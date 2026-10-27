@@ -46,7 +46,20 @@ Diagnóstico con el esqueleto animado (render) y el video del usuario `prueba01`
   disputas/min 9–14 (antes 21–22). Diagnóstico: con la fase asentada (>2 s) cada jugador ocupa su puesto (2.7–4.6 m),
   pero la posesión cambia cada ~1.9 s. Headless no anima el esqueleto ni usa las patadas reales; la medida con render
   es demasiado lenta en este entorno (no terminó). **Pendiente.**
-- **Suite headless:** ver la entrada siguiente del commit de cierre.
+- **Regresiones encontradas por la suite y corregidas en esta misma ronda:** a sprint 7 de 8 pases fallaban el golpe
+  (ajuste de zancada que no cabía antes de plantar el pie); un jugador parado salía desplazado tras patear (velocidad
+  del pie plantado en la locomoción; clip al trote elegido parado); el toque de arrancada perdía la pelota en giros a
+  sprint (6/20) y alargaba más al jugador hábil; **partido de 10 min trabado 436.8 s**: la pelota quedó quieta a 1.6 m
+  encajada entre las cabezas de dos jugadores (ahora se la quitan con un toque, `_shrug_resting_ball`); un defensor
+  reculando cruzaba la línea de fondo y otro quedaba detrás del arco (IA dentro de la cancha, rodeo del arco).
+- **Pruebas ajustadas (con motivo escrito en cada una):** `test_touch_controls` prueba cada botón en su contexto (más
+  una prueba nueva de contexto); `test_pes_mechanics::test_referee…` congela a los jugadores para medir solo al
+  árbitro; `test_gameplay_feel::test_receiving…` umbral 1.2 → 1.1 m/s (el pase sale un paso antes con la latencia
+  cuantizada; la curva de velocidad del receptor es la misma: mínimo 1.25 → 1.14 m/s medido en ambas versiones).
+  `test_dribbling::test_better_ball_carrying…` pasa con poco margen (novato 1.24 m, hábil 1.23 m; antes 1.33 / 1.23).
+- **Suite headless (ejecutada):** `tools/run_tests.sh` → **159 pruebas, 0 fallidas, 10 omitidas (necesitan render),
+  824 comprobaciones**; partidos de 3/5/7/10 min hasta el pitazo final, pelota quieta como máximo 2.4 s, 42/57/74/112
+  pases. **Con render (xvfb, ejecutadas):** `test_live_kicks` 4/4, `test_live_feet` 4/4, `test_pack_motion` 2/2.
 
 ## 2026-10-27 — Jugabilidad inspirada en PES 2021: pies en la pelota, pases filtrados, centros, chanfle, entradas, reglas con bandas, balón parado, repetición y los 133 clips en juego
 
