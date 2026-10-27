@@ -7,6 +7,8 @@ signal restart_play_requested
 signal restart_match_requested
 signal quit_requested
 signal practice_requested
+## Cambiar entre partido normal y entrenamiento (tu equipo contra el arquero rival solo).
+signal training_toggle_requested
 
 const LEVEL_NAMES: Array[String] = ["Desactivada", "Baja", "Media", "Alta"]
 
@@ -141,6 +143,7 @@ func _build_pause_menu(root: Control) -> void:
 	_add_menu_button(grid, "resume", "Continuar", func() -> void: manager.toggle_pause())
 	_add_menu_button(grid, "restart_play", "Reiniciar jugada", func() -> void: _close_pause(); restart_play_requested.emit())
 	_add_menu_button(grid, "restart_match", "Reiniciar partido", func() -> void: _close_pause(); restart_match_requested.emit())
+	_add_menu_button(grid, "training", "", func() -> void: _close_pause(); training_toggle_requested.emit())
 	_add_menu_button(grid, "practice", "Práctica de animaciones", func() -> void: _close_pause(); practice_requested.emit())
 	_add_menu_button(grid, "graphics", "", func() -> void: _cycle_graphics())
 	_add_menu_button(grid, "diagnostics", "", func() -> void: _toggle_diagnostics())
@@ -182,6 +185,7 @@ func _refresh_menu_labels() -> void:
 	(_pause_buttons["minutes"] as Button).text = "Duración del partido: %d min" % Tuning.match_minutes
 	(_pause_buttons["touch_scale"] as Button).text = "Tamaño de botones: %s" % ["Pequeño", "Normal", "Grande"][_nearest_index(TOUCH_SCALES, Tuning.touch_scale)]
 	(_pause_buttons["joy_sens"] as Button).text = "Sensibilidad del joystick: %s" % THREE_NAMES[_nearest_index(JOY_SENS, Tuning.joystick_sensitivity)]
+	(_pause_buttons["training"] as Button).text = "Volver al partido" if MatchScene.training_mode else "Entrenamiento sin rivales"
 	(_pause_buttons["diagnostics"] as Button).text = "Diagnóstico: %s" % ("ACTIVADO" if Tuning.show_diagnostics else "desactivado")
 
 ## Tamano de la botonera y sensibilidad del joystick (preferencias tactiles; se guardan con las demas).

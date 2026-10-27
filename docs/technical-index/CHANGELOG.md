@@ -11,6 +11,15 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-10-27 — Modo entrenamiento: tu equipo contra el arquero rival solo
+
+- Menú de pausa → «Entrenamiento sin rivales» / «Volver al partido» (`match_scene.gd`, `match_manager.gd`, `hud.gd`).
+- Sin rivales de campo ni reloj; los saques son de tu equipo salvo el saque de arco del arquero rival; tras un gol
+  saca tu equipo.
+- Verificación (ejecutada): `test_training_mode` 1/1 (12 comprobaciones; 150 s con la IA: 9 pases, 3 goles, 8
+  atajadas, el arquero devuelve la pelota, pelota quieta como máximo 1.5 s); `touch_controls`, `match_flow`,
+  `control_and_keeper`, `set_pieces` sin fallos; captura con render del modo y del menú.
+
 ## 2026-10-27 — Auditoría de jugabilidad: golpe sincronizado con el pie, pie de apoyo, conducción en giros, posesión única, organización colectiva, cámara y botonera contextual
 
 Diagnóstico con el esqueleto animado (render) y el video del usuario `prueba01` (fotograma a fotograma). Detalle en

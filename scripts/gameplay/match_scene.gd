@@ -24,6 +24,9 @@ var referee: Referee = null
 ## Repeticion de los goles (graba siempre; se muestra tras cada gol).
 var replay: GoalReplay = null
 @export var goal_replays: bool = true
+## Entrenamiento: tu equipo (con su arquero) contra el arquero rival SOLO, sin rivales de campo ni reloj, para probar
+## conduccion, pases y tiros al arco. Se elige en el menu de pausa y se mantiene al reiniciar la escena.
+static var training_mode: bool = false
 
 var ctx: MatchContext
 var pitch: Pitch
@@ -54,6 +57,10 @@ const FOOTBALLER_SCENE := preload("res://scenes/player/footballer.tscn")
 func _ready() -> void:
 	if duration_seconds < 0.0:
 		duration_seconds = float(Tuning.match_minutes) * 60.0
+	if training_mode:
+		away_field_players = 0
+		duration_seconds = 0.0
+		intro_seconds = 0.0
 	ctx = MatchContext.new()
 	pitch = Pitch.new()
 	pitch.name = "Pitch"
@@ -83,6 +90,7 @@ func _ready() -> void:
 	manager = MatchManager.new()
 	manager.name = "MatchManager"
 	manager.duration_seconds = duration_seconds
+	manager.training = training_mode
 	manager.intro_seconds = intro_seconds
 	add_child(manager)
 	manager.setup(ctx)
@@ -97,6 +105,9 @@ func _ready() -> void:
 	hud.restart_match_requested.connect(func() -> void: manager.restart_match())
 	hud.quit_requested.connect(_on_quit_requested)
 	hud.practice_requested.connect(_on_practice_requested)
+	hud.training_toggle_requested.connect(_on_training_toggle)
+	if training_mode:
+		hud.show_message("ENTRENAMIENTO: sin rivales, solo su arquero", 3.0)
 	marker = PlayerMarker.make(true)
 	add_child(marker)
 	next_marker = PlayerMarker.make(false)
@@ -165,6 +176,13 @@ func _on_quit_requested() -> void:
 	quit_requested.emit()
 	if get_tree().current_scene == self:
 		get_tree().quit()
+
+## Cambia entre partido normal y entrenamiento y vuelve a montar la escena.
+func _on_training_toggle() -> void:
+	training_mode = not training_mode
+	if get_tree().current_scene == self:
+		get_tree().paused = false
+		get_tree().reload_current_scene()
 
 ## Abre la sala de practica (galeria de animaciones y malabares) y vuelve aqui con «Volver».
 func _on_practice_requested() -> void:

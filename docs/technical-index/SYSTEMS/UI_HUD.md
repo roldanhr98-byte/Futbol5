@@ -25,10 +25,10 @@ No hay recursos de parámetros. Constantes y valores fijos reales:
 <!-- AUTO:consts:scripts/ui/hud.gd -->
 | Constante / enum / uniform | Valor | Línea | Descripción |
 |---|---|---|---|
-| `Hud.LEVEL_NAMES` | `["Desactivada", "Baja", "Media", "Alta"]` | 11 |  |
-| `Hud.TOUCH_SCALES` | `[0.85, 1.0, 1.2]` | 188 | Tamano de la botonera y sensibilidad del joystick (preferencias tactiles; se guardan con las demas). |
-| `Hud.JOY_SENS` | `[0.8, 1.0, 1.3]` | 189 |  |
-| `Hud.THREE_NAMES` | `["Bajo", "Normal", "Alto"]` | 190 |  |
+| `Hud.LEVEL_NAMES` | `["Desactivada", "Baja", "Media", "Alta"]` | 13 |  |
+| `Hud.TOUCH_SCALES` | `[0.85, 1.0, 1.2]` | 192 | Tamano de la botonera y sensibilidad del joystick (preferencias tactiles; se guardan con las demas). |
+| `Hud.JOY_SENS` | `[0.8, 1.0, 1.3]` | 193 |  |
+| `Hud.THREE_NAMES` | `["Bajo", "Normal", "Alto"]` | 194 |  |
 <!-- /AUTO -->
 
 - Tamaños de fuente: marcador y reloj 30, mensaje central 68 (color `(1, 0.95, 0.4)` con contorno), pista inferior 18 (`set_hint`), título de pausa 38; botones del menú de 56 px de alto mínimo y fuente 22; panel de pausa de 760 px de ancho (2 columnas).
@@ -49,31 +49,31 @@ No hay recursos de parámetros. Constantes y valores fijos reales:
 <!-- AUTO:funcs:scripts/ui/hud.gd -->
 | Función | Línea | Qué hace |
 |---|---|---|
-| `Hud._ready()` | 30 |  |
-| `Hud.should_show_touch_controls()` | 65 |  |
-| `Hud.bind(match_manager: MatchManager)` | 70 |  |
-| `Hud._charges()` | 78 |  |
-| `Hud._build_scoreboard(root: Control)` | 81 |  |
-| `Hud._build_message(root: Control)` | 98 |  |
-| `Hud._build_pause_menu(root: Control)` | 121 |  |
-| `Hud._add_menu_button(parent: Container, key: String, text: String, action: Callable)` | 156 |  |
-| `Hud._level_index(v: float)` | 167 |  |
-| `Hud._refresh_menu_labels()` | 177 |  |
-| `Hud._nearest_index(values: Array, v: float)` | 192 |  |
-| `Hud._cycle_touch(kind: StringName)` | 199 |  |
-| `Hud._cycle_minutes()` | 210 | Duracion del partido: se guarda y se aplica al reiniciar el partido (el reloj del partido en curso no cambia). |
-| `Hud._cycle_graphics()` | 218 |  |
-| `Hud._cycle_assist(kind: String)` | 222 |  |
-| `Hud._toggle_diagnostics()` | 230 |  |
-| `Hud._close_pause()` | 236 |  |
-| `Hud._on_pause_pressed()` | 240 |  |
-| `Hud.show_replay(on: bool)` | 244 |  |
-| `Hud._input(event: InputEvent)` | 252 |  |
-| `Hud._unhandled_input(event: InputEvent)` | 258 |  |
-| `Hud._on_state_changed(s: int)` | 263 |  |
-| `Hud._on_score(home: int, away: int)` | 269 |  |
-| `Hud.show_message(text: String, seconds: float)` | 272 |  |
-| `Hud.set_hint(text: String)` | 281 |  |
+| `Hud._ready()` | 32 |  |
+| `Hud.should_show_touch_controls()` | 67 |  |
+| `Hud.bind(match_manager: MatchManager)` | 72 |  |
+| `Hud._charges()` | 80 |  |
+| `Hud._build_scoreboard(root: Control)` | 83 |  |
+| `Hud._build_message(root: Control)` | 100 |  |
+| `Hud._build_pause_menu(root: Control)` | 123 |  |
+| `Hud._add_menu_button(parent: Container, key: String, text: String, action: Callable)` | 159 |  |
+| `Hud._level_index(v: float)` | 170 |  |
+| `Hud._refresh_menu_labels()` | 180 |  |
+| `Hud._nearest_index(values: Array, v: float)` | 196 |  |
+| `Hud._cycle_touch(kind: StringName)` | 203 |  |
+| `Hud._cycle_minutes()` | 214 | Duracion del partido: se guarda y se aplica al reiniciar el partido (el reloj del partido en curso no cambia). |
+| `Hud._cycle_graphics()` | 222 |  |
+| `Hud._cycle_assist(kind: String)` | 226 |  |
+| `Hud._toggle_diagnostics()` | 234 |  |
+| `Hud._close_pause()` | 240 |  |
+| `Hud._on_pause_pressed()` | 244 |  |
+| `Hud.show_replay(on: bool)` | 248 |  |
+| `Hud._input(event: InputEvent)` | 256 |  |
+| `Hud._unhandled_input(event: InputEvent)` | 262 |  |
+| `Hud._on_state_changed(s: int)` | 267 |  |
+| `Hud._on_score(home: int, away: int)` | 273 |  |
+| `Hud.show_message(text: String, seconds: float)` | 276 |  |
+| `Hud.set_hint(text: String)` | 285 |  |
 <!-- /AUTO -->
 
 <!-- AUTO:signals:scripts/ui/hud.gd -->
@@ -83,6 +83,7 @@ No hay recursos de parámetros. Constantes y valores fijos reales:
 | `Hud.restart_match_requested` | 7 |  |
 | `Hud.quit_requested` | 8 |  |
 | `Hud.practice_requested` | 9 |  |
+| `Hud.training_toggle_requested` | 11 | Cambiar entre partido normal y entrenamiento (tu equipo contra el arquero rival solo). |
 <!-- /AUTO -->
 
 <!-- AUTO:funcs:scripts/ui/ui_theme.gd -->

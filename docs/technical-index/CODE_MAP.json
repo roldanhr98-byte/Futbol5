@@ -2287,73 +2287,73 @@
         {
           "file": "scripts/gameplay/match_manager.gd",
           "name": "MatchManager.setup",
-          "line": 57,
+          "line": 60,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_manager.gd",
           "name": "MatchManager.start_match",
-          "line": 64,
+          "line": 67,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_manager.gd",
           "name": "MatchManager.restart_play",
-          "line": 75,
+          "line": 78,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_manager.gd",
           "name": "MatchManager.restart_match",
-          "line": 81,
+          "line": 84,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_manager.gd",
           "name": "MatchManager.toggle_pause",
-          "line": 85,
+          "line": 88,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_manager.gd",
           "name": "MatchManager._begin_kickoff",
-          "line": 99,
+          "line": 102,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_manager.gd",
           "name": "MatchManager._physics_process",
-          "line": 114,
+          "line": 117,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_manager.gd",
           "name": "MatchManager._on_goal",
-          "line": 260,
+          "line": 265,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_scene.gd",
           "name": "MatchScene._ready",
-          "line": 54,
+          "line": 57,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_scene.gd",
           "name": "MatchScene._spawn_teams",
-          "line": 120,
+          "line": 131,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_scene.gd",
           "name": "MatchScene.kickoff_positions",
-          "line": 178,
+          "line": 196,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_scene.gd",
           "name": "MatchScene._on_kickoff_requested",
-          "line": 187,
+          "line": 205,
           "kind": "func"
         }
       ],
@@ -2586,43 +2586,43 @@
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud.bind",
-          "line": 70,
+          "line": 72,
           "kind": "func"
         },
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud.show_message",
-          "line": 272,
+          "line": 276,
           "kind": "func"
         },
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud._build_pause_menu",
-          "line": 121,
+          "line": 123,
           "kind": "func"
         },
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud._cycle_assist",
-          "line": 222,
+          "line": 226,
           "kind": "func"
         },
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud._cycle_graphics",
-          "line": 218,
+          "line": 222,
           "kind": "func"
         },
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud._toggle_diagnostics",
-          "line": 230,
+          "line": 234,
           "kind": "func"
         },
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud.should_show_touch_controls",
-          "line": 65,
+          "line": 67,
           "kind": "func"
         },
         {
@@ -3854,19 +3854,19 @@
         {
           "file": "scripts/gameplay/match_manager.gd",
           "name": "MatchManager._check_out_of_play",
-          "line": 170,
+          "line": 173,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_manager.gd",
           "name": "MatchManager._begin_set_piece",
-          "line": 217,
+          "line": 220,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_scene.gd",
           "name": "MatchScene._on_set_piece_requested",
-          "line": 244,
+          "line": 262,
           "kind": "func"
         },
         {

@@ -45,6 +45,9 @@ var active_set_piece: SetPiece = null
 var goal_kick_keeper: Node = null
 var set_piece_kind: String = ""
 var set_piece_team: int = -1
+## Entrenamiento (sin rivales de campo): los saques siempre los hace el equipo de la persona, salvo el saque de arco
+## del arquero rival; tras un gol vuelve a sacar el equipo de la persona.
+var training: bool = false
 var set_piece_pos: Vector3 = Vector3.ZERO
 ## Segundos de pelota muerta antes de habilitar al ejecutor (la escena coloca a los jugadores).
 @export var set_piece_setup_seconds: float = 0.9
@@ -156,7 +159,7 @@ func _physics_process(delta: float) -> void:
 				_replay_done = true
 				replay_requested.emit()
 			if _state_timer <= 0.0:
-				_begin_kickoff(1 - _last_scoring_team)
+				_begin_kickoff(0 if training else 1 - _last_scoring_team)
 		State.FULL_TIME:
 			pass
 
@@ -215,6 +218,8 @@ static func in_penalty_area(p: Vector3, goal_x: float, cfg: PitchConfig) -> bool
 	return Vector2(p.x - goal_x, dz).length() <= cfg.penalty_area_radius
 
 func _begin_set_piece(kind: String, team: int, pos: Vector3) -> void:
+	if training and team == 1 and kind != "goal_kick":
+		team = 0
 	set_piece_kind = kind
 	set_piece_team = team
 	set_piece_pos = pos
