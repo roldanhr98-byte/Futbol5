@@ -36,11 +36,15 @@ const KICK_NUDGE_MAX := 3.2
 const KICK_NUDGE_PER_MS := 0.4
 ## Espera maxima de una orden de golpeo con la pelota viniendo hacia el jugador (pase o tiro de primera).
 const PENDING_FIRST_TIME_MAX := 1.4
-## Toque de arrancada: metros extra de colocacion por cada m/s que falta para la velocidad punta (y su tope).
-const ACCEL_TOUCH_PER_MS := 0.12
+## Toque de arrancada: con SPRINT, la colocacion crece hasta ACCEL_TOUCH_MAX m segun la fraccion de la velocidad punta
+## que falta (x ACCEL_TOUCH_PER_FRACTION, saturado en 1).
+const ACCEL_TOUCH_PER_FRACTION := 2.5
 const ACCEL_TOUCH_MAX := 0.3
 ## Segundos minimos entre dos toques de media vuelta seguidos (el pie no puede tocar la pelota cada fotograma).
 const REVERSAL_TOUCH_GAP := 0.12
+## Pelota apoyada en el cuerpo: velocidad maxima (m/s) y segundos quieta antes de quitarsela con la cabeza / el hombro.
+const RESTING_BALL_SPEED := 0.6
+const RESTING_BALL_SECONDS := 0.4
 
 var owner: Footballer
 var rng := RandomNumberGenerator.new()
@@ -62,6 +66,7 @@ var _kick_start_ball_v: Vector3 = Vector3.ZERO
 ## Velocidad del cuerpo y direccion deseada al empezar la patada con clip: durante el balanceo el jugador ya se
 ## comprometio (el joystick deja de girarlo/acelerarlo) y en los ultimos KICK_PLANT_TIME el pie de apoyo se planta.
 var _kick_v0: Vector3 = Vector3.ZERO
+var _resting_time: float = 0.0
 var kick_desired_dir: Vector3 = Vector3.ZERO
 var kick_desired_mag: float = 0.0
 var touch_timer: float = 0.0
@@ -255,6 +260,8 @@ func update(frame: InputFrame, stick_world: Vector3, stick_mag: float, desired_d
 			_pending_action = &""
 		elif waiting_first_time:
 			return   # sin control previo: el golpeo sera de primera
+	if _shrug_resting_ball():
+		return
 	if lockout > 0.0 or owner.ctx.ball_locked_for(owner) or ball_owned_by_other():
 		return
 	if _try_first_touch(desired_dir):
@@ -970,6 +977,30 @@ func _touch_mode(desired_dir: Vector3, stick_mag: float, turn_angle: float) -> S
 		return &"carry"
 	return &"carry"
 
+## Pelota quieta apoyada sobre el cuerpo (encajada entre las cabezas u hombros de dos jugadores pegados): nadie
+## puede tocarla con el pie y el partido se trababa (medido: 436 s en un partido de 10 min). El jugador sobre el que
+## descansa se la quita con la cabeza / el hombro: un toque real, hacia fuera y algo hacia arriba.
+func _shrug_resting_ball() -> bool:
+	var b: Ball = ball()
+	if b == null or b.is_held() or owner.ctx.ball_locked_for(owner):
+		return false
+	var t: PlayerTuning = Tuning.player
+	var y: float = b.global_position.y - owner.global_position.y
+	var off: Vector3 = ball_offset()
+	if y < 0.9 or y > t.capsule_height + 0.35 or b.linear_velocity.length() > RESTING_BALL_SPEED or off.length() > t.capsule_radius + 0.3:
+		_resting_time = 0.0
+		return false
+	_resting_time += get_dt()
+	if _resting_time < RESTING_BALL_SECONDS:
+		return false
+	_resting_time = 0.0
+	var out: Vector3 = off.normalized() if off.length() > 0.05 else owner.locomotion.forward()
+	var v: Vector3 = out * 1.8 + Vector3.UP * 1.2
+	b.kick(v, Vector3.ZERO, owner)
+	touch_timer = 0.3
+	touched_ball.emit(&"body")
+	return true
+
 ## Un toque de conduccion en la direccion dada (lo usa una accion con raiz, que no pasa por update()).
 func force_dribble_touch(dir: Vector3) -> void:
 	_try_dribble_touch(dir, 0.8)
@@ -1117,8 +1148,10 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 	# Solo en linea recta (en un giro la velocidad cae y alargar el toque perdia la pelota: 6 de 20 giros a sprint) y menos
 	# con mejor control.
 	if mode == &"carry" and loco.sprinting and turn_angle < 15.0 and absf(loco.turn_rate) < 0.6:
-		var missing: float = loco.max_sprint_speed() - loco.speed
-		gap += clampf(missing * ACCEL_TOUCH_PER_MS, 0.0, ACCEL_TOUCH_MAX) * lerpf(1.0, 0.5, skill)
+		# Por FRACCION de la punta que falta (un jugador mas rapido no recibe toques mas largos por tardar mas en llegar a
+		# ella) y mucho menos con buen control.
+		var missing: float = 1.0 - loco.speed / maxf(loco.max_sprint_speed(), 0.1)
+		gap += clampf(missing * ACCEL_TOUCH_PER_FRACTION, 0.0, 1.0) * ACCEL_TOUCH_MAX * (1.0 - skill)
 	gap = minf(gap, reach * 1.35 - 0.05)
 	_planned_gap = gap
 	_foot_wait = 0.0

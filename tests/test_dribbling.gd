@@ -86,3 +86,28 @@ func test_player_collides_with_walls() -> void:
 	await wait_seconds(4.0)
 	check(p.global_position.z <= Tuning.pitch.half_width() + 0.01, "no atraviesa la pared lateral (z=%.2f)" % p.global_position.z)
 	check(p.global_position.z > 8.0, "llega hasta la pared (z=%.2f)" % p.global_position.z)
+
+## Pelota encajada entre las cabezas de dos jugadores pegados (hallado en un partido de 10 min: 436 s trabada a 1.6 m).
+## El jugador sobre el que descansa se la quita con un toque de cabeza / hombro y vuelve al suelo.
+func test_ball_resting_on_two_players_is_shrugged_off() -> void:
+	var ctx: MatchContext = await make_match(Vector3(0.0, 3.0, 0.0))
+	var a: Footballer = add_player(ctx, 0, Vector3(-0.3, 0.0, 0.0), 50, ScriptedInput.new())
+	var b: Footballer = add_player(ctx, 1, Vector3(0.3, 0.0, 0.0), 50, ScriptedInput.new())
+	await physics_frames(5)
+	ctx.ball.reset_at(Vector3(0.0, 1.95, 0.0))
+	var max_rest: float = 0.0
+	var rest: float = 0.0
+	var landed := false
+	for i in 240:
+		await tree.physics_frame
+		var bp: Vector3 = ctx.ball.global_position
+		if bp.y > 0.9 and ctx.ball.linear_velocity.length() < 0.6:
+			rest += 1.0 / 60.0
+			max_rest = maxf(max_rest, rest)
+		else:
+			rest = 0.0
+		if bp.y < 0.2:
+			landed = true
+	note("pelota sobre los jugadores: quieta en el aire como mucho %.2f s, vuelve al suelo=%s, ultimo toque %s" % [max_rest, str(landed), str(ctx.ball.last_toucher.get("actor_id")) if ctx.ball.last_toucher else "-"])
+	check(landed, "la pelota no queda trabada sobre los jugadores")
+	check(max_rest < 1.0, "se la quitan enseguida (%.2f s)" % max_rest)
