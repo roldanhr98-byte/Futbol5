@@ -23,6 +23,9 @@ var ball_stall_seconds: float = 0.0
 ## puede quitarsela con una entrada o cortar un toque largo. Asi la posesion es clara (se ve en el aro bajo el portador)
 ## y la pelota no rebota de pie en pie en los barullos.
 var possessor: Footballer = null
+## Equipo de campo que maneja la persona (-1 si ninguno). Con la pelota en ese equipo decide siempre la persona: la IA
+## de sus companeros nunca pasa ni patea (MatchScene le da el control a quien la recibe).
+var human_team: int = -1
 var possessor_since: float = 0.0
 ## Equipo que tuvo la pelota por ultima vez con dueno (fase de juego: ataque / defensa), -1 al inicio.
 var phase_team: int = -1

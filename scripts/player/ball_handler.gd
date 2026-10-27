@@ -61,8 +61,15 @@ var _lateral_cooldown: float = 0.0
 var _carry_face: Vector3 = Vector3.ZERO
 ## Modo del ultimo toque de conduccion (settle, lateral, redirect, carry): lo usa la animacion.
 var last_touch_mode: StringName = &""
-## Instante (ms) del ultimo pase o tiro ejecutado: el jugador no vuelve a tocar su propio envio enseguida.
-var _last_kick_msec: int = 0
+## Paso de fisica del ultimo pase o tiro ejecutado: el jugador no vuelve a tocar su propio envio enseguida. Se cuenta en
+## tiempo de simulacion (con el reloj del sistema, una simulacion lenta o acelerada cambiaba la regla).
+var _last_kick_frame: int = -100000
+## Segundos tras su propio pase o tiro en que el envio no es suyo: ni lo toca ni lo persigue como conduccion.
+const OWN_KICK_SECONDS := 0.7
+## Segundos tras su propio toque en que el jugador no hace un control de primer toque sobre esa pelota. Antes eran
+## 450 ms de reloj del sistema: las pruebas (que simulan mas rapido que el tiempo real) lo midieron como ~0.9 s de juego
+## (54 pasos con render) y el movil como 0.45 s. Se fija el valor con el que se midio la conduccion.
+const OWN_TOUCH_NO_CONTROL_SECONDS := 0.9
 var _kick_start_touch: int = 0
 var _kick_start_ball_v: Vector3 = Vector3.ZERO
 ## Velocidad del cuerpo y direccion deseada al empezar la patada con clip: durante el balanceo el jugador ya se
@@ -169,7 +176,11 @@ func is_dribbling() -> bool:
 		return true
 	var b: Ball = ball()
 	return b != null and not b.is_held() and b.last_toucher == owner and ball_distance() < 2.3 \
-		and Time.get_ticks_msec() - _last_kick_msec > 700 and b.global_position.y < 0.6
+		and seconds_since_kick() > OWN_KICK_SECONDS and b.global_position.y < 0.6
+
+## Segundos de simulacion desde el ultimo pase o tiro de este jugador.
+func seconds_since_kick() -> float:
+	return float(Engine.get_physics_frames() - _last_kick_frame) / float(Engine.physics_ticks_per_second)
 
 ## Segundos hasta que una pelota que se ACERCA pase a menos de radius del jugador (INF si no viene hacia el, va alta o
 ## es de otro). Prediccion lineal en el plano: alcanza para decidir si una orden espera el golpeo de primera.
@@ -817,8 +828,8 @@ func _after_kick(action: StringName, res: KickModel.KickResult) -> void:
 	last_result = res
 	# El receptor de un pase sabe a donde va la pelota: corre a ese punto (el pase no le cae del cielo).
 	if action == &"pass" and res.target != null and is_instance_valid(res.target) and res.target != owner:
-		res.target.expect_pass(res.aim_point, res.kind)
-	_last_kick_msec = Time.get_ticks_msec()
+		res.target.expect_pass(res.aim_point, res.kind, owner)
+	_last_kick_frame = Engine.get_physics_frames()
 	lockout = Tuning.player.kick_lockout
 	touch_timer = lockout
 	# Patear desequilibra levemente: pierde algo de velocidad.
@@ -1046,7 +1057,7 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 	if b == null or b.is_held() or b.global_position.y > 0.45:
 		return
 	# Nadie vuelve a tocar su propio pase o tiro recien ejecutado (si no, el jugador se "robaria" su propio envio).
-	if b.last_toucher == owner and Time.get_ticks_msec() - _last_kick_msec < 700:
+	if b.last_toucher == owner and seconds_since_kick() < OWN_KICK_SECONDS:
 		return
 	var loco: Locomotion = owner.locomotion
 	var t: PlayerTuning = Tuning.player
@@ -1333,7 +1344,7 @@ func plan_carry(desired_dir: Vector3, stick_mag: float, dt: float) -> Vector3:
 ## (fallo visto en el video del usuario: soltar el joystick y la pelota seguia rodando sola). Devuelve [direccion,
 ## intensidad] o [] si no hace falta.
 func settle_steer() -> Array:
-	if _kick_action != &"" or not is_dribbling():
+	if _kick_action != &"" or not is_dribbling() or seconds_since_kick() < OWN_KICK_SECONDS:
 		return []
 	var b: Ball = ball()
 	if b == null or b.is_held() or b.global_position.y > 0.6:
@@ -1423,7 +1434,7 @@ func _try_first_touch(desired_dir: Vector3) -> bool:
 	if dist > t.possession_radius or b.global_position.y > 0.7 or dist < 0.01:
 		return false
 	# Un balon que acaba de golpear este mismo jugador no se "controla".
-	if b.last_toucher == owner and Time.get_ticks_msec() - b.last_touch_msec < 450:
+	if b.last_toucher == owner and float(Engine.get_physics_frames() - b.last_touch_frame) / float(Engine.physics_ticks_per_second) < OWN_TOUCH_NO_CONTROL_SECONDS:
 		return false
 	# Un balon disputado (otro jugador lo acaba de tocar y sigue junto a el) no se controla gratis:
 	# hay que disputarlo (entrada / presion).

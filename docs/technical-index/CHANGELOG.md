@@ -11,6 +11,47 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-10-27 — La persona controla todo: el receptor de cada pase pasa a ser suyo
+
+Pedido del usuario: «al realizar un pase el jugador receptor automáticamente pasa a ser controlado por mí; no quiero
+que la IA decida si pasa o tira». Detalle en [SYSTEMS/MATCH.md](SYSTEMS/MATCH.md#saque-inicial-y-cambio-de-jugador).
+
+- **Fallos reproducidos** (con `tests/test_pass_receiver_control.gd` sobre el código anterior): en un pase de 18 m el
+  control volvía a otro jugador durante 60 pasos de física del vuelo (el cambio automático elegía al más cercano a la
+  pelota, que era el pasador) y el receptor recibía con la IA; un pase al espacio sin destinatario no cambiaba el
+  control; un compañero con la pelota al pie seguía con la IA. Además el pase entrante se cancelaba en los primeros
+  pasos porque el pasador aún contaba como poseedor (fallaba `test_pes_mechanics` en la suite anterior).
+- **Corrección:** cambio al receptor en todo pase propio, con destinatario o el que llega antes a la trayectoria
+  predicha (`MatchScene.pass_receiver`); sin cambio automático con un pase en camino al controlado; control inmediato
+  al compañero que se queda con la pelota; la IA del equipo de la persona no pasa ni patea (`MatchContext.human_team`,
+  `AIInput._decide`); `_give_control` cancela una carga de la IA; `Footballer.expect_pass(..., from)` no cancela el pase
+  por el propio pasador.
+- **Reloj de simulación:** las reglas «no tocar/perseguir el propio envío» (0.7 s) y «no controlar la pelota recién
+  tocada» (450 ms) usaban el reloj del sistema; ahora pasos de física (`BallHandler.seconds_since_kick`). Era la causa
+  del fallo de `test_pack_kick` (el jugador perseguía su propio pase a 0.96 m/s con el joystick suelto). Las pruebas
+  simulan a ~2× tiempo real (medido: 602 pasos en 5.0 s con render): los 450 ms valían 0.9 s de juego en las pruebas y
+  0.45 s en el móvil. Con 0.45 s la curva con render bajó a 10/18 toques con el pie; se fija
+  `OWN_TOUCH_NO_CONTROL_SECONDS` = 0.9 s (el valor medido) y vuelve a 11/18 (zigzag 10/14).
+- Archivos: `match_scene.gd`, `match_context.gd`, `ai_input.gd`, `footballer.gd`, `ball_handler.gd`, `set_piece.gd`,
+  `tests/test_pass_receiver_control.gd` (nuevo).
+- Verificación (ejecutada, versión final): `test_pass_receiver_control` 4/4 (14 comprobaciones; 3 de las 4 fallan sin
+  el cambio); suite headless completa 169 pruebas / 869 comprobaciones / 0 fallos (13 omitidas: necesitan render); con
+  render `live_feet` 7/7 (curva 11/18 con el pie, zigzag 10/14) y `live_kicks` 4/4 (batería: 49/50 con contacto, 1
+  anulada porque el rival tocó antes, 0 inválidos, 0 bloqueos).
+
+## 2026-10-27 — Conducción tras el video `videofutbol` (tercera ronda)
+
+Detalle y cifras en [SYSTEMS/PLAYER.md](SYSTEMS/PLAYER.md#conducción-tras-el-video-videofutbol-2026-10-27-tercera-ronda)
+y [ANIMATION_CONTACT_AUDIT.md](ANIMATION_CONTACT_AUDIT.md).
+
+- Soltar el joystick: el jugador acompaña y para la pelota (`settle_steer`); giros que avanzan con la pelota
+  (`carry_turn_scale`); media vuelta por el costado; el cuerpo no frena su propia pelota; `lateral_max_stick` 0.5;
+  contacto con todo el pie; compañeros que no se pegan al portador (`TeamBrain` pasillo, `AIInput._make_way`).
+- Verificación (ejecutada, render): `live_feet` 7/7, `live_kicks` 4/4 (48/50 golpes con contacto, 2 anulados por
+  toque rival, 0 inválidos). Suite headless de esa ronda: 164 pruebas, 2 fallos (`test_pack_kick` ajuste de zancada y
+  `test_pes_mechanics` receptor), corregidos en la entrada de arriba.
+- Limitación: en curvas cerradas continuas 39 % de toques de rescate; el pack no tiene clips de pisada ni de empuje.
+
 ## 2026-10-27 — Modo entrenamiento: tu equipo contra el arquero rival solo
 
 - Menú de pausa → «Entrenamiento sin rivales» / «Volver al partido» (`match_scene.gd`, `match_manager.gd`, `hud.gd`).

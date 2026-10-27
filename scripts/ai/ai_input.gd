@@ -215,6 +215,12 @@ func _decide(f: Footballer) -> void:
 	if ctx.ball_stall_seconds > BALL_STALL_SECONDS and not mine:
 		team_has = false
 	if mine:
+		if f.team == ctx.human_team:
+			# Equipo de la persona: la IA no decide con la pelota (pase o tiro); la protege quieta hasta que el control
+			# llega a este jugador (MatchScene lo da en el mismo paso).
+			_dir = Vector3.ZERO
+			_mag = 0.0
+			return
 		_decide_with_ball(f, ctx, atk)
 		return
 	_carry_time = 0.0

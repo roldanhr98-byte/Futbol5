@@ -385,7 +385,7 @@ func _throw_velocity(from: Vector3) -> Vector3:
 			best = f
 	if best != null:
 		target = best.global_position + best.velocity * 0.4
-		best.expect_pass(target, &"throw_in")
+		best.expect_pass(target, &"throw_in", taker)
 	var d: Vector3 = KickModel.flat(target - from)
 	var dist: float = d.length()
 	var dir: Vector3 = d / maxf(dist, 0.01)

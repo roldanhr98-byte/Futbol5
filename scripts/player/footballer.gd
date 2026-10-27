@@ -58,6 +58,8 @@ var set_piece: SetPiece = null
 var incoming_pass_point: Vector3 = Vector3.ZERO
 var incoming_pass_kind: StringName = &""
 var incoming_pass_time: float = 0.0
+## Quien hizo el pase que viene (en los primeros pasos tras patear sigue contando como poseedor: no corta el pase).
+var incoming_pass_from: Node = null
 ## Carrera al espacio tras dar un pase (pared): direccion y segundos que quedan. La usa la IA del pasador.
 var give_and_go_dir: Vector3 = Vector3.ZERO
 var give_and_go_time: float = 0.0
@@ -112,8 +114,9 @@ func setup(context: MatchContext, team_index: int, id: int, attrs: PlayerAttribu
 	if visual != null and not visual.is_placeholder and team != 0:
 		visual.set_kit(FootballerVisual.default_kit(team))
 
-## Un companero acaba de pasarle la pelota: guarda el punto de llegada para ir a buscarla.
-func expect_pass(point: Vector3, kind: StringName) -> void:
+## Un companero (`from`) acaba de pasarle la pelota: guarda el punto de llegada para ir a buscarla.
+func expect_pass(point: Vector3, kind: StringName, from: Node = null) -> void:
+	incoming_pass_from = from
 	incoming_pass_point = Vector3(point.x, 0.0, point.z)
 	incoming_pass_kind = kind
 	incoming_pass_time = 2.5 if String(kind).begins_with("through") or String(kind).begins_with("cross") else 1.6
@@ -191,7 +194,7 @@ func _physics_process(delta: float) -> void:
 		incoming_pass_time = 0.0   # lo corto un rival: ya no viene
 	# La pelota ya la tiene otro (por ejemplo un companero que se adelanto): el pase ya no es para mi. Sin esto el
 	# receptor seguia corriendo al punto del pase y se metia encima del companero que conducia (video del usuario).
-	if incoming_pass_time > 0.0 and ctx.possessor != null and ctx.possessor != self:
+	if incoming_pass_time > 0.0 and ctx.possessor != null and ctx.possessor != self and ctx.possessor != incoming_pass_from:
 		incoming_pass_time = 0.0
 	var frame: InputFrame = input_source.poll(self) if (input_source != null and ctx.input_enabled) else InputFrame.new()
 	last_frame = frame

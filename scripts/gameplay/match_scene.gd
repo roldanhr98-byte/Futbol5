@@ -390,22 +390,29 @@ func _charge_state() -> Dictionary:
 	return {"pass": bh.pass_charge, "shoot": bh.shot_charge, "through": bh.through_charge, "cross": bh.cross_charge}
 
 ## Con un pase de la persona el control pasa al RECEPTOR en el momento del pase (como en los juegos de futbol de
-## consola): la persona maneja a quien va a recibir. El pasador queda en manos de la IA y, si hay espacio por delante,
-## sigue la jugada (pared): corre al espacio para ofrecer la devolucion.
+## consola): la persona maneja a quien va a recibir. Vale para todo pase propio (raso, elevado, filtrado, centro, saque
+## de banda), tenga o no destinatario: sin destinatario recibe el companero que llega antes a la trayectoria predicha.
+## El pasador queda en manos de la IA y, si hay espacio por delante, sigue la jugada (pared): corre al espacio para
+## ofrecer la devolucion.
 func _on_match_event(e: GameEvent) -> void:
+	if e.type == GameEvent.Type.PASS or e.type == GameEvent.Type.SHOT:
+		_last_kick_actor = e.actor_id
+		_last_kick_frame = Engine.get_physics_frames()
 	if e.type != GameEvent.Type.PASS or controlled == null or controlled_keeper != null:
 		return
 	if e.actor_id != controlled.actor_id or e.team != 0:
 		return
 	var target_id: int = int(e.data.get("target", -1))
-	if target_id < 0:
-		return
 	var target: Footballer = null
 	for f in home:
 		if f.actor_id == target_id:
 			target = f
 	if target == null or target == controlled:
-		return
+		var pick: Array = pass_receiver(controlled)
+		if pick.is_empty():
+			return
+		target = pick[0]
+		target.expect_pass(pick[1], StringName(e.data.get("kind", "pass")), controlled)
 	var passer: Footballer = controlled
 	_give_control(target)
 	_switch_cooldown = 0.6
@@ -415,6 +422,80 @@ func _on_match_event(e: GameEvent) -> void:
 		# Hacia delante y algo hacia el centro (la devolucion llega por dentro).
 		passer.give_and_go_dir = (atk + Vector3(0.0, 0.0, -signf(passer.global_position.z) * 0.3)).normalized()
 		passer.give_and_go_time = 1.8
+
+## Horizonte (s) y paso (s) de la trayectoria con la que se busca al receptor de un pase sin destinatario.
+const RECEIVER_HORIZON := 3.0
+const RECEIVER_STEP := 0.1
+
+## Receptor de un pase propio sin destinatario: el companero (no el pasador) que llega antes a algun punto de la
+## trayectoria predicha de la pelota a ras de piso o a la altura de la cabeza. Si nadie llega a tiempo, el mas cercano a
+## donde se detiene la pelota. Devuelve [Footballer, punto de encuentro] o [] si no hay companeros.
+func pass_receiver(passer: Footballer) -> Array:
+	var traj: PackedVector3Array = BallPredictor.trajectory(ball.global_position, ball.linear_velocity, RECEIVER_HORIZON, RECEIVER_STEP)
+	var best: Footballer = null
+	var best_t: float = INF
+	var best_p := Vector3.ZERO
+	for f in home:
+		if f == passer:
+			continue
+		var run: float = maxf(f.locomotion.max_sprint_speed() * 0.9, 2.0)
+		var me := Vector3(f.global_position.x, 0.0, f.global_position.z)
+		for i in range(1, traj.size()):
+			var t_ball: float = float(i) * RECEIVER_STEP
+			if t_ball >= best_t:
+				break
+			var p: Vector3 = traj[i]
+			if p.y > 1.9:
+				continue
+			var flat := Vector3(p.x, 0.0, p.z)
+			if me.distance_to(flat) / run <= t_ball:
+				best = f
+				best_t = t_ball
+				best_p = flat
+				break
+	if best != null:
+		return [best, best_p]
+	var end: Vector3 = traj[traj.size() - 1]
+	end.y = 0.0
+	var best_d: float = INF
+	for f in home:
+		if f == passer:
+			continue
+		var d: float = Vector3(f.global_position.x, 0.0, f.global_position.z).distance_to(end)
+		if d < best_d:
+			best_d = d
+			best = f
+	return [best, end] if best != null else []
+
+## Con la pelota en los pies de un companero de la persona (control, rebote, intercepcion, pase del arquero) el control
+## pasa a el en el acto: la IA del equipo de la persona nunca decide con la pelota. Se exige que la pelota vaya con el
+## (velocidad relativa baja) para no devolver el control al pasador en los pasos en que la pelota aun sale de su pie.
+const HANDOVER_MAX_REL_SPEED := 4.0
+## Pasos de fisica tras su propio pase o tiro en que la pelota aun no vuelve a ser del que la pateo.
+const HANDOVER_AFTER_KICK_FRAMES := 45
+var _last_kick_actor: int = -1
+var _last_kick_frame: int = -1000
+
+func _teammate_with_ball() -> Footballer:
+	if ctx.dead_ball or ball == null or ball.is_held():
+		return null
+	if controlled_keeper == null and controlled.ball_handler.has_possession():
+		return null
+	var best: Footballer = null
+	var best_d: float = INF
+	for f in home:
+		if f == controlled or not f.ball_handler.has_possession():
+			continue
+		if f.actor_id == _last_kick_actor and ball.last_toucher == f and Engine.get_physics_frames() - _last_kick_frame < HANDOVER_AFTER_KICK_FRAMES:
+			continue
+		var rel := Vector2(ball.linear_velocity.x - f.velocity.x, ball.linear_velocity.z - f.velocity.z)
+		if rel.length() >= HANDOVER_MAX_REL_SPEED:
+			continue
+		var d: float = f.ball_handler.ball_distance()
+		if d < best_d:
+			best_d = d
+			best = f
+	return best
 
 var _switch_cooldown: float = 0.0
 
@@ -459,8 +540,16 @@ func _physics_process(delta: float) -> void:
 		hud.touch.show_switch = home.size() > 1
 		hud.touch.context = touch_context()
 	_switch_cooldown = maxf(_switch_cooldown - delta, 0.0)
+	ctx.human_team = 0 if controlled != null and (controlled.is_human_controlled or controlled_keeper != null) else -1
 	if controlled == null or not ctx.input_enabled:
 		return
+	if ctx.human_team == 0:
+		var mate: Footballer = _teammate_with_ball()
+		if mate != null:
+			if controlled_keeper != null:
+				release_keeper_control()
+			_give_control(mate)
+			return
 	# Con el arquero en las manos de la persona, el cambio lo devuelve al campo; el regreso tambien es automatico
 	# cuando la jugada se aleja del area propia.
 	if controlled_keeper != null:
@@ -555,7 +644,9 @@ func switch_to_nearest_to_ball() -> void:
 
 func _auto_switch() -> void:
 	var cd: float = Vector2(controlled.global_position.x - ball.global_position.x, controlled.global_position.z - ball.global_position.z).length()
-	if cd < 7.0 or controlled.ball_handler.is_kick_in_progress() or controlled.has_ball():
+	# Con un pase en camino hacia el jugador de la persona no se cambia: en un pase largo el pasador y otros companeros
+	# quedan mas cerca de la pelota que el receptor durante el vuelo y el control volvia a ellos.
+	if cd < 7.0 or controlled.ball_handler.is_kick_in_progress() or controlled.has_ball() or controlled.has_incoming_pass():
 		return
 	var best: Footballer = null
 	var best_d: float = cd - 3.0
@@ -575,6 +666,9 @@ func _give_control(target: Footballer) -> void:
 	var human: InputSource = controlled.input_source
 	controlled.input_source = AIInput.new(int(controlled.get_meta("ai_role", 0)), ai_skill)
 	controlled.is_human_controlled = false
+	# Una carga que la IA hubiera empezado en el receptor no se suelta en manos de la persona (eso seria un pase o un
+	# tiro decidido por la IA).
+	target.ball_handler.cancel_charge()
 	target.input_source = human
 	target.is_human_controlled = true
 	controlled = target
