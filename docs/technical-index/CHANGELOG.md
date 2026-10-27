@@ -41,11 +41,13 @@ Diagnóstico con el esqueleto animado (render) y el video del usuario `prueba01`
   de la pelota en la imagen del golpe, 1 cancelado porque el rival tocó antes, 0 impulsos sin contacto, 0 bloqueos; pie de
   apoyo 0.4–1.3 m/s (antes 1.4–7.4). `test_live_feet` 4/4 — curva 100 % con la pelota cerca (antes 83 %), medias vueltas
   100 % (antes 44 %), zigzag 18/21 toques con el pie (una versión intermedia de esta ronda había bajado a 8/16; corregido).
-- **Organización colectiva (medida headless, 2×150 s, `MatchMetrics`):** sin mejora clara en el amontonamiento
-  (41–49 % de muestras con ≥4 jugadores a <4 m de la pelota; línea base 30–44 %); pases/min 9–14 (antes 5–8),
-  disputas/min 9–14 (antes 21–22). Diagnóstico: con la fase asentada (>2 s) cada jugador ocupa su puesto (2.7–4.6 m),
-  pero la posesión cambia cada ~1.9 s. Headless no anima el esqueleto ni usa las patadas reales; la medida con render
-  es demasiado lenta en este entorno (no terminó). **Pendiente.**
+- **Organización colectiva, medida con render (xvfb, 2 partidos de 90 s, misma prueba en la versión anterior y en
+  esta, `test_team_shape_metrics`):** cambios de posesión/min 44 / 22 → 12.7 / 18.7; disputas/min 19.3 / 20.7 → 11.3 /
+  11.3; pases/min 9.3 / 6.7 → 6.0 / 10.7. **No mejora** el amontonamiento (≥4 jugadores a <4 m de la pelota: 55.1 /
+  32.6 % → 51.1 / 40.8 %) y **empeoran** la separación entre compañeros (5.3 / 5.8 → 3.8 / 4.0 m) y la profundidad del
+  equipo con la pelota (12.1 / 12.7 → 6.9 / 7.3 m): el reparto de puestos deja al equipo demasiado corto. Diagnóstico
+  (headless): con la fase asentada (>2 s) cada jugador está a 2.7–4.6 m de su puesto; la posesión cambia cada ~1.9 s.
+  **Pendiente**: profundidad y separación del TeamBrain.
 - **Regresiones encontradas por la suite y corregidas en esta misma ronda:** a sprint 7 de 8 pases fallaban el golpe
   (ajuste de zancada que no cabía antes de plantar el pie); un jugador parado salía desplazado tras patear (velocidad
   del pie plantado en la locomoción; clip al trote elegido parado); el toque de arrancada perdía la pelota en giros a
