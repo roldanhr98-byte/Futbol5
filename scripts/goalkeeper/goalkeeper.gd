@@ -372,6 +372,15 @@ func _tick_prepare(delta: float) -> void:
 	var remaining: float = float(_plan["delay"]) - (_clock - _plan_clock)
 	# Se planta desde el primer instante: los planes asumen el punto donde queda parado.
 	var cur := Vector3(velocity.x, 0.0, velocity.z).move_toward(Vector3.ZERO, _tune.accel * 1.5 * delta)
+	if _plan.get("claim", false) and remaining > 0.02:
+		# Salida a un centro: pasos de ajuste para que las manos del clip lleguen a la pelota (como el ajuste de
+		# zancada del golpeo): error entre las manos previstas y la pelota en el contacto, repartido en lo que falta.
+		var ball: Ball = ctx.ball
+		var ct: PackedVector3Array = BallPredictor.trajectory(ball.global_position, ball.linear_velocity, 1.4, 1.0 / 30.0)
+		var ia: int = clampi(int(round((float(_plan["arrive"]) - (_clock - _plan_clock)) * 30.0)), 0, ct.size() - 1)
+		var hands: Vector3 = KeeperPlanner.path_world(_plan["clip"], "hands", int(_plan["k"]), global_position, yaw)
+		var err := Vector3(ct[ia].x - hands.x, 0.0, ct[ia].z - hands.z)
+		cur = (err / maxf(remaining, 0.12)).limit_length(_tune.move_speed)
 	velocity.x = cur.x
 	velocity.z = cur.z
 	if remaining > 0.08:
@@ -387,6 +396,16 @@ func _replan() -> void:
 	var ball: Ball = ctx.ball
 	if ball.is_held():
 		state = State.POSITION
+		return
+	if _plan.get("claim", false):
+		# Salida a un centro: se ajusta el plan con la trayectoria actual (sin las condiciones de disparo a puerta).
+		var ct: PackedVector3Array = BallPredictor.trajectory(ball.global_position, ball.linear_velocity, 1.4)
+		var cp: Dictionary = KeeperPlanner.plan_save(_origin_after_stop(), yaw, ct, 1.0 / 30.0, 0.0, ball.linear_velocity.length(), false)
+		if not cp.is_empty() and float(cp["dist"]) <= float(_plan["dist"]) + 0.05:
+			cp["claim"] = true
+			cp["ball_speed"] = ball.linear_velocity.length()
+			_plan = cp
+			_plan_clock = _clock
 		return
 	if _plan.get("fixed", false):
 		return
@@ -1038,13 +1057,14 @@ func _assess_cross() -> bool:
 	if ball.is_held() or ctx.dead_ball or ball.last_touch_team == team:
 		return false
 	var v: Vector3 = ball.linear_velocity
-	if ball.global_position.y < 0.8 or v.length() < 4.0:
+	if v.length() < 4.0 or _cross_landing() == Vector3.INF:
 		return false
 	if absf(ball.global_position.x - goal_x()) > 16.0:
 		return false
 	var traj: PackedVector3Array = BallPredictor.trajectory(ball.global_position, v, 1.4)
-	var plan: Dictionary = KeeperPlanner.plan_save(global_position, yaw, traj, 1.0 / 30.0, 0.15, v.length(), false)
-	if plan.is_empty() or float(plan["dist"]) > float(plan["radius"]) * 0.85:
+	# Se planta y salta desde donde queda al frenar (mismo criterio que en los disparos).
+	var plan: Dictionary = KeeperPlanner.plan_save(_origin_after_stop(), yaw, traj, 1.0 / 30.0, 0.15, v.length(), false)
+	if plan.is_empty() or float(plan["dist"]) > float(plan["radius"]) * 0.95:
 		return false
 	var i: int = clampi(int(float(plan["arrive"]) * 30.0), 0, traj.size() - 1)
 	var catch_p: Vector3 = traj[i]
@@ -1056,7 +1076,7 @@ func _assess_cross() -> bool:
 			return false
 	_plan = plan
 	_plan["ball_speed"] = v.length()
-	_plan["fixed"] = true
+	_plan["claim"] = true
 	_plan_clock = _clock
 	_replan_cd = 0.1
 	_state_time = 0.0

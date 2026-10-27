@@ -48,6 +48,9 @@ var result: StringName = &""
 var _t: float = 0.0
 var _btn: StringName = &""
 var _btn_time: float = 0.0
+var _aim_press: Vector3 = Vector3.ZERO
+## Efecto del saque (-1..1): gesto del joystick entre pulsar y soltar (persona) o eleccion de la IA.
+var curl: float = 0.0
 var _anchor: Node3D = null
 var rng := RandomNumberGenerator.new()
 
@@ -157,13 +160,16 @@ func _tick_setup(frame: InputFrame, delta: float) -> void:
 			if pair[1] and _btn == &"":
 				_btn = pair[0]
 				_btn_time = 0.0
+				_aim_press = aim_dir
 		if _btn != &"":
 			var held: bool = (_btn == &"pass" and frame.pass_held) or (_btn == &"through" and frame.through_held) \
 				or (_btn == &"cross" and frame.cross_held) or (_btn == &"shot" and frame.shoot_held)
 			if held:
 				_btn_time += delta
 			else:
-				execute(_btn, clampf(_btn_time / 0.8, 0.0, 1.0), frame.lob_held, aim_dir)
+				# Si al soltar el joystick giro respecto a donde se apunto al pulsar, es efecto (chanfle), no otra direccion.
+				var c: float = BallHandler.curl_from(_aim_press, aim_dir) if kind != Kind.THROW_IN else 0.0
+				execute(_btn, clampf(_btn_time / 0.8, 0.0, 1.0), frame.lob_held, _aim_press if c != 0.0 else aim_dir, c)
 		elif _t > HUMAN_TIMEOUT:
 			ai_execute()
 	elif _t > AI_WAIT:
@@ -183,8 +189,14 @@ func ai_execute() -> void:
 		Kind.FREE_KICK:
 			var d: float = spot.distance_to(goal)
 			if d < 13.0 and absf(spot.z) < 6.0:
-				var aim2 := Vector3(gx, 0.0, rng.randf_range(-1.0, 1.0) * ctx.pitch.config.half_goal() * 0.7)
-				execute(&"shot", rng.randf_range(0.5, 0.8), false, KickModel.flat(aim2 - spot).normalized())
+				# Tiro libre directo con chanfle: a un palo, curvando hacia dentro por encima de la defensa.
+				var post_side: float = 1.0 if rng.randf() < 0.5 else -1.0
+				var aim2 := Vector3(gx, 0.0, post_side * ctx.pitch.config.half_goal() * rng.randf_range(0.55, 0.8))
+				var to_aim: Vector3 = KickModel.flat(aim2 - spot).normalized()
+				# Curva hacia el centro del arco: a la derecha del tiro si el palo elegido esta a su izquierda.
+				var right := Vector3(-to_aim.z, 0.0, to_aim.x)
+				var c2: float = signf(KickModel.flat(Vector3(gx, 0.0, 0.0) - aim2).dot(right)) * rng.randf_range(0.5, 0.9)
+				execute(&"shot", rng.randf_range(0.55, 0.8), false, to_aim, c2)
 			else:
 				var mate: Footballer = _open_mate()
 				var dir: Vector3 = KickModel.flat(mate.global_position - spot).normalized() if mate != null else default_aim()
@@ -217,9 +229,10 @@ func _open_mate() -> Footballer:
 	return best
 
 ## Ejecuta el saque: elige el clip, coloca la carrera para que el pie llegue a la pelota y arranca la accion.
-func execute(act: StringName, ch: float, lb: bool, dir: Vector3) -> void:
+func execute(act: StringName, ch: float, lb: bool, dir: Vector3, cu: float = 0.0) -> void:
 	if stage != &"setup":
 		return
+	curl = cu
 	action = act
 	charge = ch
 	lob = lb
@@ -276,6 +289,7 @@ func _resolve_without_clip() -> void:
 		return
 	taker.place_at(spot - aim_dir * 0.35, Locomotion.yaw_from_dir(aim_dir))
 	result = &"contact"
+	taker.ball_handler.shot_curl = curl
 	taker.ball_handler.perform_action(action, aim_dir, charge, lob)
 
 ## Instante de inicio del clip para que, hasta `until`, la raiz recorra como mucho `max_m` metros.
@@ -333,6 +347,7 @@ func _resolve() -> void:
 		return
 	result = &"contact"
 	var stick: Vector3 = aim_dir
+	taker.ball_handler.shot_curl = curl
 	taker.ball_handler.perform_action(action, stick, charge, lob)
 
 ## Velocidad del saque de banda con las manos hacia el companero (o hacia donde apunta).

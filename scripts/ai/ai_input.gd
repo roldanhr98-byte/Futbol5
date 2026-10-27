@@ -49,6 +49,8 @@ var _btn_hold: float = 0.0
 var _btn_age: float = 0.0
 var _btn_dir: Vector3 = Vector3.ZERO
 var _btn_lob: bool = false
+## Efecto que la IA pide al soltar (gira el joystick como lo haria una persona): -1..1.
+var _btn_curl: float = 0.0
 var _btn_cooldown: float = 0.0
 var _dribble_started: float = 0.0
 ## Segundos que lleva este jugador con la pelota: cuanto mas tiempo, mas probable que la suelte a un companero.
@@ -99,7 +101,8 @@ func _aligned(f: Footballer, dir: Vector3) -> bool:
 	_sprint = false
 	return false
 
-func _start_button(kind: StringName, hold: float, dir: Vector3, lob: bool = false) -> void:
+func _start_button(kind: StringName, hold: float, dir: Vector3, lob: bool = false, curl: float = 0.0) -> void:
+	_btn_curl = curl
 	_btn = kind
 	_btn_hold = hold
 	_btn_age = 0.0
@@ -149,6 +152,9 @@ func _run_button(out: InputFrame, f: Footballer, dt: float) -> InputFrame:
 			return out
 	# Al cargar casi se detiene (la pelota no se escapa hacia adelante ni hacia la linea de fondo antes del golpeo).
 	out.move_world = _btn_dir * (0.18 if not releasing else 0.5)
+	if releasing and _btn_curl != 0.0:
+		# Chanfle: al soltar gira el joystick hacia el lado de la curva (derecha = angulo negativo).
+		out.move_world = _btn_dir.rotated(Vector3.UP, deg_to_rad(-_btn_curl * 45.0)) * 0.5
 	out.lob_held = _btn_lob
 	var pressed: bool = first
 	var held: bool = not releasing
@@ -395,7 +401,12 @@ func _decide_with_ball(f: Footballer, ctx: MatchContext, atk: Vector3) -> void:
 		var charge: float = clampf(0.45 + dist_goal / shoot_range * 0.4, 0.4, 0.9)
 		if not _aligned(f, d):
 			return
-		_start_button(&"shot", charge * Tuning.ball.shot_charge_time * 0.6, d, dist_goal > 9.0 and rng.randf() < 0.15)
+		# Desde fuera del area y escorado, a veces con chanfle: abre la salida y la curva la cierra al palo lejano.
+		var curl: float = 0.0
+		if dist_goal > 8.0 and absf(pos.z) > 1.5 and rng.randf() < 0.35 * (0.5 + skill):
+			# Cerrar hacia el centro: con el arco hacia +X y la pelota en z>0, la curva va a la derecha (hacia -z).
+			curl = -signf(pos.z) * atk.x * rng.randf_range(0.5, 0.9)
+		_start_button(&"shot", charge * Tuning.ball.shot_charge_time * 0.6, d, dist_goal > 9.0 and rng.randf() < 0.15 and curl == 0.0, curl)
 		return
 	# --- Centro: desde la banda en el ultimo tercio, con companeros llegando al area.
 	if _btn_cooldown <= 0.0 and _crossing_zone(ctx, pos, atk) and (desperate or _kick_safe(f)) and _box_has_mates(f, ctx, atk) and _can_kick(f, &"cross", false):

@@ -54,6 +54,12 @@ var _cross_time: float = 0.0
 var _pending_action: StringName = &""
 var _pending_charge: float = 0.0
 var _pending_lob: bool = false
+var _pending_curl: float = 0.0
+## Efecto (chanfle) del golpeo en curso: -1..1, positivo = la pelota se curva a la derecha del tiro. Lo marca el gesto
+## del joystick entre pulsar y soltar el boton (ver _curl_from).
+var _kick_curl: float = 0.0
+var shot_curl: float = 0.0
+var _aim_press: Vector3 = Vector3.ZERO
 var _pending_stick: Vector3 = Vector3.ZERO
 var _pending_age: float = 0.0
 ## Patada en curso: el impulso se aplica en el instante de contacto de la animacion.
@@ -184,12 +190,15 @@ func _update_buttons(frame: InputFrame, stick_world: Vector3, dt: float) -> void
 	if frame.shoot_pressed and not busy:
 		_shoot_active = true
 		_shoot_time = 0.0
+		_aim_press = KickModel.flat(stick_world)
 	if _shoot_active:
 		if frame.shoot_held:
 			_shoot_time += dt
 		shot_charge = clampf(_shoot_time / bt.shot_charge_time, 0.0, 1.0)
 		if frame.shoot_released or not frame.shoot_held:
-			_queue(&"shot", shot_charge, frame.lob_held, stick_world)
+			var curl: float = curl_from(_aim_press, stick_world)
+			# Con chanfle, el tiro va hacia donde se apunto al pulsar; el giro posterior del joystick es el efecto.
+			_queue(&"shot", shot_charge, frame.lob_held, _aim_press if curl != 0.0 else stick_world, curl)
 			_shoot_active = false
 			shot_charge = 0.0
 	if frame.through_pressed and not busy:
@@ -206,16 +215,30 @@ func _update_buttons(frame: InputFrame, stick_world: Vector3, dt: float) -> void
 	if frame.cross_pressed and not busy:
 		_cross_active = true
 		_cross_time = 0.0
+		_aim_press = KickModel.flat(stick_world)
 	if _cross_active:
 		if frame.cross_held:
 			_cross_time += dt
 		cross_charge = clampf(_cross_time / 0.8, 0.0, 1.0)
 		if frame.cross_released or not frame.cross_held:
-			_queue(&"cross", cross_charge, frame.lob_held, stick_world)
+			var ccurl: float = curl_from(_aim_press, stick_world)
+			_queue(&"cross", cross_charge, frame.lob_held, _aim_press if ccurl != 0.0 else stick_world, ccurl)
 			_cross_active = false
 			cross_charge = 0.0
 
-func _queue(action: StringName, charge: float, lob: bool, stick_world: Vector3) -> void:
+## Efecto pedido con el joystick: angulo (con signo) entre la direccion al pulsar y al soltar. Un giro de 15-60 grados
+## a la derecha del tiro curva la pelota a la derecha (y a la izquierda al reves). Menos de 15 grados: sin efecto extra.
+static func curl_from(at_press: Vector3, at_release: Vector3) -> float:
+	if at_press.length() < 0.3 or at_release.length() < 0.3:
+		return 0.0
+	# signed_angle_deg es positivo hacia la izquierda (antihorario visto desde arriba): la derecha es negativa.
+	var ang: float = -KickModel.signed_angle_deg(at_press, at_release)
+	if absf(ang) < 15.0:
+		return 0.0
+	return clampf(ang / 60.0, -1.0, 1.0)
+
+func _queue(action: StringName, charge: float, lob: bool, stick_world: Vector3, curl: float = 0.0) -> void:
+	_pending_curl = curl
 	_pending_action = action
 	_pending_charge = charge
 	_pending_lob = lob
@@ -231,12 +254,14 @@ func _try_execute_pending() -> bool:
 			return false   # ningun pie llegaria a la pelota: se espera (buffer) o se descarta
 		var act: StringName = _pending_action
 		_pending_action = &""
+		_kick_curl = _pending_curl
 		_start_clip_kick(act, plan, _pending_stick, _pending_charge, _pending_lob)
 		return true
 	if not can_reach(Tuning.player.touch_reach + 0.3):
 		return false
 	var action: StringName = _pending_action
 	_pending_action = &""
+	_kick_curl = _pending_curl
 	request_kick(action, _pending_stick, _pending_charge, _pending_lob)
 	return true
 
@@ -510,6 +535,9 @@ func _finish_kick() -> void:
 
 ## Ejecuta el golpeo de una accion (pase, filtrado, centro o tiro) en el instante de contacto.
 func perform_action(action: StringName, stick_world: Vector3, charge: float, lob: bool) -> KickModel.KickResult:
+	if shot_curl == 0.0:
+		shot_curl = _kick_curl
+	_kick_curl = 0.0
 	match action:
 		&"pass":
 			return perform_pass(stick_world, charge, lob)
@@ -536,7 +564,8 @@ func perform_through(stick_world: Vector3, charge: float, lob: bool) -> KickMode
 ## Centro al area: con ALTO sale raso; con carga alta, tenso; si no, elevado.
 func perform_cross(stick_world: Vector3, charge: float, low: bool) -> KickModel.KickResult:
 	var ctx: MatchContext = owner.ctx
-	var res: KickModel.KickResult = CrossAssist.compute(owner, ctx, stick_world, charge, low, rng, assist_pass_level())
+	var res: KickModel.KickResult = CrossAssist.compute(owner, ctx, stick_world, charge, low, rng, assist_pass_level(), shot_curl)
+	shot_curl = 0.0
 	ball().kick(res.velocity, res.spin, owner)
 	_after_kick(&"pass", res)
 	var data: Dictionary = {"target": res.target.actor_id if res.target != null else -1, "kind": String(res.kind),
@@ -565,7 +594,8 @@ func perform_pass(stick_world: Vector3, charge: float, lob: bool) -> KickModel.K
 
 func perform_shot(stick_world: Vector3, charge: float, lob: bool) -> KickModel.KickResult:
 	var ctx: MatchContext = owner.ctx
-	var res: KickModel.KickResult = ShotAssist.compute(owner, ctx, stick_world, charge, lob, rng, assist_shot_level())
+	var res: KickModel.KickResult = ShotAssist.compute(owner, ctx, stick_world, charge, lob, rng, assist_shot_level(), shot_curl)
+	shot_curl = 0.0
 	var b: Ball = ball()
 	b.kick(res.velocity, res.spin, owner)
 	_after_kick(&"shot", res)
@@ -573,7 +603,7 @@ func perform_shot(stick_world: Vector3, charge: float, lob: bool) -> KickModel.K
 		"kind": String(res.kind), "charge": charge, "error_deg": res.error_deg,
 		"weak_foot": res.weak_foot, "speed": res.velocity.length(),
 		"predicted_on_target": res.on_target, "assisted_deg": res.assisted_correction_deg,
-		"dir": [res.final_dir.x, res.final_dir.z],
+		"dir": [res.final_dir.x, res.final_dir.z], "curl": res.curl,
 	}
 	data.merge(_kick_event_info)
 	ctx.emit_event(GameEvent.make(GameEvent.Type.SHOT, owner.actor_id, owner.team, data))

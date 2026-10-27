@@ -57,7 +57,9 @@ func test_keeper_claims_a_high_cross_into_his_area() -> void:
 		if ctx.ball.holder == k or k.stats.get("cross_claims", 0) > 0:
 			got = true
 	note("centro al area: salidas %d, atrapadas %d, pelota en manos del arquero: %s" % [k.stats.get("cross_claims", 0), k.stats["catches"], str(ctx.ball.holder == k)])
+	note("registro del arquero: %s" % str(k.save_log.slice(-2)))
 	check(got, "el arquero sale a por el centro que cae en su zona")
+	check(k.stats["catches"] + k.stats["parries"] >= 1, "y la atrapa o la despeja con las manos")
 
 func test_desperate_dive_uses_goalkeeper_miss_and_hands_decide() -> void:
 	var w: Dictionary = await _keeper_world(Vector3(12.0, 0.11, 0.0))

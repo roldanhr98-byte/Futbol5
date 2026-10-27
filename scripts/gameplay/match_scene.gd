@@ -5,7 +5,8 @@ extends Node3D
 
 signal quit_requested
 
-@export var duration_seconds: float = 300.0
+## Duracion del partido (s). Negativo = la que eligio la persona (3, 5, 7 o 10 minutos, ver Tuning.match_minutes).
+@export var duration_seconds: float = -1.0
 ## Cantidad de futbolistas de campo por equipo en esta etapa (1 = etapa inicial).
 @export var home_field_players: int = 4
 @export var away_field_players: int = 4
@@ -20,6 +21,9 @@ signal quit_requested
 ## cerrada con paredes (la pelota rebota y nunca sale).
 @export var out_of_bounds: bool = true
 var referee: Referee = null
+## Repeticion de los goles (graba siempre; se muestra tras cada gol).
+var replay: GoalReplay = null
+@export var goal_replays: bool = true
 
 var ctx: MatchContext
 var pitch: Pitch
@@ -44,6 +48,8 @@ const BALL_SCENE := preload("res://scenes/ball/ball.tscn")
 const FOOTBALLER_SCENE := preload("res://scenes/player/footballer.tscn")
 
 func _ready() -> void:
+	if duration_seconds < 0.0:
+		duration_seconds = float(Tuning.match_minutes) * 60.0
 	ctx = MatchContext.new()
 	pitch = Pitch.new()
 	pitch.name = "Pitch"
@@ -91,6 +97,7 @@ func _ready() -> void:
 	next_marker = PlayerMarker.make(false)
 	add_child(next_marker)
 	camera.setup(ball, controlled, Tuning.pitch)
+	_setup_replay()
 	ctx.event_emitted.connect(_on_match_event)
 	GraphicsSettings.apply()
 	manager.start_match()
@@ -180,6 +187,42 @@ func _on_kickoff_requested(kicking_team: int) -> void:
 			(team_list[i] as Footballer).place_at(positions[mini(i, positions.size() - 1)], yaw)
 	if camera != null:
 		camera.snap_to_target()
+
+# --- Repeticion de goles ------------------------------------------------------------------------------------
+
+func _setup_replay() -> void:
+	replay = GoalReplay.new()
+	replay.name = "GoalReplay"
+	add_child(replay)
+	var tracked: Array[Node3D] = []
+	for f in home + away:
+		tracked.append(f)
+	for k in keepers:
+		tracked.append(k)
+	if referee != null:
+		tracked.append(referee)
+	replay.setup(ctx, tracked, camera)
+	replay.enabled = goal_replays
+	if hud != null:
+		hud.replay_skip = func() -> void: replay.skip()
+	manager.goal_scored.connect(func(_t: int, _s: int, _a: int, _o: bool) -> void: replay.mark_goal())
+	manager.replay_requested.connect(_on_replay_requested)
+	replay.started.connect(func() -> void:
+		manager.replay_active = true
+		if hud != null:
+			hud.show_replay(true))
+	replay.finished.connect(func(_skipped: bool) -> void:
+		manager.replay_active = false
+		if hud != null:
+			hud.show_replay(false))
+
+## Comprobacion de coherencia (pruebas): el marcador suma los goles del partido.
+func score_total_consistent() -> bool:
+	return manager.score[0] >= 0 and manager.score[1] >= 0
+
+func _on_replay_requested() -> void:
+	if replay != null and goal_replays:
+		replay.start()
 
 # --- Balon parado -----------------------------------------------------------------------------------------
 

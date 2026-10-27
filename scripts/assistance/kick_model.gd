@@ -22,6 +22,8 @@ class KickResult:
 	var weak_foot: bool = false
 	var charge: float = 0.0
 	var on_target: bool = false
+	## Efecto aplicado (-1..1, positivo = curva a la derecha del golpeo).
+	var curl: float = 0.0
 
 static func flat(v: Vector3) -> Vector3:
 	return Vector3(v.x, 0.0, v.z)
@@ -48,6 +50,25 @@ static func rotate_toward(dir: Vector3, target_dir: Vector3, max_deg: float) -> 
 
 static func gaussian_clipped(rng: RandomNumberGenerator, sigma: float, clip: float = 2.2) -> float:
 	return clampf(rng.randfn(0.0, sigma), -sigma * clip, sigma * clip)
+
+## Efecto lateral (chanfle): giro sobre el eje vertical que curva la pelota a la derecha (curl > 0) o a la izquierda del
+## golpeo por el efecto Magnus REAL de la pelota (Ball._integrate_forces), y angulo (grados) a "abrir" la salida para que
+## la curva la devuelva al objetivo. spin_rad: giro maximo (rad/s) del golpeo.
+static func curl_spin(dir: Vector3, curl: float, spin_rad: float) -> Vector3:
+	# w = (0, wy, 0): w x v = wy * (UP x v) = -wy * derecha * |v|. Para curvar a la derecha wy debe ser negativo.
+	return Vector3.UP * (-curl * spin_rad)
+
+## Desvio lateral (m) acumulado por el efecto al recorrer `dist` m a velocidad horizontal `vh` (con algo de arrastre).
+static func curl_offset(dist: float, vh: float, curl: float, spin_rad: float) -> float:
+	var bt: BallTuning = Tuning.ball
+	var a_lat: float = bt.magnus_k / bt.mass * absf(curl) * spin_rad * vh
+	var t: float = dist / maxf(vh * 0.92, 1.0)
+	return 0.5 * a_lat * t * t * 0.9
+
+## Angulo (grados, con signo para KickModel: positivo = izquierda) para abrir la salida y que la curva cierre sobre el objetivo.
+static func curl_preaim_deg(dist: float, vh: float, curl: float, spin_rad: float) -> float:
+	var off: float = curl_offset(dist, vh, curl, spin_rad)
+	return clampf(rad_to_deg(atan2(off, maxf(dist, 1.0))) * signf(curl), -22.0, 22.0)
 
 ## 1.0 = totalmente equilibrado. Baja con giros bruscos, frenadas y cansancio.
 static func balance_state(f: Footballer) -> float:

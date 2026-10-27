@@ -43,6 +43,17 @@ var _teleport_pos: Vector3 = Vector3.ZERO
 var _teleport_vel: Vector3 = Vector3.ZERO
 var _prev_vy: float = 0.0
 var _visual: MeshInstance3D = null
+## Estela de los tiros fuertes o con efecto (solo presentacion): cinta con las ultimas posiciones de la pelota. La forma
+## de la curva que dibuja es la de la trayectoria real (no se inventa nada).
+const TRAIL_POINTS := 18
+const TRAIL_MIN_SPEED := 15.0
+const TRAIL_MIN_SPIN := 14.0
+var _trail: MeshInstance3D = null
+var _trail_mesh: ImmediateMesh = null
+var _trail_pts: PackedVector3Array = PackedVector3Array()
+var _trail_alpha: float = 0.0
+## true mientras la estela esta activa (diagnostico y pruebas).
+var trail_active: bool = false
 
 func _ready() -> void:
 	add_to_group("ball")
@@ -78,6 +89,20 @@ func _build() -> void:
 	else:
 		_visual = get_node("Visual")
 	body_entered.connect(_on_body_entered)
+	if _trail == null:
+		_trail_mesh = ImmediateMesh.new()
+		_trail = MeshInstance3D.new()
+		_trail.name = "Trail"
+		_trail.mesh = _trail_mesh
+		_trail.top_level = true
+		_trail.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var tm := StandardMaterial3D.new()
+		tm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		tm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		tm.vertex_color_use_as_albedo = true
+		tm.cull_mode = BaseMaterial3D.CULL_DISABLED
+		_trail.material_override = tm
+		add_child(_trail)
 
 ## Aplica los parametros de BallTuning (se puede llamar en caliente desde el laboratorio).
 func apply_tuning() -> void:
@@ -210,6 +235,42 @@ func apply_state(s: BallState) -> void:
 func _physics_process(_delta: float) -> void:
 	if holder != null and _hold_anchor != null and is_instance_valid(_hold_anchor):
 		global_position = _hold_anchor.global_position
+	_update_trail(_delta)
+
+## Estela: se activa con un tiro rapido o con mucho efecto lateral en el aire y se desvanece al frenar o tocar el suelo.
+func _update_trail(delta: float) -> void:
+	if _trail_mesh == null:
+		return
+	var fast: bool = linear_velocity.length() > TRAIL_MIN_SPEED or (absf(angular_velocity.y) > TRAIL_MIN_SPIN and not _grounded and linear_velocity.length() > 8.0)
+	trail_active = fast and holder == null
+	_trail_alpha = move_toward(_trail_alpha, 1.0 if trail_active else 0.0, delta * (6.0 if trail_active else 2.5))
+	if _trail_alpha <= 0.01:
+		if not _trail_pts.is_empty():
+			_trail_pts.clear()
+			_trail_mesh.clear_surfaces()
+		return
+	_trail_pts.append(global_position)
+	if _trail_pts.size() > TRAIL_POINTS:
+		_trail_pts.remove_at(0)
+	_trail_mesh.clear_surfaces()
+	if _trail_pts.size() < 2:
+		return
+	_trail_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLE_STRIP)
+	var n: int = _trail_pts.size()
+	for i in n:
+		var p: Vector3 = _trail_pts[i]
+		var nxt: Vector3 = _trail_pts[mini(i + 1, n - 1)]
+		var prv: Vector3 = _trail_pts[maxi(i - 1, 0)]
+		var dir: Vector3 = (nxt - prv)
+		dir.y = 0.0
+		var side: Vector3 = Vector3(-dir.z, 0.0, dir.x).normalized() * radius * 0.9 * float(i) / float(n)
+		var a: float = _trail_alpha * 0.55 * float(i) / float(n)
+		var c := Color(1.0, 0.95, 0.75, a)
+		_trail_mesh.surface_set_color(c)
+		_trail_mesh.surface_add_vertex(p + side)
+		_trail_mesh.surface_set_color(c)
+		_trail_mesh.surface_add_vertex(p - side)
+	_trail_mesh.surface_end()
 
 func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	if _pending_teleport:

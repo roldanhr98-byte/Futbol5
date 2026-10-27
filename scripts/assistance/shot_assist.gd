@@ -6,8 +6,12 @@ extends RefCounted
 ## un tiro en gol: hay error por potencia, equilibrio, orientacion, pierna y atributos; la pelota
 ## puede pegar en los postes, ser atajada o irse desviada.
 
+## Giro maximo (rad/s) de un tiro con efecto (chanfle / comba): con el Magnus de la pelota curva 1.5-3 m en 15-20 m.
+const CURL_SPIN_MIN := 38.0
+const CURL_SPIN_MAX := 58.0
+
 static func compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, charge: float, lob: bool,
-		rng: RandomNumberGenerator, assist_level: float) -> KickModel.KickResult:
+		rng: RandomNumberGenerator, assist_level: float, curl: float = 0.0) -> KickModel.KickResult:
 	var cfg: AssistTuning = Tuning.assist
 	var bt: BallTuning = Tuning.ball
 	var pitch_cfg: PitchConfig = Tuning.pitch
@@ -109,6 +113,16 @@ static func compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, c
 	var err_v: float = KickModel.gaussian_clipped(rng, sigma * 0.6)
 	res.error_deg = err_h
 	final_dir = final_dir.rotated(Vector3.UP, deg_to_rad(err_h))
+	# --- Efecto (chanfle): la salida se abre hacia el lado contrario y la curva la devuelve al arco ---
+	var curl_rad: float = 0.0
+	if absf(curl) > 0.01 and not lob:
+		res.curl = curl
+		var tech: float = 0.5 * kicker.attributes.norm("shot_accuracy") + 0.5 * kicker.attributes.norm("finishing")
+		curl_rad = lerpf(CURL_SPIN_MIN, CURL_SPIN_MAX, tech)
+		var d_aim: float = KickModel.flat(res.aim_point - origin).length()
+		var vh_est: float = speed * cos(deg_to_rad(bt.shot_loft_low_deg))
+		final_dir = final_dir.rotated(Vector3.UP, deg_to_rad(KickModel.curl_preaim_deg(d_aim, vh_est, curl, curl_rad)))
+		res.kind = &"curl_shot"
 	res.final_dir = final_dir
 
 	# --- Altura / trayectoria ---
@@ -124,6 +138,9 @@ static func compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, c
 	vy = clampf(vy, -1.0, speed * sin(deg_to_rad(40.0)))
 	vy += v_h * tan(deg_to_rad(err_v))
 	vy = maxf(vy, 0.0)
+	if curl_rad > 0.0:
+		# El efecto solo actua en el aire: el tiro con chanfle sale algo levantado.
+		vy = maxf(vy, 3.4)
 	v_h = sqrt(maxf(speed * speed - vy * vy, 0.25 * speed * speed))
 
 	res.velocity = Vector3(final_dir.x * v_h, vy, final_dir.z * v_h)
@@ -132,7 +149,10 @@ static func compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, c
 	else:
 		res.spin = -Vector3.UP.cross(final_dir) * 14.0
 	res.spin += Vector3.UP * (-err_h * bt.shot_spin_factor * 0.25)
-	if placed:
+	if curl_rad > 0.0:
+		# Chanfle: el giro lateral sustituye al de rodadura (la pelota va por el aire y el Magnus la curva).
+		res.spin = KickModel.curl_spin(final_dir, curl, curl_rad) - Vector3.UP.cross(final_dir) * 6.0
+	elif placed:
 		# Rosca: la pelota se cierra hacia el palo (efecto Magnus de la pelota real).
 		var toward_center: float = signf(-origin.z) if absf(origin.z) > 0.3 else 1.0
 		res.spin += Vector3.UP * toward_center * (1.0 if to_goal_x > 0.0 else -1.0) * 22.0

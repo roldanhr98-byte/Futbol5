@@ -23,6 +23,9 @@ var _pause_panel: PanelContainer
 var _pause_buttons: Dictionary = {}
 var _message_tween: Tween
 var _theme: Theme
+var _replay_label: Label = null
+## Repeticion en curso (la muestra la escena): tocar la pantalla la salta.
+var replay_skip: Callable = Callable()
 
 func _ready() -> void:
 	layer = 10
@@ -48,6 +51,16 @@ func _ready() -> void:
 	diagnostics.visible = Tuning.show_diagnostics
 	root.add_child(diagnostics)
 	_build_pause_menu(root)
+	_replay_label = Label.new()
+	_replay_label.text = "REPETICIÓN  ·  toca para saltar"
+	_replay_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_replay_label.position = Vector2(-260, 70)
+	_replay_label.size = Vector2(520, 40)
+	_replay_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_replay_label.add_theme_font_size_override("font_size", 26)
+	_replay_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
+	_replay_label.visible = false
+	root.add_child(_replay_label)
 
 static func should_show_touch_controls() -> bool:
 	if OS.get_environment("FUTBOL5_TOUCH") == "1":
@@ -109,7 +122,7 @@ func _build_pause_menu(root: Control) -> void:
 	_pause_panel = PanelContainer.new()
 	_pause_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	_pause_panel.custom_minimum_size = Vector2(760, 0)
-	_pause_panel.position = Vector2(-380, -250)
+	_pause_panel.position = Vector2(-380, -290)
 	_pause_panel.visible = false
 	root.add_child(_pause_panel)
 	var vb := VBoxContainer.new()
@@ -134,6 +147,7 @@ func _build_pause_menu(root: Control) -> void:
 	_add_menu_button(grid, "assist_pass", "", func() -> void: _cycle_assist("pass"))
 	_add_menu_button(grid, "assist_shot", "", func() -> void: _cycle_assist("shot"))
 	_add_menu_button(grid, "assist_press", "", func() -> void: _cycle_assist("press"))
+	_add_menu_button(grid, "minutes", "", func() -> void: _cycle_minutes())
 	_add_menu_button(grid, "touch_scale", "", func() -> void: _cycle_touch(&"scale"))
 	_add_menu_button(grid, "joy_sens", "", func() -> void: _cycle_touch(&"sens"))
 	_add_menu_button(grid, "quit", "Salir", func() -> void: _close_pause(); quit_requested.emit())
@@ -165,6 +179,7 @@ func _refresh_menu_labels() -> void:
 	(_pause_buttons["assist_pass"] as Button).text = "Asistencia de pase: %s" % LEVEL_NAMES[_level_index(Tuning.assist.pass_assist)]
 	(_pause_buttons["assist_shot"] as Button).text = "Asistencia de tiro: %s" % LEVEL_NAMES[_level_index(Tuning.assist.shot_assist)]
 	(_pause_buttons["assist_press"] as Button).text = "Asistencia de presión: %s" % LEVEL_NAMES[_level_index(Tuning.assist.press_assist)]
+	(_pause_buttons["minutes"] as Button).text = "Duración del partido: %d min" % Tuning.match_minutes
 	(_pause_buttons["touch_scale"] as Button).text = "Tamaño de botones: %s" % ["Pequeño", "Normal", "Grande"][_nearest_index(TOUCH_SCALES, Tuning.touch_scale)]
 	(_pause_buttons["joy_sens"] as Button).text = "Sensibilidad del joystick: %s" % THREE_NAMES[_nearest_index(JOY_SENS, Tuning.joystick_sensitivity)]
 	(_pause_buttons["diagnostics"] as Button).text = "Diagnóstico: %s" % ("ACTIVADO" if Tuning.show_diagnostics else "desactivado")
@@ -189,6 +204,15 @@ func _cycle_touch(kind: StringName) -> void:
 	Tuning.save_user_settings()
 	if touch != null:
 		touch.queue_redraw()
+	_refresh_menu_labels()
+
+## Duracion del partido: se guarda y se aplica al reiniciar el partido (el reloj del partido en curso no cambia).
+func _cycle_minutes() -> void:
+	var opts: Array = Tuning.MATCH_MINUTES
+	Tuning.match_minutes = opts[(opts.find(Tuning.match_minutes) + 1) % opts.size()]
+	Tuning.save_user_settings()
+	if manager != null:
+		manager.duration_seconds = float(Tuning.match_minutes) * 60.0
 	_refresh_menu_labels()
 
 func _cycle_graphics() -> void:
@@ -216,6 +240,20 @@ func _close_pause() -> void:
 func _on_pause_pressed() -> void:
 	if manager != null:
 		manager.toggle_pause()
+
+func show_replay(on: bool) -> void:
+	if _replay_label != null:
+		_replay_label.visible = on
+	if touch != null:
+		touch.visible = (not on) and should_show_touch_controls()
+		if on:
+			touch.release_all()
+
+func _input(event: InputEvent) -> void:
+	if _replay_label != null and _replay_label.visible and event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed:
+		if replay_skip.is_valid():
+			replay_skip.call()
+		get_viewport().set_input_as_handled()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause_game") and manager != null:

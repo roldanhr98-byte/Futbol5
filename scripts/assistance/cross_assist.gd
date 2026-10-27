@@ -30,7 +30,7 @@ static func zone_point(ctx: MatchContext, team: int, zone: StringName, side: flo
 			return Vector3(gx + inward * cfg.penalty_mark_distance, 0.0, 0.0)
 
 static func compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, charge: float, low: bool,
-		rng: RandomNumberGenerator, assist_level: float) -> KickModel.KickResult:
+		rng: RandomNumberGenerator, assist_level: float, curl: float = 0.0) -> KickModel.KickResult:
 	var bt: BallTuning = Tuning.ball
 	var res := KickModel.KickResult.new()
 	res.charge = charge
@@ -107,8 +107,12 @@ static func compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, c
 	res.final_dir = KickModel.flat(vel).normalized()
 	res.velocity = vel
 	# Efecto: rosca hacia el arco (el centro se cierra) y algo de retroceso en el elevado.
-	var curl: float = -signf(side) * (1.0 if kicker.team == 0 else -1.0)
-	res.spin = Vector3.UP * curl * 10.0 + (-Vector3.UP.cross(res.final_dir) * 8.0 if not low else Vector3.ZERO)
+	var natural: float = -signf(side) * (1.0 if kicker.team == 0 else -1.0)
+	res.spin = Vector3.UP * natural * 10.0 + (-Vector3.UP.cross(res.final_dir) * 8.0 if not low else Vector3.ZERO)
+	if absf(curl) > 0.01 and not low:
+		# Centro con rosca pedida con el joystick: mas giro lateral (se cierra o se abre mas).
+		res.curl = curl
+		res.spin += KickModel.curl_spin(res.final_dir, curl, 22.0)
 	return res
 
 ## Velocidad de lanzamiento (m/s) con el angulo dado para que la pelota, con arrastre, llegue a `dist` metros en el plano

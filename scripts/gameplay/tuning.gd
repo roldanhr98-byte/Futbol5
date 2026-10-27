@@ -20,6 +20,9 @@ var show_diagnostics: bool = false
 ## Controles tactiles: escala de los botones (0.85 / 1 / 1.2) y sensibilidad del joystick (radio menor = mas sensible).
 var touch_scale: float = 1.0
 var joystick_sensitivity: float = 1.0
+## Duracion del partido elegida (minutos): 3, 5, 7 o 10.
+const MATCH_MINUTES := [3, 5, 7, 10]
+var match_minutes: int = 5
 
 func _init() -> void:
 	reload()
@@ -47,6 +50,8 @@ func load_user_settings() -> void:
 	show_diagnostics = bool(cfg.get_value("ui", "diagnostics", false))
 	touch_scale = clampf(float(cfg.get_value("ui", "touch_scale", 1.0)), 0.7, 1.4)
 	joystick_sensitivity = clampf(float(cfg.get_value("ui", "joystick_sensitivity", 1.0)), 0.6, 1.6)
+	var mm: int = int(cfg.get_value("match", "minutes", 5))
+	match_minutes = mm if MATCH_MINUTES.has(mm) else 5
 
 func save_user_settings() -> void:
 	var cfg := ConfigFile.new()
@@ -56,6 +61,7 @@ func save_user_settings() -> void:
 	cfg.set_value("ui", "diagnostics", show_diagnostics)
 	cfg.set_value("ui", "touch_scale", touch_scale)
 	cfg.set_value("ui", "joystick_sensitivity", joystick_sensitivity)
+	cfg.set_value("match", "minutes", match_minutes)
 	var err: int = cfg.save(USER_SETTINGS_PATH)
 	if err != OK:
 		push_warning("No se pudieron guardar las preferencias (error %d)" % err)

@@ -14,12 +14,19 @@ signal clock_changed(seconds: float)
 ## Balon parado: la escena coloca al ejecutor y a los demas. kind: "throw_in", "corner", "goal_kick", "free_kick",
 ## "penalty"; team: equipo que saca; pos: punto del saque.
 signal set_piece_requested(kind: String, team: int, pos: Vector3)
+## La escena muestra la repeticion del gol (pausa la simulacion mientras dura).
+signal replay_requested
 
 enum State { PRE_KICKOFF, PLAYING, GOAL, PAUSED, FULL_TIME, SET_PIECE }
 
 ## Duracion en segundos (0 = sin limite, util en el laboratorio).
 @export var duration_seconds: float = 300.0
 @export var goal_celebration_seconds: float = 3.0
+## Segundos de festejo en vivo antes de la repeticion del gol (0 o menos = sin repeticion).
+@export var replay_after_seconds: float = 1.3
+## true mientras se ve la repeticion (la pausa del juego no se puede abrir encima).
+var replay_active: bool = false
+var _replay_done: bool = false
 @export var pre_kickoff_seconds: float = 1.2
 ## Presentacion antes del primer saque (calentamiento y arbitro). 0 = sin presentacion.
 @export var intro_seconds: float = 0.0
@@ -76,6 +83,8 @@ func restart_match() -> void:
 	start_match()
 
 func toggle_pause() -> void:
+	if replay_active:
+		return
 	if state == State.PAUSED:
 		get_tree().paused = false
 		_set_state(_state_before_pause)
@@ -136,6 +145,9 @@ func _physics_process(delta: float) -> void:
 				ctx.emit_event(GameEvent.make(GameEvent.Type.MATCH_END, -1, -1, {"score": score.duplicate()}))
 		State.GOAL:
 			_state_timer -= delta
+			if not _replay_done and replay_after_seconds > 0.0 and goal_celebration_seconds - _state_timer >= replay_after_seconds:
+				_replay_done = true
+				replay_requested.emit()
 			if _state_timer <= 0.0:
 				_begin_kickoff(1 - _last_scoring_team)
 		State.FULL_TIME:
@@ -258,6 +270,7 @@ func _on_goal(goal: Goal, _ball_pos: Vector3) -> void:
 				assist_id = int(aid)
 	score[scoring_team] += 1
 	_last_scoring_team = scoring_team
+	_replay_done = false
 	ctx.input_enabled = false
 	_state_timer = goal_celebration_seconds
 	_set_state(State.GOAL)
