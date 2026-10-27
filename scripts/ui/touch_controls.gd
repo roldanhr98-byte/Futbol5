@@ -23,11 +23,21 @@ class TouchButton:
 	var touch_index: int = -1
 	var visible_when: Callable = Callable()
 	var charge_key: StringName = &""
+	## Situaciones en las que el boton existe (ver TouchControls.context). Vacio = siempre.
+	var contexts: Array[StringName] = []
 
 var buttons: Array[TouchButton] = []
 ## Devuelve {"pass": 0..1, "shoot": 0..1} para dibujar los anillos de carga.
 var charge_source: Callable = Callable()
 var show_switch: bool = false
+## Situacion de juego del equipo de la persona: &"attack" (tiene la pelota o le llega un pase), &"defense" (la tiene
+## el rival) o &"loose" (nadie). Cada boton se muestra solo donde su accion hace algo: en defensa los huecos de TIRO y
+## PASE pasan a ENTRADA y PRESION (como el mando: un boton, dos usos), y la botonera ocupa menos pantalla.
+var context: StringName = &"attack":
+	set(v):
+		if v != context:
+			context = v
+			queue_redraw()
 
 var _joy_index: int = -1
 var _joy_origin: Vector2 = Vector2.ZERO
@@ -46,17 +56,21 @@ func _ready() -> void:
 func _build_buttons() -> void:
 	InputBindings.ensure()
 	buttons.clear()
-	# Arco de botones alrededor del pulgar derecho. Ofensivos cerca de la esquina (tiro, pase, filtrado, centro) y
-	# defensivos arriba (presion, entrada); los modificadores (sprint, alto, regate) a la izquierda del arco.
-	_add(&"shoot", "TIRO", &"shoot", Vector2(-130, -130), 68.0, Color(0.95, 0.25, 0.2), &"shoot")
-	_add(&"pass", "PASE", &"pass", Vector2(-285, -85), 58.0, Color(0.2, 0.8, 0.35), &"pass")
-	_add(&"through", "FILTRADO", &"through_pass", Vector2(-275, -225), 48.0, Color(0.15, 0.65, 0.9), &"through")
-	_add(&"cross", "CENTRO", &"cross", Vector2(-140, -285), 48.0, Color(0.95, 0.85, 0.2), &"cross")
+	# Arco compacto alrededor del pulgar derecho. En ataque: tiro, pase, filtrado y centro (+ sprint, alto, regate). En
+	# defensa los mismos huecos son entrada y presion; con la pelota suelta, tiro/pase (golpeo de primera) y presion.
+	var atk: Array[StringName] = [&"attack"]
+	var atk_loose: Array[StringName] = [&"attack", &"loose"]
+	var def: Array[StringName] = [&"defense"]
+	_add(&"shoot", "TIRO", &"shoot", Vector2(-130, -130), 68.0, Color(0.95, 0.25, 0.2), &"shoot").contexts = atk_loose
+	_add(&"pass", "PASE", &"pass", Vector2(-285, -85), 58.0, Color(0.2, 0.8, 0.35), &"pass").contexts = atk_loose
+	_add(&"through", "FILTRADO", &"through_pass", Vector2(-275, -225), 48.0, Color(0.15, 0.65, 0.9), &"through").contexts = atk
+	_add(&"cross", "CENTRO", &"cross", Vector2(-140, -285), 48.0, Color(0.95, 0.85, 0.2), &"cross").contexts = atk
+	_add(&"tackle", "ENTRADA", &"tackle", Vector2(-130, -130), 62.0, Color(0.9, 0.35, 0.55)).contexts = def
+	_add(&"press", "PRESIÓN", &"press", Vector2(-285, -85), 58.0, Color(0.95, 0.7, 0.15)).contexts = def
+	_add(&"press_loose", "PRESIÓN", &"press", Vector2(-275, -225), 46.0, Color(0.95, 0.7, 0.15)).contexts = [&"loose"] as Array[StringName]
 	_add(&"sprint", "SPRINT", &"sprint", Vector2(-425, -80), 48.0, Color(0.25, 0.55, 0.95))
-	_add(&"lob", "ALTO", &"lob", Vector2(-410, -210), 40.0, Color(0.7, 0.45, 0.95))
-	_add(&"press", "PRESIÓN", &"press", Vector2(-262, -362), 46.0, Color(0.95, 0.7, 0.15))
-	_add(&"tackle", "ENTRADA", &"tackle", Vector2(-118, -432), 46.0, Color(0.9, 0.35, 0.55))
-	_add(&"skill", "REGATE", &"skill", Vector2(-405, -340), 40.0, Color(0.95, 0.5, 0.15))
+	_add(&"lob", "ALTO", &"lob", Vector2(-410, -210), 40.0, Color(0.7, 0.45, 0.95)).contexts = atk
+	_add(&"skill", "REGATE", &"skill", Vector2(-405, -340), 40.0, Color(0.95, 0.5, 0.15)).contexts = atk
 	var sw := _add(&"switch", "CAMBIO", &"switch_player", Vector2(-545, -88), 40.0, Color(0.3, 0.85, 0.85))
 	sw.visible_when = func() -> bool: return show_switch
 	var pause := _add(&"pause", "II", &"", Vector2(-60, 0), 28.0, Color(0.85, 0.85, 0.85))
@@ -104,6 +118,8 @@ func is_button_pressed(id: StringName) -> bool:
 	return false
 
 func _button_visible(b: TouchButton) -> bool:
+	if not b.contexts.is_empty() and not b.contexts.has(context) and not b.pressed:
+		return false   # un boton mantenido sigue vivo hasta soltarlo aunque cambie la situacion
 	return not b.visible_when.is_valid() or b.visible_when.call()
 
 # --- Entrada ---------------------------------------------------------------

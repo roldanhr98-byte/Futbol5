@@ -92,9 +92,9 @@ func poll(f: Footballer) -> InputFrame:
 # --- Botones -------------------------------------------------------------------------------------------
 
 ## Orienta el cuerpo hacia donde va a patear antes de pulsar: devuelve true si ya esta alineado (<= 28 grados).
-func _aligned(f: Footballer, dir: Vector3) -> bool:
+func _aligned(f: Footballer, dir: Vector3, max_deg: float = 28.0) -> bool:
 	var ang: float = absf(wrapf(Locomotion.yaw_from_dir(dir.normalized()) - f.locomotion.yaw, -PI, PI))
-	if ang <= deg_to_rad(28.0):
+	if ang <= deg_to_rad(max_deg):
 		return true
 	_dir = dir.normalized()
 	_mag = 0.45
@@ -203,7 +203,11 @@ func _decide(f: Footballer) -> void:
 		_move_to(f, _anchor(f, false), 0.7)
 		return
 	var carrier: Footballer = _carrier(ctx)
-	# Solo UN companero lleva la pelota (el mas cercano): con dos 'portadores' se pisaban y se robaban el golpe.
+	# Solo UN jugador lleva la pelota: el poseedor arbitrado (MatchContext.possessor); con la pelota suelta, el mas
+	# cercano. Con dos 'portadores' se pisaban y se robaban el golpe.
+	ctx.update_possession()
+	if ctx.possessor != null:
+		carrier = ctx.possessor
 	var mine: bool = carrier == f
 	var team_has: bool = carrier != null and carrier.team == f.team
 	# Jugada muerta: la pelota lleva parada demasiado tiempo. Deja de contar como 'la tiene mi equipo' para que el
@@ -233,6 +237,12 @@ func _decide(f: Footballer) -> void:
 		_move_to(f, run_to, 1.0)
 		_sprint = true
 		return
+	# Organizacion colectiva: el equipo reparte puestos (apoyo, amplitud, profundidad, seguridad / presion, cobertura,
+	# bloque) para que nunca vayan dos al mismo sitio ni todos a la pelota. Sin orden, la logica individual de abajo.
+	if use_team_brain:
+		var order: Dictionary = TeamBrain.for_team(ctx, f.team).order_for(f)
+		if not order.is_empty() and _follow_order(f, ctx, order, carrier, team_has, atk, pos, bpos):
+			return
 	var chaser: Footballer = _chaser(f, ctx)
 	if chaser == f and not team_has:
 		# A por la pelota: la presion calcula el punto de intercepcion y el robo.
@@ -285,6 +295,51 @@ func _decide(f: Footballer) -> void:
 	_sprint = (target - pos).length() > 7.0
 
 # --- Movimientos sin pelota (ataque y defensa) ----------------------------------------------------------------
+
+## Usa TeamBrain para los movimientos sin pelota (false: cada jugador decide por su cuenta, como antes).
+static var use_team_brain: bool = true
+
+## Ejecuta la orden del equipo. Devuelve false si la orden no aplica y debe decidir la logica individual.
+func _follow_order(f: Footballer, ctx: MatchContext, order: Dictionary, carrier: Footballer, team_has: bool, atk: Vector3, pos: Vector3, bpos: Vector3) -> bool:
+	var role: StringName = order["role"]
+	var target: Vector3 = order["target"]
+	match role:
+		&"press", &"chase":
+			# A por la pelota / al portador: la presion calcula el punto de intercepcion, la contencion y el robo.
+			var to_ball: Vector3 = bpos - pos
+			_dir = to_ball.normalized() if to_ball.length() > 0.2 else Vector3.ZERO
+			_mag = 1.0
+			_sprint = bool(order["sprint"])
+			_press = to_ball.length() < 14.0
+			return true
+		&"support", &"width", &"depth", &"safety":
+			if not team_has:
+				return false
+			# Llegada al area y desmarques de ruptura (individuales) siguen mandando sobre el puesto.
+			var box: Vector3 = _box_run_spot(f, ctx, carrier, atk)
+			if box.length_squared() > 0.01:
+				return false
+			_run_left = maxf(_run_left - DECISION_PERIOD, 0.0)
+			_run_cd = maxf(_run_cd - DECISION_PERIOD, 0.0)
+			if _run_left <= 0.0 and _run_cd <= 0.0 and (role == &"depth" or role == &"width") and rng.randf() < 0.08 * (0.5 + skill):
+				var behind: Vector3 = _run_behind_spot(f, ctx, carrier, atk)
+				if behind.length_squared() > 0.01:
+					_run_target = behind
+					_run_left = 1.8
+					_run_cd = 5.0
+			if _run_left > 0.0:
+				_move_to(f, _run_target, 1.0)
+				_sprint = true
+				return true
+			_move_to(f, target, 1.0)
+			_sprint = bool(order["sprint"])
+			return true
+		&"cover", &"block", &"hold":
+			_run_left = 0.0
+			_move_to(f, target, 1.0)
+			_sprint = bool(order["sprint"])
+			return true
+	return false
 
 var _run_left: float = 0.0
 var _run_cd: float = 2.0
@@ -444,7 +499,9 @@ func _decide_with_ball(f: Footballer, ctx: MatchContext, atk: Vector3) -> void:
 				var tp: Vector3 = _flat(tgt.global_position)
 				var d2: Vector3 = tp - pos
 				var dist: float = d2.length()
-				if not _aligned(f, d2):
+				# Con un rival encima no hay tiempo para girar del todo: se pasa con el cuerpo a medio orientar (el pase
+				# pierde precision por la postura, ver PassAssist), en vez de girar despacio y perder la pelota.
+				if not _aligned(f, d2, 75.0 if opp_near < PASS_PRESSURE_DIST else 28.0):
 					return
 				_start_button(&"pass", clampf(0.12 + dist * 0.022, 0.15, 0.62), d2.normalized(), dist > 15.0 and rng.randf() < 0.3)
 				return

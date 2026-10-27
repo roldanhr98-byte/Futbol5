@@ -68,29 +68,29 @@ Botones (en `TouchControls._build_buttons`; posición = desplazamiento desde la 
 <!-- AUTO:funcs:scripts/ui/touch_controls.gd -->
 | Función | Línea | Qué hace |
 |---|---|---|
-| `TouchControls._ready()` | 39 |  |
-| `TouchControls._build_buttons()` | 46 |  |
-| `TouchControls._add(id: StringName, text: String, action: StringName, anchor: Vector2, radius: float, color: Color, charge_key: StringName = &"")` | 65 |  |
-| `TouchControls._button_center(b: TouchButton)` | 77 |  |
-| `TouchControls._scale()` | 83 | Escala de la botonera (preferencia del usuario: botones pequenos, normales o grandes). |
-| `TouchControls._radius(b: TouchButton)` | 86 |  |
-| `TouchControls.joy_radius()` | 90 | Radio del joystick: con mas sensibilidad basta un recorrido menor del pulgar para llegar al maximo. |
-| `TouchControls.get_button_center(id: StringName)` | 94 | Centro (en coordenadas del control) de un boton por id. Util para pruebas. |
-| `TouchControls.is_button_pressed(id: StringName)` | 100 |  |
-| `TouchControls._button_visible(b: TouchButton)` | 106 |  |
-| `TouchControls._input(event: InputEvent)` | 111 |  |
-| `TouchControls._local_pos(p: Vector2)` | 123 |  |
-| `TouchControls._touch_down(index: int, pos: Vector2)` | 126 |  |
-| `TouchControls._touch_drag(index: int, pos: Vector2)` | 146 |  |
-| `TouchControls._touch_up(index: int)` | 152 |  |
-| `TouchControls._update_joystick()` | 166 |  |
-| `TouchControls._apply_move(v: Vector2)` | 184 | Traduce el vector analogico a las cuatro acciones de movimiento con su intensidad. |
-| `TouchControls._set_axis(action: String, strength: float)` | 190 |  |
-| `TouchControls.release_all()` | 197 |  |
-| `TouchControls.joystick_vector()` | 209 | Vector del joystick actual (para pruebas y diagnostico). |
-| `TouchControls._process(_delta: float)` | 214 |  |
-| `TouchControls._draw()` | 221 |  |
-| `TouchControls._default_joy_center_for_size()` | 247 |  |
+| `TouchControls._ready()` | 49 |  |
+| `TouchControls._build_buttons()` | 56 |  |
+| `TouchControls._add(id: StringName, text: String, action: StringName, anchor: Vector2, radius: float, color: Color, charge_key: StringName = &"")` | 79 |  |
+| `TouchControls._button_center(b: TouchButton)` | 91 |  |
+| `TouchControls._scale()` | 97 | Escala de la botonera (preferencia del usuario: botones pequenos, normales o grandes). |
+| `TouchControls._radius(b: TouchButton)` | 100 |  |
+| `TouchControls.joy_radius()` | 104 | Radio del joystick: con mas sensibilidad basta un recorrido menor del pulgar para llegar al maximo. |
+| `TouchControls.get_button_center(id: StringName)` | 108 | Centro (en coordenadas del control) de un boton por id. Util para pruebas. |
+| `TouchControls.is_button_pressed(id: StringName)` | 114 |  |
+| `TouchControls._button_visible(b: TouchButton)` | 120 |  |
+| `TouchControls._input(event: InputEvent)` | 127 |  |
+| `TouchControls._local_pos(p: Vector2)` | 139 |  |
+| `TouchControls._touch_down(index: int, pos: Vector2)` | 142 |  |
+| `TouchControls._touch_drag(index: int, pos: Vector2)` | 162 |  |
+| `TouchControls._touch_up(index: int)` | 168 |  |
+| `TouchControls._update_joystick()` | 182 |  |
+| `TouchControls._apply_move(v: Vector2)` | 200 | Traduce el vector analogico a las cuatro acciones de movimiento con su intensidad. |
+| `TouchControls._set_axis(action: String, strength: float)` | 206 |  |
+| `TouchControls.release_all()` | 213 |  |
+| `TouchControls.joystick_vector()` | 225 | Vector del joystick actual (para pruebas y diagnostico). |
+| `TouchControls._process(_delta: float)` | 230 |  |
+| `TouchControls._draw()` | 237 |  |
+| `TouchControls._default_joy_center_for_size()` | 263 |  |
 <!-- /AUTO -->
 
 <!-- AUTO:funcs:scripts/player/human_input.gd -->

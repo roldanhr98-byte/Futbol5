@@ -61,73 +61,73 @@
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.apply_tuning",
-          "line": 108,
+          "line": 110,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball._integrate_forces",
-          "line": 275,
+          "line": 278,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.kick",
-          "line": 133,
+          "line": 135,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.push",
-          "line": 148,
+          "line": 150,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.rolling_spin",
-          "line": 144,
+          "line": 146,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.reset_at",
-          "line": 166,
+          "line": 169,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.hold",
-          "line": 177,
+          "line": 180,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.release",
-          "line": 186,
+          "line": 189,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.register_touch",
-          "line": 153,
+          "line": 155,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.enter_net",
-          "line": 207,
+          "line": 210,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.exit_net",
-          "line": 211,
+          "line": 214,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball._on_body_entered",
-          "line": 342,
+          "line": 345,
           "kind": "func"
         },
         {
@@ -299,13 +299,13 @@
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.capture_state",
-          "line": 216,
+          "line": 219,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.apply_state",
-          "line": 229,
+          "line": 232,
           "kind": "func"
         }
       ],
@@ -646,37 +646,37 @@
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer.setup",
-          "line": 96,
+          "line": 98,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer._physics_process",
-          "line": 182,
+          "line": 184,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer.place_at",
-          "line": 169,
+          "line": 171,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer.set_attributes",
-          "line": 141,
+          "line": 143,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer.has_ball",
-          "line": 157,
+          "line": 159,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer.capture_state",
-          "line": 450,
+          "line": 494,
           "kind": "func"
         }
       ],
@@ -911,49 +911,49 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.update",
-          "line": 144,
+          "line": 222,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._try_dribble_touch",
-          "line": 798,
+          "line": 954,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._try_first_touch",
-          "line": 1047,
+          "line": 1256,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.attempt_tackle",
-          "line": 1107,
+          "line": 1316,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.has_possession",
-          "line": 112,
+          "line": 133,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.controls_ball",
-          "line": 120,
+          "line": 198,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.can_reach",
-          "line": 124,
+          "line": 202,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.touch_reach",
-          "line": 129,
+          "line": 207,
           "kind": "func"
         }
       ],
@@ -1091,49 +1091,49 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._update_buttons",
-          "line": 175,
+          "line": 260,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._try_execute_pending",
-          "line": 248,
+          "line": 333,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.contact_delay",
-          "line": 269,
+          "line": 354,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.request_kick",
-          "line": 273,
+          "line": 358,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._finish_kick",
-          "line": 522,
+          "line": 678,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.perform_pass",
-          "line": 579,
+          "line": 735,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.perform_shot",
-          "line": 595,
+          "line": 751,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._after_kick",
-          "line": 612,
+          "line": 768,
           "kind": "func"
         }
       ],
@@ -1191,13 +1191,13 @@
         {
           "file": "scripts/assistance/pass_assist.gd",
           "name": "PassAssist.compute",
-          "line": 10,
+          "line": 41,
           "kind": "func"
         },
         {
           "file": "scripts/assistance/pass_assist.gd",
           "name": "PassAssist._lane_clearance",
-          "line": 270,
+          "line": 280,
           "kind": "func"
         }
       ],
@@ -1970,43 +1970,43 @@
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.setup",
-          "line": 36,
+          "line": 49,
           "kind": "func"
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.snap_to_target",
-          "line": 46,
+          "line": 59,
           "kind": "func"
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera._process",
-          "line": 52,
+          "line": 65,
           "kind": "func"
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera._target_focus",
-          "line": 63,
+          "line": 76,
           "kind": "func"
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera._target_distance",
-          "line": 85,
+          "line": 130,
           "kind": "func"
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera._apply_transform",
-          "line": 92,
+          "line": 141,
           "kind": "func"
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.screen_to_world_dir",
-          "line": 110,
+          "line": 159,
           "kind": "func"
         }
       ],
@@ -2014,50 +2014,50 @@
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.pitch_deg",
-          "default": "55.0",
-          "line": 8
+          "default": "52.0",
+          "line": 10
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.base_distance",
-          "default": "20.0",
-          "line": 9
+          "default": "16.0",
+          "line": 11
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.max_distance",
-          "default": "30.0",
-          "line": 10
+          "default": "27.0",
+          "line": 12
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.follow_halflife",
           "default": "0.22",
-          "line": 12
+          "line": 22
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.zoom_halflife",
           "default": "0.55",
-          "line": 13
+          "line": 23
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.ball_lead_time",
           "default": "0.28",
-          "line": 14
+          "line": 24
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.focus_weight_with_ball",
           "default": "0.4",
-          "line": 15
+          "line": 25
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.focus_weight_without_ball",
           "default": "0.72",
-          "line": 16
+          "line": 26
         }
       ],
       "dependencies": [
@@ -2186,49 +2186,49 @@
         {
           "file": "scripts/ui/touch_controls.gd",
           "name": "TouchControls._build_buttons",
-          "line": 46,
+          "line": 56,
           "kind": "func"
         },
         {
           "file": "scripts/ui/touch_controls.gd",
           "name": "TouchControls._input",
-          "line": 111,
+          "line": 127,
           "kind": "func"
         },
         {
           "file": "scripts/ui/touch_controls.gd",
           "name": "TouchControls._touch_down",
-          "line": 126,
+          "line": 142,
           "kind": "func"
         },
         {
           "file": "scripts/ui/touch_controls.gd",
           "name": "TouchControls._update_joystick",
-          "line": 166,
+          "line": 182,
           "kind": "func"
         },
         {
           "file": "scripts/ui/touch_controls.gd",
           "name": "TouchControls._apply_move",
-          "line": 184,
+          "line": 200,
           "kind": "func"
         },
         {
           "file": "scripts/ui/touch_controls.gd",
           "name": "TouchControls.release_all",
-          "line": 197,
+          "line": 213,
           "kind": "func"
         },
         {
           "file": "scripts/ui/touch_controls.gd",
           "name": "TouchControls.get_button_center",
-          "line": 94,
+          "line": 108,
           "kind": "func"
         },
         {
           "file": "scripts/ui/touch_controls.gd",
           "name": "TouchControls._draw",
-          "line": 221,
+          "line": 237,
           "kind": "func"
         },
         {
@@ -2335,25 +2335,25 @@
         {
           "file": "scripts/gameplay/match_scene.gd",
           "name": "MatchScene._ready",
-          "line": 50,
+          "line": 54,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_scene.gd",
           "name": "MatchScene._spawn_teams",
-          "line": 111,
+          "line": 120,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_scene.gd",
           "name": "MatchScene.kickoff_positions",
-          "line": 169,
+          "line": 178,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_scene.gd",
           "name": "MatchScene._on_kickoff_requested",
-          "line": 178,
+          "line": 187,
           "kind": "func"
         }
       ],
@@ -2434,43 +2434,43 @@
         {
           "file": "scripts/gameplay/match_context.gd",
           "name": "MatchContext.emit_event",
-          "line": 36,
+          "line": 82,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_context.gd",
           "name": "MatchContext.teammates_of",
-          "line": 48,
+          "line": 94,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_context.gd",
           "name": "MatchContext.opponents_of",
-          "line": 55,
+          "line": 101,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_context.gd",
           "name": "MatchContext.attacking_goal",
-          "line": 70,
+          "line": 116,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_context.gd",
           "name": "MatchContext.defending_goal",
-          "line": 73,
+          "line": 119,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_context.gd",
           "name": "MatchContext.keeper_defending",
-          "line": 83,
+          "line": 129,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_context.gd",
           "name": "MatchContext.screen_to_world",
-          "line": 103,
+          "line": 149,
           "kind": "func"
         },
         {
@@ -2567,13 +2567,20 @@
         "reloj",
         "siguiente jugador",
         "tema",
-        "ui"
+        "ui",
+        "aro de posesion",
+        "aro de posesión",
+        "posesion",
+        "posesión",
+        "objetivo del pase",
+        "botones contextuales"
       ],
       "files": [
         "scripts/ui/hud.gd",
         "scripts/ui/player_marker.gd",
         "scripts/ui/touch_controls.gd",
-        "scripts/ui/ui_theme.gd"
+        "scripts/ui/ui_theme.gd",
+        "scripts/ui/ground_ring.gd"
       ],
       "symbols": [
         {
@@ -3277,7 +3284,7 @@
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer._on_match_event",
-          "line": 353,
+          "line": 397,
           "kind": "func"
         }
       ],
@@ -3330,43 +3337,43 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.plan_clip_kick",
-          "line": 437,
+          "line": 589,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.contact_samples",
-          "line": 365,
+          "line": 517,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.foot_contact_world",
-          "line": 302,
+          "line": 387,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.predicted_foot_to_ball",
-          "line": 354,
+          "line": 505,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.clip_timing",
-          "line": 309,
+          "line": 399,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.uses_clip_kicks",
-          "line": 296,
+          "line": 381,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._finish_clip_kick",
-          "line": 492,
+          "line": 648,
           "kind": "func"
         }
       ],
@@ -3558,7 +3565,7 @@
     {
       "id": "ai.teams",
       "system": "MATCH",
-      "description": "IA de los jugadores de campo (roles cierre, alas, pivote): conducir, pasar, tirar, presionar, marcar, entrar con barrida y reubicarse; produce InputFrame como un humano.",
+      "description": "IA de los jugadores de campo: TeamBrain reparte puestos por equipo (apoyo, amplitud, profundidad, seguridad / presión única, cobertura, bloque, repliegue; una sola decisión por equipo) y AIInput ejecuta las órdenes y decide con la pelota (conducir, pasar, tirar, centrar); produce InputFrame como un humano.",
       "keywords": [
         "ia",
         "inteligencia artificial",
@@ -3570,10 +3577,20 @@
         "equipo",
         "roles",
         "marcar",
-        "presionar"
+        "presionar",
+        "organizacion colectiva",
+        "organización colectiva",
+        "apoyo",
+        "amplitud",
+        "profundidad",
+        "cobertura",
+        "repliegue",
+        "amontonamiento",
+        "team brain"
       ],
       "files": [
         "scripts/ai/ai_input.gd",
+        "scripts/ai/team_brain.gd",
         "scripts/network/input_frame.gd",
         "scripts/network/scripted_input.gd"
       ],
@@ -3849,7 +3866,7 @@
         {
           "file": "scripts/gameplay/match_scene.gd",
           "name": "MatchScene._on_set_piece_requested",
-          "line": 235,
+          "line": 244,
           "kind": "func"
         },
         {
@@ -3952,7 +3969,7 @@
         {
           "file": "scripts/assistance/pass_assist.gd",
           "name": "PassAssist.compute_through",
-          "line": 132,
+          "line": 142,
           "kind": "func"
         }
       ],
@@ -4000,7 +4017,7 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.curl_from",
-          "line": 231,
+          "line": 316,
           "kind": "func"
         }
       ],
@@ -4037,19 +4054,19 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._sample_feet",
-          "line": 658,
+          "line": 814,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._foot_strike",
-          "line": 697,
+          "line": 853,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._try_dribble_touch",
-          "line": 798,
+          "line": 954,
           "kind": "func"
         }
       ],

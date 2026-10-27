@@ -4,10 +4,20 @@ extends Camera3D
 ## y la pelota con amortiguacion exponencial (independiente de los FPS), ajusta el encuadre
 ## segun la separacion entre ambos y nunca entra en el volumen de las paredes.
 ## Mantiene un yaw fijo: el joystick siempre es relativo a la pantalla.
+## Con el contexto del partido (ctx) el encuadre es dinamico: mas cerca que una vista general, se adelanta hacia donde
+## ataca el equipo con la pelota y se abre lo justo para que las opciones de pase del poseedor sigan en cuadro.
 
-@export var pitch_deg: float = 55.0
-@export var base_distance: float = 20.0
-@export var max_distance: float = 30.0
+@export var pitch_deg: float = 52.0
+@export var base_distance: float = 16.0
+@export var max_distance: float = 27.0
+## Metros que el foco se adelanta hacia el arco que ataca el equipo con la pelota (se ve el espacio por delante).
+@export var attack_lead: float = 2.5
+## Desplazamiento lateral de la imagen (m): la jugada queda algo a la izquierda, lejos de los botones de accion.
+@export var button_bias: float = 1.0
+## Companeros del poseedor (los mas cercanos a la pelota) que el encuadre mantiene visibles como opciones de pase.
+@export var pass_options_in_frame: int = 2
+## Mas alla de esta distancia a la pelota (m) un companero no fuerza a abrir el plano.
+@export var pass_option_range: float = 15.0
 ## Semivida del suavizado de posicion (s). Mayor = camara mas lenta.
 @export var follow_halflife: float = 0.22
 @export var zoom_halflife: float = 0.55
@@ -18,6 +28,8 @@ extends Camera3D
 var ball: Node3D = null
 var focus_actor: Node3D = null
 var pitch_config: PitchConfig = null
+## Contexto del partido (opcional): da el poseedor y sus companeros para el encuadre dinamico.
+var ctx: MatchContext = null
 
 var _focus: Vector3 = Vector3.ZERO
 var _distance: float = 20.0
@@ -32,6 +44,7 @@ func _ready() -> void:
 	if pitch_config == null:
 		pitch_config = Tuning.pitch
 	_distance = base_distance
+	h_offset = button_bias
 
 func setup(ball_node: Node3D, actor: Node3D, cfg: PitchConfig = null) -> void:
 	ball = ball_node
@@ -74,6 +87,9 @@ func _target_focus() -> Vector3:
 		var near_ball: bool = a.distance_to(ball_pos) < 3.0
 		var w: float = focus_weight_with_ball if near_ball else focus_weight_without_ball
 		f = a.lerp(lead_ball, w)
+	var owner: Footballer = _possessor()
+	if owner != null:
+		f.x += (1.0 if owner.team == 0 else -1.0) * attack_lead
 	f.y = 0.0
 	# Limites: que los arcos sigan visibles y la camara no persiga hasta los extremos.
 	var hl: float = pitch_config.half_length()
@@ -82,12 +98,45 @@ func _target_focus() -> Vector3:
 	f.z = clampf(f.z, -hw * 0.55, hw * 0.55)
 	return f
 
+func _possessor() -> Footballer:
+	if ctx == null or not is_instance_valid(ctx):
+		return null
+	var p: Footballer = ctx.possessor
+	return p if p != null and is_instance_valid(p) else null
+
+## Puntos que deben quedar en cuadro: pelota, jugador enfocado y las opciones de pase mas cercanas del poseedor.
+func frame_points() -> Array[Vector3]:
+	var pts: Array[Vector3] = []
+	if ball == null:
+		return pts
+	var bp: Vector3 = ball.global_position
+	pts.append(Vector3(bp.x, 0.0, bp.z))
+	if focus_actor != null and is_instance_valid(focus_actor):
+		pts.append(Vector3(focus_actor.global_position.x, 0.0, focus_actor.global_position.z))
+	var owner: Footballer = _possessor()
+	if owner != null:
+		var mates: Array = []
+		for m in ctx.footballers:
+			if m != owner and m.team == owner.team:
+				var d: float = Vector2(m.global_position.x - bp.x, m.global_position.z - bp.z).length()
+				if d <= pass_option_range:
+					mates.append([d, m])
+		mates.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
+		for i in mini(pass_options_in_frame, mates.size()):
+			var mp: Vector3 = (mates[i][1] as Node3D).global_position
+			pts.append(Vector3(mp.x, 0.0, mp.z))
+	return pts
+
 func _target_distance() -> float:
-	var sep: float = 0.0
-	if focus_actor != null and is_instance_valid(focus_actor) and ball != null:
-		var d: Vector3 = focus_actor.global_position - ball.global_position
-		sep = Vector2(d.x, d.z).length()
-	return clampf(base_distance + maxf(sep - 7.0, 0.0) * 0.55, base_distance, max_distance)
+	# Se abre segun lo lejos que queden del foco los puntos que hay que ver. El ancho visible de la pantalla (eje X del
+	# mundo) es mayor que el alto (eje Z, acortado por la inclinacion): la separacion en Z cuenta casi el doble.
+	var f: Vector3 = _target_focus()
+	var need: float = 0.0
+	for p in frame_points():
+		var dx: float = absf(p.x - f.x) - button_bias
+		var dz: float = absf(p.z - f.z)
+		need = maxf(need, maxf(dx, dz * 1.8))
+	return clampf(base_distance + maxf(need - 6.0, 0.0) * 0.9, base_distance, max_distance)
 
 func _apply_transform() -> void:
 	var p: float = deg_to_rad(pitch_deg)

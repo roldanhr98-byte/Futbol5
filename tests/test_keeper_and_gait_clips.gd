@@ -20,6 +20,7 @@ func test_keeper_rushes_out_against_a_lone_attacker() -> void:
 	var src := ScriptedInput.new()
 	var att: Footballer = add_player(ctx, 0, Vector3(10.5, 0.0, 1.0), 60, src)
 	att.locomotion.yaw = Locomotion.yaw_from_dir(Vector3(1, 0, 0))
+	ctx.ball.register_touch(att)   # la pelota es suya (posesion: la toco el)
 	await wait_seconds(1.5)
 	var hl: float = ctx.pitch.config.half_length()
 	var depth_alone: float = hl - k.global_position.x
@@ -27,6 +28,7 @@ func test_keeper_rushes_out_against_a_lone_attacker() -> void:
 	# Con un defensor en medio no achica.
 	var w2: Dictionary = await _keeper_world(Vector3(11.0, 0.11, 1.0))
 	var att2: Footballer = add_player(w2["ctx"], 0, Vector3(10.5, 0.0, 1.0), 60)
+	(w2["ctx"] as MatchContext).ball.register_touch(att2)
 	add_player(w2["ctx"], 1, Vector3(14.5, 0.0, 1.0), 60)
 	await wait_seconds(1.5)
 	var depth_cov: float = hl - (w2["k"] as Goalkeeper).global_position.x

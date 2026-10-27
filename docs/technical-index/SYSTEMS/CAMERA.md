@@ -21,20 +21,25 @@
 <!-- AUTO:params:MatchCamera -->
 | Parámetro | Defecto | Rango / tipo | Definido en | Dónde se usa (accesos reales) | Descripción |
 |---|---|---|---|---|---|
-| `pitch_deg` | `55.0` | float | `scripts/camera/match_camera.gd:8` | `scripts/camera/match_camera.gd:93` | Camara elevada estilo transmision deportiva. Sigue una mezcla entre el jugador controlado y la pelota con amortiguacion exponencial (independiente de los FPS), ajusta el encuadre segun la separacion entre ambos y nunca entra en el volumen de las paredes. Mantiene un yaw fijo: el joystick siempre es relativo a la pantalla. |
-| `base_distance` | `20.0` | float | `scripts/camera/match_camera.gd:9` | `scripts/camera/match_camera.gd:34`, `scripts/camera/match_camera.gd:90` |  |
-| `max_distance` | `30.0` | float | `scripts/camera/match_camera.gd:10` | `scripts/camera/match_camera.gd:90` |  |
-| `follow_halflife` | `0.22` | float | `scripts/camera/match_camera.gd:12` | `scripts/camera/match_camera.gd:59` | Semivida del suavizado de posicion (s). Mayor = camara mas lenta. |
-| `zoom_halflife` | `0.55` | float | `scripts/camera/match_camera.gd:13` | `scripts/camera/match_camera.gd:60` |  |
-| `ball_lead_time` | `0.28` | float | `scripts/camera/match_camera.gd:14` | `scripts/camera/match_camera.gd:70` |  |
-| `focus_weight_with_ball` | `0.4` | float | `scripts/camera/match_camera.gd:15` | `scripts/camera/match_camera.gd:75` |  |
-| `focus_weight_without_ball` | `0.72` | float | `scripts/camera/match_camera.gd:16` | `scripts/camera/match_camera.gd:75` |  |
-| `ball` | `null` | Node3D | `scripts/camera/match_camera.gd:18` | `scripts/camera/match_camera.gd:37`, `scripts/camera/match_camera.gd:53`, `scripts/camera/match_camera.gd:66`, `scripts/camera/match_camera.gd:67` (+4) |  |
-| `focus_actor` | `null` | Node3D | `scripts/camera/match_camera.gd:19` | `scripts/camera/match_camera.gd:38`, `scripts/camera/match_camera.gd:44`, `scripts/camera/match_camera.gd:72`, `scripts/camera/match_camera.gd:73` (+2) |  |
-| `pitch_config` | `null` | PitchConfig | `scripts/camera/match_camera.gd:20` | `scripts/camera/match_camera.gd:32`, `scripts/camera/match_camera.gd:33`, `scripts/camera/match_camera.gd:40`, `scripts/camera/match_camera.gd:79` (+2) |  |
-| `_focus` | `Vector3.ZERO` | Vector3 | `scripts/camera/match_camera.gd:22` | `scripts/camera/match_camera.gd:47`, `scripts/camera/match_camera.gd:59`, `scripts/camera/match_camera.gd:95`, `scripts/camera/match_camera.gd:99` |  |
-| `_distance` | `20.0` | float | `scripts/camera/match_camera.gd:23` | `scripts/camera/match_camera.gd:34`, `scripts/camera/match_camera.gd:48`, `scripts/camera/match_camera.gd:60`, `scripts/camera/match_camera.gd:94` |  |
-| `_initialized` | `false` | bool | `scripts/camera/match_camera.gd:24` | `scripts/camera/match_camera.gd:50`, `scripts/camera/match_camera.gd:55` |  |
+| `pitch_deg` | `52.0` | float | `scripts/camera/match_camera.gd:10` | `scripts/camera/match_camera.gd:142` | Camara elevada estilo transmision deportiva. Sigue una mezcla entre el jugador controlado y la pelota con amortiguacion exponencial (independiente de los FPS), ajusta el encuadre segun la separacion entre ambos y nunca entra en el volumen de las paredes. Mantiene un yaw fijo: el joystick siempre es relativo a la pantalla. Con el contexto del partido (ctx) el encuadre es dinamico: mas cerca que una vista general, se adelanta hacia donde ataca el equipo con la pelota y se abre lo justo para que las opciones de pase del poseedor sigan en cuadro. |
+| `base_distance` | `16.0` | float | `scripts/camera/match_camera.gd:11` | `scripts/camera/match_camera.gd:46`, `scripts/camera/match_camera.gd:139` |  |
+| `max_distance` | `27.0` | float | `scripts/camera/match_camera.gd:12` | `scripts/camera/match_camera.gd:139` |  |
+| `attack_lead` | `2.5` | float | `scripts/camera/match_camera.gd:14` | `scripts/camera/match_camera.gd:92` | Metros que el foco se adelanta hacia el arco que ataca el equipo con la pelota (se ve el espacio por delante). |
+| `button_bias` | `1.0` | float | `scripts/camera/match_camera.gd:16` | `scripts/camera/match_camera.gd:47`, `scripts/camera/match_camera.gd:136` | Desplazamiento lateral de la imagen (m): la jugada queda algo a la izquierda, lejos de los botones de accion. |
+| `pass_options_in_frame` | `2` | int | `scripts/camera/match_camera.gd:18` | `scripts/camera/match_camera.gd:125` | Companeros del poseedor (los mas cercanos a la pelota) que el encuadre mantiene visibles como opciones de pase. |
+| `pass_option_range` | `15.0` | float | `scripts/camera/match_camera.gd:20` | `scripts/camera/match_camera.gd:122` | Mas alla de esta distancia a la pelota (m) un companero no fuerza a abrir el plano. |
+| `follow_halflife` | `0.22` | float | `scripts/camera/match_camera.gd:22` | `scripts/camera/match_camera.gd:72` | Semivida del suavizado de posicion (s). Mayor = camara mas lenta. |
+| `zoom_halflife` | `0.55` | float | `scripts/camera/match_camera.gd:23` | `scripts/camera/match_camera.gd:73` |  |
+| `ball_lead_time` | `0.28` | float | `scripts/camera/match_camera.gd:24` | `scripts/camera/match_camera.gd:83` |  |
+| `focus_weight_with_ball` | `0.4` | float | `scripts/camera/match_camera.gd:25` | `scripts/camera/match_camera.gd:88` |  |
+| `focus_weight_without_ball` | `0.72` | float | `scripts/camera/match_camera.gd:26` | `scripts/camera/match_camera.gd:88` |  |
+| `ball` | `null` | Node3D | `scripts/camera/match_camera.gd:28` | `scripts/camera/match_camera.gd:50`, `scripts/camera/match_camera.gd:66`, `scripts/camera/match_camera.gd:79`, `scripts/camera/match_camera.gd:80` (+4) |  |
+| `focus_actor` | `null` | Node3D | `scripts/camera/match_camera.gd:29` | `scripts/camera/match_camera.gd:51`, `scripts/camera/match_camera.gd:57`, `scripts/camera/match_camera.gd:85`, `scripts/camera/match_camera.gd:86` (+2) |  |
+| `pitch_config` | `null` | PitchConfig | `scripts/camera/match_camera.gd:30` | `scripts/camera/match_camera.gd:44`, `scripts/camera/match_camera.gd:45`, `scripts/camera/match_camera.gd:53`, `scripts/camera/match_camera.gd:95` (+2) |  |
+| `ctx` | `null` | MatchContext | `scripts/camera/match_camera.gd:32` | `scripts/gameplay/match_scene.gd:75`, `scripts/camera/match_camera.gd:102`, `scripts/camera/match_camera.gd:104`, `scripts/camera/match_camera.gd:119` | Contexto del partido (opcional): da el poseedor y sus companeros para el encuadre dinamico. |
+| `_focus` | `Vector3.ZERO` | Vector3 | `scripts/camera/match_camera.gd:34` | `scripts/camera/match_camera.gd:60`, `scripts/camera/match_camera.gd:72`, `scripts/camera/match_camera.gd:144`, `scripts/camera/match_camera.gd:148` |  |
+| `_distance` | `20.0` | float | `scripts/camera/match_camera.gd:35` | `scripts/camera/match_camera.gd:46`, `scripts/camera/match_camera.gd:61`, `scripts/camera/match_camera.gd:73`, `scripts/camera/match_camera.gd:143` |  |
+| `_initialized` | `false` | bool | `scripts/camera/match_camera.gd:36` | `scripts/camera/match_camera.gd:63`, `scripts/camera/match_camera.gd:68` |  |
 <!-- /AUTO -->
 
 Valores fijos (no son `@export`): `fov = 42`, `near = 0.5`, `far = 140`, `keep_aspect = KEEP_HEIGHT` (`_ready`); la cámara se mantiene a `pitch_cfg.wall_height + 2.0` de altura mínima; el foco se limita a `x ∈ ±(half_length − 8)` y `z ∈ ±0.55·half_width`; el zoom crece `0.55` por metro de separación jugador-pelota por encima de 7 m (`_target_distance`); «cerca de la pelota» = a menos de 3 m (`_target_focus`).
@@ -54,17 +59,19 @@ Valores fijos (no son `@export`): `fov = 42`, `near = 0.5`, `far = 140`, `keep_a
 <!-- AUTO:funcs:scripts/camera/match_camera.gd -->
 | Función | Línea | Qué hace |
 |---|---|---|
-| `MatchCamera._ready()` | 26 |  |
-| `MatchCamera.setup(ball_node: Node3D, actor: Node3D, cfg: PitchConfig = null)` | 36 |  |
-| `MatchCamera.set_focus_actor(actor: Node3D)` | 43 |  |
-| `MatchCamera.snap_to_target()` | 46 |  |
-| `MatchCamera._process(delta: float)` | 52 |  |
-| `MatchCamera._target_focus()` | 63 |  |
-| `MatchCamera._target_distance()` | 85 |  |
-| `MatchCamera._apply_transform()` | 92 |  |
-| `MatchCamera._damp_float(current_value: float, target: float, halflife: float, delta: float)` | 101 |  |
-| `MatchCamera._damp_vec3(current_value: Vector3, target: Vector3, halflife: float, delta: float)` | 105 |  |
-| `MatchCamera.screen_to_world_dir(v: Vector2)` | 110 | Convierte un vector 2D de pantalla (x derecha, y abajo) en direccion de mundo sobre el plano XZ. |
+| `MatchCamera._ready()` | 38 |  |
+| `MatchCamera.setup(ball_node: Node3D, actor: Node3D, cfg: PitchConfig = null)` | 49 |  |
+| `MatchCamera.set_focus_actor(actor: Node3D)` | 56 |  |
+| `MatchCamera.snap_to_target()` | 59 |  |
+| `MatchCamera._process(delta: float)` | 65 |  |
+| `MatchCamera._target_focus()` | 76 |  |
+| `MatchCamera._possessor()` | 101 |  |
+| `MatchCamera.frame_points()` | 108 | Puntos que deben quedar en cuadro: pelota, jugador enfocado y las opciones de pase mas cercanas del poseedor. |
+| `MatchCamera._target_distance()` | 130 |  |
+| `MatchCamera._apply_transform()` | 141 |  |
+| `MatchCamera._damp_float(current_value: float, target: float, halflife: float, delta: float)` | 150 |  |
+| `MatchCamera._damp_vec3(current_value: Vector3, target: Vector3, halflife: float, delta: float)` | 154 |  |
+| `MatchCamera.screen_to_world_dir(v: Vector2)` | 159 | Convierte un vector 2D de pantalla (x derecha, y abajo) en direccion de mundo sobre el plano XZ. |
 <!-- /AUTO -->
 
 ## Recorrido de ejecución

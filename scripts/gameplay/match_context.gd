@@ -18,6 +18,52 @@ var input_enabled: bool = true
 ## Segundos seguidos que la pelota lleva practicamente parada y sin que nadie la sostenga. Lo actualiza MatchManager
 ## y lo usa la IA para romper un atasco: si la jugada se muere, el mas cercano de cada equipo va a buscarla.
 var ball_stall_seconds: float = 0.0
+## Posesion: UN solo dueno de la pelota a la vez. Se gana tocandola (control, robo, intercepcion) y se pierde cuando la
+## pelota se aleja de su control o la toca otro. Mientras tiene dueno, nadie mas conduce esa pelota: el rival solo
+## puede quitarsela con una entrada o cortar un toque largo. Asi la posesion es clara (se ve en el aro bajo el portador)
+## y la pelota no rebota de pie en pie en los barullos.
+var possessor: Footballer = null
+var possessor_since: float = 0.0
+## Equipo que tuvo la pelota por ultima vez con dueno (fase de juego: ataque / defensa), -1 al inicio.
+var phase_team: int = -1
+var _poss_frame: int = -1
+## Organizacion colectiva por equipo (TeamBrain), creada a demanda por la IA.
+var brains: Array = [null, null]
+
+## Actualiza el dueno de la pelota (una vez por paso de fisica, la llame quien la llame).
+func update_possession() -> void:
+	var fr: int = Engine.get_physics_frames()
+	if fr == _poss_frame:
+		return
+	_poss_frame = fr
+	var b: Ball = ball
+	if b == null:
+		return
+	if b.is_held():
+		possessor = null
+		phase_team = int(b.holder.get("team")) if b.holder != null and b.holder.get("team") != null else phase_team
+		return
+	if possessor != null and is_instance_valid(possessor):
+		var d: float = Vector2(possessor.global_position.x - b.global_position.x, possessor.global_position.z - b.global_position.z).length()
+		var touched_by_other: bool = b.last_toucher != possessor
+		if not touched_by_other and d <= possessor.ball_handler.possession_radius() * 1.45 and b.global_position.y < 0.9:
+			return
+		possessor = null
+	var lt: Footballer = b.last_toucher as Footballer
+	if lt != null and is_instance_valid(lt) and b.global_position.y < 0.7:
+		var d2: float = Vector2(lt.global_position.x - b.global_position.x, lt.global_position.z - b.global_position.z).length()
+		var rel: float = Vector2(b.linear_velocity.x - lt.velocity.x, b.linear_velocity.z - lt.velocity.z).length()
+		# La pelota es suya si la tiene cerca y va con el (no si acaba de patearla lejos).
+		if d2 <= lt.ball_handler.possession_radius() and rel < 6.0:
+			possessor = lt
+			possessor_since = match_time
+			phase_team = lt.team
+
+## Pelota sin dueno (rodando, en el aire, rebote): cualquiera puede ir a buscarla y tocarla.
+func ball_is_loose() -> bool:
+	update_possession()
+	return possessor == null
+
 ## Pelota muerta (balon parado en preparacion): solo `restart_taker` puede tocarla; la IA no la persigue.
 var dead_ball: bool = false
 var restart_taker: Node = null

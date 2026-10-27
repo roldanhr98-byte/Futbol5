@@ -141,6 +141,10 @@ static func defender_pitch_clamp(ctx: MatchContext, p: Vector3) -> Vector3:
 	return ctx.pitch.clamp_to_pitch(p, 0.4)
 
 static func _find_carrier(ctx: MatchContext, ball: Ball, team: int, radius: float) -> Footballer:
+	# Con dueno de la pelota, el portador es el (si es de ese equipo); sin dueno, el mas cercano dentro del radio.
+	ctx.update_possession()
+	if ctx.possessor != null and is_instance_valid(ctx.possessor):
+		return ctx.possessor if ctx.possessor.team == team else null
 	var best: Footballer = null
 	var best_d: float = radius
 	var bp := Vector2(ball.global_position.x, ball.global_position.z)

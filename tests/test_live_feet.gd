@@ -82,3 +82,70 @@ func test_stopping_from_a_run_keeps_the_ball_at_the_feet() -> void:
 	note("frenada desde %.1f m/s: pelota a %.2f m del cuerpo, %d toques (%d con el pie) al frenar" % [5.3, d, p.ball_handler.dribble_touch_count - t0, p.ball_handler.foot_touches - foot0])
 	check(p.locomotion.speed < 0.3, "el jugador se detiene (%.2f m/s)" % p.locomotion.speed)
 	check(d < 1.0, "la pelota queda a sus pies al frenar (%.2f m)" % d)
+
+## Conduccion con un joystick que cambia en el tiempo: stick_at(i) da el joystick en el fotograma i, sprint_at(i) el
+## sprint. Ademas de los toques mide si el jugador pasa POR ENCIMA de la pelota (centro del cuerpo a menos de 0.25 m
+## de ella) o la deja atras sin causa (pelota detras del cuerpo, fuera de un giro), y lo mas lejos que se adelanta.
+func _carry_fn(stick_at: Callable, sprint_at: Callable, seconds: float) -> Dictionary:
+	var ctx: MatchContext = await make_match(Vector3(-14.4, 0.11, 0.0))
+	var src := ScriptedInput.new()
+	var p: Footballer = add_player(ctx, 0, Vector3(-15.0, 0.0, 0.0), 60, src, true)
+	p.locomotion.yaw = Locomotion.yaw_from_dir(Vector3(1, 0, 0))
+	var dists: Array[float] = []
+	p.ball_handler.touched_ball.connect(func(_k: StringName) -> void:
+		if p.ball_handler.last_touch_foot_distance >= 0.0:
+			dists.append(p.ball_handler.last_touch_foot_distance))
+	var frames: int = int(seconds * 60.0)
+	var kept: int = 0
+	var over: int = 0
+	var behind: int = 0
+	var max_ahead: float = 0.0
+	var max_speed: float = 0.0
+	for i in frames:
+		src.move = stick_at.call(i)
+		src.sprint = sprint_at.call(i)
+		await tree.physics_frame
+		var off: Vector3 = KickModel.flat(ctx.ball.global_position - p.global_position)
+		if off.length() < 1.6:
+			kept += 1
+		if off.length() < 0.25:
+			over += 1
+		var fwd: float = off.dot(p.locomotion.forward())
+		if fwd < -0.15 and absf(p.locomotion.turn_rate) < 1.5 and p.locomotion.speed > 1.0:
+			behind += 1
+		max_ahead = maxf(max_ahead, fwd)
+		max_speed = maxf(max_speed, p.locomotion.speed)
+	var bh: BallHandler = p.ball_handler
+	dists.sort()
+	var out := {"touches": bh.dribble_touch_count, "foot": bh.foot_touches, "median": dists[dists.size() / 2] if not dists.is_empty() else -1.0,
+		"kept": float(kept) / float(frames), "over": float(over) / float(frames), "behind": float(behind) / float(frames),
+		"max_ahead": max_ahead, "max_speed": max_speed, "possessor": ctx.possessor == p}
+	cleanup()
+	return out
+
+func _report_carry(name: String, r: Dictionary) -> void:
+	note("%s: %d toques (%d con el pie), mediana punta-pelota %.2f m, pelota cerca %d %%, encima de la pelota %d %%, pelota atras %d %%, se adelanta hasta %.2f m, velocidad max %.1f m/s" % [
+		name, r["touches"], r["foot"], r["median"], int(r["kept"] * 100.0), int(r["over"] * 100.0), int(r["behind"] * 100.0), r["max_ahead"], r["max_speed"]])
+
+func test_curved_dribble_acceleration_and_turns_with_the_ball() -> void:
+	if _needs_render():
+		return
+	var no_sprint := func(_i: int) -> bool: return false
+	# Curva continua: el joystick gira 360 grados en 6 s (circulo de ~6 m de radio al trote).
+	var curve: Dictionary = await _carry_fn(func(i: int) -> Vector2: return Vector2(cos(i / 60.0), sin(i / 60.0)) * 0.8, no_sprint, 6.0)
+	_report_carry("curva", curve)
+	check(curve["kept"] > 0.9, "en curva conserva la pelota (%d %%)" % int(curve["kept"] * 100.0))
+	check(float(curve["foot"]) >= 0.7 * float(curve["touches"]), "en curva la mayoria de los toques los da un pie (%d de %d)" % [curve["foot"], curve["touches"]])
+	check(curve["over"] < 0.05, "en curva no pasa por encima de la pelota (%d %%)" % int(curve["over"] * 100.0))
+	# Arranque desde parado hasta el sprint: los toques se alargan (la pelota se adelanta mas) sin perderla.
+	var accel: Dictionary = await _carry_fn(func(i: int) -> Vector2: return Vector2(0.3 if i < 60 else 1.0, 0.0), func(i: int) -> bool: return i >= 90, 4.0)
+	_report_carry("aceleracion hasta el sprint", accel)
+	check(accel["max_speed"] > 5.5, "llega al sprint con la pelota (%.1f m/s)" % accel["max_speed"])
+	check(accel["max_ahead"] > 0.9 and accel["max_ahead"] < 2.6, "al acelerar el toque se alarga sin perderla (se adelanta %.2f m)" % accel["max_ahead"])
+	check(accel["kept"] > 0.85 and accel["possessor"], "conserva la pelota al acelerar (%d %%)" % int(accel["kept"] * 100.0))
+	check(accel["over"] < 0.05 and accel["behind"] < 0.05, "no la pisa ni la deja atras al acelerar (encima %d %%, atras %d %%)" % [int(accel["over"] * 100.0), int(accel["behind"] * 100.0)])
+	# Cambio de direccion de 180 grados a la carrera y vuelta.
+	var turn: Dictionary = await _carry_fn(func(i: int) -> Vector2: return Vector2(1.0 if (i / 120) % 2 == 0 else -1.0, 0.0), no_sprint, 6.0)
+	_report_carry("cambios de direccion de 180 grados", turn)
+	check(turn["kept"] > 0.8 and turn["possessor"], "en los giros de 180 grados conserva la pelota (%d %%)" % int(turn["kept"] * 100.0))
+	check(turn["over"] < 0.08, "en los giros no atraviesa la pelota (%d %%)" % int(turn["over"] * 100.0))

@@ -33,6 +33,8 @@ var assist_override_pass: float = -1.0
 var assist_override_shot: float = -1.0
 ## Marcado por el gestor de partido: este futbolista es el que maneja la persona.
 var is_human_controlled: bool = false
+## Probabilidad de que la IA entre cuando puede disputar una pelota protegida por el portador (ver _ai_commits_tackle).
+const AI_TACKLE_COMMIT := 0.3
 ## Velocidad extra (m/s) de un ajuste de zancada para llegar a la pelota al patear. Mueve el cuerpo pero NO entra en
 ## Locomotion (no cambia la velocidad ni la inercia del jugador).
 var nudge_velocity: Vector3 = Vector3.ZERO
@@ -182,6 +184,7 @@ func place_at(pos: Vector3, yaw: float) -> void:
 func _physics_process(delta: float) -> void:
 	if ctx == null or locomotion == null:
 		return
+	ctx.update_possession()
 	incoming_pass_time = maxf(incoming_pass_time - delta, 0.0)
 	give_and_go_time = maxf(give_and_go_time - delta, 0.0)
 	if incoming_pass_time > 0.0 and ctx.ball != null and ctx.ball.last_toucher != null and ctx.ball.last_toucher.get("team") != team:
@@ -213,9 +216,16 @@ func _physics_process(delta: float) -> void:
 	var want_sprint: bool = frame.sprint
 	# Recepcion asistida: con el joystick suelto, el jugador de la persona sale al encuentro del pase que le llega
 	# (se orienta y ajusta los pasos a la trayectoria real de la pelota). Mover el joystick manda siempre.
-	if is_human_controlled and stick_mag < 0.2 and has_incoming_pass() and not ball_handler.has_possession():
-		var to_meet: Vector3 = KickModel.flat(pass_meet_point() - global_position)
-		if to_meet.length() > 0.5:
+	# Con una orden de golpeo de primera esperando la pelota, el joystick es la puntería y el jugador va a la trayectoria.
+	var first_time: bool = is_human_controlled and ball_handler.is_waiting_first_time()
+	if is_human_controlled and (first_time or (stick_mag < 0.2 and has_incoming_pass())) and not ball_handler.has_possession():
+		var meet: Vector3 = pass_meet_point() if has_incoming_pass() else ball_handler.incoming_ball_point()
+		var to_meet: Vector3 = KickModel.flat(meet - global_position)
+		if first_time and to_meet.length() <= 0.5:
+			desired_dir = Vector3.ZERO   # ya esta en la trayectoria: se planta y espera la pelota
+			desired_mag = 0.0
+			want_sprint = false
+		elif to_meet.length() > 0.5:
 			desired_dir = to_meet.normalized()
 			desired_mag = clampf(to_meet.length() / 2.5, 0.4, 1.0)
 			want_sprint = to_meet.length() > 4.0
@@ -237,7 +247,7 @@ func _physics_process(delta: float) -> void:
 					pass
 				elif press_info.carrier != null and actions._alongside(press_info.carrier) and actions.rng.randf() < 0.04:
 					actions.shoulder_charge(press_info.carrier)
-				elif press_info.attempt_tackle:
+				elif press_info.attempt_tackle and _ai_commits_tackle(press_info.carrier):
 					var won: bool = ball_handler.attempt_tackle(press_info.carrier)
 					tackled.emit(won)
 	else:
@@ -250,6 +260,26 @@ func _physics_process(delta: float) -> void:
 				visual.update_motion(self, delta)
 			return
 
+	# Pelota propia atras o al costado tras un giro: primero se va a por ella (BallHandler.carry_steer). Los toques
+	# siguen usando el rumbo pedido (intent_dir): al llegar a la pelota, el toque la lleva hacia alli.
+	var intent_dir: Vector3 = desired_dir
+	if not is_pressing:
+		var steer: Vector3 = ball_handler.carry_steer(desired_dir)
+		if steer.length_squared() > 0.01:
+			desired_dir = steer
+			# Pelota que se aleja: a por ella a fondo (si no, nunca se la alcanza); quieta o cerca, con pasos cortos.
+			var away: float = KickModel.flat(ctx.ball.linear_velocity).dot(steer)
+			desired_mag = maxf(desired_mag, 1.0) if away > 1.0 else minf(desired_mag, 0.75)
+			want_sprint = want_sprint or away > 3.5
+
+	# Patada con clip en curso: el jugador ya se comprometio con el golpeo. El joystick no lo gira ni lo acelera (el
+	# giro sigue la direccion del inicio, reducido por kick_turn_scale) y la velocidad la fija el balanceo.
+	var kicking: bool = ball_handler.is_clip_kick_in_progress()
+	if kicking:
+		desired_dir = ball_handler.kick_desired_dir
+		desired_mag = ball_handler.kick_desired_mag
+		want_sprint = false
+
 	# Marcaje en jockey: cerca del portador rival mira hacia el y se mueve en cualquier direccion.
 	# Con la pelota, el mismo mecanismo sirve para el control lateral y para proteger el balon de espaldas al rival.
 	locomotion.face_override = Vector3.ZERO
@@ -257,17 +287,21 @@ func _physics_process(delta: float) -> void:
 		var to_c: Vector3 = KickModel.flat(press_info.carrier.global_position - global_position)
 		if to_c.length() < JOCKEY_RANGE and to_c.length() > 0.5:
 			locomotion.face_override = to_c.normalized()
-	else:
+	elif not kicking:
 		var carry_face: Vector3 = ball_handler.plan_carry(desired_dir, desired_mag, delta)
 		if carry_face.length_squared() > 0.01:
 			locomotion.face_override = carry_face
 
 	# Conduciendo la pelota se corre algo mas lento (y menos con peor conduccion).
 	var cap: float = -1.0
-	if ball_handler.has_possession():
+	# Tope de conduccion solo con la pelota al pie: si el toque se fue largo, el jugador acelera para alcanzarla.
+	if ball_handler.is_dribbling() and ball_handler.ball_distance() <= ball_handler.possession_radius():
 		cap = locomotion.max_sprint_speed() * lerpf(0.86, 0.97, attributes.norm("ball_carrying"))
 	var speed_before: float = locomotion.speed
 	locomotion.step(desired_dir, desired_mag, want_sprint, delta, cap)
+	if kicking:
+		locomotion.velocity = ball_handler.kick_body_velocity()
+		locomotion.speed = locomotion.velocity.length()
 	_gait_overlays(desired_dir, want_sprint, stick_mag, speed_before, delta)
 
 	velocity.x = locomotion.velocity.x + nudge_velocity.x
@@ -282,13 +316,13 @@ func _physics_process(delta: float) -> void:
 	locomotion.velocity = Vector3(velocity.x - nudge_velocity.x, 0.0, velocity.z - nudge_velocity.z)
 	rotation.y = locomotion.yaw
 
-	ball_handler.update(frame, stick_world, stick_mag, desired_dir, delta)
+	ball_handler.update(frame, stick_world, stick_mag, intent_dir, delta)
 	if incoming_pass_time > 0.0 and ball_handler.has_possession():
 		incoming_pass_time = 0.0
 	if visual != null:
 		_update_reaction(delta)
 		visual.directional = locomotion.jockeying
-		visual.carrying = ball_handler.has_possession()
+		visual.carrying = ball_handler.is_dribbling()
 		visual.dir_velocity = Vector2(locomotion.forward_speed, locomotion.lateral_speed)
 		visual.update_motion(self, delta)
 
@@ -304,6 +338,16 @@ const TIRED_STOP := &"Running_Tired"
 const TIRED_STOP_FROM := 2.0
 var _overlay_cd: float = 0.0
 var _tired_cd: float = 0.0
+
+## La IA no disputa en cada ocasion: contiene (jockey) y entra cuando la pelota queda expuesta (toque largo del
+## portador, pelota suelta) o, con el portador protegiendola, solo de vez en cuando. Asi el portador tiene tiempo de
+## jugar y la posesion no cambia a cada segundo.
+func _ai_commits_tackle(carrier: Footballer) -> bool:
+	if carrier == null:
+		return true
+	if carrier.ball_handler.ball_distance() > 0.75:
+		return true
+	return actions.rng.randf() < AI_TACKLE_COMMIT
 
 func _gait_overlays(desired_dir: Vector3, want_sprint: bool, stick_mag: float, speed_before: float, delta: float) -> void:
 	_overlay_cd = maxf(_overlay_cd - delta, 0.0)

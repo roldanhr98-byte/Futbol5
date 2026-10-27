@@ -5,6 +5,37 @@ extends RefCounted
 ## No garantiza que el pase llegue: el error depende de distancia, potencia, equilibrio,
 ## orientacion corporal, pierna de golpeo y atributos.
 
+## Companero que recibiria el pase con esta intencion (direccion, distancia por la carga y linea libre); null si
+## ninguno encaja en el cono (pase al espacio). Es la misma eleccion que hace compute: la usa tambien el indicador del
+## objetivo del pase en pantalla, asi lo que se ve es lo que va a pasar.
+static func pick_target(kicker: Footballer, ctx: MatchContext, intent: Vector3, has_stick: bool, charge: float, assist_level: float) -> Footballer:
+	var cfg: AssistTuning = Tuning.assist
+	if assist_level <= 0.0 or ctx.ball == null:
+		return null
+	var origin: Vector3 = ctx.ball.global_position
+	var best: Footballer = null
+	var best_score: float = -1.0
+	var cone: float = cfg.pass_cone_deg * lerpf(0.65, 1.0, assist_level)
+	if not has_stick:
+		cone *= 0.75
+	var ideal: float = 4.5 + 13.0 * charge
+	for tm in ctx.teammates_of(kicker):
+		var to: Vector3 = KickModel.flat(tm.global_position - origin)
+		var dist: float = to.length()
+		if dist < 1.2 or dist > cfg.pass_max_distance:
+			continue
+		var ang: float = KickModel.angle_between_deg(intent, to)
+		if ang > cone:
+			continue
+		var angle_score: float = 1.0 - ang / cone
+		var dist_score: float = clampf(1.0 - absf(dist - ideal) / (ideal + 6.0), 0.0, 1.0)
+		var lane_score: float = _lane_clearance(origin, tm.global_position, ctx.opponents_of(kicker), cfg.pass_lane_block_radius)
+		var score: float = cfg.pass_weight_angle * angle_score + cfg.pass_weight_distance * dist_score + cfg.pass_weight_lane * lane_score
+		if score > best_score:
+			best_score = score
+			best = tm
+	return best
+
 ## Calcula un pase. stick_dir: direccion deseada en el mundo (o cero), charge: 0..1, lob: pase elevado.
 ## assist_level: 0 = sin ayuda ... 1 = maxima ayuda.
 static func compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, charge: float, lob: bool,
@@ -22,28 +53,7 @@ static func compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, c
 	res.intended_dir = intent
 
 	# --- 1. Elegir candidato ---
-	var best: Footballer = null
-	var best_score: float = -1.0
-	if assist_level > 0.0:
-		var cone: float = cfg.pass_cone_deg * lerpf(0.65, 1.0, assist_level)
-		if not has_stick:
-			cone *= 0.75
-		var ideal: float = 4.5 + 13.0 * charge
-		for tm in ctx.teammates_of(kicker):
-			var to: Vector3 = KickModel.flat(tm.global_position - origin)
-			var dist: float = to.length()
-			if dist < 1.2 or dist > cfg.pass_max_distance:
-				continue
-			var ang: float = KickModel.angle_between_deg(intent, to)
-			if ang > cone:
-				continue
-			var angle_score: float = 1.0 - ang / cone
-			var dist_score: float = clampf(1.0 - absf(dist - ideal) / (ideal + 6.0), 0.0, 1.0)
-			var lane_score: float = _lane_clearance(origin, tm.global_position, ctx.opponents_of(kicker), cfg.pass_lane_block_radius)
-			var score: float = cfg.pass_weight_angle * angle_score + cfg.pass_weight_distance * dist_score + cfg.pass_weight_lane * lane_score
-			if score > best_score:
-				best_score = score
-				best = tm
+	var best: Footballer = pick_target(kicker, ctx, intent, has_stick, charge, assist_level)
 	res.target = best
 
 	# --- 2. Punto de mira y direccion ---

@@ -11,6 +11,43 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-10-27 — Auditoría de jugabilidad: golpe sincronizado con el pie, pie de apoyo, conducción en giros, posesión única, organización colectiva, cámara y botonera contextual
+
+Diagnóstico con el esqueleto animado (render) y el video del usuario `prueba01` (fotograma a fotograma). Detalle en
+[SYSTEMS/PLAYER.md](SYSTEMS/PLAYER.md#patadas-sincronizadas-pie-de-apoyo-y-conducción-en-giros-2026-10-27-segunda-ronda).
+
+- **Fallos hallados en el video:** (8.0–9.9 s) con TIRO cargando el jugador gira hacia el arco y deja la pelota, que sale
+  por la banda; pelota diminuta con la cámara lejana; los botones tapan el arco de la derecha; PASE pulsado sin tener la
+  pelota (35 s); amontonamientos (22–25 s).
+- **Golpeo** (`ball_handler.gd`): latencia cuantizada a pasos de física con la pose de contacto en el paso del impulso;
+  pie de apoyo plantado con la velocidad que pide el clip; joystick sin efecto durante el balanceo; ajuste de paso en
+  lazo cerrado; golpeo de primera que espera la pelota que llega. Sin contacto no hay impulso (ya existía; verificado).
+- **Conducción:** recuperar la pelota propia tras un giro (`carry_steer`), toque de media vuelta, toque sobre el arco en
+  curva, toque de arrancada con SPRINT; `has_possession()` = pelota al pie y no es de otro.
+- **Posesión única** (`match_context.gd`): `MatchContext.possessor` arbitra; nadie conduce ni controla la pelota de
+  otro (solo disputa o corta un toque largo). La presión busca al poseedor.
+- **IA colectiva** (`scripts/ai/team_brain.gd`, nuevo): una decisión por equipo con puestos (apoyo, amplitud,
+  profundidad, seguridad / presión única, cobertura, bloque, repliegue), histéresis de puestos y de lado, fase de ataque
+  estable durante toques largos; la IA contiene y entra cuando la pelota queda expuesta (`AI_TACKLE_COMMIT`) y pasa
+  medio orientada bajo presión.
+- **Cámara** (`match_camera.gd`): 16 m (antes 20), adelantada hacia el ataque, se abre para mantener en cuadro las dos
+  opciones de pase del poseedor, imagen desplazada lejos de los botones (`button_bias`).
+- **Interfaz:** aro de posesión bajo el poseedor y aro del compañero que recibiría el pase (`ground_ring.gd`,
+  `PassAssist.pick_target`, la misma elección que el pase real); botonera contextual (ataque: TIRO/PASE/FILTRADO/CENTRO;
+  defensa: ENTRADA/PRESIÓN en los mismos huecos; suelta: TIRO/PASE/PRESIÓN), más baja.
+- **Pruebas nuevas:** `test_live_kicks` (pie de apoyo, golpeo de primera, batería de 50 golpeos variados),
+  `test_live_feet::test_curved_dribble_acceleration_and_turns_with_the_ball`, `test_team_shape_metrics` (informe).
+- **Verificación con render (ejecutada, xvfb):** `test_live_kicks` 4/4 — 49 de 50 golpeos con la punta del pie a ≤0.30 m
+  de la pelota en la imagen del golpe, 1 cancelado porque el rival tocó antes, 0 impulsos sin contacto, 0 bloqueos; pie de
+  apoyo 0.4–1.3 m/s (antes 1.4–7.4). `test_live_feet` 4/4 — curva 100 % con la pelota cerca (antes 83 %), medias vueltas
+  100 % (antes 44 %), zigzag 18/21 toques con el pie (una versión intermedia de esta ronda había bajado a 8/16; corregido).
+- **Organización colectiva (medida headless, 2×150 s, `MatchMetrics`):** sin mejora clara en el amontonamiento
+  (41–49 % de muestras con ≥4 jugadores a <4 m de la pelota; línea base 30–44 %); pases/min 9–14 (antes 5–8),
+  disputas/min 9–14 (antes 21–22). Diagnóstico: con la fase asentada (>2 s) cada jugador ocupa su puesto (2.7–4.6 m),
+  pero la posesión cambia cada ~1.9 s. Headless no anima el esqueleto ni usa las patadas reales; la medida con render
+  es demasiado lenta en este entorno (no terminó). **Pendiente.**
+- **Suite headless:** ver la entrada siguiente del commit de cierre.
+
 ## 2026-10-27 — Jugabilidad inspirada en PES 2021: pies en la pelota, pases filtrados, centros, chanfle, entradas, reglas con bandas, balón parado, repetición y los 133 clips en juego
 
 Análisis de los videos, tabla de mecánicas, diagnóstico, archivos y limitaciones: [GAMEPLAY_PES.md](GAMEPLAY_PES.md).

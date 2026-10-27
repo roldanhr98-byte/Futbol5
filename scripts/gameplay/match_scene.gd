@@ -38,6 +38,10 @@ var keepers: Array[Goalkeeper] = []
 ## Indicadores sobre el jugador controlado y sobre el que recibiria el control con CAMBIO.
 var marker: PlayerMarker = null
 var next_marker: PlayerMarker = null
+## Aro de posesion (bajo el unico jugador con la pelota) y aro del companero que recibiria el pase ahora.
+var possession_ring: GroundRing = null
+var pass_ring: GroundRing = null
+const RING_COLORS: Array[Color] = [Color(1.0, 0.35, 0.3, 0.9), Color(1.0, 0.86, 0.2, 0.9)]
 ## Arquero propio bajo control de la persona (null = lo lleva la IA). Mientras lo maneja, el jugador de campo
 ## `controlled` queda en manos de la IA pero se recuerda para devolverle el control.
 var controlled_keeper: Goalkeeper = null
@@ -68,6 +72,7 @@ func _ready() -> void:
 	camera.name = "MatchCamera"
 	add_child(camera)
 	ctx.camera = camera
+	camera.ctx = ctx
 	_spawn_teams()
 	if with_referee:
 		referee = Referee.new()
@@ -96,6 +101,10 @@ func _ready() -> void:
 	add_child(marker)
 	next_marker = PlayerMarker.make(false)
 	add_child(next_marker)
+	possession_ring = GroundRing.make("PossessionRing", RING_COLORS[0], 0.62, 0.11)
+	add_child(possession_ring)
+	pass_ring = GroundRing.make("PassTargetRing", Color(1.0, 1.0, 1.0, 0.75), 0.55, 0.06)
+	add_child(pass_ring)
 	camera.setup(ball, controlled, Tuning.pitch)
 	_setup_replay()
 	ctx.event_emitted.connect(_on_match_event)
@@ -391,12 +400,46 @@ func _on_match_event(e: GameEvent) -> void:
 
 var _switch_cooldown: float = 0.0
 
+## Situacion para la botonera tactil: ataque (la pelota es del equipo de la persona o le llega un pase propio),
+## defensa (la tiene el rival) o suelta.
+func touch_context() -> StringName:
+	var owner: Footballer = ctx.possessor
+	if owner != null:
+		return &"attack" if owner.team == 0 else &"defense"
+	for f in home:
+		if f.has_incoming_pass():
+			return &"attack"
+	return &"loose"
+
+## Aro de posesion bajo el poseedor (color de su equipo; sin aro = pelota suelta) y, con la pelota en los pies de la
+## persona, aro bajo el companero que eligiria el pase con el joystick y la carga actuales.
+func _update_rings() -> void:
+	if possession_ring == null:
+		return
+	ctx.update_possession()
+	var owner: Footballer = ctx.possessor if not ctx.dead_ball else null
+	possession_ring.follow(owner)
+	if owner != null:
+		possession_ring.set_color(RING_COLORS[clampi(owner.team, 0, 1)])
+	var target: Footballer = null
+	if controlled != null and owner == controlled and controlled.ball_handler != null:
+		var frame: InputFrame = controlled.last_frame
+		var stick := Vector3.ZERO
+		if frame != null:
+			stick = KickModel.flat(frame.move_world if frame.use_world else ctx.screen_to_world(frame.move))
+		var has_stick: bool = stick.length() > 0.2
+		var intent: Vector3 = stick.normalized() if has_stick else controlled.locomotion.forward()
+		target = PassAssist.pick_target(controlled, ctx, intent, has_stick, controlled.ball_handler.pass_charge, controlled.ball_handler.assist_pass_level())
+	pass_ring.follow(target)
+
 func _physics_process(delta: float) -> void:
 	if marker != null:
 		marker.follow(human_actor(), delta)
 		next_marker.follow(switch_candidate() if (controlled != null and home.size() > 1) else null, delta)
+	_update_rings()
 	if hud != null and controlled != null:
 		hud.touch.show_switch = home.size() > 1
+		hud.touch.context = touch_context()
 	_switch_cooldown = maxf(_switch_cooldown - delta, 0.0)
 	if controlled == null or not ctx.input_enabled:
 		return

@@ -28,6 +28,8 @@ var last_touch_team: int = -1
 var previous_toucher: Node = null
 var previous_touch_team: int = -1
 var last_touch_msec: int = 0
+## Fotograma de fisica del ultimo toque (tiempo de simulacion, valido tambien en pruebas aceleradas).
+var last_touch_frame: int = 0
 
 ## Quien la sostiene ahora mismo (solo arquero).
 var holder: Node = null
@@ -160,6 +162,7 @@ func register_touch(actor: Node) -> void:
 	var team_value: Variant = actor.get("team")
 	last_touch_team = int(team_value) if team_value != null else -1
 	last_touch_msec = Time.get_ticks_msec()
+	last_touch_frame = Engine.get_physics_frames()
 	touched.emit(actor)
 
 ## Teletransporte controlado (saques de centro, reinicios). No se usa durante el juego normal.
