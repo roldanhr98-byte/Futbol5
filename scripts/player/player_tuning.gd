@@ -51,8 +51,9 @@ extends Resource
 @export var settle_gap: float = 0.38
 ## Segundos que el cuerpo conserva su orientacion tras un control lateral.
 @export var lateral_hold_seconds: float = 0.40
-## Intensidad maxima del joystick para que un empuje de costado sea control lateral (mas fuerte = giro normal).
-@export var lateral_max_stick: float = 0.75
+## Intensidad maxima del joystick para que un empuje de costado sea control lateral (mas fuerte = giro normal). 0.5:
+## en el movil el joystick rara vez va a fondo y con 0.75 el jugador se desplazaba de lado en vez de girar.
+@export var lateral_max_stick: float = 0.5
 ## Radio (m) dentro del cual un rival hace que el portador proteja la pelota con el cuerpo.
 @export var shield_radius: float = 2.6
 ## Desviacion tipica (m) de los toques largos a sprint con control 0 (disminuye con la habilidad).

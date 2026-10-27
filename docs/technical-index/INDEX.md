@@ -59,6 +59,7 @@ Procedimiento completo y reglas: sección «Procedimiento de trabajo» al final 
 - [CHANGELOG.md](CHANGELOG.md): historial técnico con pruebas ejecutadas y pendientes.
 - [GAMEPLAY_PES.md](GAMEPLAY_PES.md): análisis de los videos de referencia, tabla de mecánicas, diagnóstico y pruebas de la jugabilidad inspirada en PES 2021.
 - [ANIMATION_PACK_CLIPS.md](ANIMATION_PACK_CLIPS.md): tabla de los 133 clips del pack de animaciones (duración real, raíz, ciclo, verificación visual, recomendación).
+- [ANIMATION_CONTACT_AUDIT.md](ANIMATION_CONTACT_AUDIT.md): auditoría generada de los clips que tocan la pelota (pie, instante y posición del contacto medidos, raíz, uso en el código); se regenera con `AUDIT_OUT=… tools/run_tests.sh animation_contact_audit`.
 - [CODE_MAP.json](CODE_MAP.json): mapa legible por máquina (alias en español/inglés → archivos, símbolos, parámetros, ficha).
 - `docs/tripo/ledger.jsonl`: libro de gasto de créditos de Tripo3D (cada operación de pago, con saldo).
 - `CLAUDE.md` (raíz): instrucciones breves para que cada sesión consulte primero este índice.

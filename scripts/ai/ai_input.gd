@@ -333,6 +333,7 @@ func _follow_order(f: Footballer, ctx: MatchContext, order: Dictionary, carrier:
 				return true
 			_move_to(f, target, 1.0)
 			_sprint = bool(order["sprint"])
+			_make_way(f, carrier)
 			return true
 		&"cover", &"block", &"hold":
 			_run_left = 0.0
@@ -769,6 +770,28 @@ func _avoid_opponents(f: Footballer, ctx: MatchContext, pos: Vector3, dir: Vecto
 		if kd.length() < 3.0 and kd.normalized().dot(dir) > 0.5:
 			steer += Vector3(-dir.z, 0.0, dir.x) * signf(-kd.z if absf(kd.z) > 0.05 else 1.0) * 0.8
 	return steer.normalized()
+
+## Un companero a menos de MAKE_WAY_DIST del portador se aparta de su trayectoria (de lado, hacia donde ya esta) antes
+## de seguir a su puesto: el portador corre mas y si no se le echaba encima (medido en el modo entrenamiento).
+const MAKE_WAY_DIST := 3.0
+
+func _make_way(f: Footballer, carrier: Footballer) -> void:
+	if carrier == null or carrier == f or carrier.team != f.team:
+		return
+	var rel: Vector3 = _flat(f.global_position - carrier.global_position)
+	if rel.length() > MAKE_WAY_DIST:
+		return
+	var v: Vector3 = _flat(carrier.velocity)
+	var dir: Vector3 = v.normalized() if v.length() > 0.8 else _attack_dir(f)
+	var side := Vector3(-dir.z, 0.0, dir.x)
+	var lat: float = rel.dot(side)
+	var away: Vector3 = side * (signf(lat) if absf(lat) > 0.1 else 1.0)
+	# Si delante del portador, ademas no frena su carrera: se aparta en diagonal hacia adelante.
+	if rel.dot(dir) > 0.0:
+		away = (away + dir * 0.5).normalized()
+	_dir = away
+	_mag = 1.0
+	_sprint = true
 
 ## Detras de la linea de fondo y a la altura del arco (por perseguir una pelota que salio), el camino recto de vuelta
 ## choca con la red: primero se rodea el poste por el lado mas cercano (hallado en un partido: un jugador quedo

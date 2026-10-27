@@ -46,3 +46,37 @@ func test_training_has_only_my_team_and_the_rival_keeper() -> void:
 	check(worst < 12.0, "la pelota no se traba (%.1f s)" % worst)
 	for k in set_piece_teams.keys():
 		check(String(k).ends_with("/0") or String(k).begins_with("goal_kick"), "saque %s: lo hace tu equipo o el arquero rival" % k)
+
+## Mientras la persona conduce, ningun companero se le mete encima (visto en el video del usuario: un companero que
+## iba a por un pase anterior acababa pegado al portador).
+func test_teammates_do_not_crowd_the_dribbler() -> void:
+	PackLibrary.reload()
+	MatchScene.training_mode = true
+	var m: MatchScene = load("res://scenes/main/match.tscn").instantiate()
+	m.auto_switch = false
+	spawn(m)
+	await physics_frames(3)
+	MatchScene.training_mode = false
+	var src := ScriptedInput.new()
+	var p: Footballer = m.controlled
+	p.input_source = src
+	await wait_seconds(0.5)
+	var close: int = 0
+	var samples: int = 0
+	var min_d: float = INF
+	# Conduce en zigzag por el campo propio y rival durante 10 s.
+	for i in 600:
+		src.move = Vector2(0.8, 0.6 if (i / 90) % 2 == 0 else -0.6)
+		await tree.physics_frame
+		if m.manager.state != MatchManager.State.PLAYING or i < 60:
+			continue
+		samples += 1
+		for f in m.home:
+			if f == p:
+				continue
+			var d: float = KickModel.flat(f.global_position - p.global_position).length()
+			min_d = minf(min_d, d)
+			if d < 2.0:
+				close += 1
+	note("conduciendo 10 s: companero mas cercano %.2f m; muestras con un companero a < 2 m: %d de %d" % [min_d, close, samples])
+	check(samples > 0 and close <= samples / 20, "los companeros no se pegan al portador (%d de %d muestras a < 2 m)" % [close, samples])

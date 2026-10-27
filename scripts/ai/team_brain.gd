@@ -170,6 +170,7 @@ func _attack(ctx: MatchContext, carrier: Footballer, mates: Array[Footballer]) -
 		p = _open_lane(ctx, cp, p, opps, hw)
 		slots[k] = p
 	_spread(slots, keys, cp)
+	_clear_carrier_corridor(ctx, slots, keys, carrier, hw)
 	# Reparto: los jugadores sin pelota a los puestos (coste = distancia, con preferencia por su rol de formacion).
 	var others: Array[Footballer] = []
 	for m in mates:
@@ -213,6 +214,34 @@ static func _lane_clear(a: Vector3, b: Vector3, opps: Array[Footballer], width: 
 		if u > 0.08 and u < 0.95 and (a + ab * u).distance_to(p) < width:
 			return false
 	return true
+
+## Pasillo del portador: ningun puesto queda delante de el en su carril (a menos de CORRIDOR_HALF_WIDTH de lado y
+## CORRIDOR_LENGTH por delante, segun hacia donde corre). Si no, el companero que va a ese puesto (mas lento que el
+## portador) acababa con el portador encima (medido: 24 % del tiempo a < 2 m conduciendo; visto en el video).
+const CORRIDOR_HALF_WIDTH := 2.5
+const CORRIDOR_LENGTH := 9.0
+
+func _clear_carrier_corridor(ctx: MatchContext, slots: Dictionary, keys: Array, carrier: Footballer, hw: float) -> void:
+	var cp: Vector3 = _flat(carrier.global_position)
+	var v: Vector3 = _flat(carrier.velocity)
+	# Hacia donde corre y hacia el arco rival: los dos pasillos quedan libres (conduciendo en zigzag el rumbo cambia).
+	for dir in [v.normalized() if v.length() > 1.0 else _atk(), _atk()]:
+		_clear_corridor(ctx, slots, keys, cp, dir, hw)
+
+func _clear_corridor(ctx: MatchContext, slots: Dictionary, keys: Array, cp: Vector3, dir: Vector3, hw: float) -> void:
+	var side_axis := Vector3(-dir.z, 0.0, dir.x)
+	for k in keys:
+		var p: Vector3 = slots[k]
+		var rel: Vector3 = p - cp
+		var ahead: float = rel.dot(dir)
+		var lat: float = rel.dot(side_axis)
+		if ahead > -1.0 and ahead < CORRIDOR_LENGTH and absf(lat) < CORRIDOR_HALF_WIDTH:
+			# Al lado con mas sitio (lejos de la banda) y a la altura que tenia.
+			var sgn: float = signf(lat) if absf(lat) > 0.2 else (-signf(cp.z) if absf(cp.z) > 0.5 else 1.0)
+			var q: Vector3 = cp + dir * ahead + side_axis * sgn * (CORRIDOR_HALF_WIDTH + 1.0)
+			if absf(q.z) > hw - 1.2:
+				q = cp + dir * ahead - side_axis * sgn * (CORRIDOR_HALF_WIDTH + 1.0)
+			slots[k] = ctx.pitch.clamp_to_pitch(q, 1.2)
 
 ## Separa los puestos entre si (y del portador) al menos MIN_SPACING.
 func _spread(slots: Dictionary, keys: Array, carrier_pos: Vector3) -> void:
@@ -370,6 +399,11 @@ func _loose(ctx: MatchContext, mates: Array[Footballer]) -> void:
 	var by_time: Array[Footballer] = mates.duplicate()
 	by_time.sort_custom(func(a: Footballer, b: Footballer) -> bool: return _time_to(a, bp) < _time_to(b, bp))
 	chaser = by_time[0]
+	# Si la toco por ultimo un companero que sigue cerca (toque largo, rebote propio), es el quien va: otro companero
+	# no se le mete encima.
+	var lt: Footballer = ball.last_toucher as Footballer
+	if lt != null and mates.has(lt) and _flat(lt.global_position).distance_to(_flat(ball.global_position)) < 3.0:
+		chaser = lt
 	if not chaser.is_human_controlled:
 		orders[chaser] = {"role": &"chase", "target": bp, "press": true, "sprint": _flat(chaser.global_position).distance_to(bp) > 3.0}
 	# Los demas: si la ultima fase fue nuestra, mantienen sus puestos de ataque; si no, se ordenan en defensa respecto a

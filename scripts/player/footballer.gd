@@ -189,6 +189,10 @@ func _physics_process(delta: float) -> void:
 	give_and_go_time = maxf(give_and_go_time - delta, 0.0)
 	if incoming_pass_time > 0.0 and ctx.ball != null and ctx.ball.last_toucher != null and ctx.ball.last_toucher.get("team") != team:
 		incoming_pass_time = 0.0   # lo corto un rival: ya no viene
+	# La pelota ya la tiene otro (por ejemplo un companero que se adelanto): el pase ya no es para mi. Sin esto el
+	# receptor seguia corriendo al punto del pase y se metia encima del companero que conducia (video del usuario).
+	if incoming_pass_time > 0.0 and ctx.possessor != null and ctx.possessor != self:
+		incoming_pass_time = 0.0
 	var frame: InputFrame = input_source.poll(self) if (input_source != null and ctx.input_enabled) else InputFrame.new()
 	last_frame = frame
 	if set_piece != null:
@@ -267,6 +271,11 @@ func _physics_process(delta: float) -> void:
 	# Pelota propia atras o al costado tras un giro: primero se va a por ella (BallHandler.carry_steer). Los toques
 	# siguen usando el rumbo pedido (intent_dir): al llegar a la pelota, el toque la lleva hacia alli.
 	var intent_dir: Vector3 = desired_dir
+	if not is_pressing and stick_mag < 0.18 and desired_dir.length_squared() < 0.01:
+		var settle: Array = ball_handler.settle_steer()
+		if not settle.is_empty():
+			desired_dir = settle[0]
+			desired_mag = settle[1]
 	if not is_pressing:
 		var steer: Vector3 = ball_handler.carry_steer(desired_dir)
 		if steer.length_squared() > 0.01:
@@ -283,6 +292,9 @@ func _physics_process(delta: float) -> void:
 		desired_dir = ball_handler.kick_desired_dir
 		desired_mag = ball_handler.kick_desired_mag
 		want_sprint = false
+	else:
+		# Girar CON la pelota: el cuerpo no puede dejarla a la espalda antes de tocarla hacia el rumbo nuevo.
+		locomotion.turn_scale = ball_handler.carry_turn_scale(desired_dir)
 
 	# Marcaje en jockey: cerca del portador rival mira hacia el y se mueve en cualquier direccion.
 	# Con la pelota, el mismo mecanismo sirve para el control lateral y para proteger el balon de espaldas al rival.
