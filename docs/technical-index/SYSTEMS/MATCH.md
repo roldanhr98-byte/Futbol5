@@ -60,7 +60,7 @@
 | `home_field_players` | `4` | int | `scripts/gameplay/match_scene.gd:11` | `scripts/gameplay/match_scene.gd:133` | Cantidad de futbolistas de campo por equipo en esta etapa (1 = etapa inicial). |
 | `away_field_players` | `4` | int | `scripts/gameplay/match_scene.gd:12` | `scripts/gameplay/match_scene.gd:61`, `scripts/gameplay/match_scene.gd:140` |  |
 | `auto_switch` | `true` | bool | `scripts/gameplay/match_scene.gd:14` | `scripts/gameplay/match_scene.gd:568` | Cambia solo al jugador del humano mas cercano a la pelota cuando el actual queda lejos. |
-| `ai_skill` | `0.6` | float | `scripts/gameplay/match_scene.gd:16` | `scripts/gameplay/match_scene.gd:135`, `scripts/gameplay/match_scene.gd:142`, `scripts/gameplay/match_scene.gd:594`, `scripts/gameplay/match_scene.gd:616` (+1) | Calidad de decision de la IA (0..1). |
+| `ai_skill` | `0.6` | float | `scripts/gameplay/match_scene.gd:16` | `scripts/gameplay/match_scene.gd:135`, `scripts/gameplay/match_scene.gd:142`, `scripts/gameplay/match_scene.gd:601`, `scripts/gameplay/match_scene.gd:623` (+1) | Calidad de decision de la IA (0..1). |
 | `intro_seconds` | `4.5` | float | `scripts/gameplay/match_scene.gd:18` | `scripts/gameplay/match_scene.gd:63`, `scripts/gameplay/match_scene.gd:94` | Presentacion antes del primer saque (s): calentamiento de los jugadores y arbitro contando. 0 = sin presentacion. |
 | `with_referee` | `true` | bool | `scripts/gameplay/match_scene.gd:19` | `scripts/gameplay/match_scene.gd:84` |  |
 | `out_of_bounds` | `true` | bool | `scripts/gameplay/match_scene.gd:22` | `scripts/gameplay/match_scene.gd:69`, `scripts/gameplay/match_scene.gd:89` | Reglas de futbol con bandas: la pelota sale y se repone (saque de banda, corner, saque de arco). Con false, cancha cerrada con paredes (la pelota rebota y nunca sale). |
@@ -82,11 +82,11 @@
 | `next_marker` | `null` | PlayerMarker | `scripts/gameplay/match_scene.gd:43` | `scripts/gameplay/match_scene.gd:113`, `scripts/gameplay/match_scene.gd:114`, `scripts/gameplay/match_scene.gd:537` |  |
 | `possession_ring` | `null` | GroundRing | `scripts/gameplay/match_scene.gd:45` | `scripts/gameplay/match_scene.gd:115`, `scripts/gameplay/match_scene.gd:116`, `scripts/gameplay/match_scene.gd:516`, `scripts/gameplay/match_scene.gd:520` (+1) | Aro de posesion (bajo el unico jugador con la pelota) y aro del companero que recibiria el pase ahora. |
 | `pass_ring` | `null` | GroundRing | `scripts/gameplay/match_scene.gd:46` | `scripts/gameplay/match_scene.gd:117`, `scripts/gameplay/match_scene.gd:118`, `scripts/gameplay/match_scene.gd:532` |  |
-| `controlled_keeper` | `null` | Goalkeeper | `scripts/gameplay/match_scene.gd:50` | `scripts/gameplay/match_scene.gd:312`, `scripts/gameplay/match_scene.gd:377`, `scripts/gameplay/match_scene.gd:387`, `scripts/gameplay/match_scene.gd:401` (+12) | Arquero propio bajo control de la persona (null = lo lleva la IA). Mientras lo maneja, el jugador de campo `controlled` queda en manos de la IA pero se recuerda para devolverle el control. |
+| `controlled_keeper` | `null` | Goalkeeper | `scripts/gameplay/match_scene.gd:50` | `scripts/gameplay/match_scene.gd:312`, `scripts/gameplay/match_scene.gd:377`, `scripts/gameplay/match_scene.gd:387`, `scripts/gameplay/match_scene.gd:401` (+13) | Arquero propio bajo control de la persona (null = lo lleva la IA). Mientras lo maneja, el jugador de campo `controlled` queda en manos de la IA pero se recuerda para devolverle el control. |
 | `with_keepers` | `true` | bool | `scripts/gameplay/match_scene.gd:52` | `scripts/gameplay/match_scene.gd:150` | Con false no se crean arqueros (algunas pruebas y la practica los omiten). |
 | `_last_kick_actor` | `-1` | int | `scripts/gameplay/match_scene.gd:476` | `scripts/gameplay/match_scene.gd:399`, `scripts/gameplay/match_scene.gd:489` |  |
 | `_last_kick_frame` | `-1000` | int | `scripts/gameplay/match_scene.gd:477` | `scripts/gameplay/match_scene.gd:400`, `scripts/gameplay/match_scene.gd:489` |  |
-| `_switch_cooldown` | `0.0` | float | `scripts/gameplay/match_scene.gd:500` | `scripts/gameplay/match_scene.gd:418`, `scripts/gameplay/match_scene.gd:542`, `scripts/gameplay/match_scene.gd:568`, `scripts/gameplay/match_scene.gd:599` (+2) |  |
+| `_switch_cooldown` | `0.0` | float | `scripts/gameplay/match_scene.gd:500` | `scripts/gameplay/match_scene.gd:418`, `scripts/gameplay/match_scene.gd:542`, `scripts/gameplay/match_scene.gd:568`, `scripts/gameplay/match_scene.gd:606` (+2) |  |
 <!-- /AUTO -->
 
 `MatchScene.duration_seconds` (300) se copia a `MatchManager.duration_seconds` en `_ready`; **el valor efectivo es el de la escena**. `0` = sin límite (lo usan las pruebas).
@@ -169,14 +169,15 @@
 | `MatchScene.touch_context()` | 504 | Situacion para la botonera tactil: ataque (la pelota es del equipo de la persona o le llega un pase propio), defensa (la tiene el rival) o s |
 | `MatchScene._update_rings()` | 515 | Aro de posesion bajo el poseedor (color de su equipo; sin aro = pelota suelta) y, con la pelota en los pies de la persona, aro bajo el compa |
 | `MatchScene._physics_process(delta: float)` | 534 |  |
-| `MatchScene._ball_in_own_third()` | 572 | true si la pelota esta en el tercio defensivo propio (zona donde tiene sentido manejar al arquero). |
-| `MatchScene._keeper_is_best_candidate()` | 577 | true si al pulsar CAMBIO conviene pasar al arquero: la jugada esta en el area propia y el arquero es quien mejor puede intervenir (mas cerca |
-| `MatchScene.take_keeper_control()` | 589 | Pasa el control de la persona al arquero propio: el jugador de campo que llevaba vuelve a la IA. |
-| `MatchScene.release_keeper_control()` | 605 | Devuelve el control a un jugador de campo (el mas cercano a la pelota) y el arquero vuelve a la IA. |
-| `MatchScene.switch_candidate()` | 627 | Companero que recibiria el control al pulsar CAMBIO: el mas cercano a la pelota, sin contar al actual. Lo usan tanto el cambio como el indic |
-| `MatchScene.switch_to_nearest_to_ball()` | 640 | Pasa el control humano al companero mas cercano a la pelota (distinto del actual). |
-| `MatchScene._auto_switch()` | 645 |  |
-| `MatchScene._give_control(target: Footballer)` | 663 |  |
+| `MatchScene._person_plays()` | 573 | true si una persona maneja al equipo 0 (jugador de campo o arquero). Las pruebas que dejan al equipo 0 en manos de la IA le ponen un AIInput |
+| `MatchScene._ball_in_own_third()` | 579 | true si la pelota esta en el tercio defensivo propio (zona donde tiene sentido manejar al arquero). |
+| `MatchScene._keeper_is_best_candidate()` | 584 | true si al pulsar CAMBIO conviene pasar al arquero: la jugada esta en el area propia y el arquero es quien mejor puede intervenir (mas cerca |
+| `MatchScene.take_keeper_control()` | 596 | Pasa el control de la persona al arquero propio: el jugador de campo que llevaba vuelve a la IA. |
+| `MatchScene.release_keeper_control()` | 612 | Devuelve el control a un jugador de campo (el mas cercano a la pelota) y el arquero vuelve a la IA. |
+| `MatchScene.switch_candidate()` | 634 | Companero que recibiria el control al pulsar CAMBIO: el mas cercano a la pelota, sin contar al actual. Lo usan tanto el cambio como el indic |
+| `MatchScene.switch_to_nearest_to_ball()` | 647 | Pasa el control humano al companero mas cercano a la pelota (distinto del actual). |
+| `MatchScene._auto_switch()` | 652 |  |
+| `MatchScene._give_control(target: Footballer)` | 670 |  |
 <!-- /AUTO -->
 
 <!-- AUTO:funcs:scripts/gameplay/match_context.gd -->
@@ -254,8 +255,11 @@
     el acto (`_teammate_with_ball`, también con `auto_switch` apagado; no al pasador en los 45 pasos tras su propio
     golpeo ni con la pelota pasando rápido, `HANDOVER_MAX_REL_SPEED`).
   - La IA del equipo de la persona nunca pasa ni patea: `MatchContext.human_team` (0 si la persona maneja un
-    jugador o al arquero, −1 si no) y `AIInput._decide` no decide con la pelota para ese equipo; `_give_control`
-    cancela cualquier carga que la IA hubiera empezado en el receptor.
+    jugador o al arquero, −1 si no; `MatchScene._person_plays` mira la entrada real, no `is_human_controlled`, porque
+    las pruebas que dejan el equipo 0 a la IA ponen un `AIInput` al controlado y los saques lo pasan de jugador en
+    jugador marcándolo como controlado: con la primera versión la pelota quedó quieta 311 s en el partido de 7 min de
+    la CI) y `AIInput._decide` no decide con la pelota para ese equipo; `_give_control` cancela cualquier carga que la
+    IA hubiera empezado en el receptor.
   - Pruebas: `tests/test_pass_receiver_control.gd` (las tres primeras fallan con el código anterior).
 
 ## Limitaciones conocidas

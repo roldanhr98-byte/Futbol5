@@ -122,7 +122,20 @@ func test_ai_teams_still_play_without_a_human() -> void:
 	m.ctx.event_emitted.connect(func(e: GameEvent) -> void:
 		if (e.type == GameEvent.Type.PASS or e.type == GameEvent.Type.SHOT) and e.team == 0:
 			kicks[0] += 1)
-	await wait_seconds(25.0)
-	note("equipo 0 sin persona (IA contra el arquero): %d pases/tiros en 25 s, human_team=%d" % [kicks[0], m.ctx.human_team])
+	# Un saque o un cambio pasa ese control de IA a otro jugador (lo marca como controlado): sigue sin haber persona.
+	m._give_control(m.home[1])
+	await physics_frames(2)
+	check(m.ctx.human_team == -1, "un control de IA pasado a otro jugador no cuenta como persona")
+	var stall := 0.0
+	var carriers := {}
+	for k in 25 * 60:
+		await physics_frames(1)
+		stall = maxf(stall, m.ctx.ball_stall_seconds)
+		var pos: Footballer = m.ctx.possessor
+		if pos != null and pos.team == 0:
+			carriers[pos.actor_id] = true
+	note("equipo 0 sin persona (IA contra el arquero), 25 s: %d pases/tiros, %d jugadores distintos con la pelota, pelota quieta max %.1f s, human_team=%d" % [kicks[0], carriers.size(), stall, m.ctx.human_team])
 	check(m.ctx.human_team == -1, "sin persona no hay equipo humano")
-	check(kicks[0] > 0, "la IA del equipo 0 sigue pasando y tirando cuando nadie lo maneja (%d)" % kicks[0])
+	# Con la persona ausente la IA del equipo 0 juega la pelota (antes del arreglo quedaba quieta: 311 s en un partido).
+	check(stall < 3.0, "la pelota no se queda quieta en los pies de la IA (%.1f s)" % stall)
+	check(carriers.size() >= 2 or kicks[0] > 0, "la IA del equipo 0 sigue jugando (%d con la pelota, %d pases/tiros)" % [carriers.size(), kicks[0]])

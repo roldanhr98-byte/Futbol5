@@ -11,6 +11,20 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-10-27 — Corrección: el equipo 0 manejado por la IA no se queda quieto con la pelota
+
+- La CI (run 16) falló en `test_full_match::test_seven_minute_match`: pelota quieta 311 s. Con el equipo 0 en manos de
+  la IA, un saque pasaba el control (un `AIInput`) al ejecutor marcándolo como controlado; `human_team` lo tomaba por
+  la persona y la IA no jugaba la pelota. Ahora `MatchScene._person_plays` exige una entrada que no sea `AIInput`.
+- Reproducido en `test_pass_receiver_control::test_ai_teams_still_play_without_a_human` (con la regla anterior:
+  pelota quieta 26.6 s, nadie del equipo 0 con la pelota; con la corrección: 1.8 s, 3 jugadores con la pelota).
+- Verificación (ejecutada): `test_pass_receiver_control` 4/4 (16 comprobaciones); suite headless 169 pruebas / 871
+  comprobaciones / 1 fallo: `test_ai_match` «hay tiros (0)» en el partido IA contra IA de 120 s, que no es
+  determinista. Medido 5 veces con cada versión: tiros 1, 5, 2, 5, 6 con el código anterior y 2, 1, 4, 3, 8 con el
+  actual (misma distribución); en una de las 5 corridas actuales falló «nadie se sale de la cancha» por 1 muestra.
+  Pendiente: hacer determinista ese partido (las semillas de la IA no bastan). Partido de 7 min: pelota quieta máx.
+  0.7 s.
+
 ## 2026-10-27 — La persona controla todo: el receptor de cada pase pasa a ser suyo
 
 Pedido del usuario: «al realizar un pase el jugador receptor automáticamente pasa a ser controlado por mí; no quiero

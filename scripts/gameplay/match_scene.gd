@@ -540,7 +540,7 @@ func _physics_process(delta: float) -> void:
 		hud.touch.show_switch = home.size() > 1
 		hud.touch.context = touch_context()
 	_switch_cooldown = maxf(_switch_cooldown - delta, 0.0)
-	ctx.human_team = 0 if controlled != null and (controlled.is_human_controlled or controlled_keeper != null) else -1
+	ctx.human_team = 0 if _person_plays() else -1
 	if controlled == null or not ctx.input_enabled:
 		return
 	if ctx.human_team == 0:
@@ -567,6 +567,13 @@ func _physics_process(delta: float) -> void:
 			switch_to_nearest_to_ball()
 	elif auto_switch and _switch_cooldown <= 0.0:
 		_auto_switch()
+
+## true si una persona maneja al equipo 0 (jugador de campo o arquero). Las pruebas que dejan al equipo 0 en manos de la
+## IA le ponen un AIInput al controlado; ese control (que el cambio y los saques pasan de jugador en jugador) no cuenta.
+func _person_plays() -> bool:
+	if controlled_keeper != null:
+		return controlled_keeper.input_source != null and not (controlled_keeper.input_source is AIInput)
+	return controlled != null and controlled.input_source != null and not (controlled.input_source is AIInput)
 
 ## true si la pelota esta en el tercio defensivo propio (zona donde tiene sentido manejar al arquero).
 func _ball_in_own_third() -> bool:
