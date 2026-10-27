@@ -60,14 +60,38 @@ func test_buttons_fire_real_actions_and_support_multitouch() -> void:
 	_touch(3, Vector2(150, 600), false)
 	await physics_frames(2)
 	check(not Input.is_action_pressed("sprint"), "soltar SPRINT libera la accion")
-	for id in [&"pass", &"press", &"lob"]:
-		var pos: Vector2 = hud.touch.get_button_center(id)
+	# Cada boton existe solo en su situacion (ataque / defensa / pelota suelta): se prueba en ella.
+	for cfg in [[&"pass", &"attack", "pass"], [&"lob", &"attack", "lob"], [&"press", &"defense", "press"], [&"tackle", &"defense", "tackle"], [&"press_loose", &"loose", "press"]]:
+		hud.touch.context = cfg[1]
+		var pos: Vector2 = hud.touch.get_button_center(cfg[0])
 		_touch(7, pos, true)
 		await physics_frames(1)
-		check(Input.is_action_pressed(String(id)), "el boton %s activa su accion" % id)
+		check(Input.is_action_pressed(cfg[2]), "el boton %s activa su accion en %s" % [cfg[0], cfg[1]])
 		_touch(7, pos, false)
 		await physics_frames(1)
-		check(not Input.is_action_pressed(String(id)), "soltar %s libera la accion" % id)
+		check(not Input.is_action_pressed(cfg[2]), "soltar %s libera la accion" % cfg[0])
+	hud.touch.release_all()
+
+func test_buttons_follow_the_play_context() -> void:
+	var hud: Hud = await _make_hud()
+	# En defensa el hueco de TIRO es ENTRADA y el de PASE es PRESION: tocar alli NO pide un tiro.
+	hud.touch.context = &"defense"
+	var shoot_pos: Vector2 = hud.touch.get_button_center(&"shoot")
+	_touch(8, shoot_pos, true)
+	await physics_frames(1)
+	check(not Input.is_action_pressed("shoot") and Input.is_action_pressed("tackle"), "en defensa el hueco de TIRO es ENTRADA")
+	_touch(8, shoot_pos, false)
+	await physics_frames(1)
+	# Un boton mantenido sigue vivo hasta soltarlo aunque cambie la situacion.
+	hud.touch.context = &"attack"
+	_touch(9, shoot_pos, true)
+	await physics_frames(1)
+	hud.touch.context = &"defense"
+	await physics_frames(1)
+	check(Input.is_action_pressed("shoot"), "TIRO mantenido sigue activo al pasar a defensa")
+	_touch(9, shoot_pos, false)
+	await physics_frames(1)
+	check(not Input.is_action_pressed("shoot"), "y se libera al soltar")
 	hud.touch.release_all()
 
 func test_pause_button_emits_signal_and_switch_button_only_when_needed() -> void:

@@ -26,8 +26,14 @@ const KICK_PLANT_TIME := 0.10
 const KICK_PLANT_SPEED := 0.4
 ## Altura maxima (m) de la punta del pie de apoyo para considerarlo plantado.
 const PLANT_FOOT_MAX_Y := 0.06
-## Velocidad maxima del ajuste de paso (m/s) durante el balanceo.
+## m/s que la velocidad de apoyo de un clip puede superar a la del cuerpo al empezar la patada.
+const PLANT_SPEED_GAIN_MAX := 1.5
+## Coste (m de residuo equivalentes por m/s) de elegir un clip cuya velocidad de apoyo no encaja con la del jugador.
+const PLANT_MISMATCH_COST := 0.06
+## Velocidad maxima del ajuste de paso (m/s) durante el balanceo, parado; a la carrera la ultima zancada puede
+## alargarse mas (KICK_NUDGE_PER_MS por cada m/s del cuerpo).
 const KICK_NUDGE_MAX := 3.2
+const KICK_NUDGE_PER_MS := 0.4
 ## Espera maxima de una orden de golpeo con la pelota viniendo hacia el jugador (pase o tiro de primera).
 const PENDING_FIRST_TIME_MAX := 1.4
 ## Toque de arrancada: metros extra de colocacion por cada m/s que falta para la velocidad punta (y su tope).
@@ -465,18 +471,30 @@ static func clip_plant_velocity(clip: StringName, contact_time: float, foot: int
 	return Vector2(-d.x, -d.z) / secs
 
 ## Velocidad del cuerpo (mundo) con el pie de apoyo plantado para un contacto, con orientacion yaw y velocidad previa v.
+## La velocidad del clip se acota a la que trae el cuerpo + PLANT_SPEED_GAIN_MAX: un jugador parado no sale disparado
+## porque el clip elegido represente un golpeo al trote (el pie de apoyo desliza algo en ese caso; plan_clip_kick
+## prefiere los clips cuya velocidad de apoyo encaja con la del jugador, ver PLANT_MISMATCH_COST).
 static func plant_velocity(contact: Dictionary, yaw: float, v: Vector3) -> Vector3:
 	if not contact.has("plant"):
 		return Vector3(v.x, 0.0, v.z) * KICK_PLANT_SPEED
 	var pl: Vector2 = contact["plant"]
 	var f: Vector3 = Locomotion.dir_from_yaw(yaw)
-	return f * pl.x + Vector3(-f.z, 0.0, f.x) * pl.y
+	var pv: Vector3 = f * pl.x + Vector3(-f.z, 0.0, f.x) * pl.y
+	return pv.limit_length(Vector2(v.x, v.z).length() + PLANT_SPEED_GAIN_MAX)
 
 ## Recorrido del cuerpo en las proximas latency s de una patada que empieza (o sigue) con velocidad v: a velocidad
 ## constante hasta plantar el pie y a la velocidad de apoyo (plant_v) en los ultimos KICK_PLANT_TIME.
 static func kick_body_travel(v: Vector3, latency: float, plant_v: Vector3) -> Vector3:
 	var plant: float = minf(latency, KICK_PLANT_TIME)
 	return Vector3(v.x, 0.0, v.z) * (latency - plant) + plant_v * plant
+
+## Ajuste de paso maximo (m/s) a la velocidad de cuerpo v.
+static func kick_nudge_cap(v: Vector3) -> float:
+	return KICK_NUDGE_MAX + KICK_NUDGE_PER_MS * Vector2(v.x, v.z).length()
+
+## Metros de ajuste de paso que caben antes de plantar el pie en una patada de latencia `latency`.
+static func kick_adjust_capacity(v: Vector3, latency: float) -> float:
+	return kick_nudge_cap(v) * maxf(latency - KICK_PLANT_TIME, 0.0)
 
 ## true durante una patada con clip (balanceo hasta el contacto).
 func is_clip_kick_in_progress() -> bool:
@@ -500,7 +518,7 @@ func _steer_clip_kick() -> void:
 		return
 	var delta: Vector3 = predicted_foot_to_ball(_kick_clip["contact"], _kick_timer, _kick_v0)
 	var flat_d := Vector3(delta.x, 0.0, delta.z)
-	owner.nudge_velocity = (flat_d / maxf(_kick_timer - KICK_PLANT_TIME, 0.04)).limit_length(KICK_NUDGE_MAX)
+	owner.nudge_velocity = (flat_d / maxf(_kick_timer - KICK_PLANT_TIME, 0.04)).limit_length(kick_nudge_cap(_kick_v0))
 
 func predicted_foot_to_ball(contact: Dictionary, latency: float, body_v: Variant = null) -> Vector3:
 	var b: Ball = ball()
@@ -604,9 +622,11 @@ func plan_clip_kick(action: StringName, charge: float, lob: bool) -> Dictionary:
 			c["plant"] = clip_plant_velocity(cand["clip"], float(c["time"]), int(c["foot"]), float(timing["speed"]))
 			var delta: Vector3 = predicted_foot_to_ball(c, timing["latency"])
 			var flat_d := Vector3(delta.x, 0.0, delta.z)
-			var step: Vector3 = flat_d.limit_length(adjust_max)
+			# El ajuste solo cabe antes de plantar el pie: no se planifica uno que el cuerpo no puede dar.
+			var step: Vector3 = flat_d.limit_length(minf(adjust_max, kick_adjust_capacity(owner.locomotion.velocity, float(timing["latency"]))))
 			var residual: float = Vector3(flat_d.x - step.x, delta.y, flat_d.z - step.z).length()
-			var score: float = residual + 0.15 * step.length()
+			var mismatch: float = absf((c["plant"] as Vector2).length() - owner.locomotion.speed)
+			var score: float = residual + 0.15 * step.length() + PLANT_MISMATCH_COST * mismatch
 			if score < best_score:
 				best_score = score
 				best = timing.merged({"clip": cand["clip"], "contact": c, "distance": delta.length(), "residual": residual, "adjust": step})
@@ -629,7 +649,7 @@ func _start_clip_kick(action: StringName, plan: Dictionary, stick_world: Vector3
 	lockout = _kick_timer + 0.4
 	touch_timer = lockout
 	owner.locomotion.turn_scale = t.kick_turn_scale
-	owner.nudge_velocity = ((plan["adjust"] as Vector3) / maxf(_kick_timer - KICK_PLANT_TIME, 0.05)).limit_length(KICK_NUDGE_MAX)
+	owner.nudge_velocity = ((plan["adjust"] as Vector3) / maxf(_kick_timer - KICK_PLANT_TIME, 0.05)).limit_length(kick_nudge_cap(_kick_v0))
 	# Durante el balanceo el cuerpo (que se acerca a la pelota por el ajuste de zancada) no debe empujarla: el golpe lo da
 	# el pie en el instante de contacto, con impulso.
 	owner.set_ball_ghost(true)
@@ -654,6 +674,9 @@ func _finish_clip_kick() -> void:
 	owner.locomotion.turn_scale = 1.0
 	owner.nudge_velocity = Vector3.ZERO
 	owner.set_ball_ghost(false)
+	# Tras el golpe el cuerpo sigue con la velocidad que traia (la del pie plantado era solo del balanceo).
+	owner.locomotion.velocity = _kick_v0
+	owner.locomotion.speed = _kick_v0.length()
 	var b: Ball = ball()
 	var d: float = -1.0
 	if b != null and not b.is_held():
@@ -1091,9 +1114,11 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 		gap = clampf(foot_gap + maxf(long_touch, 0.0) * 0.5, t.carry_gap_stand, reach * 1.2)
 	# Arrancada: con SPRINT pedido y lejos de la velocidad punta, el toque se alarga (se empuja la pelota al espacio para
 	# acelerar detras de ella, como un toque de arrancada); al llegar a la punta vuelve el control cercano.
-	if mode == &"carry" and loco.sprinting:
+	# Solo en linea recta (en un giro la velocidad cae y alargar el toque perdia la pelota: 6 de 20 giros a sprint) y menos
+	# con mejor control.
+	if mode == &"carry" and loco.sprinting and turn_angle < 15.0 and absf(loco.turn_rate) < 0.6:
 		var missing: float = loco.max_sprint_speed() - loco.speed
-		gap += clampf(missing * ACCEL_TOUCH_PER_MS, 0.0, ACCEL_TOUCH_MAX)
+		gap += clampf(missing * ACCEL_TOUCH_PER_MS, 0.0, ACCEL_TOUCH_MAX) * lerpf(1.0, 0.5, skill)
 	gap = minf(gap, reach * 1.35 - 0.05)
 	_planned_gap = gap
 	_foot_wait = 0.0

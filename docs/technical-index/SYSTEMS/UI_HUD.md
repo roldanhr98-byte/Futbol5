@@ -110,8 +110,9 @@ No hay recursos de parámetros. Constantes y valores fijos reales:
 |---|---|
 | `test_floating_joystick_drives_move_actions_with_analog_strength` | 24 |
 | `test_buttons_fire_real_actions_and_support_multitouch` | 43 |
-| `test_pause_button_emits_signal_and_switch_button_only_when_needed` | 73 |
-| `test_touch_joystick_moves_a_real_footballer_end_to_end` | 95 |
+| `test_buttons_follow_the_play_context` | 75 |
+| `test_pause_button_emits_signal_and_switch_button_only_when_needed` | 97 |
+| `test_touch_joystick_moves_a_real_footballer_end_to_end` | 119 |
 <!-- /AUTO -->
 
 - **Qué podría romperse:** el menú no abre al pausar (error de clave en `_pause_buttons`), botones fuera de pantalla en relaciones de aspecto distintas de 16:9 (`window/stretch/aspect="expand"`).

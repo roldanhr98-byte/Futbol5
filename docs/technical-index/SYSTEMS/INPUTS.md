@@ -141,8 +141,9 @@ Botones (en `TouchControls._build_buttons`; posición = desplazamiento desde la 
 |---|---|
 | `test_floating_joystick_drives_move_actions_with_analog_strength` | 24 |
 | `test_buttons_fire_real_actions_and_support_multitouch` | 43 |
-| `test_pause_button_emits_signal_and_switch_button_only_when_needed` | 73 |
-| `test_touch_joystick_moves_a_real_footballer_end_to_end` | 95 |
+| `test_buttons_follow_the_play_context` | 75 |
+| `test_pause_button_emits_signal_and_switch_button_only_when_needed` | 97 |
+| `test_touch_joystick_moves_a_real_footballer_end_to_end` | 119 |
 <!-- /AUTO -->
 
 - **Qué podría romperse:** botones que no reciben el toque (por posición o por la ventana de pruebas), joystick que se queda «pegado» al pausar (`release_all` se llama al entrar en pausa), flancos duplicados.

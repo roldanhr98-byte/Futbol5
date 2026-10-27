@@ -213,6 +213,9 @@ func test_referee_follows_play_with_root_motion_twins() -> void:
 	await wait_seconds(1.5)
 	var ref: Referee = m.referee
 	var x0: float = ref.position.x
+	# Solo se mide al arbitro: los jugadores quietos (sin entrada) para que la jugada se quede donde esta la pelota
+	# (con la IA jugando, a donde vaya la pelota en 5 s depende de las decisiones del equipo).
+	m.ctx.input_enabled = false
 	m.ball.reset_at(Vector3(14.0, 0.11, -3.0))
 	await wait_seconds(5.0)
 	note("arbitro: de x=%.1f a x=%.1f, %.1f m recorridos, gemelos usados %s" % [x0, ref.position.x, ref.travelled, str(ref.twins_used.keys())])
