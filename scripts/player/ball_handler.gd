@@ -634,13 +634,17 @@ const FOOT_WAIT_MAX := 0.30
 ## true cuando el esqueleto del jugador se esta animando de verdad (en partido, no en pruebas headless).
 var feet_live: bool = false
 var _toe_ids: Array[int] = []
+var _leg_bone: int = -1
+static var _headless: bool = DisplayServer.get_name() == "headless"
+var _toe_sk_prev: Vector3 = Vector3.ZERO
 var _toe_now: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 var _toe_prev: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 var _toe_vel: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 var _foot_reach: float = 0.45
 var _reach_peak: float = 0.45
 var _foot_wait: float = 0.0
-var _still_frames: int = 0
+## Empieza como "quieto": los pies solo se consideran vivos cuando se ve moverse el esqueleto.
+var _still_frames: int = 30
 var _dt: float = 1.0 / 60.0
 ## Toques de conduccion dados con el pie animado y distancia pie-pelota del ultimo (diagnostico y pruebas).
 var foot_touches: int = 0
@@ -660,10 +664,15 @@ func _sample_feet(dt: float) -> void:
 	var sk: Skeleton3D = v.skeleton
 	if _toe_ids.is_empty():
 		_toe_ids = [sk.find_bone("mixamorig_LeftToeBase"), sk.find_bone("mixamorig_RightToeBase")]
+		_leg_bone = sk.find_bone("mixamorig_LeftUpLeg")
 		if _toe_ids[0] < 0 or _toe_ids[1] < 0:
 			_toe_ids = []
 			return
-	var moved: bool = false
+	# El esqueleto esta vivo si la punta del pie se mueve en el espacio del propio esqueleto (solo la animacion la mueve:
+	# ni la inclinacion del cuerpo ni el desplazamiento del jugador). En headless la pose global no se recalcula.
+	var toe_sk: Vector3 = sk.get_bone_global_pose(_toe_ids[0]).origin
+	var moved: bool = _toe_sk_prev != Vector3.ZERO and toe_sk.distance_to(_toe_sk_prev) > 0.001
+	_toe_sk_prev = toe_sk
 	var body_v := Vector3(owner.locomotion.velocity.x, 0.0, owner.locomotion.velocity.z)
 	var fwd: Vector3 = owner.locomotion.forward()
 	var best_fwd: float = -INF
@@ -672,13 +681,13 @@ func _sample_feet(dt: float) -> void:
 		_toe_now[i] = sk.global_transform * sk.get_bone_global_pose(_toe_ids[i]).origin
 		_toe_vel[i] = (_toe_now[i] - _toe_prev[i]) / maxf(dt, 0.001) - body_v
 		var rel: Vector3 = _toe_now[i] - owner.global_position
-		if (_toe_now[i] - _toe_prev[i] - body_v * dt).length() > 0.002:
-			moved = true
 		if _toe_now[i].y < FOOT_MAX_Y:
 			best_fwd = maxf(best_fwd, rel.dot(fwd))
 	_still_frames = 0 if moved else _still_frames + 1
 	# El esqueleto se considera vivo si las puntas se movieron respecto al cuerpo en el ultimo medio segundo.
-	feet_live = foot_sync_enabled and _still_frames < 30
+	# En headless (servidor, pruebas sin render) la pose no es fiable: se usa la cadencia de la marcha.
+	feet_live = foot_sync_enabled and _still_frames < 30 and not _headless
+
 	# Alcance de la zancada: maximo reciente de la punta del pie apoyada/baja por delante del cuerpo.
 	_reach_peak = maxf(_reach_peak - 0.5 * dt, best_fwd if best_fwd > -INF else 0.0)
 	_foot_reach = clampf(_reach_peak, 0.2, 0.9)
@@ -846,7 +855,9 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 			# Si el cuerpo alcanza a la pelota (queda pegada o por detras de la punta del pie) tampoco: el jugador la pisaria.
 			var overrun: bool = off.dot(fwd) < _foot_reach * 0.9 and (mode == &"carry" or mode == &"setup")
 			var wait_max: float = 0.08 if (mode == &"redirect" or mode == &"lateral" or overrun) else FOOT_WAIT_MAX
-			if not ((urgent or overrun or dist > _planned_gap + 0.25) and dist < reach * 1.3 and _foot_wait > wait_max):
+			# Con un golpeo pedido (modo setup) el toque de preparacion no espera a la zancada: el jugador va a la pelota.
+			var setup_reach: bool = mode == &"setup" and dist < reach * 1.5
+			if not (((urgent or overrun or dist > _planned_gap + 0.25) and dist < reach * 1.3) or setup_reach) or _foot_wait <= wait_max:
 				return
 	elif touch_timer > 0.0 and not (urgent and touch_timer < interval * 0.8):
 		return

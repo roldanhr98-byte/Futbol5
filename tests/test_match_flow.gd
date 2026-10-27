@@ -10,6 +10,7 @@ func _make_scene(duration: float = 0.0, keepers: bool = false) -> MatchScene:
 	m.intro_seconds = 0.0
 	m.with_referee = false
 	m.with_keepers = keepers   # estas pruebas son de reglas: el arquero se prueba en test_goalkeeper
+	m.goal_replays = false     # la repeticion se prueba en test_goal_replay (aqui alargaria el festejo)
 	spawn(m)
 	await physics_frames(3)
 	return m

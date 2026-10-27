@@ -53,6 +53,8 @@ func spawn(node: Node) -> Node:
 	return node
 
 func cleanup() -> void:
+	# Una repeticion o una pausa a medias no puede contagiar a la prueba siguiente.
+	tree.paused = false
 	for n in _spawned:
 		if is_instance_valid(n):
 			n.queue_free()

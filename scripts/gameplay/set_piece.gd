@@ -44,6 +44,8 @@ var clip: StringName = &""
 var foot_key: String = "toe_r"
 var contact_t: float = 0.0
 var resolved: bool = false
+## Golpeos fallidos (el pie no llego a la pelota): al segundo, el saque se hace sin carrera para no trabar el partido.
+var misses: int = 0
 var result: StringName = &""
 var _t: float = 0.0
 var _btn: StringName = &""
@@ -273,6 +275,19 @@ func execute(act: StringName, ch: float, lb: bool, dir: Vector3, cu: float = 0.0
 	if not taker.actions.start(&"set_piece", clip, KICK_SPEED, contact_t - start_t + 0.45, [], start_t):
 		_resolve_without_clip()
 
+## Fuerza el saque ya (lo pide el partido si el balon parado se alarga demasiado).
+func force() -> void:
+	if result == &"contact" or result == &"thrown":
+		return
+	if stage == &"setup":
+		ai_execute()
+		if result == &"contact" or result == &"thrown":
+			return
+	taker.actions.reset()
+	if kind == Kind.THROW_IN and not ctx.ball.is_held():
+		_hold_ball()
+	_resolve_without_clip()
+
 ## Sin libreria del pack (o sin modelo) no hay clip que mueva el cuerpo: el saque se hace en el sitio, junto a la pelota.
 func _resolve_without_clip() -> void:
 	resolved = true
@@ -338,6 +353,11 @@ func _resolve() -> void:
 	if d > CONTACT_RADIUS:
 		result = &"missed"
 		ctx.emit_event(GameEvent.make(GameEvent.Type.KICK_WHIFF, taker.actor_id, team, {"set_piece": kind_name(kind), "foot_distance": d}))
+		misses += 1
+		if misses >= 2:
+			taker.actions.reset()
+			_resolve_without_clip()
+			return
 		# El saque no se pierde: se repite desde la preparacion.
 		stage = &"setup"
 		resolved = false

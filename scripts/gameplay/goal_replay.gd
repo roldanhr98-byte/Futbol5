@@ -42,6 +42,11 @@ var _restore: Dictionary = {}
 var _cam_pos: Vector3 = Vector3.ZERO
 var _skip_armed: bool = false
 
+func _exit_tree() -> void:
+	if playing:
+		playing = false
+		get_tree().paused = false
+
 func setup(context: MatchContext, tracked: Array[Node3D], match_camera: Camera3D) -> void:
 	ctx = context
 	actors = tracked

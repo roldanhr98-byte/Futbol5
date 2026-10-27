@@ -318,8 +318,9 @@ func _arrange_box(kind: String, team: int, pos: Vector3, taker: Footballer) -> v
 	var att_yaw: float = Locomotion.yaw_from_dir(Vector3(-inward, 0.0, 0.0))
 	var def_yaw: float = Locomotion.yaw_from_dir(Vector3(inward, 0.0, 0.0))
 	if kind == "penalty":
-		var edge: float = gx + inward * (cfg.penalty_area_radius + 1.5)
-		var zs := [-3.0, -1.0, 1.0, 3.0, -5.0, 5.0, 0.0]
+		# Todos fuera del area, detras del punto y lejos de la carrera del ejecutor (si no, chocaria con ellos).
+		var edge: float = gx + inward * (cfg.penalty_mark_distance + 4.0)
+		var zs := [-3.5, 3.5, -2.4, 2.4, -5.0, 5.0, -6.0]
 		var i: int = 0
 		for f in attackers + defenders:
 			f.place_at(Vector3(edge + inward * (0.8 if f.team != team else 0.0), 0.0, zs[i % zs.size()]), att_yaw)

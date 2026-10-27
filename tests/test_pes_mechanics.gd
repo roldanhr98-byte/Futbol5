@@ -104,19 +104,30 @@ func test_human_press_contains_but_does_not_steal_by_holding_the_button() -> voi
 	note("presion humana mantenida 4 s: defensor a %.2f m de la pelota, entradas %d" % [d, tackles[0]])
 	check(d < 2.0, "la presion cierra la distancia (%.2f m)" % d)
 	check(tackles[0] == 0, "mantener la presion no roba la pelota sola (%d entradas)" % tackles[0])
-	def_src.tackle()
-	await physics_frames(3)
+	# Con el boton ENTRADA si entra (si estaba en mitad de otra accion, al terminarla).
+	for attempt in 6:
+		def_src.tackle()
+		await physics_frames(10)
+		if tackles[0] >= 1 or def.last_tackle != &"":
+			break
 	check(tackles[0] >= 1 or def.last_tackle != &"", "con el boton ENTRADA si entra (%s)" % def.last_tackle)
 
 func test_tackle_button_choices_stand_slide_whiff() -> void:
+	# Pelota disputada a 0.7 m del defensor (el atacante a 1.4 m: no llega a protegerla antes de la entrada).
 	var ctx: MatchContext = await make_match(Vector3(0.5, 0.11, 0.0))
-	var att: Footballer = add_player(ctx, 0, Vector3(0.0, 0.0, 0.0), 50)
+	var att: Footballer = add_player(ctx, 0, Vector3(-0.9, 0.0, 0.0), 50)
 	var def_src := ScriptedInput.new()
 	var def: Footballer = add_player(ctx, 1, Vector3(1.2, 0.0, 0.0), 50, def_src, true)
 	def.locomotion.yaw = Locomotion.yaw_from_dir(Vector3(-1, 0, 0))
 	await physics_frames(5)
-	def_src.tackle()
-	await physics_frames(2)
+	# Si esta en mitad de otra accion (un tropiezo por el choque inicial), la entrada llega al terminarla.
+	for attempt in 8:
+		ctx.ball.register_touch(att)   # la pelota es del atacante (si no, el defensor no tiene a quien entrarle)
+		def_src.tackle()
+		await physics_frames(2)
+		if def.last_tackle != &"":
+			break
+		await physics_frames(8)
 	check(def.last_tackle == &"stand", "pelota al alcance: entrada de pie (%s)" % def.last_tackle)
 	# Lejos y parado: entrada al aire (pierde velocidad y queda un instante sin poder repetir).
 	def.place_at(Vector3(6.0, 0.0, 0.0), Locomotion.yaw_from_dir(Vector3(-1, 0, 0)))

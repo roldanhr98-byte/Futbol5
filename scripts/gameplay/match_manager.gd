@@ -132,6 +132,13 @@ func _physics_process(delta: float) -> void:
 				_end_set_piece()
 			elif _state_timer < -SET_PIECE_MAX_SECONDS and active_set_piece != null and active_set_piece.stage == &"setup":
 				active_set_piece.ai_execute()
+			elif _state_timer < -SET_PIECE_MAX_SECONDS - 6.0:
+				# Salvaguarda: un saque que no se completa nunca (ejecutor bloqueado) se fuerza y el juego sigue.
+				stats["forced"] = int(stats.get("forced", 0)) + 1
+				if active_set_piece != null:
+					active_set_piece.force()
+				if not _set_piece_taken():
+					_end_set_piece()
 		State.PLAYING:
 			ctx.match_time += delta
 			clock_changed.emit(ctx.match_time)

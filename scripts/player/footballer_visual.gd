@@ -311,6 +311,14 @@ func play_action(clip: StringName, speed: float = 1.0) -> float:
 	_action_timer = length
 	return length
 
+## Ciclos de zancada (dos apoyos) que contiene cada clip de marcha. Casi todos son de un ciclo; el trote lento
+## (Jogging_inplace, 2.57 s) trae tres y Two_Cycle_Sprint dos (contados en las punta de pie del clip).
+const GAIT_CYCLES := {&"Jogging_inplace": 3, &"Jogging": 3, &"Two_Cycle_Sprint_inplace": 2, &"Two_Cycle_Sprint": 2}
+
+## Duracion (s) de UN ciclo de zancada del clip.
+static func cycle_seconds(clip: StringName) -> float:
+	return float(PackLibrary.meta(clip).get("duration", 1.0)) / float(GAIT_CYCLES.get(clip, 1))
+
 ## Tabla de la marcha del pack: [posicion en el BlendSpace (m/s), velocidad natural del clip (m/s), duracion del ciclo (s)].
 static var _gait_cache: Array[Vector3] = []
 
@@ -320,7 +328,7 @@ static func gait_table() -> Array[Vector3]:
 			var clip: StringName = pt[0]
 			var m: Dictionary = PackLibrary.meta(clip)
 			var natural: float = 0.0 if clip == PACK_GAIT_CLIPS[0] else float(m.get("natural_speed", 0.0))
-			_gait_cache.append(Vector3(natural if float(pt[1]) < 0.0 else float(pt[1]), natural, float(m.get("duration", 1.0))))
+			_gait_cache.append(Vector3(natural if float(pt[1]) < 0.0 else float(pt[1]), natural, cycle_seconds(clip)))
 	return _gait_cache
 
 ## Escala de tiempo de la marcha del pack a una velocidad: velocidad / velocidad natural de lo que se esta mezclando.
@@ -352,7 +360,7 @@ static func carry_gait_table() -> Array[Vector3]:
 				continue
 			var m: Dictionary = PackLibrary.meta(clip)
 			var natural: float = float(m.get("natural_speed", 0.0))
-			_carry_cache.append(Vector3(natural if float(pt[1]) < 0.0 else float(pt[1]), natural, float(m.get("duration", 1.0))))
+			_carry_cache.append(Vector3(natural if float(pt[1]) < 0.0 else float(pt[1]), natural, cycle_seconds(clip)))
 	return _carry_cache
 
 static func carry_scale_for(speed: float) -> float:

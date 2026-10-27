@@ -84,3 +84,21 @@ func test_five_minute_match_with_rules_and_set_pieces() -> void:
 	check(m.replay.replays_shown == int(c.get("GOAL", 0)), "repeticion por gol (%d/%d)" % [m.replay.replays_shown, int(c.get("GOAL", 0))])
 	check(r["worst_still"] < 12.0, "sin atascos (%.1f s)" % r["worst_still"])
 
+
+func _long_match(minutes: int) -> void:
+	var m: MatchScene = await _scene(float(minutes))
+	var r: Dictionary = await _play_full(m, float(minutes) * 2.2 + 1.0)
+	_report(m, r, minutes)
+	var c: Dictionary = r["counts"]
+	check(m.manager.state == MatchManager.State.FULL_TIME, "el partido de %d minutos termina con el pitazo final" % minutes)
+	check(m.ctx.match_time >= float(minutes) * 60.0, "se juegan los %d minutos" % minutes)
+	check(int(c.get("PASS", 0)) >= minutes * 3, "hay juego de pases (%d)" % int(c.get("PASS", 0)))
+	check(m.replay.replays_shown == int(c.get("GOAL", 0)), "repeticion por gol (%d/%d)" % [m.replay.replays_shown, int(c.get("GOAL", 0))])
+	check(r["worst_still"] < 12.0, "sin atascos (%.1f s)" % r["worst_still"])
+	check(r["out"] == 0, "nadie fuera del area de juego (%d)" % r["out"])
+
+func test_seven_minute_match() -> void:
+	await _long_match(7)
+
+func test_ten_minute_match() -> void:
+	await _long_match(10)
