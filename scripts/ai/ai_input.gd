@@ -82,7 +82,7 @@ func poll(f: Footballer) -> InputFrame:
 		_decide(f)
 		if _btn != &"":
 			return _run_button(out, f, dt)
-	out.move_world = _dir * _mag
+	out.move_world = _around_goal(f, _dir) * _mag
 	out.sprint = _sprint
 	out.press_held = _press
 	out.skill_pressed = _skill_next
@@ -769,6 +769,21 @@ func _avoid_opponents(f: Footballer, ctx: MatchContext, pos: Vector3, dir: Vecto
 		if kd.length() < 3.0 and kd.normalized().dot(dir) > 0.5:
 			steer += Vector3(-dir.z, 0.0, dir.x) * signf(-kd.z if absf(kd.z) > 0.05 else 1.0) * 0.8
 	return steer.normalized()
+
+## Detras de la linea de fondo y a la altura del arco (por perseguir una pelota que salio), el camino recto de vuelta
+## choca con la red: primero se rodea el poste por el lado mas cercano (hallado en un partido: un jugador quedo
+## detras del arco empujando la red).
+func _around_goal(f: Footballer, dir: Vector3) -> Vector3:
+	if dir.length_squared() < 0.0001:
+		return dir
+	var cfg: PitchConfig = f.ctx.pitch.config
+	var p: Vector3 = f.global_position
+	var hl: float = cfg.half_length()
+	var post: float = cfg.half_goal() + 0.6
+	if absf(p.x) < hl - 0.1 or absf(p.z) > post or signf(dir.x) == signf(p.x):
+		return dir
+	var side: float = signf(p.z) if absf(p.z) > 0.05 else 1.0
+	return Vector3(0.0, 0.0, side)
 
 func _avoid_walls(pos: Vector3, dir: Vector3, ctx: MatchContext) -> Vector3:
 	var half_w: float = ctx.pitch.config.width * 0.5 - 1.0

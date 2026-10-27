@@ -27,7 +27,7 @@
 | `balance` | Equilibrio | campo | `scripts/assistance/kick_model.gd:81`, `scripts/player/ball_handler.gd:1389`, `scripts/player/player_actions.gd:264`, `scripts/player/player_actions.gd:265` |
 | `agility` | Agilidad | campo | `scripts/player/ball_handler.gd:437`, `scripts/player/locomotion.gd:74`, `scripts/player/locomotion.gd:163` |
 | `ball_control` | Control de balón | campo | `scripts/player/ball_handler.gd:931`, `scripts/player/ball_handler.gd:1346`, `scripts/player/ball_handler.gd:1355`, `scripts/player/ball_handler.gd:1359` |
-| `ball_carrying` | Conducción | campo | `scripts/player/ball_handler.gd:931`, `scripts/player/footballer.gd:299` |
+| `ball_carrying` | Conducción | campo | `scripts/player/ball_handler.gd:931`, `scripts/player/footballer.gd:303` |
 | `dribbling` | Regate | campo | **sin uso todavía** |
 | `short_pass` | Pase corto | campo | `scripts/assistance/pass_assist.gd:85`, `scripts/assistance/pass_assist.gd:213` |
 | `long_pass` | Pase largo | campo | `scripts/assistance/cross_assist.gd:93`, `scripts/assistance/cross_assist.gd:103`, `scripts/assistance/pass_assist.gd:85`, `scripts/assistance/pass_assist.gd:213` |

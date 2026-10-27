@@ -256,3 +256,25 @@ Ver [CHANGELOG.md](../CHANGELOG.md): «Partido jugable».
 - **Repetición:** `GoalReplay` graba 7 s a 30 Hz (pelota, jugadores, arqueros, árbitro y la pose de cada hueso). `MatchManager.replay_requested` se emite `replay_after_seconds` tras el gol; la escena pausa el árbol, reproduce 4.5 s antes del gol + 0.7 s después a 0.6x con su cámara y restaura el estado exacto. Cualquier botón o toque la salta.
 - **Duración:** `MatchScene.duration_seconds < 0` usa `Tuning.match_minutes` (3, 5, 7 o 10; menú de pausa).
 - Pruebas: `test_set_pieces`, `test_goal_replay`, `test_full_match` (partidos completos de 3, 5, 7 y 10 minutos).
+
+## Posesión única y organización colectiva (2026-10-27)
+
+- **`MatchContext.possessor`** (`update_possession`, una vez por paso de física): el último que la tocó la conserva
+  mientras nadie más la toque y siga a ≤1.45 × su radio de posesión; si no, es suya solo si la tiene al pie y va con
+  ella. `BallHandler.ball_owned_by_other` impide conducir o controlar la pelota de otro (solo disputarla o cortar un
+  toque largo); `PressController` presiona al poseedor.
+- **`TeamBrain`** (`scripts/ai/team_brain.gd`): una decisión por equipo cada 0.2 s. Ataque: apoyo (6.5 m, línea de pase
+  libre), amplitud (banda contraria, lado con histéresis), profundidad (altura del último rival) y seguridad; en zona de
+  centro, primer palo / segundo palo / penal. Defensa: un presionador (si es el de la persona, la IA no manda otro),
+  una cobertura (el que llega antes al punto entre la pelota y el arco, a 6.5 m) y el bloque a ≥5 m de la pelota con la
+  línea que retrocede. Pelota suelta: va uno por equipo. Reparto de puestos por coste mínimo con ventaja para conservar
+  el puesto anterior (`KEEP_ROLE_BONUS`). La fase de ataque se mantiene durante un toque largo propio
+  (`TEAM_POSSESSION_GRACE`). `AIInput._follow_order` ejecuta la orden (los desmarques de ruptura y las llegadas al
+  área siguen siendo individuales); `AIInput.use_team_brain = false` vuelve a la lógica individual.
+- **Decisiones de la IA:** el defensor contiene y entra cuando la pelota queda expuesta (toque largo) o con
+  probabilidad `Footballer.AI_TACKLE_COMMIT`; el portador presionado pasa con el cuerpo a medio orientar (≤75°);
+  la IA no sale de la cancha (`Footballer._keep_inside`) y rodea el arco si queda detrás de la línea
+  (`AIInput._around_goal`).
+- **Medido** (`test_team_shape_metrics`, `tests/match_metrics.gd`): con la fase asentada (>2 s) cada jugador está a
+  2.7–4.6 m de su puesto, pero la posesión cambia cada ~1.9 s y el amontonamiento (≥4 jugadores a <4 m de la pelota)
+  no bajó de forma clara (headless 41–49 %; versión anterior con render 33–55 %). Pendiente: reducir las pérdidas.

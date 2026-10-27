@@ -113,16 +113,17 @@ Ver la tabla «Valores fijos» de [ARCHITECTURE.md](../ARCHITECTURE.md) (carga d
 | `Footballer.reset_motion()` | 162 |  |
 | `Footballer.place_at(pos: Vector3, yaw: float)` | 171 |  |
 | `Footballer._physics_process(delta: float)` | 184 |  |
-| `Footballer._ai_commits_tackle(carrier: Footballer)` | 345 | La IA no disputa en cada ocasion: contiene (jockey) y entra cuando la pelota queda expuesta (toque largo del portador, pelota suelta) o, con |
-| `Footballer._gait_overlays(desired_dir: Vector3, want_sprint: bool, stick_mag: float, speed_before: float, delta: float)` | 352 |  |
-| `Footballer._cancel_reaction()` | 387 |  |
-| `Footballer._on_match_event(e: GameEvent)` | 397 | Reacciones de presentacion a eventos del partido: - Gol: el goleador, el asistente, el resto del equipo y el rival reaccionan distinto (un a |
-| `Footballer._try_block_jump(e: GameEvent)` | 433 |  |
-| `Footballer.rng_delay()` | 448 |  |
-| `Footballer._set_reaction(situation: StringName, wait: float, cut: float)` | 451 |  |
-| `Footballer._update_reaction(delta: float)` | 458 | La reaccion a un gol arranca cuando el jugador casi se ha detenido (o tras REACTION_MAX_WAIT) para no animar un clip en el sitio sobre un cu |
-| `Footballer._check_player_collisions()` | 472 | Un choque a velocidad con otro jugador provoca un tropiezo (presentacion) o, si es fuerte, un golpe de hombro y caida. |
-| `Footballer.capture_state()` | 494 | Datos replicables del jugador (para snapshots de red / pruebas). |
+| `Footballer._keep_inside(dir: Vector3)` | 347 | Quita la componente que saca al jugador mas alla de las lineas (con medio metro de margen). |
+| `Footballer._ai_commits_tackle(carrier: Footballer)` | 360 | La IA no disputa en cada ocasion: contiene (jockey) y entra cuando la pelota queda expuesta (toque largo del portador, pelota suelta) o, con |
+| `Footballer._gait_overlays(desired_dir: Vector3, want_sprint: bool, stick_mag: float, speed_before: float, delta: float)` | 367 |  |
+| `Footballer._cancel_reaction()` | 402 |  |
+| `Footballer._on_match_event(e: GameEvent)` | 412 | Reacciones de presentacion a eventos del partido: - Gol: el goleador, el asistente, el resto del equipo y el rival reaccionan distinto (un a |
+| `Footballer._try_block_jump(e: GameEvent)` | 448 |  |
+| `Footballer.rng_delay()` | 463 |  |
+| `Footballer._set_reaction(situation: StringName, wait: float, cut: float)` | 466 |  |
+| `Footballer._update_reaction(delta: float)` | 473 | La reaccion a un gol arranca cuando el jugador casi se ha detenido (o tras REACTION_MAX_WAIT) para no animar un clip en el sitio sobre un cu |
+| `Footballer._check_player_collisions()` | 487 | Un choque a velocidad con otro jugador provoca un tropiezo (presentacion) o, si es fuerte, un golpe de hombro y caida. |
+| `Footballer.capture_state()` | 509 | Datos replicables del jugador (para snapshots de red / pruebas). |
 <!-- /AUTO -->
 
 <!-- AUTO:funcs:scripts/player/locomotion.gd -->

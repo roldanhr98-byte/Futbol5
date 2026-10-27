@@ -676,7 +676,7 @@
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer.capture_state",
-          "line": 494,
+          "line": 509,
           "kind": "func"
         }
       ],
@@ -3284,7 +3284,7 @@
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer._on_match_event",
-          "line": 397,
+          "line": 412,
           "kind": "func"
         }
       ],

@@ -365,7 +365,8 @@ func _spread_defense(ctx: MatchContext, cp: Vector3) -> void:
 
 func _loose(ctx: MatchContext, mates: Array[Footballer]) -> void:
 	var ball: Ball = ctx.ball
-	var bp: Vector3 = _flat(ball.global_position + ball.linear_velocity * 0.35)
+	# Dentro de la cancha: una pelota que sale no arrastra al perseguidor detras del arco.
+	var bp: Vector3 = ctx.pitch.clamp_to_pitch(_flat(ball.global_position + ball.linear_velocity * 0.35), 0.3)
 	var by_time: Array[Footballer] = mates.duplicate()
 	by_time.sort_custom(func(a: Footballer, b: Footballer) -> bool: return _time_to(a, bp) < _time_to(b, bp))
 	chaser = by_time[0]

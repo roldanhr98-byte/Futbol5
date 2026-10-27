@@ -260,6 +260,10 @@ func _physics_process(delta: float) -> void:
 				visual.update_motion(self, delta)
 			return
 
+	# La IA no sale de la cancha: reculando en jockey junto a la linea de fondo cruzaba la linea (1.1-1.3 m fuera).
+	if not is_human_controlled and desired_dir.length_squared() > 0.0001:
+		desired_dir = _keep_inside(desired_dir)
+
 	# Pelota propia atras o al costado tras un giro: primero se va a por ella (BallHandler.carry_steer). Los toques
 	# siguen usando el rumbo pedido (intent_dir): al llegar a la pelota, el toque la lleva hacia alli.
 	var intent_dir: Vector3 = desired_dir
@@ -338,6 +342,17 @@ const TIRED_STOP := &"Running_Tired"
 const TIRED_STOP_FROM := 2.0
 var _overlay_cd: float = 0.0
 var _tired_cd: float = 0.0
+
+## Quita la componente que saca al jugador mas alla de las lineas (con medio metro de margen).
+func _keep_inside(dir: Vector3) -> Vector3:
+	var cfg: PitchConfig = ctx.pitch.config
+	var p: Vector3 = global_position
+	var out: Vector3 = dir
+	if absf(p.x) > cfg.half_length() - 0.2 and signf(dir.x) == signf(p.x):
+		out.x = 0.0
+	if absf(p.z) > cfg.half_width() - 0.2 and signf(dir.z) == signf(p.z):
+		out.z = 0.0
+	return out.normalized() if out.length_squared() > 0.0001 else Vector3.ZERO
 
 ## La IA no disputa en cada ocasion: contiene (jockey) y entra cuando la pelota queda expuesta (toque largo del
 ## portador, pelota suelta) o, con el portador protegiendola, solo de vez en cuando. Asi el portador tiene tiempo de
