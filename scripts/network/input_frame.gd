@@ -17,6 +17,16 @@ var pass_released: bool = false
 var shoot_pressed: bool = false
 var shoot_held: bool = false
 var shoot_released: bool = false
+## Pase filtrado (al espacio, entre defensores): mismos flancos que el pase.
+var through_pressed: bool = false
+var through_held: bool = false
+var through_released: bool = false
+## Centro (desde la banda al area): mismos flancos que el pase.
+var cross_pressed: bool = false
+var cross_held: bool = false
+var cross_released: bool = false
+## Entrada defensiva (de pie o barrida segun distancia y velocidad): flanco de bajada.
+var tackle_pressed: bool = false
 ## Modificador "alto": pase elevado / tiro elevado.
 var lob_held: bool = false
 var press_held: bool = false
@@ -34,6 +44,8 @@ func to_dict() -> Dictionary:
 		"pp": pass_pressed, "ph": pass_held, "pr": pass_released,
 		"sp_": shoot_pressed, "sh": shoot_held, "sr": shoot_released,
 		"lob": lob_held, "press": press_held, "sw": switch_pressed, "sk": skill_pressed,
+		"tp": through_pressed, "th": through_held, "tr": through_released,
+		"cp": cross_pressed, "ch": cross_held, "cr": cross_released, "tk": tackle_pressed,
 	}
 
 static func from_dict(d: Dictionary) -> InputFrame:
@@ -53,4 +65,11 @@ static func from_dict(d: Dictionary) -> InputFrame:
 	f.press_held = bool(d.get("press", false))
 	f.switch_pressed = bool(d.get("sw", false))
 	f.skill_pressed = bool(d.get("sk", false))
+	f.through_pressed = bool(d.get("tp", false))
+	f.through_held = bool(d.get("th", false))
+	f.through_released = bool(d.get("tr", false))
+	f.cross_pressed = bool(d.get("cp", false))
+	f.cross_held = bool(d.get("ch", false))
+	f.cross_released = bool(d.get("cr", false))
+	f.tackle_pressed = bool(d.get("tk", false))
 	return f

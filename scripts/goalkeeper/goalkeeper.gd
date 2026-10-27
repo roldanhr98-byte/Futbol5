@@ -9,7 +9,7 @@ extends CharacterBody3D
 
 signal saved(kind: StringName)
 
-enum State { POSITION, PREPARE, ACTION, HOLD, DISTRIBUTE }
+enum State { POSITION, PREPARE, ACTION, HOLD, DISTRIBUTE, GOAL_KICK }
 
 ## Segundos con la pelota parada en el area tras los que el arquero la recoge aunque haya rivales cerca.
 const SCRUM_SECONDS := 1.2
@@ -23,6 +23,26 @@ const FOOT_TRAP_RANGE := 0.75
 const FOOT_PLAY_DELAY := 0.6
 ## Segundos maximos que el arquero controlado por la persona retiene la pelota antes de sacar solo.
 const MANUAL_HOLD_MAX := 8.0
+## Reposo con la pelota en las manos (clip con trayectoria de manos: la pelota va en sus manos de verdad).
+const HOLD_IDLE_CLIP := &"goalkeeper_idle_2"
+## Indicaciones al equipo cuando la jugada esta lejos: hacia el ataque (pelota en campo rival) o la defensa.
+const DIRECT_ATTACK_CLIP := &"goalkeeper_directing"
+const DIRECT_DEFENSE_CLIP := &"goalkeeper_directing_2"
+const DIRECT_SECONDS := 2.2
+const DIRECT_COOLDOWN := 11.0
+## Estirada desesperada que no llega (salta hacia su derecha; el espejo, a la izquierda): cuando ningun clip de atajada
+## alcanza la pelota.
+const MISS_CLIP := &"goalkeeper_miss"
+## Saque de arco: coloca la pelota en el suelo (corto o largo) y la juega con el pie.
+const PLACE_CLIPS := [&"goalkeeper_placing_ball", &"goalkeeper_placing_ball_2"]
+const PLACE_LONG_CUT := 4.2
+## Achique en el mano a mano: distancia (m) al arco dentro de la cual sale a cerrar el angulo y a la que se queda del
+## portador.
+const RUSH_RANGE := 11.0
+const RUSH_GAP := 2.6
+const RUSH_MAX_OUT := 6.0
+## Salida a por un centro: el punto de atrapada debe quedar a esta distancia maxima (m) de la linea de gol.
+const CLAIM_MAX_DEPTH := 4.5
 
 @export var team: int = 0
 var actor_id: int = 0
@@ -68,6 +88,16 @@ var _stick_idle: float = 10.0
 var _button_cd: float = 0.0
 ## Segundos que la pelota lleva controlada con el pie tras un pase del propio equipo (0 = no la tiene en los pies).
 var _foot_ball: float = 0.0
+## Saque de arco en curso: etapa ("place", "wait", "kick") y si ya se jugo la pelota (lo lee MatchManager).
+var goal_kick_done: bool = false
+var _gk_stage: StringName = &""
+var _gk_clip: StringName = &""
+var _gk_place_t: float = 0.0
+var _gk_long: bool = false
+var _direct_cd: float = 4.0
+var _hold_clip_time: float = 0.0
+## Mano a mano: true mientras sale a cerrar el angulo a un portador solo.
+var rushing: bool = false
 
 func _ready() -> void:
 	add_to_group("keepers")
@@ -130,6 +160,8 @@ func right_vec() -> Vector3:
 
 func reset_position() -> void:
 	_cancel_action(true)
+	_gk_stage = &""
+	rushing = false
 	state = State.POSITION
 	yaw = Locomotion.yaw_from_dir(inward())
 	rotation.y = yaw
@@ -168,6 +200,9 @@ func _physics_process(delta: float) -> void:
 			_tick_hold(delta)
 		State.DISTRIBUTE:
 			_tick_distribute(delta)
+		State.GOAL_KICK:
+			_tick_goal_kick(delta)
+	_direct_cd = maxf(_direct_cd - delta, 0.0)
 	if is_on_floor():
 		velocity.y = -0.5
 	else:
@@ -176,7 +211,7 @@ func _physics_process(delta: float) -> void:
 	rotation.y = yaw
 	var f: Vector3 = forward()
 	var flat := Vector3(velocity.x, 0.0, velocity.z)
-	visual.directional = state == State.POSITION or state == State.PREPARE or state == State.HOLD
+	visual.directional = state == State.POSITION or state == State.PREPARE or state == State.HOLD or (state == State.GOAL_KICK and _gk_stage == &"wait")
 	visual.dir_velocity = Vector2(flat.dot(f), flat.dot(right_vec()))
 	visual.drive_motion(flat.length(), 0.0, delta)
 
@@ -195,6 +230,11 @@ func _tick_position(delta: float, preparing: bool = false) -> void:
 			return
 		if _try_pickup():
 			return
+		if _try_smother():
+			return
+		if _assess_cross():
+			return
+		_maybe_direct_team()
 	# Objetivo: sobre el arco, en la linea arco-pelota, mas adelantado cuanto mas cerca esta el peligro.
 	var g := Vector3(goal_x(), 0.0, 0.0)
 	var b := Vector3(ball.global_position.x, 0.0, ball.global_position.z)
@@ -204,12 +244,27 @@ func _tick_position(delta: float, preparing: bool = false) -> void:
 	var pos_k: float = lerpf(0.85, 1.2, _norm("positioning"))
 	var depth: float = lerpf(_tune.base_depth, _tune.max_depth, clampf((14.0 - d) / 14.0, 0.0, 1.0)) * pos_k
 	depth = clampf(depth, 0.4, _tune.max_depth)
+	# Achique: un rival se va solo hacia el arco -> sale a cerrarle el angulo, quedandose a RUSH_GAP de la pelota.
+	rushing = false
+	var lone: Footballer = _lone_attacker()
+	if lone != null and not preparing:
+		rushing = true
+		depth = clampf(d - RUSH_GAP * lerpf(1.15, 0.85, _norm("positioning")), depth, RUSH_MAX_OUT)
+	# Centro en el aire hacia su area: va al punto donde la pelota bajara a altura de manos (para poder atraparla).
+	var landing: Vector3 = _cross_landing()
+	if landing != Vector3.INF and not preparing:
+		var to_land: Vector3 = landing - g
+		dir = to_land.normalized() if to_land.length() > 0.1 else dir
+		depth = clampf(to_land.length(), 0.4, CLAIM_MAX_DEPTH)
+	# Penal: en la linea hasta el disparo.
+	if ctx.dead_ball and ctx.restart_taker != null and ctx.restart_taker.get("team") != team and d < ctx.pitch.config.penalty_mark_distance + 0.5:
+		depth = 0.15
 	var target: Vector3 = g + dir * depth
 	var hz: float = ctx.pitch.config.half_goal() + 0.9
 	target.z = clampf(target.z, -hz, hz)
 	var to_t: Vector3 = target - global_position
 	to_t.y = 0.0
-	var speed_cap: float = _tune.move_speed * lerpf(0.9, 1.15, _norm("reflexes"))
+	var speed_cap: float = _tune.move_speed * lerpf(0.9, 1.15, _norm("reflexes")) * (1.35 if rushing else 1.0)
 	var want: Vector3 = to_t.normalized() * minf(to_t.length() * 5.0, speed_cap) if to_t.length() > 0.06 else Vector3.ZERO
 	var cur := Vector3(velocity.x, 0.0, velocity.z)
 	cur = cur.move_toward(want, _tune.accel * delta)
@@ -281,7 +336,20 @@ func _assess_shot() -> void:
 		return
 	var plan: Dictionary = KeeperPlanner.plan_save(_origin_after_stop(), yaw, traj, 1.0 / 30.0, 0.0, v.length(), false)
 	if plan.is_empty() or float(plan["dist"]) > _tune.effort_radius:
-		# Sin posibilidad de llegar: sigue mirando; el cuerpo todavia puede tapar con la colision.
+		# Sin posibilidad de llegar con una atajada: si la pelota va a su derecha y hay tiempo, se estira igual
+		# (estirada desesperada: el contacto se evalua con sus manos reales, casi nunca llega); si no, sigue mirando y el
+		# cuerpo todavia puede tapar con la colision.
+		var miss: Dictionary = _plan_miss(traj, ci)
+		if not miss.is_empty():
+			_plan = miss
+			_plan["ball_speed"] = v.length()
+			_plan["fixed"] = true
+			_plan_clock = _clock
+			_state_time = 0.0
+			_threat_since = -1.0
+			stats["desperate"] = int(stats.get("desperate", 0)) + 1
+			state = State.PREPARE
+			return
 		_log_save(&"no_chance", {"dist": plan.get("dist", -1.0), "speed": v.length()})
 		_threat_since = _clock + 5.0
 		return
@@ -320,6 +388,8 @@ func _replan() -> void:
 	if ball.is_held():
 		state = State.POSITION
 		return
+	if _plan.get("fixed", false):
+		return
 	var v: Vector3 = ball.linear_velocity
 	# La amenaza cambio (desvio, bloqueo de un rival, pelota lenta): se cancela y vuelve a posicionarse.
 	if v.length() < _tune.shot_min_speed * 0.6 or v.x * float(goal_side()) < 0.5:
@@ -337,6 +407,8 @@ func _replan() -> void:
 ## Pelota suelta y lenta dentro de su area sin rival cerca: sale a recogerla con una atajada baja o la recogida.
 func _try_pickup() -> bool:
 	var ball: Ball = ctx.ball
+	if ctx.ball_locked_for(self):
+		return false
 	if ball.is_held() or ball.global_position.y > 0.5 or ball.linear_velocity.length() > _tune.pickup_ball_speed_max:
 		return false
 	if _foot_ball > 0.0:
@@ -388,6 +460,10 @@ func _read_input(delta: float) -> void:
 ## suelta a su alcance la atrapa si viene suave y la despeja si no.
 func _manual_action(long: bool) -> void:
 	var ball: Ball = ctx.ball
+	if state == State.GOAL_KICK:
+		if _gk_stage == &"wait":
+			_start_goal_kick_strike(long)
+		return
 	if ball.holder == self:
 		_begin_distribution(&"throw" if not long else &"kick")
 		return
@@ -447,6 +523,8 @@ func _face_ball(delta: float) -> void:
 ## si esta ocupandose de ella (entonces no hace nada mas en este paso).
 func _receive_backpass(delta: float) -> bool:
 	var ball: Ball = ctx.ball
+	if ctx.ball_locked_for(self):
+		return false
 	if ball.is_held() or ball.last_touch_team != team or ball.global_position.y > 0.6:
 		return false
 	var v: Vector3 = KickModel.flat(ball.linear_velocity)
@@ -585,6 +663,9 @@ func _cancel_action(release_ball: bool) -> void:
 func _enter_hold() -> void:
 	state = State.HOLD
 	_state_time = 0.0
+	_hold_clip_time = 0.0
+	if visual != null and visual.uses_pack and PackLibrary.has_clip(HOLD_IDLE_CLIP):
+		visual.play_pack_clip(HOLD_IDLE_CLIP, 1.0, 0.0, 30.0)
 	_hold_left = lerpf(_tune.hold_time_max, _tune.hold_time_min, _norm("reflexes") * 0.5 + _norm("throwing") * 0.5) * rng.randf_range(0.9, 1.1)
 	_anchor.position = Vector3(0.0, _tune.carry_height, -_tune.carry_forward)
 	_anchor.position = Vector3(0.0, _tune.carry_height, 0.0)
@@ -595,8 +676,14 @@ func _tick_hold(delta: float) -> void:
 	if ball.holder != self:
 		state = State.POSITION
 		return
-	# El ancla va delante del pecho (marco del cuerpo, ya girado).
-	_anchor.global_position = global_position + forward() * _tune.carry_forward + Vector3.UP * _tune.carry_height
+	# El ancla va en las manos del clip de reposo con pelota (si esta sonando) o delante del pecho.
+	_hold_clip_time += delta
+	if visual != null and visual.current_action == HOLD_IDLE_CLIP:
+		var n: int = (PackLibrary.meta(HOLD_IDLE_CLIP).get("paths", {}).get("hands", PackedVector3Array()) as PackedVector3Array).size()
+		var kk: int = int(_hold_clip_time * 30.0) % maxi(n, 1)
+		_anchor.global_position = KeeperPlanner.path_world_at_body(HOLD_IDLE_CLIP, "hands", kk, global_position, yaw)
+	else:
+		_anchor.global_position = global_position + forward() * _tune.carry_forward + Vector3.UP * _tune.carry_height
 	_tick_position(delta, true)
 	if is_human_controlled:
 		# Con el arquero en las manos de la persona, el saque lo ordena ella (hay un limite largo para que la
@@ -709,7 +796,7 @@ func _tick_distribute(delta: float) -> void:
 			_foot_ball = 0.0
 			var ftoe: Vector3 = KeeperPlanner.path_world_at_body(clip, String(_dist.get("key", "toe_r")), k, global_position, yaw)
 			if ftoe.distance_to(ball.global_position) <= 0.8:
-				ball.kick(_throw_velocity(&"roll", ball.global_position, tgt), Vector3.ZERO, self)
+				ball.kick(_throw_velocity(&"kick" if _gk_long else &"roll", ball.global_position, tgt), Vector3.ZERO, self)
 				stats["distributions"] += 1
 				ctx.emit_event(GameEvent.make(GameEvent.Type.KEEPER_DISTRIBUTE, actor_id, team, {"mode": "foot", "dist": _dist["dist"]}))
 		if not _motion.active or (clip == &"" and _state_time > 0.5):
@@ -775,11 +862,240 @@ func _throw_velocity(mode: StringName, from: Vector3, target: Vector3) -> Vector
 func _finish_distribution() -> void:
 	if ctx.ball.holder == self:
 		ctx.ball.release(self, Vector3.ZERO)
+	if _gk_stage == &"kick":
+		# Saque de arco: si el pie no llego a la pelota (pelota movida por un choque), se juega igual desde donde esta
+		# para que el partido no quede detenido.
+		if ctx.ball.last_toucher != self or ctx.ball.linear_velocity.length() < 1.0:
+			var tgt: Vector3 = _dist.get("target", global_position + inward() * 10.0)
+			ctx.ball.kick(_throw_velocity(&"kick" if _gk_long else &"roll", ctx.ball.global_position, tgt), Vector3.ZERO, self)
+		_gk_stage = &""
+		goal_kick_done = true
 	state = State.POSITION
 	_state_time = 0.0
 	_motion.stop()
 	velocity = Vector3.ZERO
 	_threat_since = -1.0
+
+# --- Saque de arco ---------------------------------------------------------------------------------------
+
+## Saque de arco: el arquero toma la pelota en el punto del saque, la coloca en el suelo con el clip de colocar
+## (corto o, a veces, el largo) y la juega con el pie hacia un companero libre (corto) o en largo.
+func start_goal_kick(spot: Vector3) -> void:
+	_cancel_action(true)
+	goal_kick_done = false
+	_gk_long = rng.randf() < 0.35
+	var face: Vector3 = inward()
+	global_position = Vector3(spot.x, 0.0, spot.z) - face * 0.55
+	yaw = Locomotion.yaw_from_dir(face)
+	rotation.y = yaw
+	velocity = Vector3.ZERO
+	ctx.ball.hold(_anchor, self)
+	_anchor.global_position = global_position + forward() * _tune.carry_forward + Vector3.UP * _tune.carry_height
+	state = State.GOAL_KICK
+	_state_time = 0.0
+	_gk_stage = &"place"
+	_gk_clip = PLACE_CLIPS[1] if (rng.randf() < 0.3 and PackLibrary.has_clip(PLACE_CLIPS[1])) else PLACE_CLIPS[0]
+	if visual == null or not visual.uses_pack or not PackLibrary.has_clip(_gk_clip):
+		_gk_clip = &""
+		_gk_place_t = 0.4
+		return
+	var cut: float = PLACE_LONG_CUT if _gk_clip == PLACE_CLIPS[1] else -1.0
+	visual.play_pack_clip(_gk_clip, 1.2, 0.0, cut / 1.2 if cut > 0.0 else -1.0)
+	_motion.start(_gk_clip, 1.2, 0.0, cut / 1.2 if cut > 0.0 else -1.0)
+	_gk_place_t = _lowest_hands_time(_gk_clip, cut)
+
+## Instante (s del clip) en que las manos estan mas bajas (dejan la pelota en el suelo) dentro del tramo util.
+static func _lowest_hands_time(id: StringName, cut: float) -> float:
+	var hp: PackedVector3Array = PackLibrary.meta(id).get("paths", {}).get("hands", PackedVector3Array())
+	if hp.is_empty():
+		return 0.5
+	var last: int = hp.size() - 1 if cut <= 0.0 else mini(hp.size() - 1, int(cut * 30.0) - 3)
+	var best_k: int = int(last * 0.25)
+	for k in range(int(last * 0.25), last):
+		if hp[k].y < hp[best_k].y:
+			best_k = k
+	return float(best_k) / 30.0
+
+func _tick_goal_kick(delta: float) -> void:
+	var ball: Ball = ctx.ball
+	match _gk_stage:
+		&"place":
+			var rv: Vector2 = _motion.step(delta) if _gk_clip != &"" else Vector2.ZERO
+			var wv: Vector3 = forward() * rv.x + right_vec() * rv.y
+			velocity.x = wv.x
+			velocity.z = wv.z
+			var t: float = _motion.t if _gk_clip != &"" else _state_time
+			if ball.holder == self:
+				if _gk_clip != &"":
+					_anchor.global_position = KeeperPlanner.path_world_at_body(_gk_clip, "hands", int(t * 30.0), global_position, yaw)
+				if t >= _gk_place_t:
+					# Deja la pelota en el suelo, quieta, donde la tienen las manos.
+					var at: Vector3 = _anchor.global_position
+					ball.release(self, Vector3.ZERO)
+					ball.global_position = Vector3(at.x, Tuning.ball.radius + 0.01, at.z)
+					ball.register_touch(self)
+			if ball.holder != self and (_gk_clip == &"" or not _motion.active or t >= _gk_place_t + 0.5):
+				_motion.stop()
+				if visual != null:
+					visual.stop_current_action()
+				velocity = Vector3.ZERO
+				_gk_stage = &"wait"
+				_state_time = 0.0
+		&"wait":
+			velocity = Vector3.ZERO
+			_face_ball(delta)
+			var go: bool = _state_time > 0.5
+			if is_human_controlled and ctx.input_enabled:
+				go = _state_time > MANUAL_HOLD_MAX
+			if go:
+				_start_goal_kick_strike(_gk_long)
+		_:
+			pass
+
+## Golpeo del saque de arco (pase con el pie): corto o largo. La persona lo pide con PASE (corto) o TIRO (largo).
+func _start_goal_kick_strike(long: bool) -> void:
+	_gk_long = long
+	_gk_stage = &"kick"
+	_begin_distribution(&"foot")
+
+# --- Mano a mano, centros y estirada desesperada ------------------------------------------------------------
+
+## Rival que se va solo hacia el arco con la pelota: a menos de RUSH_RANGE m y sin defensor propio entre el y el arco.
+func _lone_attacker() -> Footballer:
+	var ball: Ball = ctx.ball
+	if ball.is_held() or ctx.dead_ball or ball.global_position.y > 0.6:
+		return null
+	var g := Vector3(goal_x(), 0.0, 0.0)
+	var carrier: Footballer = null
+	for f in ctx.footballers:
+		if f.team != team and f.ball_handler.has_possession():
+			carrier = f
+	if carrier == null:
+		return null
+	var cp := Vector3(carrier.global_position.x, 0.0, carrier.global_position.z)
+	if cp.distance_to(g) > RUSH_RANGE or (cp.x - g.x) * -float(goal_side()) < 1.0:
+		return null
+	for f in ctx.footballers:
+		if f.team != team:
+			continue
+		var fp := Vector3(f.global_position.x, 0.0, f.global_position.z)
+		var ab: Vector3 = g - cp
+		var u: float = clampf((fp - cp).dot(ab) / ab.length_squared(), 0.0, 1.0)
+		if u > 0.05 and (cp + ab * u).distance_to(fp) < 1.6:
+			return null
+	return carrier
+
+## Mano a mano: si el portador se adelanta la pelota (toque largo) y el arquero llega antes, se lanza a sus pies
+## (bloqueo con el cuerpo o atajada baja) con el plan de manos real.
+func _try_smother() -> bool:
+	if not rushing:
+		return false
+	var lone: Footballer = _lone_attacker()
+	if lone == null:
+		return false
+	var ball: Ball = ctx.ball
+	var bp: Vector3 = ball.global_position
+	var my_d: float = Vector2(bp.x - global_position.x, bp.z - global_position.z).length()
+	var his_d: float = lone.ball_handler.ball_distance()
+	if my_d > 2.4 or his_d < 0.75 or my_d > his_d + 1.2:
+		return false
+	var traj: PackedVector3Array = BallPredictor.trajectory(bp, ball.linear_velocity, 1.0)
+	var plan: Dictionary = KeeperPlanner.plan_save(global_position, yaw, traj, 1.0 / 30.0, 0.0, ball.linear_velocity.length(), false)
+	if plan.is_empty() or float(plan["dist"]) > float(plan["radius"]) * 0.85:
+		return false
+	_plan = plan
+	_plan["smother"] = true
+	_plan_clock = _clock
+	_state_time = 0.0
+	stats["smothers"] = int(stats.get("smothers", 0)) + 1
+	_begin_action()
+	return true
+
+## Centro al area: si la pelota llega por alto (no a puerta) y el arquero la alcanza con las manos cerca de su linea antes
+## que nadie, sale a atraparla (el plan usa la trayectoria de manos real; si no llega, no sale).
+## Punto (en el suelo) donde un centro en el aire baja a 2.2 m de altura dentro de la zona del arquero, o Vector3.INF.
+func _cross_landing() -> Vector3:
+	var ball: Ball = ctx.ball
+	if ball.is_held() or ctx.dead_ball or ball.last_touch_team == team or ball.global_position.y < 0.5:
+		return Vector3.INF
+	var v: Vector3 = ball.linear_velocity
+	if v.length() < 4.0 or (v.y < 0.0 and ball.global_position.y < 1.2):
+		return Vector3.INF
+	var traj: PackedVector3Array = BallPredictor.trajectory(ball.global_position, v, 1.6, 1.0 / 15.0)
+	var apex := false
+	for i in range(1, traj.size()):
+		if traj[i].y < traj[i - 1].y:
+			apex = true
+		if apex and traj[i].y <= 2.2:
+			var p: Vector3 = traj[i]
+			if absf(p.x - goal_x()) <= CLAIM_MAX_DEPTH and absf(p.z) <= ctx.pitch.config.half_goal() + 3.0 and (p.x - goal_x()) * -float(goal_side()) > 0.2:
+				return Vector3(p.x, 0.0, p.z)
+			return Vector3.INF
+	return Vector3.INF
+
+func _assess_cross() -> bool:
+	var ball: Ball = ctx.ball
+	if ball.is_held() or ctx.dead_ball or ball.last_touch_team == team:
+		return false
+	var v: Vector3 = ball.linear_velocity
+	if ball.global_position.y < 0.8 or v.length() < 4.0:
+		return false
+	if absf(ball.global_position.x - goal_x()) > 16.0:
+		return false
+	var traj: PackedVector3Array = BallPredictor.trajectory(ball.global_position, v, 1.4)
+	var plan: Dictionary = KeeperPlanner.plan_save(global_position, yaw, traj, 1.0 / 30.0, 0.15, v.length(), false)
+	if plan.is_empty() or float(plan["dist"]) > float(plan["radius"]) * 0.85:
+		return false
+	var i: int = clampi(int(float(plan["arrive"]) * 30.0), 0, traj.size() - 1)
+	var catch_p: Vector3 = traj[i]
+	if absf(catch_p.x - goal_x()) > CLAIM_MAX_DEPTH or absf(catch_p.z) > ctx.pitch.config.half_goal() + 3.0 or catch_p.y < 0.9:
+		return false
+	# Si un rival llega antes al punto, no sale (seria una salida en falso).
+	for f in ctx.footballers:
+		if f.team != team and Vector2(f.global_position.x - catch_p.x, f.global_position.z - catch_p.z).length() / 6.0 < float(plan["arrive"]) - 0.25:
+			return false
+	_plan = plan
+	_plan["ball_speed"] = v.length()
+	_plan["fixed"] = true
+	_plan_clock = _clock
+	_replan_cd = 0.1
+	_state_time = 0.0
+	stats["cross_claims"] = int(stats.get("cross_claims", 0)) + 1
+	state = State.PREPARE
+	return true
+
+## Estirada sin opciones: goalkeeper_miss se lanza a la derecha del arquero. Solo si la pelota cruza por ese lado, a
+## 1-3.2 m, y hay tiempo de empezar el salto. El contacto se juzga igual que en cualquier atajada.
+func _plan_miss(traj: PackedVector3Array, ci: int) -> Dictionary:
+	if visual == null or not visual.uses_pack:
+		return {}
+	var cp: Vector3 = traj[ci]
+	var lateral: float = (cp - global_position).dot(right_vec())
+	var t_arrive: float = float(ci) / 30.0
+	if absf(lateral) < 1.0 or absf(lateral) > 3.2 or t_arrive < 0.3 or cp.y > ctx.pitch.config.goal_height:
+		return {}
+	# El clip salta hacia la derecha; su espejo, hacia la izquierda.
+	var id: StringName = MISS_CLIP if lateral > 0.0 else StringName(String(MISS_CLIP) + "_mirror")
+	if not PackLibrary.has_clip(id):
+		return {}
+	var tau: float = KeeperPlanner.peak_speed_time(id, "hands")
+	return {"clip": id, "speed": 1.0, "k": int(tau * 30.0), "tau": tau, "delay": maxf(t_arrive - tau, 0.0),
+		"arrive": t_arrive, "dist": 9.0, "radius": 0.45, "travel": 0.65}
+
+## Indicaciones al equipo (presentacion): con la jugada lejos y sin peligro, de vez en cuando el arquero ordena.
+func _maybe_direct_team() -> void:
+	if _direct_cd > 0.0 or visual == null or not visual.uses_pack or visual.is_action_playing() or is_human_controlled:
+		return
+	var ball: Ball = ctx.ball
+	var far: float = absf(ball.global_position.x - goal_x())
+	if far < 16.0:
+		return
+	_direct_cd = DIRECT_COOLDOWN * rng.randf_range(0.8, 1.3)
+	var own_ball: bool = ball.last_touch_team == team
+	var id: StringName = DIRECT_ATTACK_CLIP if own_ball else DIRECT_DEFENSE_CLIP
+	if PackLibrary.has_clip(id):
+		visual.play_pack_clip(id, 1.0, 0.0, DIRECT_SECONDS)
+		stats["directing"] = int(stats.get("directing", 0)) + 1
 
 # --- Eventos del partido ------------------------------------------------------------------------------
 
@@ -787,6 +1103,16 @@ func _on_match_event(e: GameEvent) -> void:
 	match e.type:
 		GameEvent.Type.KICKOFF, GameEvent.Type.RESTART, GameEvent.Type.MATCH_START:
 			reset_position()
+		GameEvent.Type.OUT_OF_PLAY, GameEvent.Type.SET_PIECE:
+			# Pelota muerta: cualquier atajada o salida en curso se corta y vuelve a su arco (el saque de arco lo
+			# inicia la escena con start_goal_kick).
+			if state != State.GOAL_KICK and state != State.HOLD:
+				_cancel_action(true)
+				_gk_stage = &""
+				state = State.POSITION
+				if String(e.data.get("kind", "")) == "penalty" and e.team != team:
+					global_position = Vector3(goal_x(), 0.0, 0.0) + inward() * 0.15
+					velocity = Vector3.ZERO
 		GameEvent.Type.GOAL:
 			if visual != null and not visual.is_placeholder:
 				visual.stop_current_action()

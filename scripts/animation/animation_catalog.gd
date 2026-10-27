@@ -27,7 +27,7 @@ const FIELD := {
 	&"getup": {"pack": [&"standing_up", &"Getting_Up_3"], "tripo": []},
 	&"slide_tackle": {"pack": [&"soccer_tackle"], "tripo": []},
 	&"trip": {"pack": [&"soccer_trip"], "tripo": [&"fall"]},
-	&"receive": {"pack": [&"Receive"], "tripo": []},
+	&"receive": {"pack": [&"Receive", &"receive_soccerball"], "tripo": []},
 	&"jump": {"pack": [&"Jumping_Up", &"Jump_4"], "tripo": [&"jump"]},
 	&"jump_running": {"pack": [&"Jump_2"], "tripo": [&"jump"]},
 }
@@ -39,6 +39,8 @@ const KICKS := {
 	&"pass": [&"Soccer_Pass", &"strike_foward_jog_inplace"],
 	&"shot": [&"strike_foward_jog_inplace", &"Soccer_Pass"],
 	&"lob": [&"strike_foward_jog_inplace"],
+	&"through": [&"Soccer_Pass", &"strike_foward_jog_inplace"],
+	&"cross": [&"strike_foward_jog_inplace", &"Soccer_Pass"],
 }
 const ROOT_MAX := 0.30
 

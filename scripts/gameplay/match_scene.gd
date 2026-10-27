@@ -16,6 +16,9 @@ signal quit_requested
 ## Presentacion antes del primer saque (s): calentamiento de los jugadores y arbitro contando. 0 = sin presentacion.
 @export var intro_seconds: float = 4.5
 @export var with_referee: bool = true
+## Reglas de futbol con bandas: la pelota sale y se repone (saque de banda, corner, saque de arco). Con false, cancha
+## cerrada con paredes (la pelota rebota y nunca sale).
+@export var out_of_bounds: bool = true
 var referee: Referee = null
 
 var ctx: MatchContext
@@ -45,7 +48,9 @@ func _ready() -> void:
 	pitch = Pitch.new()
 	pitch.name = "Pitch"
 	add_child(pitch)
-	pitch.build(Tuning.pitch)
+	var cfg: PitchConfig = Tuning.pitch.duplicate() as PitchConfig
+	cfg.boundary_mode = PitchConfig.BoundaryMode.OUT_OF_BOUNDS if out_of_bounds else PitchConfig.BoundaryMode.WALLS
+	pitch.build(cfg)
 	ball = BALL_SCENE.instantiate()
 	ball.name = "Ball"
 	add_child(ball)
@@ -62,7 +67,8 @@ func _ready() -> void:
 		referee = Referee.new()
 		referee.name = "Referee"
 		add_child(referee)
-		referee.setup(ctx, Vector3(-2.0, 0.0, Tuning.pitch.width * 0.5 - 0.9))
+		# Con bandas el arbitro corre por fuera de la linea; con paredes, por dentro junto a la pared.
+		referee.setup(ctx, Vector3(-2.0, 0.0, Tuning.pitch.width * 0.5 + (1.1 if out_of_bounds else -0.9)))
 	manager = MatchManager.new()
 	manager.name = "MatchManager"
 	manager.duration_seconds = duration_seconds
@@ -70,6 +76,7 @@ func _ready() -> void:
 	add_child(manager)
 	manager.setup(ctx)
 	manager.kickoff_requested.connect(_on_kickoff_requested)
+	manager.set_piece_requested.connect(_on_set_piece_requested)
 	hud = Hud.new()
 	hud.name = "Hud"
 	add_child(hud)
@@ -84,6 +91,7 @@ func _ready() -> void:
 	next_marker = PlayerMarker.make(false)
 	add_child(next_marker)
 	camera.setup(ball, controlled, Tuning.pitch)
+	ctx.event_emitted.connect(_on_match_event)
 	GraphicsSettings.apply()
 	manager.start_match()
 
@@ -161,6 +169,8 @@ func kickoff_positions(team: int, kicking: bool = true) -> Array[Vector3]:
 	return out
 
 func _on_kickoff_requested(kicking_team: int) -> void:
+	for f in home + away:
+		f.set_piece = null
 	ball.reset_at(Vector3(0.0, 0.11, 0.0))
 	for team_list in [home, away]:
 		var team_index: int = 0 if team_list == home else 1
@@ -170,6 +180,125 @@ func _on_kickoff_requested(kicking_team: int) -> void:
 			(team_list[i] as Footballer).place_at(positions[mini(i, positions.size() - 1)], yaw)
 	if camera != null:
 		camera.snap_to_target()
+
+# --- Balon parado -----------------------------------------------------------------------------------------
+
+## Distancia (m) que deben respetar los rivales al balon parado (futsal: 5 m).
+const SET_PIECE_DISTANCE := 5.0
+
+## Prepara un balon parado: ejecutor (el mas cercano del equipo que saca; el arquero en el saque de arco), pelota en
+## su sitio y rivales a distancia. En corner, tiro libre cercano y penal, los demas se ordenan como en una jugada
+## ensayada (atacantes al area, defensores marcando). La pelota esta muerta: reubicar jugadores es legal.
+func _on_set_piece_requested(kind: String, team: int, pos: Vector3) -> void:
+	for f in home + away:
+		f.set_piece = null
+		f.incoming_pass_time = 0.0
+		f.ball_handler.cancel_charge()
+		f.ball_handler.abort_kick()
+	var cfg: PitchConfig = pitch.config
+	var gx: float = cfg.half_length() * (1.0 if team == 0 else -1.0)   # arco que ataca el equipo que saca
+	if kind == "goal_kick":
+		var k: Goalkeeper = null
+		for kk in keepers:
+			if kk.team == team:
+				k = kk
+		ball.reset_at(Vector3(pos.x, 0.12, pos.z))
+		if k != null:
+			k.start_goal_kick(Vector3(pos.x, 0.0, pos.z))
+			manager.goal_kick_keeper = k
+			ctx.restart_taker = k
+		_clear_zone(pos, team, 6.0)
+		_focus_after_set_piece(null)
+		return
+	var squad: Array[Footballer] = home if team == 0 else away
+	var taker: Footballer = null
+	var best: float = INF
+	for f in squad:
+		var d: float = Vector2(f.global_position.x - pos.x, f.global_position.z - pos.z).length()
+		if d < best:
+			best = d
+			taker = f
+	if taker == null:
+		ball.reset_at(Vector3(pos.x, 0.12, pos.z))
+		return
+	var k_kind: SetPiece.Kind = SetPiece.Kind.THROW_IN
+	match kind:
+		"corner":
+			k_kind = SetPiece.Kind.CORNER
+		"free_kick":
+			k_kind = SetPiece.Kind.FREE_KICK
+		"penalty":
+			k_kind = SetPiece.Kind.PENALTY
+	ball.reset_at(Vector3(pos.x, 0.12, pos.z))
+	var sp := SetPiece.new(k_kind, team, pos, taker, ctx)
+	taker.set_piece = sp
+	sp.place_taker()
+	manager.active_set_piece = sp
+	ctx.restart_taker = taker
+	if kind == "corner" or kind == "penalty" or (kind == "free_kick" and absf(pos.x - gx) < 16.0):
+		_arrange_box(kind, team, pos, taker)
+	_clear_zone(pos, team, SET_PIECE_DISTANCE if kind != "throw_in" else 2.0)
+	# La persona saca con su equipo: toma al ejecutor.
+	if team == 0 and taker.team == 0 and controlled != null and controlled_keeper == null and taker != controlled:
+		_give_control(taker)
+	_focus_after_set_piece(taker)
+
+func _focus_after_set_piece(taker: Footballer) -> void:
+	if camera != null:
+		if taker != null and taker.team == 0:
+			camera.set_focus_actor(taker)
+		camera.snap_to_target()
+
+## Aleja a los rivales del equipo que saca a `radius` metros de la pelota (direccion radial, dentro de la cancha).
+func _clear_zone(pos: Vector3, team: int, radius: float) -> void:
+	for f in (away if team == 0 else home):
+		var d := Vector3(f.global_position.x - pos.x, 0.0, f.global_position.z - pos.z)
+		if d.length() >= radius:
+			continue
+		var dir: Vector3 = d.normalized() if d.length() > 0.1 else Vector3(-signf(pos.x) if absf(pos.x) > 0.1 else 1.0, 0.0, 0.0)
+		var np: Vector3 = pitch.clamp_to_pitch(pos + dir * (radius + 0.3), 0.6)
+		if Vector2(np.x - pos.x, np.z - pos.z).length() < radius:
+			np = pitch.clamp_to_pitch(pos + Vector3(-signf(pos.x) * (radius + 0.3), 0.0, 0.0), 0.6)
+		f.place_at(np, f.locomotion.yaw)
+
+## Jugada ensayada en el area rival: atacantes a primer palo, segundo palo, punto de penal y borde del area; cada
+## defensor marca a uno por el lado del arco. En el penal, todos fuera del area y detras de la pelota.
+func _arrange_box(kind: String, team: int, pos: Vector3, taker: Footballer) -> void:
+	var cfg: PitchConfig = pitch.config
+	var gx: float = cfg.half_length() * (1.0 if team == 0 else -1.0)
+	var inward: float = -signf(gx)
+	var attackers: Array[Footballer] = []
+	for f in (home if team == 0 else away):
+		if f != taker:
+			attackers.append(f)
+	var defenders: Array[Footballer] = (away if team == 0 else home).duplicate()
+	var att_yaw: float = Locomotion.yaw_from_dir(Vector3(-inward, 0.0, 0.0))
+	var def_yaw: float = Locomotion.yaw_from_dir(Vector3(inward, 0.0, 0.0))
+	if kind == "penalty":
+		var edge: float = gx + inward * (cfg.penalty_area_radius + 1.5)
+		var zs := [-3.0, -1.0, 1.0, 3.0, -5.0, 5.0, 0.0]
+		var i: int = 0
+		for f in attackers + defenders:
+			f.place_at(Vector3(edge + inward * (0.8 if f.team != team else 0.0), 0.0, zs[i % zs.size()]), att_yaw)
+			i += 1
+		return
+	var side: float = signf(pos.z) if absf(pos.z) > 0.5 else 1.0
+	var spots := [
+		CrossAssist.zone_point(ctx, team, &"near_post", side),
+		CrossAssist.zone_point(ctx, team, &"far_post", side),
+		CrossAssist.zone_point(ctx, team, &"penalty_spot", side),
+		Vector3(gx + inward * (cfg.penalty_area_radius + 2.5), 0.0, -side * 2.0),
+	]
+	if kind == "free_kick":
+		# Tiro libre cercano: atacantes repartidos por el area, uno de apoyo corto.
+		spots[3] = pos + Vector3(inward * 2.5, 0.0, -side * 2.5)
+	for i in attackers.size():
+		var sp: Vector3 = spots[i % spots.size()]
+		attackers[i].place_at(pitch.clamp_to_pitch(sp + Vector3(inward * 1.2, 0.0, 0.0), 0.5), att_yaw)
+	for i in defenders.size():
+		var mark: Vector3 = spots[i % spots.size()]
+		# Marca por el lado del arco: entre el atacante y la porteria.
+		defenders[i].place_at(pitch.clamp_to_pitch(mark + Vector3(-inward * 0.2 + signf(gx) * 0.6, 0.0, 0.3), 0.5), def_yaw)
 
 ## Nodo que maneja la persona ahora mismo: el arquero si lo ha tomado, si no el jugador de campo.
 ## Lo usan la camara y los indicadores.
@@ -186,7 +315,35 @@ func own_keeper() -> Goalkeeper:
 func _charge_state() -> Dictionary:
 	if controlled == null or controlled_keeper != null:
 		return {}
-	return {"pass": controlled.ball_handler.pass_charge, "shoot": controlled.ball_handler.shot_charge}
+	var bh: BallHandler = controlled.ball_handler
+	return {"pass": bh.pass_charge, "shoot": bh.shot_charge, "through": bh.through_charge, "cross": bh.cross_charge}
+
+## Con un pase de la persona el control pasa al RECEPTOR en el momento del pase (como en los juegos de futbol de
+## consola): la persona maneja a quien va a recibir. El pasador queda en manos de la IA y, si hay espacio por delante,
+## sigue la jugada (pared): corre al espacio para ofrecer la devolucion.
+func _on_match_event(e: GameEvent) -> void:
+	if e.type != GameEvent.Type.PASS or controlled == null or controlled_keeper != null:
+		return
+	if e.actor_id != controlled.actor_id or e.team != 0:
+		return
+	var target_id: int = int(e.data.get("target", -1))
+	if target_id < 0:
+		return
+	var target: Footballer = null
+	for f in home:
+		if f.actor_id == target_id:
+			target = f
+	if target == null or target == controlled:
+		return
+	var passer: Footballer = controlled
+	_give_control(target)
+	_switch_cooldown = 0.6
+	var atk := Vector3(1.0, 0.0, 0.0)
+	var space: float = PassAssist._space_ahead(passer, atk, ctx.opponents_of(passer))
+	if not bool(e.data.get("cross", false)) and space > 4.0 and passer.global_position.x > -pitch.config.half_length() * 0.5:
+		# Hacia delante y algo hacia el centro (la devolucion llega por dentro).
+		passer.give_and_go_dir = (atk + Vector3(0.0, 0.0, -signf(passer.global_position.z) * 0.3)).normalized()
+		passer.give_and_go_time = 1.8
 
 var _switch_cooldown: float = 0.0
 

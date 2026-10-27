@@ -47,6 +47,18 @@ const REACTION_START_SPEED := 1.5
 const RECEIVE_MAX_SPEED := 2.0
 const RECEIVE_MAX_SECONDS := 0.9
 var _reaction: StringName = &""
+## Resultado de la ultima entrada pedida con el boton (stand, shoulder, slide, whiff): diagnostico y pruebas.
+var last_tackle: StringName = &""
+## Balon parado que ejecuta este jugador (saque de banda, corner, tiro libre, penal) o null.
+var set_piece: SetPiece = null
+## Pase que viene hacia este jugador: punto de llegada previsto, tipo y segundos de validez. La IA corre a ese punto
+## (desmarque de recepcion / carrera al espacio del filtrado); la persona lo ve en el indicador.
+var incoming_pass_point: Vector3 = Vector3.ZERO
+var incoming_pass_kind: StringName = &""
+var incoming_pass_time: float = 0.0
+## Carrera al espacio tras dar un pase (pared): direccion y segundos que quedan. La usa la IA del pasador.
+var give_and_go_dir: Vector3 = Vector3.ZERO
+var give_and_go_time: float = 0.0
 var _reaction_cut: float = REACTION_MAX_SECONDS
 var _reaction_wait: float = 0.0
 
@@ -98,6 +110,34 @@ func setup(context: MatchContext, team_index: int, id: int, attrs: PlayerAttribu
 	if visual != null and not visual.is_placeholder and team != 0:
 		visual.set_kit(FootballerVisual.default_kit(team))
 
+## Un companero acaba de pasarle la pelota: guarda el punto de llegada para ir a buscarla.
+func expect_pass(point: Vector3, kind: StringName) -> void:
+	incoming_pass_point = Vector3(point.x, 0.0, point.z)
+	incoming_pass_kind = kind
+	incoming_pass_time = 2.5 if String(kind).begins_with("through") or String(kind).begins_with("cross") else 1.6
+
+## true mientras hay un pase en camino hacia este jugador (y la pelota no la tiene nadie todavia).
+func has_incoming_pass() -> bool:
+	return incoming_pass_time > 0.0
+
+## Punto donde salir a buscar el pase que viene: el primero de la trayectoria PREDICHA de la pelota al que el jugador
+## llega antes que ella (a ras de piso o a la altura de la cabeza). Si no llega a ninguno, el punto de destino del pase.
+func pass_meet_point() -> Vector3:
+	var b: Ball = ctx.ball if ctx != null else null
+	if b == null:
+		return incoming_pass_point
+	var traj: PackedVector3Array = BallPredictor.trajectory(b.global_position, b.linear_velocity, 2.4, 0.1)
+	var run: float = maxf(locomotion.max_sprint_speed() * 0.9, 2.0)
+	var me := Vector3(global_position.x, 0.0, global_position.z)
+	for i in range(2, traj.size()):
+		var p: Vector3 = traj[i]
+		if p.y > 1.9:
+			continue
+		var flat := Vector3(p.x, 0.0, p.z)
+		if me.distance_to(flat) / run <= float(i) * 0.1 - 0.12:
+			return flat
+	return incoming_pass_point
+
 func set_attributes(attrs: PlayerAttributes) -> void:
 	attributes = attrs
 	if locomotion != null:
@@ -119,6 +159,7 @@ func has_ball() -> bool:
 
 func reset_motion() -> void:
 	_cancel_reaction()
+	set_piece = null
 	if actions != null:
 		actions.reset()
 	velocity = Vector3.ZERO
@@ -141,8 +182,17 @@ func place_at(pos: Vector3, yaw: float) -> void:
 func _physics_process(delta: float) -> void:
 	if ctx == null or locomotion == null:
 		return
+	incoming_pass_time = maxf(incoming_pass_time - delta, 0.0)
+	give_and_go_time = maxf(give_and_go_time - delta, 0.0)
+	if incoming_pass_time > 0.0 and ctx.ball != null and ctx.ball.last_toucher != null and ctx.ball.last_toucher.get("team") != team:
+		incoming_pass_time = 0.0   # lo corto un rival: ya no viene
 	var frame: InputFrame = input_source.poll(self) if (input_source != null and ctx.input_enabled) else InputFrame.new()
 	last_frame = frame
+	if set_piece != null:
+		if set_piece.tick(frame, delta):
+			return
+		if set_piece.stage == &"done":
+			set_piece = null
 	# Una accion de cuerpo completo (barrida, caida, levantarse) mueve al jugador con la raiz del clip.
 	if actions.tick(delta):
 		if visual != null:
@@ -161,6 +211,14 @@ func _physics_process(delta: float) -> void:
 	var desired_dir: Vector3 = stick_world.normalized() if stick_mag > 0.05 else Vector3.ZERO
 	var desired_mag: float = stick_mag
 	var want_sprint: bool = frame.sprint
+	# Recepcion asistida: con el joystick suelto, el jugador de la persona sale al encuentro del pase que le llega
+	# (se orienta y ajusta los pasos a la trayectoria real de la pelota). Mover el joystick manda siempre.
+	if is_human_controlled and stick_mag < 0.2 and has_incoming_pass() and not ball_handler.has_possession():
+		var to_meet: Vector3 = KickModel.flat(pass_meet_point() - global_position)
+		if to_meet.length() > 0.5:
+			desired_dir = to_meet.normalized()
+			desired_mag = clampf(to_meet.length() / 2.5, 0.4, 1.0)
+			want_sprint = to_meet.length() > 4.0
 
 	# Presion defensiva: el boton fija la INTENCION de disputar; el joystick solo ajusta el angulo.
 	is_pressing = false
@@ -172,14 +230,25 @@ func _physics_process(delta: float) -> void:
 			desired_dir = press_info.dir
 			desired_mag = press_info.magnitude
 			want_sprint = want_sprint or press_info.sprint
-			# Barrida de recuperacion: se decide al acercarse (1.3-2.7 m), antes del alcance del robo normal.
-			if press_info.carrier != null and actions.try_slide_tackle(press_info.carrier):
-				pass
-			elif press_info.attempt_tackle:
-				var won: bool = ball_handler.attempt_tackle(press_info.carrier)
-				tackled.emit(won)
+			# La IA disputa sola al presionar (barrida de recuperacion, carga o robo). La persona NO roba por mantener
+			# la presion: la presion solo cierra y contiene; la entrada se pide con el boton ENTRADA.
+			if not is_human_controlled:
+				if press_info.carrier != null and actions.try_slide_tackle(press_info.carrier):
+					pass
+				elif press_info.carrier != null and actions._alongside(press_info.carrier) and actions.rng.randf() < 0.04:
+					actions.shoulder_charge(press_info.carrier)
+				elif press_info.attempt_tackle:
+					var won: bool = ball_handler.attempt_tackle(press_info.carrier)
+					tackled.emit(won)
 	else:
 		press.reset()
+	if frame.tackle_pressed and not ball_handler.controls_ball():
+		var carrier: Footballer = press_info.carrier if press_info != null else PressController._find_carrier(ctx, ctx.ball, 1 - team, Tuning.player.possession_radius * 1.4)
+		last_tackle = actions.tackle_request(carrier)
+		if actions.tick(0.0):
+			if visual != null:
+				visual.update_motion(self, delta)
+			return
 
 	# Marcaje en jockey: cerca del portador rival mira hacia el y se mueve en cualquier direccion.
 	# Con la pelota, el mismo mecanismo sirve para el control lateral y para proteger el balon de espaldas al rival.
@@ -197,7 +266,9 @@ func _physics_process(delta: float) -> void:
 	var cap: float = -1.0
 	if ball_handler.has_possession():
 		cap = locomotion.max_sprint_speed() * lerpf(0.86, 0.97, attributes.norm("ball_carrying"))
+	var speed_before: float = locomotion.speed
 	locomotion.step(desired_dir, desired_mag, want_sprint, delta, cap)
+	_gait_overlays(desired_dir, want_sprint, stick_mag, speed_before, delta)
 
 	velocity.x = locomotion.velocity.x + nudge_velocity.x
 	velocity.z = locomotion.velocity.z + nudge_velocity.z
@@ -212,12 +283,60 @@ func _physics_process(delta: float) -> void:
 	rotation.y = locomotion.yaw
 
 	ball_handler.update(frame, stick_world, stick_mag, desired_dir, delta)
+	if incoming_pass_time > 0.0 and ball_handler.has_possession():
+		incoming_pass_time = 0.0
 	if visual != null:
 		_update_reaction(delta)
 		visual.directional = locomotion.jockeying
 		visual.carrying = ball_handler.has_possession()
 		visual.dir_velocity = Vector2(locomotion.forward_speed, locomotion.lateral_speed)
 		visual.update_motion(self, delta)
+
+# --- Transiciones de marcha con clips del pack ----------------------------------------------------------------
+
+## Clips de transicion sobre la marcha (todos se cortan en cuanto el movimiento real deja de corresponderles):
+##  - Idle_To_Sprint: arranque explosivo desde parado con sprint pedido.
+##  - Sprint_Turn: cambio de rumbo a la carrera hacia la derecha (el clip gira a ese lado).
+##  - Running_Tired (tramo final): se para agotado a recuperar el aliento.
+const IDLE_TO_SPRINT := &"Idle_To_Sprint"
+const SPRINT_TURN := &"Sprint_Turn"
+const TIRED_STOP := &"Running_Tired"
+const TIRED_STOP_FROM := 2.0
+var _overlay_cd: float = 0.0
+var _tired_cd: float = 0.0
+
+func _gait_overlays(desired_dir: Vector3, want_sprint: bool, stick_mag: float, speed_before: float, delta: float) -> void:
+	_overlay_cd = maxf(_overlay_cd - delta, 0.0)
+	_tired_cd = maxf(_tired_cd - delta, 0.0)
+	if visual == null or not visual.uses_pack or visual.is_placeholder:
+		return
+	var cur: StringName = visual.current_action
+	# Cortes: el clip deja de valer si el cuerpo ya no hace lo que muestra.
+	if cur == TIRED_STOP and locomotion.speed > 1.0:
+		visual.stop_current_action()
+	elif cur == SPRINT_TURN and locomotion.speed < 2.5:
+		visual.stop_current_action()
+	elif cur == IDLE_TO_SPRINT and stick_mag < 0.3:
+		visual.stop_current_action()
+	if visual.is_action_playing() or actions.active() or ball_handler.is_kick_in_progress() or ball_handler.has_possession():
+		return
+	if _tired_cd <= 0.0 and locomotion.exhausted and locomotion.speed < 0.4 and speed_before < 0.6 and PackLibrary.has_clip(TIRED_STOP):
+		if visual.play_pack_clip(TIRED_STOP, 1.0, TIRED_STOP_FROM, 2.6) > 0.0:
+			_tired_cd = 7.0
+		return
+	if _overlay_cd > 0.0:
+		return
+	if want_sprint and stick_mag > 0.8 and speed_before < 0.6 and locomotion.speed < 1.5:
+		if visual.play_pack_clip(IDLE_TO_SPRINT, 1.0, 0.0, 0.55) > 0.0:
+			_overlay_cd = 1.5
+		return
+	if locomotion.sprinting and locomotion.speed > 4.5 and desired_dir.length_squared() > 0.01:
+		var turn: float = rad_to_deg(wrapf(Locomotion.yaw_from_dir(desired_dir.normalized()) - locomotion.yaw, -PI, PI))
+		# yaw decreciente = giro a la derecha.
+		if turn < -35.0 and turn > -110.0:
+			if visual.play_pack_clip(SPRINT_TURN, 1.2, 0.0, 0.6) > 0.0:
+				_overlay_cd = 3.0
+			return
 
 # --- Reacciones de presentacion a eventos del partido --------------------------------------------
 
@@ -258,7 +377,29 @@ func _on_match_event(e: GameEvent) -> void:
 			_cancel_reaction()
 		GameEvent.Type.FIRST_TOUCH:
 			if e.actor_id == actor_id and locomotion.speed <= RECEIVE_MAX_SPEED and not ball_handler.is_kick_in_progress() and not visual.is_action_playing() and not actions.active():
-				visual.play_situation(&"receive", 0, 1.0, RECEIVE_MAX_SECONDS)
+				# Pelota que llega rapida: control con el cuerpo (Receive); suave: control con el pie (receive_soccerball).
+				var soft: bool = float(e.data.get("incoming_speed", 9.0)) < 6.0
+				visual.play_situation(&"receive", 1 if soft else 0, 1.0, RECEIVE_MAX_SECONDS)
+		GameEvent.Type.SHOT:
+			_try_block_jump(e)
+
+## Bloqueo: un defensor en la linea del disparo, cerca del que patea, salta para tapar (Defender_2). El bloqueo real lo
+## hace su cuerpo (la capsula) si la pelota le pega; el salto es la reaccion visible a un tiro que le viene encima.
+const BLOCK_CLIP := &"Defender_2"
+func _try_block_jump(e: GameEvent) -> void:
+	if e.team == team or actions.active() or visual.is_action_playing() or ctx.ball == null or not PackLibrary.has_clip(BLOCK_CLIP):
+		return
+	var b: Ball = ctx.ball
+	var d: Array = e.data.get("dir", [0.0, 0.0])
+	var v := Vector3(float(d[0]), 0.0, float(d[1])) * float(e.data.get("speed", 0.0))
+	if v.length() < 4.0:
+		return
+	var to_me: Vector3 = KickModel.flat(global_position - b.global_position)
+	var along: float = to_me.dot(v.normalized())
+	var off_line: float = (to_me - v.normalized() * along).length()
+	if along > 0.6 and along < 6.0 and off_line < 1.4:
+		visual.play_pack_clip(BLOCK_CLIP, 1.4, 0.0, 0.85)
+		locomotion.face_towards(-v, 1.0, 360.0)
 
 func rng_delay() -> float:
 	return float(actor_id % 5) * 0.12

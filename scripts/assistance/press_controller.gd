@@ -23,6 +23,8 @@ class PressOutput:
 
 var tackle_cooldown: float = 0.0
 var _carrier: Footballer = null
+## Segundos seguidos encima del portador sin llegar al alcance de robo (el cuerpo del portador tapa la pelota).
+var _close_time: float = 0.0
 
 func reset() -> void:
 	_carrier = null
@@ -114,7 +116,11 @@ func update(defender: Footballer, ctx: MatchContext, stick_world: Vector3, stick
 
 	# --- Disputa ---
 	var facing_ball: float = KickModel.angle_between_deg(defender.locomotion.forward(), ball_pos - d_pos)
-	if dist_ball <= cfg.press_tackle_range and tackle_cooldown <= 0.0 and ball.global_position.y < 0.6 and facing_ball < 85.0:
+	# Encima del portador que protege la pelota con el cuerpo: tras un rato estira la pierna (alcance algo mayor). Si no,
+	# un portador quieto y bien plantado podria retenerla para siempre.
+	_close_time = _close_time + dt if (carrier != null and dist_ball < cfg.press_tackle_range + 0.45) else 0.0
+	var reach: float = cfg.press_tackle_range + (0.3 if _close_time > 1.2 else 0.0)
+	if dist_ball <= reach and tackle_cooldown <= 0.0 and ball.global_position.y < 0.6 and facing_ball < 85.0:
 		out.attempt_tackle = true
 		tackle_cooldown = cfg.press_tackle_cooldown
 	return out

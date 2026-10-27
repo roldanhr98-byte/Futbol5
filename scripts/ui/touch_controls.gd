@@ -44,14 +44,20 @@ func _ready() -> void:
 	resized.connect(queue_redraw)
 
 func _build_buttons() -> void:
+	InputBindings.ensure()
 	buttons.clear()
-	_add(&"shoot", "TIRO", &"shoot", Vector2(-150, -150), 72.0, Color(0.95, 0.25, 0.2), &"shoot")
-	_add(&"pass", "PASE", &"pass", Vector2(-300, -105), 64.0, Color(0.2, 0.8, 0.35), &"pass")
-	_add(&"sprint", "SPRINT", &"sprint", Vector2(-110, -310), 54.0, Color(0.25, 0.55, 0.95))
-	_add(&"press", "PRESIÓN", &"press", Vector2(-270, -255), 54.0, Color(0.95, 0.7, 0.15))
-	_add(&"lob", "ALTO", &"lob", Vector2(-410, -190), 44.0, Color(0.7, 0.45, 0.95))
-	_add(&"skill", "REGATE", &"skill", Vector2(-430, -320), 44.0, Color(0.95, 0.5, 0.15))
-	var sw := _add(&"switch", "CAMBIO", &"switch_player", Vector2(-420, -70), 42.0, Color(0.3, 0.85, 0.85))
+	# Arco de botones alrededor del pulgar derecho. Ofensivos cerca de la esquina (tiro, pase, filtrado, centro) y
+	# defensivos arriba (presion, entrada); los modificadores (sprint, alto, regate) a la izquierda del arco.
+	_add(&"shoot", "TIRO", &"shoot", Vector2(-130, -130), 68.0, Color(0.95, 0.25, 0.2), &"shoot")
+	_add(&"pass", "PASE", &"pass", Vector2(-285, -85), 58.0, Color(0.2, 0.8, 0.35), &"pass")
+	_add(&"through", "FILTRADO", &"through_pass", Vector2(-275, -225), 48.0, Color(0.15, 0.65, 0.9), &"through")
+	_add(&"cross", "CENTRO", &"cross", Vector2(-140, -285), 48.0, Color(0.95, 0.85, 0.2), &"cross")
+	_add(&"sprint", "SPRINT", &"sprint", Vector2(-425, -80), 48.0, Color(0.25, 0.55, 0.95))
+	_add(&"lob", "ALTO", &"lob", Vector2(-410, -210), 40.0, Color(0.7, 0.45, 0.95))
+	_add(&"press", "PRESIÓN", &"press", Vector2(-262, -362), 46.0, Color(0.95, 0.7, 0.15))
+	_add(&"tackle", "ENTRADA", &"tackle", Vector2(-118, -432), 46.0, Color(0.9, 0.35, 0.55))
+	_add(&"skill", "REGATE", &"skill", Vector2(-405, -340), 40.0, Color(0.95, 0.5, 0.15))
+	var sw := _add(&"switch", "CAMBIO", &"switch_player", Vector2(-545, -88), 40.0, Color(0.3, 0.85, 0.85))
 	sw.visible_when = func() -> bool: return show_switch
 	var pause := _add(&"pause", "II", &"", Vector2(-60, 0), 28.0, Color(0.85, 0.85, 0.85))
 	pause.anchor = Vector2(-60, 0)   # arriba a la derecha (ver _button_center)
@@ -71,7 +77,18 @@ func _add(id: StringName, text: String, action: StringName, anchor: Vector2, rad
 func _button_center(b: TouchButton) -> Vector2:
 	if b.id == &"pause":
 		return Vector2(size.x + b.anchor.x, 52.0)
-	return Vector2(size.x + b.anchor.x, size.y + b.anchor.y)
+	return Vector2(size.x + b.anchor.x * _scale(), size.y + b.anchor.y * _scale())
+
+## Escala de la botonera (preferencia del usuario: botones pequenos, normales o grandes).
+func _scale() -> float:
+	return Tuning.touch_scale if Tuning != null else 1.0
+
+func _radius(b: TouchButton) -> float:
+	return b.radius * (_scale() if b.id != &"pause" else 1.0)
+
+## Radio del joystick: con mas sensibilidad basta un recorrido menor del pulgar para llegar al maximo.
+func joy_radius() -> float:
+	return JOY_RADIUS / (Tuning.joystick_sensitivity if Tuning != null else 1.0)
 
 ## Centro (en coordenadas del control) de un boton por id. Util para pruebas.
 func get_button_center(id: StringName) -> Vector2:
@@ -110,7 +127,7 @@ func _touch_down(index: int, pos: Vector2) -> void:
 	for b in buttons:
 		if not _button_visible(b) or b.touch_index != -1:
 			continue
-		if pos.distance_to(_button_center(b)) <= b.radius * 1.2:
+		if pos.distance_to(_button_center(b)) <= _radius(b) * 1.2:
 			b.touch_index = index
 			b.pressed = true
 			if b.action != &"":
@@ -150,11 +167,12 @@ func _update_joystick() -> void:
 	var d: Vector2 = _joy_pos - _joy_origin
 	var len: float = d.length()
 	# El origen sigue al dedo si se aleja demasiado (joystick flotante comodo con el pulgar).
-	if len > JOY_RADIUS * 1.6:
-		_joy_origin += d.normalized() * (len - JOY_RADIUS * 1.6)
+	var jr: float = joy_radius()
+	if len > jr * 1.6:
+		_joy_origin += d.normalized() * (len - jr * 1.6)
 		d = _joy_pos - _joy_origin
 		len = d.length()
-	var m: float = clampf(len / JOY_RADIUS, 0.0, 1.0)
+	var m: float = clampf(len / jr, 0.0, 1.0)
 	if m < JOY_DEADZONE:
 		_joy_vec = Vector2.ZERO
 	else:
@@ -205,22 +223,24 @@ func _draw() -> void:
 	var charges: Dictionary = charge_source.call() if charge_source.is_valid() else {}
 	# Joystick: base tenue siempre visible para indicar donde tocar.
 	var base_center: Vector2 = _joy_origin if _joy_index != -1 else _default_joy_center_for_size()
-	draw_circle(base_center, JOY_RADIUS, Color(1, 1, 1, 0.08))
-	draw_arc(base_center, JOY_RADIUS, 0.0, TAU, 48, Color(1, 1, 1, 0.35), 3.0, true)
-	var knob: Vector2 = base_center + _joy_vec * JOY_RADIUS
+	var jr: float = joy_radius()
+	draw_circle(base_center, jr, Color(1, 1, 1, 0.08))
+	draw_arc(base_center, jr, 0.0, TAU, 48, Color(1, 1, 1, 0.35), 3.0, true)
+	var knob: Vector2 = base_center + _joy_vec * jr
 	draw_circle(knob, 38.0, Color(1, 1, 1, 0.35 if _joy_index != -1 else 0.15))
 	for b in buttons:
 		if not _button_visible(b):
 			continue
 		var c: Vector2 = _button_center(b)
+		var rad: float = _radius(b)
 		var a: float = 0.55 if b.pressed else 0.28
-		draw_circle(c, b.radius, Color(b.color.r, b.color.g, b.color.b, a))
-		draw_arc(c, b.radius, 0.0, TAU, 40, Color(b.color.r, b.color.g, b.color.b, 0.9), 3.0, true)
+		draw_circle(c, rad, Color(b.color.r, b.color.g, b.color.b, a))
+		draw_arc(c, rad, 0.0, TAU, 40, Color(b.color.r, b.color.g, b.color.b, 0.9), 3.0, true)
 		if b.charge_key != &"" and charges.has(String(b.charge_key)):
 			var ch: float = float(charges[String(b.charge_key)])
 			if ch > 0.01:
-				draw_arc(c, b.radius + 8.0, -PI * 0.5, -PI * 0.5 + TAU * ch, 48, Color(1, 1, 1, 0.95), 6.0, true)
-		var fs: int = FONT_SIZE if b.radius > 50.0 else 17
+				draw_arc(c, rad + 8.0, -PI * 0.5, -PI * 0.5 + TAU * ch, 48, Color(1, 1, 1, 0.95), 6.0, true)
+		var fs: int = FONT_SIZE if rad > 50.0 else (17 if rad > 42.0 else 14)
 		var ts: Vector2 = font.get_string_size(b.label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs)
 		draw_string(font, c + Vector2(-ts.x * 0.5, ts.y * 0.3), b.label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(1, 1, 1, 0.95))
 

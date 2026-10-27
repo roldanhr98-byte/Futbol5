@@ -13,6 +13,8 @@ signal touched_ball(kind: StringName)
 
 ## Interruptor global (pruebas): false fuerza siempre la patada procedural antigua.
 static var clip_kicks_enabled: bool = true
+## Interruptor global (pruebas): false ignora los pies animados y conduce con la cadencia de la marcha.
+static var foot_sync_enabled: bool = true
 ## Maximo de entradas del registro de patadas.
 const KICK_LOG_MAX := 64
 ## Segundos que espera un pase o tiro pulsado hasta que algun pie llegue a la pelota antes de descartarse.
@@ -45,6 +47,10 @@ var _pass_active: bool = false
 var _pass_time: float = 0.0
 var _shoot_active: bool = false
 var _shoot_time: float = 0.0
+var _through_active: bool = false
+var _through_time: float = 0.0
+var _cross_active: bool = false
+var _cross_time: float = 0.0
 var _pending_action: StringName = &""
 var _pending_charge: float = 0.0
 var _pending_lob: bool = false
@@ -75,6 +81,8 @@ var _desired_dir: Vector3 = Vector3.ZERO
 ## Progreso de carga actual (0..1) para el HUD.
 var pass_charge: float = 0.0
 var shot_charge: float = 0.0
+var through_charge: float = 0.0
+var cross_charge: float = 0.0
 
 func _init(o: Footballer) -> void:
 	owner = o
@@ -133,6 +141,7 @@ func update(frame: InputFrame, stick_world: Vector3, stick_mag: float, desired_d
 	control_cooldown = maxf(control_cooldown - dt, 0.0)
 	_redirect_hold = maxf(_redirect_hold - dt, 0.0)
 	_desired_dir = desired_dir
+	_sample_feet(dt)
 	_update_buttons(frame, stick_world, dt)
 	if _kick_action != &"":
 		_kick_timer -= dt
@@ -149,7 +158,7 @@ func update(frame: InputFrame, stick_world: Vector3, stick_mag: float, desired_d
 				kick_stats["out_of_reach"] += 1
 				owner.ctx.emit_event(GameEvent.make(GameEvent.Type.KICK_WHIFF, owner.actor_id, owner.team, {"action": String(_pending_action), "reason": "out_of_reach"}))
 			_pending_action = &""
-	if lockout > 0.0:
+	if lockout > 0.0 or owner.ctx.ball_locked_for(owner):
 		return
 	if _try_first_touch(desired_dir):
 		return
@@ -159,7 +168,9 @@ func update(frame: InputFrame, stick_world: Vector3, stick_mag: float, desired_d
 
 func _update_buttons(frame: InputFrame, stick_world: Vector3, dt: float) -> void:
 	var bt: BallTuning = Tuning.ball
-	if frame.pass_pressed and not _shoot_active:
+	# Un solo boton de golpeo a la vez: el primero que se pulsa manda hasta soltarse.
+	var busy: bool = _pass_active or _shoot_active or _through_active or _cross_active
+	if frame.pass_pressed and not busy:
 		_pass_active = true
 		_pass_time = 0.0
 	if _pass_active:
@@ -170,7 +181,7 @@ func _update_buttons(frame: InputFrame, stick_world: Vector3, dt: float) -> void
 			_queue(&"pass", pass_charge, frame.lob_held, stick_world)
 			_pass_active = false
 			pass_charge = 0.0
-	if frame.shoot_pressed and not _pass_active:
+	if frame.shoot_pressed and not busy:
 		_shoot_active = true
 		_shoot_time = 0.0
 	if _shoot_active:
@@ -181,6 +192,28 @@ func _update_buttons(frame: InputFrame, stick_world: Vector3, dt: float) -> void
 			_queue(&"shot", shot_charge, frame.lob_held, stick_world)
 			_shoot_active = false
 			shot_charge = 0.0
+	if frame.through_pressed and not busy:
+		_through_active = true
+		_through_time = 0.0
+	if _through_active:
+		if frame.through_held:
+			_through_time += dt
+		through_charge = clampf(_through_time / 0.8, 0.0, 1.0)
+		if frame.through_released or not frame.through_held:
+			_queue(&"through", through_charge, frame.lob_held, stick_world)
+			_through_active = false
+			through_charge = 0.0
+	if frame.cross_pressed and not busy:
+		_cross_active = true
+		_cross_time = 0.0
+	if _cross_active:
+		if frame.cross_held:
+			_cross_time += dt
+		cross_charge = clampf(_cross_time / 0.8, 0.0, 1.0)
+		if frame.cross_released or not frame.cross_held:
+			_queue(&"cross", cross_charge, frame.lob_held, stick_world)
+			_cross_active = false
+			cross_charge = 0.0
 
 func _queue(action: StringName, charge: float, lob: bool, stick_world: Vector3) -> void:
 	_pending_action = action
@@ -190,7 +223,7 @@ func _queue(action: StringName, charge: float, lob: bool, stick_world: Vector3) 
 	_pending_age = 0.0
 
 func _try_execute_pending() -> bool:
-	if lockout > 0.0:
+	if lockout > 0.0 or owner.ctx.ball_locked_for(owner):
 		return false
 	if uses_clip_kicks():
 		var plan: Dictionary = plan_clip_kick(_pending_action, _pending_charge, _pending_lob)
@@ -209,7 +242,7 @@ func _try_execute_pending() -> bool:
 
 ## Segundos entre el inicio de la patada y el golpeo (la animacion y el impulso comparten este instante).
 func contact_delay(action: StringName, charge: float) -> float:
-	return 0.10 if action == &"pass" else 0.12 + 0.06 * charge
+	return 0.12 + 0.06 * charge if action == &"shot" else 0.10
 
 ## Comienza una patada: arranca la animacion y programa el impulso para el instante de contacto.
 func request_kick(action: StringName, stick_world: Vector3, charge: float, lob: bool) -> void:
@@ -225,6 +258,8 @@ func request_kick(action: StringName, stick_world: Vector3, charge: float, lob: 
 	var side: int = 1 if ball_offset().dot(owner.locomotion.right()) >= 0.0 else -1
 	if owner.visual != null:
 		var power: float = charge if action == &"shot" else 0.35 + 0.5 * charge
+		if action == &"cross":
+			power = 0.6 + 0.4 * charge
 		owner.visual.start_kick(_kick_timer, power, side)
 
 func is_kick_in_progress() -> bool:
@@ -284,8 +319,12 @@ func abort_kick() -> void:
 func cancel_charge() -> void:
 	_pass_active = false
 	_shoot_active = false
+	_through_active = false
+	_cross_active = false
 	pass_charge = 0.0
 	shot_charge = 0.0
+	through_charge = 0.0
+	cross_charge = 0.0
 
 func predicted_foot_to_ball(contact: Dictionary, latency: float) -> Vector3:
 	var b: Ball = ball()
@@ -380,7 +419,8 @@ func plan_clip_kick(action: StringName, charge: float, lob: bool) -> Dictionary:
 	var adjust_max: float = t.kick_adjust_max + t.kick_adjust_sprint * _sprint_ratio()
 	var best: Dictionary = {}
 	var best_score: float = INF
-	for cand in AnimationCatalog.kick_candidates(&"lob" if lob else action):
+	var kind_key: StringName = action if action == &"cross" else (&"lob" if lob else action)
+	for cand in AnimationCatalog.kick_candidates(kind_key):
 		for smp in contact_samples(cand["contact"]):
 			var c := {"time": smp["time"], "pos": smp["pos"], "foot": cand["foot"]}
 			var timing: Dictionary = clip_timing(float(c["time"]), action, charge)
@@ -451,10 +491,7 @@ func _finish_clip_kick() -> void:
 	kick_stats["contact"] += 1
 	_log_kick(action, &"contact", info)
 	_kick_event_info = info
-	if action == &"pass":
-		perform_pass(_kick_stick, _kick_charge, _kick_lob)
-	else:
-		perform_shot(_kick_stick, _kick_charge, _kick_lob)
+	perform_action(action, _kick_stick, _kick_charge, _kick_lob)
 	_kick_event_info = {}
 
 func _finish_kick() -> void:
@@ -469,10 +506,45 @@ func _finish_kick() -> void:
 		lockout = 0.3
 		owner.ctx.emit_event(GameEvent.make(GameEvent.Type.KICK_WHIFF, owner.actor_id, owner.team, {"action": String(action)}))
 		return
-	if action == &"pass":
-		perform_pass(_kick_stick, _kick_charge, _kick_lob)
-	else:
-		perform_shot(_kick_stick, _kick_charge, _kick_lob)
+	perform_action(action, _kick_stick, _kick_charge, _kick_lob)
+
+## Ejecuta el golpeo de una accion (pase, filtrado, centro o tiro) en el instante de contacto.
+func perform_action(action: StringName, stick_world: Vector3, charge: float, lob: bool) -> KickModel.KickResult:
+	match action:
+		&"pass":
+			return perform_pass(stick_world, charge, lob)
+		&"through":
+			return perform_through(stick_world, charge, lob)
+		&"cross":
+			return perform_cross(stick_world, charge, lob)
+		_:
+			return perform_shot(stick_world, charge, lob)
+
+## Pase filtrado: al espacio por delante del desmarque del receptor.
+func perform_through(stick_world: Vector3, charge: float, lob: bool) -> KickModel.KickResult:
+	var ctx: MatchContext = owner.ctx
+	var res: KickModel.KickResult = PassAssist.compute_through(owner, ctx, stick_world, charge, lob, rng, assist_pass_level())
+	ball().kick(res.velocity, res.spin, owner)
+	_after_kick(&"pass", res)
+	var data: Dictionary = {"target": res.target.actor_id if res.target != null else -1, "kind": String(res.kind),
+		"charge": charge, "error_deg": res.error_deg, "speed": res.velocity.length(), "through": true,
+		"aim": [res.aim_point.x, res.aim_point.z]}
+	data.merge(_kick_event_info)
+	ctx.emit_event(GameEvent.make(GameEvent.Type.PASS, owner.actor_id, owner.team, data))
+	return res
+
+## Centro al area: con ALTO sale raso; con carga alta, tenso; si no, elevado.
+func perform_cross(stick_world: Vector3, charge: float, low: bool) -> KickModel.KickResult:
+	var ctx: MatchContext = owner.ctx
+	var res: KickModel.KickResult = CrossAssist.compute(owner, ctx, stick_world, charge, low, rng, assist_pass_level())
+	ball().kick(res.velocity, res.spin, owner)
+	_after_kick(&"pass", res)
+	var data: Dictionary = {"target": res.target.actor_id if res.target != null else -1, "kind": String(res.kind),
+		"charge": charge, "error_deg": res.error_deg, "speed": res.velocity.length(), "cross": true,
+		"aim": [res.aim_point.x, res.aim_point.z]}
+	data.merge(_kick_event_info)
+	ctx.emit_event(GameEvent.make(GameEvent.Type.PASS, owner.actor_id, owner.team, data))
+	return res
 
 ## Ejecuta un pase ahora mismo (la pelota debe estar a alcance). Devuelve el resultado.
 func perform_pass(stick_world: Vector3, charge: float, lob: bool) -> KickModel.KickResult:
@@ -501,6 +573,7 @@ func perform_shot(stick_world: Vector3, charge: float, lob: bool) -> KickModel.K
 		"kind": String(res.kind), "charge": charge, "error_deg": res.error_deg,
 		"weak_foot": res.weak_foot, "speed": res.velocity.length(),
 		"predicted_on_target": res.on_target, "assisted_deg": res.assisted_correction_deg,
+		"dir": [res.final_dir.x, res.final_dir.z],
 	}
 	data.merge(_kick_event_info)
 	ctx.emit_event(GameEvent.make(GameEvent.Type.SHOT, owner.actor_id, owner.team, data))
@@ -508,12 +581,101 @@ func perform_shot(stick_world: Vector3, charge: float, lob: bool) -> KickModel.K
 
 func _after_kick(action: StringName, res: KickModel.KickResult) -> void:
 	last_result = res
+	# El receptor de un pase sabe a donde va la pelota: corre a ese punto (el pase no le cae del cielo).
+	if action == &"pass" and res.target != null and is_instance_valid(res.target) and res.target != owner:
+		res.target.expect_pass(res.aim_point, res.kind)
 	_last_kick_msec = Time.get_ticks_msec()
 	lockout = Tuning.player.kick_lockout
 	touch_timer = lockout
 	# Patear desequilibra levemente: pierde algo de velocidad.
 	owner.locomotion.velocity *= 0.9
 	kicked.emit(action, res)
+
+# --- Pies animados (esqueleto vivo) ------------------------------------------------
+
+## Distancia (m) maxima entre la punta del pie animado y el centro de la pelota para que el pie la toque.
+const FOOT_CONTACT := 0.28
+## Altura (m) maxima de la punta del pie para contar como toque raso.
+const FOOT_MAX_Y := 0.20
+## La pelota se deja esta distancia (m) por delante del alcance de la punta del pie (radio de la pelota y holgura).
+const FOOT_BALL_LEAD := 0.10
+## Segundos maximos sin pie en la pelota antes de tocarla igual si se escapa junto al cuerpo.
+const FOOT_WAIT_MAX := 0.30
+## true cuando el esqueleto del jugador se esta animando de verdad (en partido, no en pruebas headless).
+var feet_live: bool = false
+var _toe_ids: Array[int] = []
+var _toe_now: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
+var _toe_prev: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
+var _toe_vel: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
+var _foot_reach: float = 0.45
+var _reach_peak: float = 0.45
+var _foot_wait: float = 0.0
+var _still_frames: int = 0
+var _dt: float = 1.0 / 60.0
+## Toques de conduccion dados con el pie animado y distancia pie-pelota del ultimo (diagnostico y pruebas).
+var foot_touches: int = 0
+var last_touch_foot_distance: float = -1.0
+
+func get_dt() -> float:
+	return _dt
+
+## Lee las puntas de los pies del esqueleto animado. Si no se mueven (headless, maniqui) feet_live queda en false y la
+## conduccion usa la cadencia de la marcha.
+func _sample_feet(dt: float) -> void:
+	_dt = dt
+	var v: FootballerVisual = owner.visual
+	if v == null or v.is_placeholder or v.skeleton == null:
+		feet_live = false
+		return
+	var sk: Skeleton3D = v.skeleton
+	if _toe_ids.is_empty():
+		_toe_ids = [sk.find_bone("mixamorig_LeftToeBase"), sk.find_bone("mixamorig_RightToeBase")]
+		if _toe_ids[0] < 0 or _toe_ids[1] < 0:
+			_toe_ids = []
+			return
+	var moved: bool = false
+	var body_v := Vector3(owner.locomotion.velocity.x, 0.0, owner.locomotion.velocity.z)
+	var fwd: Vector3 = owner.locomotion.forward()
+	var best_fwd: float = -INF
+	for i in 2:
+		_toe_prev[i] = _toe_now[i]
+		_toe_now[i] = sk.global_transform * sk.get_bone_global_pose(_toe_ids[i]).origin
+		_toe_vel[i] = (_toe_now[i] - _toe_prev[i]) / maxf(dt, 0.001) - body_v
+		var rel: Vector3 = _toe_now[i] - owner.global_position
+		if (_toe_now[i] - _toe_prev[i] - body_v * dt).length() > 0.002:
+			moved = true
+		if _toe_now[i].y < FOOT_MAX_Y:
+			best_fwd = maxf(best_fwd, rel.dot(fwd))
+	_still_frames = 0 if moved else _still_frames + 1
+	# El esqueleto se considera vivo si las puntas se movieron respecto al cuerpo en el ultimo medio segundo.
+	feet_live = foot_sync_enabled and _still_frames < 30
+	# Alcance de la zancada: maximo reciente de la punta del pie apoyada/baja por delante del cuerpo.
+	_reach_peak = maxf(_reach_peak - 0.5 * dt, best_fwd if best_fwd > -INF else 0.0)
+	_foot_reach = clampf(_reach_peak, 0.2, 0.9)
+
+## Pie (0 izquierdo, 1 derecho) que puede tocar la pelota ahora: punta baja, a FOOT_CONTACT de la pelota, por detras de
+## ella y yendo hacia delante (o casi quieta) respecto al cuerpo. -1 si ninguno.
+func _foot_strike(b: Ball, mode: StringName, close_in: bool = false) -> int:
+	var fwd: Vector3 = owner.locomotion.forward()
+	var push_dir: Vector3 = fwd if (mode == &"carry" or mode == &"setup") else KickModel.flat(b.global_position - owner.global_position).normalized()
+	var radius: float = FOOT_CONTACT * (1.4 if mode == &"settle" or mode == &"lateral" or mode == &"redirect" or close_in else 1.0)
+	if close_in:
+		# Pelota pegada al cuerpo: la toca el pie que este encima, sin exigir que vaya hacia delante (la empuja o la arrastra).
+		mode = &"near"
+	var best: int = -1
+	var best_d: float = radius
+	for i in 2:
+		var toe: Vector3 = _toe_now[i]
+		if toe.y > FOOT_MAX_Y:
+			continue
+		var d: float = toe.distance_to(b.global_position)
+		if d > best_d:
+			continue
+		if (mode == &"carry" or mode == &"setup") and ((b.global_position - toe).dot(push_dir) < -0.06 or _toe_vel[i].dot(fwd) < -0.6):
+			continue
+		best_d = d
+		best = i
+	return best
 
 # --- Conduccion ------------------------------------------------------------
 ##
@@ -554,7 +716,9 @@ func _touch_interval(ratio: float) -> float:
 	var step: float = FootballerVisual.step_interval_for(owner.locomotion.speed)
 	if step <= 0.0:
 		return fixed
-	return clampf(step * (1.0 if ratio < 0.2 else 2.0), 0.2, 0.6)
+	# Con pies vivos se toca en cada apoyo hasta la carrera (el pie que llega a la pelota) y cada dos a sprint.
+	var every: float = (1.0 if ratio < 0.6 else 2.0) if feet_live else (1.0 if ratio < 0.2 else 2.0)
+	return clampf(step * every, 0.18 if feet_live else 0.2, 0.6)
 
 ## Rival mas cercano a este jugador dentro de `radius` (o null). Lo usan la proteccion y el calculo de presion.
 func nearest_opponent(radius: float) -> Footballer:
@@ -637,7 +801,24 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 		var rel_future: Vector3 = off + rel_v * 0.14
 		escaping = rel_future.length() > reach * t.touch_escape_factor and dist < reach * 1.3
 	var urgent: bool = escaping or mode == &"redirect" or (mode == &"settle" and rel_v.length() > 0.8)
-	if touch_timer > 0.0 and not (urgent and touch_timer < interval * 0.8):
+	var strike: int = -1
+	if feet_live:
+		# Con el esqueleto animado el toque lo da un PIE: solo cuando una punta de pie baja llega a la pelota. Si no hay
+		# pie en la pelota se espera (el jugador alcanza su propio toque largo); la pelota que se escapa junto al cuerpo
+		# se toca igual tras FOOT_WAIT_MAX para no perderla.
+		if touch_timer > interval * 0.45:
+			return
+		var close_in: bool = off.dot(fwd) < _foot_reach * 0.9 and (mode == &"carry" or mode == &"setup")
+		strike = _foot_strike(b, mode, close_in)
+		if strike < 0:
+			_foot_wait += get_dt()
+			# En un cambio de rumbo no se puede esperar a la zancada: el toque llega antes (el pie se estira a la pelota).
+			# Si el cuerpo alcanza a la pelota (queda pegada o por detras de la punta del pie) tampoco: el jugador la pisaria.
+			var overrun: bool = off.dot(fwd) < _foot_reach * 0.9 and (mode == &"carry" or mode == &"setup")
+			var wait_max: float = 0.08 if (mode == &"redirect" or mode == &"lateral" or overrun) else FOOT_WAIT_MAX
+			if not ((urgent or overrun or dist > _planned_gap + 0.25) and dist < reach * 1.3 and _foot_wait > wait_max):
+				return
+	elif touch_timer > 0.0 and not (urgent and touch_timer < interval * 0.8):
 		return
 	var lateral_off: float = absf(off.dot(loco.right()))
 	var trigger: float = clampf(_planned_gap + 0.14, reach * 0.5, reach * 1.1)
@@ -697,8 +878,20 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 			# A sprint el toque puede pasarse (toque largo); con mejor control se pasa menos.
 			gap += absf(rng.randfn(0.0, t.touch_overshoot_sprint * (1.2 - skill))) * ratio * ratio
 
+	# Con pies vivos la pelota se deja donde llega la punta del pie en su zancada (mas un radio): asi el siguiente toque
+	# lo da el pie de verdad. Sin esqueleto animado, la ley de distancias de PlayerTuning.
+	if feet_live and (mode == &"carry" or mode == &"setup" or mode == &"redirect"):
+		var foot_gap: float = _foot_reach + FOOT_BALL_LEAD
+		if mode == &"setup":
+			foot_gap = _foot_reach * 0.8 + FOOT_BALL_LEAD
+		var long_touch: float = gap - carry_gap(carry_speed, skill)
+		gap = clampf(foot_gap + maxf(long_touch, 0.0) * 0.5, t.carry_gap_stand, reach * 1.2)
 	gap = minf(gap, reach * 1.35 - 0.05)
 	_planned_gap = gap
+	_foot_wait = 0.0
+	if strike >= 0:
+		foot_touches += 1
+		last_touch_foot_distance = _toe_now[strike].distance_to(b.global_position)
 
 	# Posicion del jugador cuando la pelota llegue a destino: promedio entre su velocidad actual y la que tendra.
 	var p_pos: Vector3 = KickModel.flat(owner.global_position)
@@ -833,6 +1026,13 @@ func _try_first_touch(desired_dir: Vector3) -> bool:
 	var closing: float = -rel_v.dot(off / dist)
 	if closing < 2.2:
 		return false
+	if feet_live:
+		# Con pies vivos el control lo hace el pie (o el cuerpo) cuando la pelota LLEGA a el, no a un metro: se espera a
+		# que una punta de pie este en la pelota o a que la pelota vaya a alcanzar el cuerpo en el proximo paso.
+		var toe_d: float = minf(_toe_now[0].distance_to(b.global_position), _toe_now[1].distance_to(b.global_position))
+		var next_d: float = dist - closing * _dt * 1.1
+		if toe_d > FOOT_CONTACT + 0.06 and next_d > 0.48:
+			return false
 	var loco: Locomotion = owner.locomotion
 	var ratio: float = _sprint_ratio()
 	var absorb: float = t.first_touch_absorb * owner.attributes.factor("ball_control", 0.35)
@@ -865,7 +1065,7 @@ func _try_first_touch(desired_dir: Vector3) -> bool:
 ## velocidad relativa y atributos de ambos jugadores. Devuelve true si la recupera.
 func attempt_tackle(carrier: Footballer) -> bool:
 	var b: Ball = ball()
-	if b == null:
+	if b == null or owner.ctx.ball_locked_for(owner):
 		return false
 	var d_off: Vector3 = ball_offset()
 	var dist: float = d_off.length()

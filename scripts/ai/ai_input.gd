@@ -156,6 +156,14 @@ func _run_button(out: InputFrame, f: Footballer, dt: float) -> InputFrame:
 		out.pass_pressed = pressed
 		out.pass_held = held
 		out.pass_released = releasing
+	elif _btn == &"through":
+		out.through_pressed = pressed
+		out.through_held = held
+		out.through_released = releasing
+	elif _btn == &"cross":
+		out.cross_pressed = pressed
+		out.cross_held = held
+		out.cross_released = releasing
 	else:
 		out.shoot_pressed = pressed
 		out.shoot_held = held
@@ -182,6 +190,9 @@ func _decide(f: Footballer) -> void:
 	var bpos: Vector3 = _flat(ball.global_position)
 	_press = false
 	_sprint = false
+	if ctx.dead_ball:
+		_decide_dead_ball(f, ctx, atk, pos, bpos)
+		return
 	if ball.is_held():
 		_move_to(f, _anchor(f, false), 0.7)
 		return
@@ -197,6 +208,25 @@ func _decide(f: Footballer) -> void:
 		_decide_with_ball(f, ctx, atk)
 		return
 	_carry_time = 0.0
+	# Pase en camino hacia mi: salgo a buscarlo al punto donde llego antes que la pelota.
+	if f.has_incoming_pass():
+		var meet: Vector3 = f.pass_meet_point()
+		_move_to(f, meet, 1.0)
+		_sprint = (meet - pos).length() > 3.0
+		return
+	# Un companero tiene un pase en camino: la jugada es de mi equipo aunque la pelota viaje suelta.
+	if not team_has and ball.last_touch_team == f.team:
+		for mate in ctx.teammates_of(f):
+			if mate.has_incoming_pass():
+				team_has = true
+				carrier = mate
+				break
+	# Pared: tras dar el pase, sigo la jugada corriendo al espacio para recibir la devolucion.
+	if f.give_and_go_time > 0.0 and team_has:
+		var run_to: Vector3 = ctx.pitch.clamp_to_pitch(pos + f.give_and_go_dir * 6.0, 1.2)
+		_move_to(f, run_to, 1.0)
+		_sprint = true
+		return
 	var chaser: Footballer = _chaser(f, ctx)
 	if chaser == f and not team_has:
 		# A por la pelota: la presion calcula el punto de intercepcion y el robo.
@@ -207,16 +237,141 @@ func _decide(f: Footballer) -> void:
 		_press = to_ball.length() < 14.0
 		return
 	if team_has:
+		# Llegada al area: con el companero en zona de centro, cada uno ataca un punto (primer palo, segundo palo,
+		# punto de penal); el cierre se queda en la frontal.
+		var box: Vector3 = _box_run_spot(f, ctx, carrier, atk)
+		if box.length_squared() > 0.01:
+			_move_to(f, box, 1.0)
+			_sprint = (box - pos).length() > 3.0
+			return
+		# Desmarque de ruptura: de vez en cuando un ala o el pivote ataca la espalda de la defensa (pase filtrado).
+		_run_left = maxf(_run_left - DECISION_PERIOD, 0.0)
+		_run_cd = maxf(_run_cd - DECISION_PERIOD, 0.0)
+		if _run_left <= 0.0 and _run_cd <= 0.0 and role >= 1 and rng.randf() < 0.06 * (0.5 + skill):
+			var behind: Vector3 = _run_behind_spot(f, ctx, carrier, atk)
+			if behind.length_squared() > 0.01:
+				_run_target = behind
+				_run_left = 1.8
+				_run_cd = 5.0
+		if _run_left > 0.0:
+			_move_to(f, _run_target, 1.0)
+			_sprint = true
+			return
 		# Apoyo: ofrecerse en una linea de pase limpia, por delante o al costado del companero con pelota.
 		var spot: Vector3 = _support_spot(f, carrier, atk)
 		_move_to(f, spot, 0.85)
 		_sprint = (spot - pos).length() > 6.0
 		return
-	# Defensa sin ser el primer presionador: marcar al rival peligroso por el lado del propio arco.
+	_run_left = 0.0
+	# Defensa sin ser el primer presionador: marcar al rival peligroso por el lado del propio arco; si no hay a quien
+	# marcar, cerrar la linea de pase mas peligrosa del portador; el cierre cubre la espalda del que presiona.
 	var mark: Vector3 = _mark_spot(f, ctx, atk)
 	var target: Vector3 = mark if mark.length_squared() > 0.01 else _anchor(f, false)
+	if carrier != null and carrier.team != f.team:
+		var cover: Vector3 = _cover_spot(f, ctx, carrier, chaser, atk)
+		if cover.length_squared() > 0.01:
+			target = cover
+		elif mark.length_squared() < 0.01:
+			var lane: Vector3 = _lane_cut_spot(f, ctx, carrier, atk)
+			if lane.length_squared() > 0.01:
+				target = lane
 	_move_to(f, target, 0.85)
 	_sprint = (target - pos).length() > 7.0
+
+# --- Movimientos sin pelota (ataque y defensa) ----------------------------------------------------------------
+
+var _run_left: float = 0.0
+var _run_cd: float = 2.0
+var _run_target: Vector3 = Vector3.ZERO
+
+## true si el portador esta en zona de centro: cerca de la banda y en el ultimo tercio.
+func _crossing_zone(ctx: MatchContext, p: Vector3, atk: Vector3) -> bool:
+	var cfg: PitchConfig = ctx.pitch.config
+	var gx: float = cfg.half_length() * atk.x
+	return absf(p.z) > cfg.half_width() - 4.5 and (gx - p.x) * atk.x < 11.0 and (gx - p.x) * atk.x > 0.5
+
+func _box_run_spot(f: Footballer, ctx: MatchContext, carrier: Footballer, atk: Vector3) -> Vector3:
+	if carrier == null or carrier == f:
+		return Vector3.ZERO
+	var cp: Vector3 = _flat(carrier.global_position)
+	if not _crossing_zone(ctx, cp, atk):
+		return Vector3.ZERO
+	var side: float = signf(cp.z)
+	match role:
+		3:
+			return CrossAssist.zone_point(ctx, f.team, &"near_post", side)
+		1, 2:
+			# El ala del lado contrario va al segundo palo; la del mismo lado, al punto de penal.
+			var far: bool = (role == 1 and side > 0.0) or (role == 2 and side < 0.0)
+			return CrossAssist.zone_point(ctx, f.team, &"far_post" if far else &"penalty_spot", side)
+		_:
+			var cfg: PitchConfig = ctx.pitch.config
+			return Vector3(cfg.half_length() * atk.x - atk.x * (cfg.penalty_area_radius + 2.5), 0.0, -side * 1.5)
+
+## Punto a la espalda del ultimo defensor rival, en el carril de este jugador.
+func _run_behind_spot(f: Footballer, ctx: MatchContext, carrier: Footballer, atk: Vector3) -> Vector3:
+	var last_x: float = -INF
+	for o in ctx.footballers:
+		if o.team != f.team:
+			last_x = maxf(last_x, o.global_position.x * atk.x)
+	if last_x == -INF:
+		return Vector3.ZERO
+	var cfg: PitchConfig = ctx.pitch.config
+	var x: float = minf(last_x + 3.0, cfg.half_length() - 2.5) * atk.x
+	var lane_z: float = clampf(f.global_position.z * 0.6, -cfg.half_width() + 2.0, cfg.half_width() - 2.0)
+	var spot := Vector3(x, 0.0, lane_z)
+	# Solo si el portador puede jugarla (no esta ya en el area) y la carrera es hacia delante.
+	if (spot - _flat(f.global_position)).dot(atk) < 2.0 or (carrier != null and absf(carrier.global_position.x - spot.x) < 2.0):
+		return Vector3.ZERO
+	return spot
+
+## Cobertura: el cierre se coloca detras del companero que presiona al portador, entre ambos y el propio arco.
+func _cover_spot(f: Footballer, ctx: MatchContext, carrier: Footballer, chaser: Footballer, atk: Vector3) -> Vector3:
+	if role != 0 or chaser == null or chaser == f:
+		return Vector3.ZERO
+	var own_goal := Vector3(-atk.x * ctx.pitch.config.half_length(), 0.0, 0.0)
+	var cp: Vector3 = _flat(carrier.global_position)
+	if cp.distance_to(own_goal) > 22.0:
+		return Vector3.ZERO
+	var to_goal: Vector3 = (own_goal - cp).normalized()
+	return ctx.pitch.clamp_to_pitch(_flat(chaser.global_position) + to_goal * 3.5, 1.0)
+
+## Cerrar la linea de pase: en el segmento entre el portador y su receptor mas peligroso (el rival mas cercano a nuestro
+## arco), al 45 %, si este defensor es el que mejor llega a ese punto.
+func _lane_cut_spot(f: Footballer, ctx: MatchContext, carrier: Footballer, atk: Vector3) -> Vector3:
+	var own_goal := Vector3(-atk.x * ctx.pitch.config.half_length(), 0.0, 0.0)
+	var danger: Footballer = null
+	var best: float = INF
+	for o in ctx.footballers:
+		if o.team == f.team or o == carrier:
+			continue
+		var d: float = _flat(o.global_position).distance_to(own_goal)
+		if d < best:
+			best = d
+			danger = o
+	if danger == null:
+		return Vector3.ZERO
+	var spot: Vector3 = _flat(carrier.global_position).lerp(_flat(danger.global_position), 0.45)
+	for mate in ctx.footballers:
+		if mate.team == f.team and mate != f and _flat(mate.global_position).distance_to(spot) < _flat(f.global_position).distance_to(spot) - 1.0:
+			return Vector3.ZERO
+	return spot
+
+## Balon parado: el equipo que saca se ofrece para recibir; el rival marca y respeta la distancia a la pelota.
+func _decide_dead_ball(f: Footballer, ctx: MatchContext, atk: Vector3, pos: Vector3, bpos: Vector3) -> void:
+	var taker: Node = ctx.restart_taker
+	var taker_team: int = int(taker.get("team")) if taker != null else -1
+	var target: Vector3
+	if taker_team == f.team:
+		target = _support_spot(f, taker as Footballer, atk) if taker is Footballer else _anchor(f, true)
+	else:
+		var mark: Vector3 = _mark_spot(f, ctx, atk)
+		target = mark if mark.length_squared() > 0.01 else _anchor(f, false)
+		var away: Vector3 = target - bpos
+		if away.length() < 5.2:
+			target = bpos + (away.normalized() if away.length() > 0.1 else -atk) * 5.2
+	target = ctx.pitch.clamp_to_pitch(target, 0.6)
+	_move_to(f, target, 0.7)
 
 func _decide_with_ball(f: Footballer, ctx: MatchContext, atk: Vector3) -> void:
 	var pos: Vector3 = _flat(f.global_position)
@@ -242,6 +397,24 @@ func _decide_with_ball(f: Footballer, ctx: MatchContext, atk: Vector3) -> void:
 			return
 		_start_button(&"shot", charge * Tuning.ball.shot_charge_time * 0.6, d, dist_goal > 9.0 and rng.randf() < 0.15)
 		return
+	# --- Centro: desde la banda en el ultimo tercio, con companeros llegando al area.
+	if _btn_cooldown <= 0.0 and _crossing_zone(ctx, pos, atk) and (desperate or _kick_safe(f)) and _box_has_mates(f, ctx, atk) and _can_kick(f, &"cross", false):
+		var gx2: float = ctx.pitch.config.half_length() * atk.x
+		var cdir: Vector3 = (Vector3(gx2 - atk.x * 3.0, 0.0, -signf(pos.z) * 1.5) - pos).normalized()
+		if not _aligned(f, cdir):
+			return
+		var low_cross: bool = rng.randf() < 0.3
+		_start_button(&"cross", rng.randf_range(0.1, 0.55) if rng.randf() < 0.75 else 0.75, cdir, low_cross)
+		return
+	# --- Pase filtrado: un companero ataca la espalda de la defensa con espacio por delante.
+	if _btn_cooldown <= 0.0 and (desperate or _kick_safe(f)) and rng.randf() < 0.35 * (0.4 + skill):
+		var runner: Footballer = _through_target(f, ctx, pos, atk)
+		if runner != null and _can_kick(f, &"through", false):
+			var tdir: Vector3 = (_flat(runner.global_position) + atk * 4.0 - pos).normalized()
+			if not _aligned(f, tdir):
+				return
+			_start_button(&"through", clampf(0.2 + (_flat(runner.global_position) - pos).length() * 0.02, 0.2, 0.6), tdir, false)
+			return
 	# --- Pase: la jugada se construye pasando. Se evalua SIEMPRE un receptor y se decide por presion, progreso
 	# y tiempo con la pelota; conducir indefinidamente no es una opcion.
 	_carry_time += DECISION_PERIOD
@@ -284,6 +457,34 @@ func _decide_with_ball(f: Footballer, ctx: MatchContext, atk: Vector3) -> void:
 	_dir = dir
 	_mag = 1.0
 	_sprint = opp_near > 4.0 and dist_goal > 6.0
+
+## Hay companeros llegando al area rival (para que un centro tenga destinatario).
+func _box_has_mates(f: Footballer, ctx: MatchContext, atk: Vector3) -> bool:
+	var gx: float = ctx.pitch.config.half_length() * atk.x
+	for mate in ctx.teammates_of(f):
+		var mp: Vector3 = _flat(mate.global_position + mate.velocity * 0.6)
+		if absf(mp.x - gx) < 8.0 and absf(mp.z) < 5.0:
+			return true
+	return false
+
+## Companero que corre hacia delante con espacio a su espalda (destinatario de un pase filtrado).
+func _through_target(f: Footballer, ctx: MatchContext, pos: Vector3, atk: Vector3) -> Footballer:
+	var best: Footballer = null
+	var best_s: float = 0.0
+	for mate in ctx.teammates_of(f):
+		var mp: Vector3 = _flat(mate.global_position)
+		var ahead: float = (mp - pos).dot(atk)
+		if ahead < 1.5 or mp.distance_to(pos) > 20.0:
+			continue
+		var run: float = mate.velocity.dot(atk)
+		var space: float = PassAssist._space_ahead(mate, atk, ctx.opponents_of(mate))
+		if run < 2.0 or space < 4.0:
+			continue
+		var s2: float = space + run * 0.5
+		if s2 > best_s:
+			best_s = s2
+			best = mate
+	return best
 
 # --- Utilidades tacticas -------------------------------------------------------------------------------------
 

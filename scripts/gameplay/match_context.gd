@@ -18,6 +18,13 @@ var input_enabled: bool = true
 ## Segundos seguidos que la pelota lleva practicamente parada y sin que nadie la sostenga. Lo actualiza MatchManager
 ## y lo usa la IA para romper un atasco: si la jugada se muere, el mas cercano de cada equipo va a buscarla.
 var ball_stall_seconds: float = 0.0
+## Pelota muerta (balon parado en preparacion): solo `restart_taker` puede tocarla; la IA no la persigue.
+var dead_ball: bool = false
+var restart_taker: Node = null
+
+## true si `who` no puede tocar la pelota ahora (balon parado de otro).
+func ball_locked_for(who: Node) -> bool:
+	return dead_ball and who != restart_taker
 
 ## Actualiza el contador de pelota muerta (lo llama MatchManager cada paso de fisica mientras se juega).
 func update_ball_stall(delta: float) -> void:

@@ -60,6 +60,7 @@ func cleanup() -> void:
 	# Interruptores globales que algunas pruebas cambian: cada prueba empieza con los valores por defecto.
 	FootballerVisual.prefer_pack = true
 	BallHandler.clip_kicks_enabled = true
+	BallHandler.foot_sync_enabled = true
 	Input.flush_buffered_events()
 	for action in InputMap.get_actions():
 		Input.action_release(action)

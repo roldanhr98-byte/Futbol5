@@ -134,6 +134,8 @@ func _build_pause_menu(root: Control) -> void:
 	_add_menu_button(grid, "assist_pass", "", func() -> void: _cycle_assist("pass"))
 	_add_menu_button(grid, "assist_shot", "", func() -> void: _cycle_assist("shot"))
 	_add_menu_button(grid, "assist_press", "", func() -> void: _cycle_assist("press"))
+	_add_menu_button(grid, "touch_scale", "", func() -> void: _cycle_touch(&"scale"))
+	_add_menu_button(grid, "joy_sens", "", func() -> void: _cycle_touch(&"sens"))
 	_add_menu_button(grid, "quit", "Salir", func() -> void: _close_pause(); quit_requested.emit())
 	_refresh_menu_labels()
 
@@ -163,7 +165,31 @@ func _refresh_menu_labels() -> void:
 	(_pause_buttons["assist_pass"] as Button).text = "Asistencia de pase: %s" % LEVEL_NAMES[_level_index(Tuning.assist.pass_assist)]
 	(_pause_buttons["assist_shot"] as Button).text = "Asistencia de tiro: %s" % LEVEL_NAMES[_level_index(Tuning.assist.shot_assist)]
 	(_pause_buttons["assist_press"] as Button).text = "Asistencia de presión: %s" % LEVEL_NAMES[_level_index(Tuning.assist.press_assist)]
+	(_pause_buttons["touch_scale"] as Button).text = "Tamaño de botones: %s" % ["Pequeño", "Normal", "Grande"][_nearest_index(TOUCH_SCALES, Tuning.touch_scale)]
+	(_pause_buttons["joy_sens"] as Button).text = "Sensibilidad del joystick: %s" % THREE_NAMES[_nearest_index(JOY_SENS, Tuning.joystick_sensitivity)]
 	(_pause_buttons["diagnostics"] as Button).text = "Diagnóstico: %s" % ("ACTIVADO" if Tuning.show_diagnostics else "desactivado")
+
+## Tamano de la botonera y sensibilidad del joystick (preferencias tactiles; se guardan con las demas).
+const TOUCH_SCALES := [0.85, 1.0, 1.2]
+const JOY_SENS := [0.8, 1.0, 1.3]
+const THREE_NAMES := ["Bajo", "Normal", "Alto"]
+
+func _nearest_index(values: Array, v: float) -> int:
+	var best: int = 0
+	for i in values.size():
+		if absf(float(values[i]) - v) < absf(float(values[best]) - v):
+			best = i
+	return best
+
+func _cycle_touch(kind: StringName) -> void:
+	if kind == &"scale":
+		Tuning.touch_scale = TOUCH_SCALES[(_nearest_index(TOUCH_SCALES, Tuning.touch_scale) + 1) % TOUCH_SCALES.size()]
+	else:
+		Tuning.joystick_sensitivity = JOY_SENS[(_nearest_index(JOY_SENS, Tuning.joystick_sensitivity) + 1) % JOY_SENS.size()]
+	Tuning.save_user_settings()
+	if touch != null:
+		touch.queue_redraw()
+	_refresh_menu_labels()
 
 func _cycle_graphics() -> void:
 	GraphicsSettings.set_profile((GraphicsSettings.profile + 1) % 4)

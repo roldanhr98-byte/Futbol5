@@ -5,6 +5,7 @@ extends InputSource
 var _tick: int = 0
 
 func poll(_footballer: Footballer) -> InputFrame:
+	InputBindings.ensure()
 	var f := InputFrame.new()
 	_tick += 1
 	f.tick = _tick
@@ -20,4 +21,11 @@ func poll(_footballer: Footballer) -> InputFrame:
 	f.press_held = Input.is_action_pressed("press")
 	f.switch_pressed = Input.is_action_just_pressed("switch_player")
 	f.skill_pressed = Input.is_action_just_pressed("skill")
+	f.through_pressed = Input.is_action_just_pressed("through_pass")
+	f.through_held = Input.is_action_pressed("through_pass")
+	f.through_released = Input.is_action_just_released("through_pass")
+	f.cross_pressed = Input.is_action_just_pressed("cross")
+	f.cross_held = Input.is_action_pressed("cross")
+	f.cross_released = Input.is_action_just_released("cross")
+	f.tackle_pressed = Input.is_action_just_pressed("tackle")
 	return f

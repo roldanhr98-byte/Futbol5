@@ -25,6 +25,14 @@ static func compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, c
 	var goal_x: float = goal.global_position.x
 	var to_goal_x: float = goal_x - origin.x
 	var dist_goal: float = absf(to_goal_x)
+	# Tipo de tiro por la carga: toque corto cerca del arco = tiro COLOCADO (con rosca al palo lejano, mas lento y
+	# preciso); carga alta = tiro POTENTE (mas rapido y menos preciso). En medio, el tiro normal.
+	var placed: bool = not lob and charge < 0.3 and dist_goal < 14.0
+	var power: bool = not lob and charge > 0.8
+	if placed:
+		res.kind = &"placed_shot"
+	elif power:
+		res.kind = &"power_shot"
 	var usable: float = maxf(pitch_cfg.half_goal() - cfg.shot_post_margin, 0.1)
 
 	# --- Hacia donde apunta la intencion respecto al arco ---
@@ -40,7 +48,10 @@ static func compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, c
 
 	# --- Punto de mira dentro del arco ---
 	var lateral: float = clampf(z_hit / usable, -1.0, 1.0)
-	if weight > 0.0 and absf(lateral) < 0.22 and assist_level >= 0.4:
+	if placed and weight > 0.0:
+		# Colocado: al palo lejano respecto de la posicion de la pelota (cerrando hacia dentro).
+		lateral = clampf(-signf(origin.z) * 0.8 if absf(origin.z) > 0.5 else (lateral if absf(lateral) > 0.3 else 0.8), -0.85, 0.85)
+	elif weight > 0.0 and absf(lateral) < 0.22 and assist_level >= 0.4:
 		# Intencion centrada: sugerir el lado contrario al arquero.
 		var keeper: Node = ctx.keeper_defending(1 - kicker.team)
 		var side: float = 1.0
@@ -66,6 +77,8 @@ static func compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, c
 	# --- Potencia ---
 	var power_mult: float = kicker.attributes.factor("shot_power", 0.14)
 	var speed: float = lerpf(bt.shot_speed_min, bt.shot_speed_max, clampf(charge, 0.0, 1.0)) * power_mult
+	if placed:
+		speed = maxf(speed, lerpf(bt.shot_speed_min, bt.shot_speed_max, 0.25) * power_mult)
 	res.weak_foot = KickModel.is_weak_foot(kicker, origin)
 	if res.weak_foot:
 		speed *= KickModel.weak_foot_power_mult(kicker)
@@ -85,6 +98,10 @@ static func compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, c
 	if dist_goal < 10.0:
 		sigma *= lerpf(1.15, 0.85, fin)
 	sigma *= lerpf(1.1, 0.88, kicker.attributes.norm("composure"))
+	# Presion rival encima: el tiro sale peor.
+	sigma *= 1.0 + 0.4 * PassAssist.pressure(kicker)
+	if placed:
+		sigma *= 0.72
 	if res.weak_foot:
 		sigma *= KickModel.weak_foot_error_mult(kicker)
 	res.sigma_deg = sigma
@@ -115,6 +132,10 @@ static func compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, c
 	else:
 		res.spin = -Vector3.UP.cross(final_dir) * 14.0
 	res.spin += Vector3.UP * (-err_h * bt.shot_spin_factor * 0.25)
+	if placed:
+		# Rosca: la pelota se cierra hacia el palo (efecto Magnus de la pelota real).
+		var toward_center: float = signf(-origin.z) if absf(origin.z) > 0.3 else 1.0
+		res.spin += Vector3.UP * toward_center * (1.0 if to_goal_x > 0.0 else -1.0) * 22.0
 
 	# Prediccion simple (sin resistencia) de si iria al arco, para estadisticas de intencion.
 	if final_dir.x * to_goal_x > 0.0:

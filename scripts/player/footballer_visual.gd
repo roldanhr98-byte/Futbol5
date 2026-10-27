@@ -32,11 +32,13 @@ static var prefer_pack: bool = true
 const PACK_LIB := &"pack"
 ## Marcha del pack: clips que se mezclan segun la velocidad. La posicion en el BlendSpace ES la velocidad natural
 ## medida de cada clip, asi que a esa velocidad se reproduce a ritmo 1.0 (sin patinar) y entre dos clips se mezclan.
-const PACK_GAIT_CLIPS: Array[StringName] = [&"offensive_idle", &"Walking_7_inplace", &"jog_forward_inplace", &"Sprint_inplace"]
+const PACK_GAIT_CLIPS: Array[StringName] = [&"offensive_idle", &"Walking_7_inplace", &"Jogging_inplace", &"jog_forward_inplace", &"Sprint_inplace"]
 ## Puntos del BlendSpace de la marcha del pack: [clip, posicion (m/s)]. El trote se repite en una posicion mas alta:
 ## entre ambos se reproduce SOLO el trote (a mayor cadencia) y la mezcla con el sprint empieza despues, en vez de
 ## mezclar dos zancadas distintas durante todo el tramo intermedio.
-const PACK_GAIT_POINTS := [[&"offensive_idle", 0.0], [&"Walking_7_inplace", -1.0], [&"jog_forward_inplace", -1.0], [&"jog_forward_inplace", 3.4], [&"Sprint_inplace", -1.0]]
+## Entre la caminata y el trote va el trote lento (Jogging_inplace, 1.64 m/s): el paso de caminar a trotar ya no mezcla dos
+## zancadas muy distintas.
+const PACK_GAIT_POINTS := [[&"offensive_idle", 0.0], [&"Walking_7_inplace", -1.0], [&"Jogging_inplace", -1.0], [&"jog_forward_inplace", -1.0], [&"jog_forward_inplace", 3.4], [&"Sprint_inplace", -1.0]]
 
 ## Mezcla direccional de 8 sentidos (arquero y defensa: el cuerpo mira a un punto y se mueve en cualquier direccion).
 ## Posicion en el BlendSpace2D: x = derecha, y = adelante; los clips cardinales estan a distancia 1.
@@ -45,13 +47,31 @@ const DIR_POINTS := [
 	[&"jog_strafe_left_inplace", -1.0, 0.0], [&"jog_strafe_right_inplace", 1.0, 0.0],
 	[&"jog_forward_diagonal_inplace", 0.7, 0.7], [&"jog_forward_diagonal_2_inplace", -0.7, 0.7],
 	[&"jog_backward_diagonal_inplace", 0.7, -0.7], [&"jog_backward_diagonal_2_inplace", -0.7, -0.7],
+	# Desplazamiento lateral rapido (3.14 m/s natural) hacia la derecha: el marcaje lateral a la carrera.
+	[&"Strafe_3_inplace", 1.36, 0.0],
 ]
+## Limite de la mezcla direccional (el lateral rapido esta a 1.36).
+const DIR_MAX := 1.4
+const STRAFE_FAST_SPEED := 3.14
+## Arbitro: usa los GEMELOS CON RAIZ de la marcha (misma pose que los _inplace; su desplazamiento de raiz medido es el
+## que mueve al cuerpo, ver Referee). Marcha y mezcla direccional con esos clips.
+const TWIN_GAIT_POINTS := [[&"offensive_idle", 0.0], [&"Walking_7", -1.0], [&"Jogging", -1.0], [&"Running", -1.0], [&"Sprint", -1.0], [&"Two_Cycle_Sprint", 6.2]]
+const TWIN_DIR_POINTS := [
+	[&"jog_forward", 0.0, 1.0], [&"jog_backward", 0.0, -1.0],
+	[&"jog_strafe_left", -1.0, 0.0], [&"jog_strafe_right", 1.0, 0.0],
+	[&"jog_forward_diagonal", 0.7, 0.7], [&"jog_forward_diagonal_2", -0.7, 0.7],
+	[&"jog_backward_diagonal", 0.7, -0.7], [&"jog_backward_diagonal_2", -0.7, -0.7],
+	[&"Strafe_3", 1.36, 0.0],
+]
+
 ## Velocidad (m/s) a la que la mezcla direccional esta en su radio 1 (velocidad natural media de esos clips).
 const DIR_REF_SPEED := 2.3
 
 ## Marcha CON la pelota: mismos tramos que la marcha normal pero con los clips de conduccion (el jugador mira la
 ## pelota, da zancadas mas cortas y mueve los brazos distinto). Se mezcla con la marcha normal segun la posesion.
-const CARRY_GAIT_POINTS := [[&"Soccer_Idle", 0.0], [&"Dribble_2", -1.0], [&"jog_forward_inplace", 3.6], [&"Sprint_inplace", -1.0]]
+## Con la pelota la carrera usa Running_inplace (braceo distinto al trote sin pelota) y el sprint, Two_Cycle_Sprint_inplace
+## (dos zancadas por ciclo: la conduccion larga a toda velocidad).
+const CARRY_GAIT_POINTS := [[&"Soccer_Idle", 0.0], [&"Dribble_2", -1.0], [&"Running_inplace", 3.6], [&"Two_Cycle_Sprint_inplace", -1.0]]
 ## Velocidad (m/s) con la que la mezcla de conduccion llega a su peso maximo al recuperar la pelota.
 const CARRY_BLEND_RATE := 4.0
 
@@ -78,6 +98,12 @@ var carrying: bool = false
 var _carry_weight: float = 0.0
 var dir_velocity: Vector2 = Vector2.ZERO
 var _dir_weight: float = 0.0
+## true: rig del arbitro con los gemelos con raiz (ver TWIN_GAIT_POINTS). Se fija antes de build().
+var twin_rig: bool = false
+## > 0: posicion de la mezcla direccional y escala de tiempo fijadas por el dueno (el arbitro se mueve exactamente a la
+## velocidad natural del gemelo que reproduce, asi que la escala es 1).
+var dir_blend_override: Vector2 = Vector2.ZERO
+var dir_scale_override: float = -1.0
 
 var _pack_clip_node: AnimationNodeAnimation = null
 var _has_carry: bool = false
@@ -178,7 +204,7 @@ func _setup_animation_tree() -> void:
 	space.sync = true
 	if uses_pack:
 		var idx := 0
-		for pt in PACK_GAIT_POINTS:
+		for pt in (TWIN_GAIT_POINTS if twin_rig else PACK_GAIT_POINTS):
 			var clip: StringName = pt[0]
 			var natural: float = 0.0 if clip == PACK_GAIT_CLIPS[0] else float(PackLibrary.meta(clip).get("natural_speed", 0.0))
 			var pos: float = natural if float(pt[1]) < 0.0 else float(pt[1])
@@ -196,12 +222,12 @@ func _setup_animation_tree() -> void:
 	var previous: StringName = &"LocoScale"
 	if uses_pack:
 		var dir := AnimationNodeBlendSpace2D.new()
-		dir.min_space = Vector2(-1.3, -1.3)
-		dir.max_space = Vector2(1.3, 1.3)
+		dir.min_space = Vector2(-DIR_MAX - 0.1, -DIR_MAX - 0.1)
+		dir.max_space = Vector2(DIR_MAX + 0.1, DIR_MAX + 0.1)
 		var center: StringName = PackLibrary.anim_path(&"goalkeeper_idle") if (keeper_mode and PackLibrary.has_clip(&"goalkeeper_idle")) else StringName("%s/%s" % [PACK_LIB, PACK_GAIT_CLIPS[0]])
 		dir.add_blend_point(_anim_node(center), Vector2.ZERO, -1, &"d_center")
 		var di := 0
-		for pt in DIR_POINTS:
+		for pt in (TWIN_DIR_POINTS if twin_rig else DIR_POINTS):
 			if PackLibrary.has_clip(pt[0]):
 				dir.add_blend_point(_anim_node(PackLibrary.anim_path(pt[0])), Vector2(pt[1], pt[2]), -1, StringName("d%d" % di))
 				di += 1
@@ -470,10 +496,15 @@ func drive_motion(speed: float, turn_rate: float, delta: float) -> void:
 		if _dir_weight > 0.0:
 			var ds: float = dir_velocity.length()
 			var p := Vector2(dir_velocity.y, dir_velocity.x) / DIR_REF_SPEED
-			if p.length() > 1.0:
-				p = p.normalized()
+			# Solo el lateral hacia la derecha tiene un clip rapido (Strafe_3); el resto se limita al radio 1.
+			var lim: float = DIR_MAX if p.x > 0.8 and absf(p.y) < 0.5 else 1.0
+			if p.length() > lim:
+				p = p.normalized() * lim
+			var ref: float = lerpf(DIR_REF_SPEED, STRAFE_FAST_SPEED, clampf((p.x - 1.0) / (DIR_MAX - 1.0), 0.0, 1.0))
+			if dir_scale_override > 0.0:
+				p = dir_blend_override
 			anim_tree.set("parameters/Dir/blend_position", p)
-			anim_tree.set("parameters/DirScale/scale", clampf(ds / DIR_REF_SPEED, 0.6, 2.2) if ds > 0.2 else 1.0)
+			anim_tree.set("parameters/DirScale/scale", dir_scale_override if dir_scale_override > 0.0 else (clampf(ds / ref, 0.6, 2.2) if ds > 0.2 else 1.0))
 	# Inclinacion del cuerpo: hacia delante al acelerar/sprintar y hacia dentro en las curvas.
 	var target_pitch: float = clampf(speed / 7.0, 0.0, 1.0) * 0.12
 	var target_roll: float = clampf(turn_rate * speed * 0.0042, -0.28, 0.28)

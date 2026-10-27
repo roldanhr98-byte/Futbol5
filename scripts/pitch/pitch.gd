@@ -221,44 +221,58 @@ func _build_walls() -> void:
 	var cfg := config
 	var t: float = 0.5
 	var h: float = cfg.wall_height
-	var hl: float = cfg.half_length()
-	var hw: float = cfg.half_width()
+	# Con bandas (OUT_OF_BOUNDS) las paredes se retiran hasta el borde del area exterior (run_off): la pelota puede
+	# salir por la linea y el partido la repone con saque de banda, corner o saque de arco; la pared solo la frena.
+	var oob: bool = cfg.boundary_mode == PitchConfig.BoundaryMode.OUT_OF_BOUNDS
+	var m: float = cfg.run_off if oob else 0.0
+	var hl: float = cfg.half_length() + m
+	var hw: float = cfg.half_width() + m
+	var full_len: float = hl * 2.0
 	var wall_pm := PhysicsMaterial.new()
 	wall_pm.friction = 0.4
-	wall_pm.bounce = 0.5
+	wall_pm.bounce = 0.5 if not oob else 0.25
 	var root := Node3D.new()
 	root.name = "Walls"
 	add_child(root)
 	# Paredes laterales (bandas).
 	for z in [-1.0, 1.0]:
-		var b := MeshUtil.add_box_body(root, Vector3(cfg.length + t * 2.0, h, t),
+		var b := MeshUtil.add_box_body(root, Vector3(full_len + t * 2.0, h, t),
 			Vector3(0, h * 0.5, z * (hw + t * 0.5)), Ball.LAYER_WORLD)
 		b.physics_material_override = wall_pm
-	# Paredes de fondo con hueco para el arco.
 	var gw: float = cfg.half_goal() + cfg.post_radius * 2.0
 	var seg_len: float = hw - gw
-	for s in [-1.0, 1.0]:
-		for z in [-1.0, 1.0]:
-			var b2 := MeshUtil.add_box_body(root, Vector3(t, h, seg_len),
-				Vector3(s * (hl + t * 0.5), h * 0.5, z * (gw + seg_len * 0.5)), Ball.LAYER_WORLD)
-			b2.physics_material_override = wall_pm
-		# Dintel sobre el arco.
-		var top_h: float = h - cfg.goal_height - cfg.post_radius * 2.0
-		if top_h > 0.0:
-			var b3 := MeshUtil.add_box_body(root, Vector3(t + cfg.goal_depth, top_h, gw * 2.0),
-				Vector3(s * (hl + (t + cfg.goal_depth) * 0.5), cfg.goal_height + cfg.post_radius * 2.0 + top_h * 0.5, 0),
-				Ball.LAYER_WORLD)
-			b3.physics_material_override = wall_pm
+	if oob:
+		# Fondo completo detras de los arcos (el arco con su red queda por delante).
+		for s in [-1.0, 1.0]:
+			var bf := MeshUtil.add_box_body(root, Vector3(t, h, hw * 2.0), Vector3(s * (hl + t * 0.5), h * 0.5, 0.0), Ball.LAYER_WORLD)
+			bf.physics_material_override = wall_pm
+	else:
+		# Paredes de fondo con hueco para el arco.
+		for s in [-1.0, 1.0]:
+			for z in [-1.0, 1.0]:
+				var b2 := MeshUtil.add_box_body(root, Vector3(t, h, seg_len),
+					Vector3(s * (hl + t * 0.5), h * 0.5, z * (gw + seg_len * 0.5)), Ball.LAYER_WORLD)
+				b2.physics_material_override = wall_pm
+			# Dintel sobre el arco.
+			var top_h: float = h - cfg.goal_height - cfg.post_radius * 2.0
+			if top_h > 0.0:
+				var b3 := MeshUtil.add_box_body(root, Vector3(t + cfg.goal_depth, top_h, gw * 2.0),
+					Vector3(s * (hl + (t + cfg.goal_depth) * 0.5), cfg.goal_height + cfg.post_radius * 2.0 + top_h * 0.5, 0),
+					Ball.LAYER_WORLD)
+				b3.physics_material_override = wall_pm
 	# Baranda visible (baja) para dar contexto de cancha cerrada.
 	var barrier_h: float = cfg.barrier_visible_height
 	var barrier_mat := MeshUtil.flat_material(Color(0.12, 0.2, 0.38), 0.8)
 	var rim_mat := MeshUtil.flat_material(Color(0.85, 0.85, 0.88), 0.6)
 	for z in [-1.0, 1.0]:
-		_add_visual_box(root, Vector3(cfg.length + t * 2.0, barrier_h, 0.12),
+		_add_visual_box(root, Vector3(full_len + t * 2.0, barrier_h, 0.12),
 			Vector3(0, barrier_h * 0.5, z * (hw + 0.06)), barrier_mat)
-		_add_visual_box(root, Vector3(cfg.length + t * 2.0, 0.06, 0.2),
+		_add_visual_box(root, Vector3(full_len + t * 2.0, 0.06, 0.2),
 			Vector3(0, barrier_h + 0.03, z * (hw + 0.1)), rim_mat)
 	for s in [-1.0, 1.0]:
+		if oob:
+			_add_visual_box(root, Vector3(0.12, barrier_h, hw * 2.0), Vector3(s * (hl + 0.06), barrier_h * 0.5, 0.0), barrier_mat)
+			continue
 		for z in [-1.0, 1.0]:
 			_add_visual_box(root, Vector3(0.12, barrier_h, seg_len),
 				Vector3(s * (hl + 0.06), barrier_h * 0.5, z * (gw + seg_len * 0.5)), barrier_mat)

@@ -91,7 +91,11 @@ func test_slow_first_touch_plays_receive_and_fast_one_does_not() -> void:
 			got["action"] = a.visual.current_action
 			break
 	check(got["first_touch"], "el jugador controla la pelota que le llega")
-	check(got["action"] == &"Receive", "primer toque lento: gesto de recepcion del pack (%s)" % got["action"])
+	# Pelota suave (5.5 m/s): control con el pie (receive_soccerball); una fuerte usa Receive (control con el cuerpo).
+	check(got["action"] == &"receive_soccerball", "primer toque lento de pelota suave: recepcion con el pie (%s)" % got["action"])
+	a.visual.stop_current_action()
+	ctx.emit_event(GameEvent.make(GameEvent.Type.FIRST_TOUCH, a.actor_id, 0, {"incoming_speed": 10.0}))
+	check(a.visual.current_action == &"Receive", "pelota fuerte: recepcion con el cuerpo (%s)" % a.visual.current_action)
 	# Un primer toque a velocidad de carrera no se anima (el cuerpo ya corre).
 	a.visual.stop_current_action()
 	a.locomotion.velocity = Vector3(4.0, 0.0, 0.0)
