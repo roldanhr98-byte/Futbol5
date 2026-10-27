@@ -5,7 +5,7 @@
 - **Responsabilidad exacta:** los datos puros y serializables que un servidor autoritativo y los clientes intercambiarían: `InputFrame` (intención del jugador, ver [INPUTS](INPUTS.md)), `GameEvent` (hechos del partido) y `BallState` (instantánea de la pelota). Son clases `RefCounted` sin dependencia de nodos ni de la presentación.
 - **Estado:** **parcial / solo contratos.** No existe servidor, transporte, replicación, predicción, reconciliación, validación de acciones, reconexión, emparejamiento ni identidad de jugador. No hay `MultiplayerAPI`, `ENet` ni `WebSocket` en el código.
 - **Última verificación:** <!-- AUTO:verified -->
-2026-10-26
+2026-10-27
 <!-- /AUTO -->
 
 ## Archivos responsables
@@ -34,10 +34,10 @@ No hay parámetros. Tipos de evento definidos (`GameEvent.Type`), con su **emiso
 <!-- AUTO:funcs:scripts/network/game_event.gd -->
 | Función | Línea | Qué hace |
 |---|---|---|
-| `GameEvent.make(t: Type, actor: int, team_index: int, payload: Dictionary = {})` | 21 |  |
-| `GameEvent.type_name()` | 29 |  |
-| `GameEvent.to_dict()` | 32 |  |
-| `GameEvent.from_dict(d: Dictionary)` | 35 |  |
+| `GameEvent.make(t: Type, actor: int, team_index: int, payload: Dictionary = {})` | 22 |  |
+| `GameEvent.type_name()` | 30 |  |
+| `GameEvent.to_dict()` | 33 |  |
+| `GameEvent.from_dict(d: Dictionary)` | 36 |  |
 <!-- /AUTO -->
 
 <!-- AUTO:funcs:scripts/network/ball_state.gd -->
@@ -51,9 +51,9 @@ No hay parámetros. Tipos de evento definidos (`GameEvent.Type`), con su **emiso
 <!-- AUTO:funcs:scripts/network/input_frame.gd -->
 | Función | Línea | Qué hace |
 |---|---|---|
-| `InputFrame.move_length()` | 28 |  |
-| `InputFrame.to_dict()` | 31 |  |
-| `InputFrame.from_dict(d: Dictionary)` | 39 |  |
+| `InputFrame.move_length()` | 38 |  |
+| `InputFrame.to_dict()` | 41 |  |
+| `InputFrame.from_dict(d: Dictionary)` | 51 |  |
 <!-- /AUTO -->
 
 ## Recorrido de ejecución

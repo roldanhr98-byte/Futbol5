@@ -11,6 +11,39 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-10-27 — Jugabilidad inspirada en PES 2021: pies en la pelota, pases filtrados, centros, chanfle, entradas, reglas con bandas, balón parado, repetición y los 133 clips en juego
+
+Análisis de los videos, tabla de mecánicas, diagnóstico, archivos y limitaciones: [GAMEPLAY_PES.md](GAMEPLAY_PES.md).
+
+- **Conducción y recepción con el pie real** (`ball_handler.gd`): con el esqueleto animado cada toque lo da una punta de
+  pie que llega a la pelota. Medido con render: antes el pie estaba a 0.81 / 1.15 / 1.07 m de la pelota en el toque
+  (trote / carrera / sprint); ahora la mediana punta–centro de pelota es 0.27 / 0.23 / 0.23 m (radio de la pelota 0.11),
+  con la pelota controlada el 100 % del tiempo y 18 de 21 toques con el pie en zigzag. La recepción ocurre a ~0.5 m del
+  cuerpo (antes 1.05 m). En headless se mantiene la cadencia de la marcha.
+- **Pases:** filtrado al espacio (`PassAssist.compute_through`), centros elevado / tenso / raso con zonas y llegada de
+  compañeros (`cross_assist.gd`), presión rival en el error, control al receptor al pasar, receptor que sale al punto de
+  encuentro, pared.
+- **Tiro:** colocado (palo lejano, más preciso), potente y **chanfle** (giro lateral con el Magnus real, 1.3 m de curva en
+  ~17 m; gesto: girar el joystick al soltar TIRO). Estela en tiros rápidos o con efecto.
+- **Defensa:** botón ENTRADA (de pie, carga con el hombro, barrida, entrada al aire); mantener PRESIÓN ya no roba (la IA
+  sí disputa); faltas sancionadas; bloqueo de tiro; IA con cobertura del cierre y corte de líneas de pase.
+- **Reglas con bandas:** saque de banda, córner, saque de arco, tiro libre y penal con clips de raíz real; salvaguardas
+  para que ningún saque trabe el partido (hallado por el partido de 7 min: el ejecutor del penal chocaba con jugadores
+  colocados en su carrera).
+- **Arquero:** saque de arco colocando la pelota, achique en el mano a mano, salida a centros (ajusta los pasos para que
+  las manos lleguen), estirada desesperada, pelota en las manos de su clip de reposo, indicaciones al equipo.
+- **Animaciones:** los 40 clips que solo estaban en la galería tienen disparador (marcha, transiciones, balón parado,
+  arquero, defensa, caídas, recepción, árbitro con gemelos con raíz). Estado 133/133 integrado.
+- **Repetición de goles** (`goal_replay.gd`) en cámara lenta con su cámara, saltable. **Duración** del partido 3/5/7/10 min.
+- **Controles:** FILTRADO, CENTRO y ENTRADA táctiles; mando configurado; tamaño de botones y sensibilidad del joystick.
+- **Verificación (ejecutada):** `tools/run_tests.sh` → **151 pruebas, 0 fallidas, 5 omitidas (necesitan render), 814
+  comprobaciones**. Con render (`xvfb-run`): `test_live_feet` 3/3 y `test_pack_motion` 2/2 (pie a 0.008 m de la pelota en
+  el pase y 0.026 m en el tiro). Partidos completos de IA (`test_full_match`): 3 min 1-0, 5 min 1-2, 7 min 4-1, 10 min 7-1,
+  todos hasta el pitazo final, una repetición por gol (15 de 15), pelota nunca trabada más de 1.3 s.
+- **No verificado:** rendimiento y controles en un teléfono real (no hay dispositivo en el entorno).
+
+---
+
 ## 2026-10-26 — Proyecto listo para un repositorio público
 
 - Las animaciones van dentro del juego ya convertidas (`pack_clips.res`, `pack_keeper.res`); los FBX originales (`pack/`) salen del repositorio (`/pack/` en `.gitignore`) y solo se usan en local para reconvertir. Los tests no los necesitan.

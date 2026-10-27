@@ -5,7 +5,7 @@
 - **Responsabilidad exacta:** construir por código la cancha de futsal (por defecto 40 × 20 m): superficie, líneas reglamentarias en **una sola malla**, paredes de contención con colisión, baranda visible, iluminación, elementos ambientales; y los **arcos** (postes y travesaño con colisión física, red visible de una malla, red absorbente, detección de gol).
 - **Estado:** implementado. La opción `PitchConfig.boundary_mode` está **declarada pero ningún código la usa**: las paredes siempre se construyen (`OUT_OF_BOUNDS` no existe).
 - **Última verificación:** <!-- AUTO:verified -->
-2026-10-26
+2026-10-27
 <!-- /AUTO -->
 
 ## Archivos responsables
@@ -26,23 +26,23 @@
 <!-- AUTO:params:PitchConfig -->
 | Parámetro | Defecto | Rango / tipo | Definido en | Dónde se usa (accesos reales) | Descripción |
 |---|---|---|---|---|---|
-| `length` | `40.0` | float | `scripts/pitch/pitch_config.gd:10` | `scripts/ai/ai_input.gd:349`, `scripts/ai/ai_input.gd:352`, `scripts/pitch/pitch.gd:73`, `scripts/pitch/pitch.gd:85` (+5) |  (Dimensiones) |
-| `width` | `20.0` | float | `scripts/pitch/pitch_config.gd:11` | `scripts/ai/ai_input.gd:354`, `scripts/gameplay/match_scene.gd:65`, `scripts/pitch/pitch.gd:74`, `scripts/pitch/pitch.gd:85` (+3) |  (Dimensiones) |
+| `length` | `40.0` | float | `scripts/pitch/pitch_config.gd:10` | `scripts/ai/ai_input.gd:561`, `scripts/ai/ai_input.gd:564`, `scripts/pitch/pitch.gd:73`, `scripts/pitch/pitch.gd:85` (+2) |  (Dimensiones) |
+| `width` | `20.0` | float | `scripts/pitch/pitch_config.gd:11` | `scripts/ai/ai_input.gd:566`, `scripts/gameplay/match_scene.gd:77`, `scripts/pitch/pitch.gd:74`, `scripts/pitch/pitch.gd:85` (+3) |  (Dimensiones) |
 | `goal_width` | `3.0` | float | `scripts/pitch/pitch_config.gd:14` | `scripts/pitch/goal.gd:44`, `scripts/pitch/goal.gd:104`, `scripts/pitch/goal.gd:107`, `scripts/pitch/goal.gd:116` (+1) |  (Arco) |
-| `goal_height` | `2.0` | float | `scripts/pitch/pitch_config.gd:15` | `scripts/assistance/shot_assist.gd:124`, `scripts/goalkeeper/goalkeeper.gd:268`, `scripts/pitch/goal.gd:39`, `scripts/pitch/goal.gd:77` (+4) |  (Arco) |
-| `goal_depth` | `1.0` | float | `scripts/pitch/pitch_config.gd:16` | `scripts/pitch/goal.gd:76`, `scripts/pitch/pitch.gd:248`, `scripts/pitch/pitch.gd:249` |  (Arco) |
-| `post_radius` | `0.04` | float | `scripts/pitch/pitch_config.gd:17` | `scripts/pitch/goal.gd:38`, `scripts/pitch/pitch.gd:238`, `scripts/pitch/pitch.gd:246`, `scripts/pitch/pitch.gd:249` |  (Arco) |
+| `goal_height` | `2.0` | float | `scripts/pitch/pitch_config.gd:15` | `scripts/assistance/shot_assist.gd:165`, `scripts/gameplay/match_manager.gd:187`, `scripts/goalkeeper/goalkeeper.gd:323`, `scripts/pitch/goal.gd:39` (+5) |  (Arco) |
+| `goal_depth` | `1.0` | float | `scripts/pitch/pitch_config.gd:16` | `scripts/pitch/goal.gd:76`, `scripts/pitch/pitch.gd:259`, `scripts/pitch/pitch.gd:260` |  (Arco) |
+| `post_radius` | `0.04` | float | `scripts/pitch/pitch_config.gd:17` | `scripts/gameplay/match_manager.gd:187`, `scripts/pitch/goal.gd:38`, `scripts/pitch/pitch.gd:242`, `scripts/pitch/pitch.gd:257` (+1) |  (Arco) |
 | `line_width` | `0.08` | float | `scripts/pitch/pitch_config.gd:20` | `scripts/pitch/pitch.gd:172`, `scripts/pitch/pitch.gd:173`, `scripts/pitch/pitch.gd:174`, `scripts/pitch/pitch.gd:182` (+5) |  (Marcas) |
 | `center_circle_radius` | `3.0` | float | `scripts/pitch/pitch_config.gd:21` | `scripts/pitch/pitch.gd:182` |  (Marcas) |
-| `penalty_area_radius` | `6.0` | float | `scripts/pitch/pitch_config.gd:23` | `scripts/goalkeeper/goalkeeper.gd:348`, `scripts/pitch/pitch.gd:185` | Radio de los cuartos de circulo del area de penal (desde cada poste). (Marcas) |
-| `penalty_mark_distance` | `6.0` | float | `scripts/pitch/pitch_config.gd:24` | `scripts/pitch/pitch.gd:198` |  (Marcas) |
+| `penalty_area_radius` | `6.0` | float | `scripts/pitch/pitch_config.gd:23` | `scripts/ai/ai_input.gd:315`, `scripts/gameplay/match_manager.gd:215`, `scripts/gameplay/match_scene.gd:334`, `scripts/goalkeeper/goalkeeper.gd:439` (+1) | Radio de los cuartos de circulo del area de penal (desde cada poste). (Marcas) |
+| `penalty_mark_distance` | `6.0` | float | `scripts/pitch/pitch_config.gd:24` | `scripts/assistance/cross_assist.gd:30`, `scripts/gameplay/match_manager.gd:206`, `scripts/gameplay/match_scene.gd:322`, `scripts/pitch/pitch.gd:198` |  (Marcas) |
 | `second_penalty_mark_distance` | `10.0` | float | `scripts/pitch/pitch_config.gd:26` | `scripts/pitch/pitch.gd:199` | Segundo punto penal (reglamento futsal, falta acumulada). (Marcas) |
 | `corner_arc_radius` | `0.25` | float | `scripts/pitch/pitch_config.gd:27` | `scripts/pitch/pitch.gd:205` |  (Marcas) |
 | `substitution_zone_length` | `5.0` | float | `scripts/pitch/pitch_config.gd:28` | `scripts/pitch/pitch.gd:203` |  (Marcas) |
-| `boundary_mode` | `BoundaryMode.WALLS` | BoundaryMode | `scripts/pitch/pitch_config.gd:31` | **sin uso** |  (Entorno) |
+| `boundary_mode` | `BoundaryMode.WALLS` | BoundaryMode | `scripts/pitch/pitch_config.gd:31` | `scripts/gameplay/match_manager.gd:172`, `scripts/gameplay/match_scene.gd:58`, `scripts/player/player_actions.gd:371`, `scripts/pitch/pitch.gd:226` |  (Entorno) |
 | `wall_height` | `3.0` | float | `scripts/pitch/pitch_config.gd:33` | `scripts/camera/match_camera.gd:97`, `scripts/pitch/pitch.gd:223` | Altura de las paredes que mantienen la pelota en juego. (Entorno) |
-| `barrier_visible_height` | `1.0` | float | `scripts/pitch/pitch_config.gd:35` | `scripts/pitch/pitch.gd:253` | Altura visible de la valla/baranda (el resto es colision invisible). (Entorno) |
-| `run_off` | `2.5` | float | `scripts/pitch/pitch_config.gd:36` | `scripts/pitch/pitch.gd:73`, `scripts/pitch/pitch.gd:74` |  (Entorno) |
+| `barrier_visible_height` | `1.0` | float | `scripts/pitch/pitch_config.gd:35` | `scripts/pitch/pitch.gd:264` | Altura visible de la valla/baranda (el resto es colision invisible). (Entorno) |
+| `run_off` | `2.5` | float | `scripts/pitch/pitch_config.gd:36` | `scripts/player/player_actions.gd:371`, `scripts/pitch/pitch.gd:73`, `scripts/pitch/pitch.gd:74`, `scripts/pitch/pitch.gd:227` |  (Entorno) |
 <!-- /AUTO -->
 
 ### Receta: «quiero cambiar el tamaño del arco» (consumidores verificados con búsqueda en el código)
@@ -82,10 +82,10 @@ Quedan **fijos en el código** (no derivan del tamaño): `MatchScene.kickoff_pos
 | `Pitch.LineBuilder.disc(cx: float, cz: float, r: float, segments: int = 14)` | 156 |  |
 | `Pitch._build_lines()` | 169 |  |
 | `Pitch._build_walls()` | 220 |  |
-| `Pitch._add_visual_box(parent: Node3D, size: Vector3, pos: Vector3, mat: Material)` | 266 |  |
-| `Pitch._build_goals()` | 278 |  |
-| `Pitch._build_lighting()` | 288 |  |
-| `Pitch._build_ambient()` | 318 |  |
+| `Pitch._add_visual_box(parent: Node3D, size: Vector3, pos: Vector3, mat: Material)` | 280 |  |
+| `Pitch._build_goals()` | 292 |  |
+| `Pitch._build_lighting()` | 302 |  |
+| `Pitch._build_ambient()` | 332 |  |
 <!-- /AUTO -->
 
 <!-- AUTO:funcs:scripts/pitch/goal.gd -->

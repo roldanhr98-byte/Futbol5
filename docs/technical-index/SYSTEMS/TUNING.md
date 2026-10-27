@@ -5,7 +5,7 @@
 - **Responsabilidad exacta:** el autoload `Tuning` es el **único punto de acceso** a los parámetros de balance (`Tuning.ball`, `Tuning.player`, `Tuning.assist`, `Tuning.keeper`, `Tuning.pitch`) y a las preferencias del usuario (niveles de asistencia, diagnóstico). Intenta cargar un `.tres` por clase desde `resources/tuning/`; **si no existe, usa los valores por defecto escritos en la propia clase**.
 - **Estado:** implementado. **`resources/tuning/` existe pero está vacío**: hoy el balance vive en los valores por defecto de las clases.
 - **Última verificación:** <!-- AUTO:verified -->
-2026-10-26
+2026-10-27
 <!-- /AUTO -->
 
 ## Archivos responsables
@@ -32,6 +32,7 @@
 | `Tuning.KEEPER_PATH` | `"res://resources/tuning/keeper_tuning.tres"` | 8 |  |
 | `Tuning.PITCH_PATH` | `"res://resources/tuning/pitch_config.tres"` | 9 |  |
 | `Tuning.USER_SETTINGS_PATH` | `"user://settings.cfg"` | 17 |  |
+| `Tuning.MATCH_MINUTES` | `[3, 5, 7, 10]` | 24 | Duracion del partido elegida (minutos): 3, 5, 7 o 10. |
 <!-- /AUTO -->
 
 Rutas esperadas de los `.tres` (**ninguna existe hoy**): las constantes `BALL_PATH`, `PLAYER_PATH`, `ASSIST_PATH`, `KEEPER_PATH` y `PITCH_PATH` de arriba, todas dentro de `resources/tuning/`. Un `.tres` cuyo script no coincide con la clase se ignora con un aviso.
@@ -52,11 +53,12 @@ Preferencias del usuario (`user://settings.cfg`, `Tuning.save_user_settings`): s
 <!-- AUTO:funcs:scripts/gameplay/tuning.gd -->
 | Función | Línea | Qué hace |
 |---|---|---|
-| `Tuning._init()` | 21 |  |
-| `Tuning.reload()` | 25 | Recarga todos los parametros desde disco (util al ajustar valores en el laboratorio). |
-| `Tuning.load_user_settings()` | 34 | Aplica las preferencias del usuario (niveles de asistencia, diagnostico) sobre los parametros. |
-| `Tuning.save_user_settings()` | 43 |  |
-| `Tuning._load_or_default(path: String, script: GDScript)` | 53 |  |
+| `Tuning._init()` | 27 |  |
+| `Tuning._ready()` | 30 |  |
+| `Tuning.reload()` | 34 | Recarga todos los parametros desde disco (util al ajustar valores en el laboratorio). |
+| `Tuning.load_user_settings()` | 43 | Aplica las preferencias del usuario (niveles de asistencia, diagnostico) sobre los parametros. |
+| `Tuning.save_user_settings()` | 56 |  |
+| `Tuning._load_or_default(path: String, script: GDScript)` | 69 |  |
 <!-- /AUTO -->
 
 ## Recorrido de ejecución

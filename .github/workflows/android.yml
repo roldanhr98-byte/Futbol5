@@ -43,7 +43,8 @@ env:
 jobs:
   apk:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    # La suite incluye partidos completos de 3, 5, 7 y 10 minutos de juego simulado.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -123,6 +124,20 @@ jobs:
       - name: Pruebas headless
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.skip_tests) }}
         run: tools/run_tests.sh
+
+      # Pruebas que necesitan el esqueleto animado (toques de conduccion con el pie real, pie en la pelota al patear):
+      # con render en un servidor X virtual.
+      - name: Pruebas con render (pies animados)
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.skip_tests) }}
+        # Depende del OpenGL por software del runner: si el entorno no puede renderizar, no bloquea el APK (queda en el log).
+        continue-on-error: true
+        run: |
+          sudo apt-get update -q > /dev/null && sudo apt-get install -y -q xvfb libgl1-mesa-dri > /dev/null
+          for f in live_feet pack_motion; do
+            xvfb-run -a godot --rendering-driver opengl3 --fixed-fps 60 --path . res://tests/run_tests.tscn -- --filter "$f" 2>&1 \
+              | sed 's/\x1b\[[0-9;]*m//g' | tee "$RUNNER_TEMP/render_$f.txt"
+            if grep -q "SCRIPT ERROR\|\[FAIL\]" "$RUNNER_TEMP/render_$f.txt"; then exit 1; fi
+          done
 
       - name: Version
         run: |

@@ -5,7 +5,7 @@
 - **Responsabilidad exacta:** presentar al futbolista: cargar el modelo de Tripo3D (`player_base.glb`, esqueleto único v1.0 de 23 huesos `mixamorig_*`), recolorearlo por regiones (camiseta, short, medias, botines, piel, pelo), animarlo con un `AnimationTree` (locomoción mezclada por velocidad + acciones de una sola vez) y superponer la patada **procedural** (los clips de Tripo no traen patadas).
 - **Estado:** modelo, locomoción (idle/walk/run), kit y patada procedural **implementados y probados**. **Desde la integración del pack** (ver [ANIMATION_PACK](ANIMATION_PACK.md)) el visual usa, si existe la librería local `pack_clips.res`, los clips de Mixamo para la marcha, la patada con contacto por pie, la recepción y las reacciones de gol; los clips de Tripo y la patada procedural son el **respaldo** (sin la librería, o con `FootballerVisual.prefer_pack = false`). Las 9 acciones (`celebrate_goal`, `dejected`, `frustrated`, `jump`, `turn`, `fall`, `dive`, `keeper_catch_high`, `keeper_scoop_low`) **existen en el árbol pero nada en el juego las dispara todavía** (no hay ningún llamador de `FootballerVisual.play_action` en `scripts/`). El clip `defensive_stance` está en la librería pero **no está conectado** al árbol.
 - **Última verificación:** <!-- AUTO:verified -->
-2026-10-26
+2026-10-27
 <!-- /AUTO -->
 
 ## Archivos responsables
@@ -43,12 +43,17 @@ Esta capa **no usa recursos de parámetros**: todo son constantes del código (v
 | `FootballerVisual.MIN_TIME_SCALE` | `0.6` | 24 |  |
 | `FootballerVisual.ACTION_CLIPS` | `[&"celebrate_goal", &"dejected", &"frustrated", &"jump", &"turn", &"fall", &"...` | 26 | Clips de accion (una sola vez) que se pueden disparar con play_action(). |
 | `FootballerVisual.PACK_LIB` | `&"pack"` | 32 |  |
-| `FootballerVisual.PACK_GAIT_CLIPS` | `[&"offensive_idle", &"Walking_7_inplace", &"jog_forward_inplace", &"Sprint_in...` | 35 | Marcha del pack: clips que se mezclan segun la velocidad. La posicion en el BlendSpace ES la velocidad natural medida de cada clip, asi que a esa velocidad se reproduce a ritmo 1.0 (sin patinar) y entre dos clips se mezclan. |
-| `FootballerVisual.PACK_GAIT_POINTS` | `[[&"offensive_idle", 0.0], [&"Walking_7_inplace", -1.0], [&"jog_forward_inpla...` | 39 | Puntos del BlendSpace de la marcha del pack: [clip, posicion (m/s)]. El trote se repite en una posicion mas alta: entre ambos se reproduce SOLO el trote (a mayor cadencia) y la mezcla con el sprint empieza despues, en vez de mezclar dos zancadas distintas durante todo el tramo intermedio. |
-| `FootballerVisual.DIR_POINTS` | `[ [&"jog_forward_inplace", 0.0, 1.0], [&"jog_backward_inplace", 0.0, -1.0], [...` | 43 | Mezcla direccional de 8 sentidos (arquero y defensa: el cuerpo mira a un punto y se mueve en cualquier direccion). Posicion en el BlendSpace2D: x = derecha, y = adelante; los clips cardinales estan a distancia 1. |
-| `FootballerVisual.DIR_REF_SPEED` | `2.3` | 50 | Velocidad (m/s) a la que la mezcla direccional esta en su radio 1 (velocidad natural media de esos clips). |
-| `FootballerVisual.CARRY_GAIT_POINTS` | `[[&"Soccer_Idle", 0.0], [&"Dribble_2", -1.0], [&"jog_forward_inplace", 3.6], ...` | 54 | Marcha CON la pelota: mismos tramos que la marcha normal pero con los clips de conduccion (el jugador mira la pelota, da zancadas mas cortas y mueve los brazos distinto). Se mezcla con la marcha normal segun la posesion. |
-| `FootballerVisual.CARRY_BLEND_RATE` | `4.0` | 56 | Velocidad (m/s) con la que la mezcla de conduccion llega a su peso maximo al recuperar la pelota. |
+| `FootballerVisual.PACK_GAIT_CLIPS` | `[&"offensive_idle", &"Walking_7_inplace", &"Jogging_inplace", &"jog_forward_i...` | 35 | Marcha del pack: clips que se mezclan segun la velocidad. La posicion en el BlendSpace ES la velocidad natural medida de cada clip, asi que a esa velocidad se reproduce a ritmo 1.0 (sin patinar) y entre dos clips se mezclan. |
+| `FootballerVisual.PACK_GAIT_POINTS` | `[[&"offensive_idle", 0.0], [&"Walking_7_inplace", -1.0], [&"Jogging_inplace",...` | 41 | Puntos del BlendSpace de la marcha del pack: [clip, posicion (m/s)]. El trote se repite en una posicion mas alta: entre ambos se reproduce SOLO el trote (a mayor cadencia) y la mezcla con el sprint empieza despues, en vez de mezclar dos zancadas distintas durante todo el tramo intermedio. Entre la caminata y el trote va el trote lento (Jogging_inplace, 1.64 m/s): el paso de caminar a trotar ya no mezcla dos zancadas muy distintas. |
+| `FootballerVisual.DIR_POINTS` | `[ [&"jog_forward_inplace", 0.0, 1.0], [&"jog_backward_inplace", 0.0, -1.0], [...` | 45 | Mezcla direccional de 8 sentidos (arquero y defensa: el cuerpo mira a un punto y se mueve en cualquier direccion). Posicion en el BlendSpace2D: x = derecha, y = adelante; los clips cardinales estan a distancia 1. |
+| `FootballerVisual.DIR_MAX` | `1.4` | 54 | Limite de la mezcla direccional (el lateral rapido esta a 1.36). |
+| `FootballerVisual.STRAFE_FAST_SPEED` | `3.14` | 55 |  |
+| `FootballerVisual.TWIN_GAIT_POINTS` | `[[&"offensive_idle", 0.0], [&"Walking_7", -1.0], [&"Jogging", -1.0], [&"Runni...` | 58 | Arbitro: usa los GEMELOS CON RAIZ de la marcha (misma pose que los _inplace; su desplazamiento de raiz medido es el que mueve al cuerpo, ver Referee). Marcha y mezcla direccional con esos clips. |
+| `FootballerVisual.TWIN_DIR_POINTS` | `[ [&"jog_forward", 0.0, 1.0], [&"jog_backward", 0.0, -1.0], [&"jog_strafe_lef...` | 59 |  |
+| `FootballerVisual.DIR_REF_SPEED` | `2.3` | 68 | Velocidad (m/s) a la que la mezcla direccional esta en su radio 1 (velocidad natural media de esos clips). |
+| `FootballerVisual.CARRY_GAIT_POINTS` | `[[&"Soccer_Idle", 0.0], [&"Dribble_2", -1.0], [&"Running_inplace", 3.6], [&"T...` | 74 | Marcha CON la pelota: mismos tramos que la marcha normal pero con los clips de conduccion (el jugador mira la pelota, da zancadas mas cortas y mueve los brazos distinto). Se mezcla con la marcha normal segun la posesion. Con la pelota la carrera usa Running_inplace (braceo distinto al trote sin pelota) y el sprint, Two_Cycle_Sprint_inplace (dos zancadas por ciclo: la conduccion larga a toda velocidad). |
+| `FootballerVisual.CARRY_BLEND_RATE` | `4.0` | 76 | Velocidad (m/s) con la que la mezcla de conduccion llega a su peso maximo al recuperar la pelota. |
+| `FootballerVisual.GAIT_CYCLES` | `{&"Jogging_inplace": 3, &"Jogging": 3, &"Two_Cycle_Sprint_inplace": 2, &"Two_...` | 316 | Ciclos de zancada (dos apoyos) que contiene cada clip de marcha. Casi todos son de un ciclo; el trote lento (Jogging_inplace, 2.57 s) trae tres y Two_Cycle_Sprint dos (contados en las punta de pie del clip). |
 <!-- /AUTO -->
 
 <!-- AUTO:consts:scripts/animation/procedural_pose.gd -->
@@ -77,35 +82,36 @@ Esta capa **no usa recursos de parámetros**: todo son constantes del código (v
 <!-- AUTO:funcs:scripts/player/footballer_visual.gd -->
 | Función | Línea | Qué hace |
 |---|---|---|
-| `FootballerVisual.default_kit(team: int)` | 96 | Colores por defecto del kit (camiseta, short, medias, botines, piel, pelo). |
-| `FootballerVisual.referee_kit()` | 103 |  |
-| `FootballerVisual.keeper_kit()` | 107 |  |
-| `FootballerVisual.build(kit: Dictionary)` | 112 | Carga el modelo y aplica el kit. Devuelve false si se uso el maniqui provisional. |
-| `FootballerVisual._apply_kit(kit: Dictionary)` | 151 |  |
-| `FootballerVisual.set_kit(kit: Dictionary)` | 162 |  |
-| `FootballerVisual._anim_node(clip: StringName)` | 169 |  |
-| `FootballerVisual._setup_animation_tree()` | 174 |  |
-| `FootballerVisual.play_action(clip: StringName, speed: float = 1.0)` | 276 | Dispara un clip de accion una sola vez. Devuelve su duracion efectiva en segundos. |
-| `FootballerVisual.gait_table()` | 291 |  |
-| `FootballerVisual.gait_scale_for(speed: float)` | 301 | Escala de tiempo de la marcha del pack a una velocidad: velocidad / velocidad natural de lo que se esta mezclando. |
-| `FootballerVisual.gait_time_scale(speed: float)` | 315 |  |
-| `FootballerVisual.carry_gait_table()` | 321 | Tabla de la marcha CON balon, igual que gait_table pero con los clips de conduccion. |
-| `FootballerVisual.carry_scale_for(speed: float)` | 332 |  |
-| `FootballerVisual.step_interval_for(speed: float)` | 348 | Segundos entre apoyos consecutivos (un pie tras otro) de la marcha del pack a una velocidad, ya con la escala de tiempo con la que se reprod |
-| `FootballerVisual.play_pack_clip(id: StringName, speed: float = 1.0, start: float = 0.0, play_for: float = -1.0)` | 367 | Dispara un clip del pack una sola vez, con velocidad de reproduccion y punto de inicio (s). Devuelve su duracion efectiva en segundos (0 si  |
-| `FootballerVisual.play_situation(situation: StringName, pick: int = 0, speed: float = 1.0, play_for: float = -1.0)` | 391 | Reproduce la situacion de juego pedida (AnimationCatalog): clip del pack si existe, si no el de Tripo. Devuelve {"source", "clip", "duration |
-| `FootballerVisual.stop_current_action()` | 402 | Corta con un fundido la accion en curso (de Tripo o del pack). |
-| `FootballerVisual.stop_action(clip: StringName)` | 414 |  |
-| `FootballerVisual.start_kick(contact_time: float, power: float, side: int)` | 423 | Inicia la patada procedural: el golpeo ocurre a los contact_time segundos. side: +1 derecha, -1 izquierda. |
-| `FootballerVisual.is_action_playing()` | 427 |  |
-| `FootballerVisual.update_motion(f: Footballer, delta: float)` | 431 | Llamado cada paso de fisica por el futbolista. |
-| `FootballerVisual.drive_motion(speed: float, turn_rate: float, delta: float)` | 435 | Version por valores (la usan el futbolista y el arquero): velocidad horizontal y velocidad de giro (rad/s). |
-| `FootballerVisual._build_placeholder(shirt_color: Color)` | 488 |  |
-| `FootballerVisual._update_placeholder(speed: float, delta: float)` | 500 |  |
-| `FootballerVisual._add_mesh(mesh: Mesh, mat: Material, pos: Vector3)` | 507 |  |
-| `FootballerVisual._capsule(r: float, h: float)` | 515 |  |
-| `FootballerVisual._sphere(r: float)` | 523 |  |
-| `FootballerVisual._box(size: Vector3)` | 531 |  |
+| `FootballerVisual.default_kit(team: int)` | 122 | Colores por defecto del kit (camiseta, short, medias, botines, piel, pelo). |
+| `FootballerVisual.referee_kit()` | 129 |  |
+| `FootballerVisual.keeper_kit()` | 133 |  |
+| `FootballerVisual.build(kit: Dictionary)` | 138 | Carga el modelo y aplica el kit. Devuelve false si se uso el maniqui provisional. |
+| `FootballerVisual._apply_kit(kit: Dictionary)` | 177 |  |
+| `FootballerVisual.set_kit(kit: Dictionary)` | 188 |  |
+| `FootballerVisual._anim_node(clip: StringName)` | 195 |  |
+| `FootballerVisual._setup_animation_tree()` | 200 |  |
+| `FootballerVisual.play_action(clip: StringName, speed: float = 1.0)` | 302 | Dispara un clip de accion una sola vez. Devuelve su duracion efectiva en segundos. |
+| `FootballerVisual.cycle_seconds(clip: StringName)` | 319 | Duracion (s) de UN ciclo de zancada del clip. |
+| `FootballerVisual.gait_table()` | 325 |  |
+| `FootballerVisual.gait_scale_for(speed: float)` | 335 | Escala de tiempo de la marcha del pack a una velocidad: velocidad / velocidad natural de lo que se esta mezclando. |
+| `FootballerVisual.gait_time_scale(speed: float)` | 349 |  |
+| `FootballerVisual.carry_gait_table()` | 355 | Tabla de la marcha CON balon, igual que gait_table pero con los clips de conduccion. |
+| `FootballerVisual.carry_scale_for(speed: float)` | 366 |  |
+| `FootballerVisual.step_interval_for(speed: float)` | 382 | Segundos entre apoyos consecutivos (un pie tras otro) de la marcha del pack a una velocidad, ya con la escala de tiempo con la que se reprod |
+| `FootballerVisual.play_pack_clip(id: StringName, speed: float = 1.0, start: float = 0.0, play_for: float = -1.0)` | 401 | Dispara un clip del pack una sola vez, con velocidad de reproduccion y punto de inicio (s). Devuelve su duracion efectiva en segundos (0 si  |
+| `FootballerVisual.play_situation(situation: StringName, pick: int = 0, speed: float = 1.0, play_for: float = -1.0)` | 425 | Reproduce la situacion de juego pedida (AnimationCatalog): clip del pack si existe, si no el de Tripo. Devuelve {"source", "clip", "duration |
+| `FootballerVisual.stop_current_action()` | 436 | Corta con un fundido la accion en curso (de Tripo o del pack). |
+| `FootballerVisual.stop_action(clip: StringName)` | 448 |  |
+| `FootballerVisual.start_kick(contact_time: float, power: float, side: int)` | 457 | Inicia la patada procedural: el golpeo ocurre a los contact_time segundos. side: +1 derecha, -1 izquierda. |
+| `FootballerVisual.is_action_playing()` | 461 |  |
+| `FootballerVisual.update_motion(f: Footballer, delta: float)` | 465 | Llamado cada paso de fisica por el futbolista. |
+| `FootballerVisual.drive_motion(speed: float, turn_rate: float, delta: float)` | 469 | Version por valores (la usan el futbolista y el arquero): velocidad horizontal y velocidad de giro (rad/s). |
+| `FootballerVisual._build_placeholder(shirt_color: Color)` | 527 |  |
+| `FootballerVisual._update_placeholder(speed: float, delta: float)` | 539 |  |
+| `FootballerVisual._add_mesh(mesh: Mesh, mat: Material, pos: Vector3)` | 546 |  |
+| `FootballerVisual._capsule(r: float, h: float)` | 554 |  |
+| `FootballerVisual._sphere(r: float)` | 562 |  |
+| `FootballerVisual._box(size: Vector3)` | 570 |  |
 <!-- /AUTO -->
 
 <!-- AUTO:funcs:scripts/animation/procedural_pose.gd -->
@@ -138,7 +144,7 @@ Esta capa **no usa recursos de parámetros**: todo son constantes del código (v
 <!-- AUTO:signals:scripts/player/footballer_visual.gd -->
 | Señal | Línea | Descripción |
 |---|---|---|
-| `FootballerVisual.action_finished(clip: StringName)` | 58 |  |
+| `FootballerVisual.action_finished(clip: StringName)` | 78 |  |
 <!-- /AUTO -->
 
 ## Clips de la librería (13) y su origen

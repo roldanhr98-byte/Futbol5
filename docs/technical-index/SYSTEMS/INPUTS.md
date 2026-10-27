@@ -5,7 +5,7 @@
 - **Responsabilidad exacta:** todo lo que el jugador (o, en el futuro, una IA o la red) puede *pedir* a un futbolista. Una `InputSource` produce un `InputFrame` por paso de física; el futbolista solo conoce el `InputFrame`. Los controles táctiles **inyectan acciones reales de `InputMap`** (`Input.action_press`), de modo que teclado, táctil y pruebas comparten el mismo camino.
 - **Estado:** implementado y probado (teclado, táctil multitoque con joystick flotante, entrada programada). No hay mapeo de gamepad (ver «Limitaciones»).
 - **Última verificación:** <!-- AUTO:verified -->
-2026-10-26
+2026-10-27
 <!-- /AUTO -->
 
 ## Archivos responsables
@@ -70,24 +70,27 @@ Botones (en `TouchControls._build_buttons`; posición = desplazamiento desde la 
 |---|---|---|
 | `TouchControls._ready()` | 39 |  |
 | `TouchControls._build_buttons()` | 46 |  |
-| `TouchControls._add(id: StringName, text: String, action: StringName, anchor: Vector2, radius: float, color: Color, charge_key: StringName = &"")` | 59 |  |
-| `TouchControls._button_center(b: TouchButton)` | 71 |  |
-| `TouchControls.get_button_center(id: StringName)` | 77 | Centro (en coordenadas del control) de un boton por id. Util para pruebas. |
-| `TouchControls.is_button_pressed(id: StringName)` | 83 |  |
-| `TouchControls._button_visible(b: TouchButton)` | 89 |  |
-| `TouchControls._input(event: InputEvent)` | 94 |  |
-| `TouchControls._local_pos(p: Vector2)` | 106 |  |
-| `TouchControls._touch_down(index: int, pos: Vector2)` | 109 |  |
-| `TouchControls._touch_drag(index: int, pos: Vector2)` | 129 |  |
-| `TouchControls._touch_up(index: int)` | 135 |  |
-| `TouchControls._update_joystick()` | 149 |  |
-| `TouchControls._apply_move(v: Vector2)` | 166 | Traduce el vector analogico a las cuatro acciones de movimiento con su intensidad. |
-| `TouchControls._set_axis(action: String, strength: float)` | 172 |  |
-| `TouchControls.release_all()` | 179 |  |
-| `TouchControls.joystick_vector()` | 191 | Vector del joystick actual (para pruebas y diagnostico). |
-| `TouchControls._process(_delta: float)` | 196 |  |
-| `TouchControls._draw()` | 203 |  |
-| `TouchControls._default_joy_center_for_size()` | 227 |  |
+| `TouchControls._add(id: StringName, text: String, action: StringName, anchor: Vector2, radius: float, color: Color, charge_key: StringName = &"")` | 65 |  |
+| `TouchControls._button_center(b: TouchButton)` | 77 |  |
+| `TouchControls._scale()` | 83 | Escala de la botonera (preferencia del usuario: botones pequenos, normales o grandes). |
+| `TouchControls._radius(b: TouchButton)` | 86 |  |
+| `TouchControls.joy_radius()` | 90 | Radio del joystick: con mas sensibilidad basta un recorrido menor del pulgar para llegar al maximo. |
+| `TouchControls.get_button_center(id: StringName)` | 94 | Centro (en coordenadas del control) de un boton por id. Util para pruebas. |
+| `TouchControls.is_button_pressed(id: StringName)` | 100 |  |
+| `TouchControls._button_visible(b: TouchButton)` | 106 |  |
+| `TouchControls._input(event: InputEvent)` | 111 |  |
+| `TouchControls._local_pos(p: Vector2)` | 123 |  |
+| `TouchControls._touch_down(index: int, pos: Vector2)` | 126 |  |
+| `TouchControls._touch_drag(index: int, pos: Vector2)` | 146 |  |
+| `TouchControls._touch_up(index: int)` | 152 |  |
+| `TouchControls._update_joystick()` | 166 |  |
+| `TouchControls._apply_move(v: Vector2)` | 184 | Traduce el vector analogico a las cuatro acciones de movimiento con su intensidad. |
+| `TouchControls._set_axis(action: String, strength: float)` | 190 |  |
+| `TouchControls.release_all()` | 197 |  |
+| `TouchControls.joystick_vector()` | 209 | Vector del joystick actual (para pruebas y diagnostico). |
+| `TouchControls._process(_delta: float)` | 214 |  |
+| `TouchControls._draw()` | 221 |  |
+| `TouchControls._default_joy_center_for_size()` | 247 |  |
 <!-- /AUTO -->
 
 <!-- AUTO:funcs:scripts/player/human_input.gd -->
@@ -99,13 +102,18 @@ Botones (en `TouchControls._build_buttons`; posición = desplazamiento desde la 
 <!-- AUTO:funcs:scripts/network/scripted_input.gd -->
 | Función | Línea | Qué hace |
 |---|---|---|
-| `ScriptedInput.hold_pass()` | 19 |  |
-| `ScriptedInput.release_pass()` | 23 |  |
-| `ScriptedInput.hold_shoot()` | 27 |  |
-| `ScriptedInput.release_shoot()` | 31 |  |
-| `ScriptedInput.skill()` | 35 |  |
-| `ScriptedInput.request_switch()` | 38 |  |
-| `ScriptedInput.poll(_footballer: Footballer)` | 41 |  |
+| `ScriptedInput.hold_through()` | 26 |  |
+| `ScriptedInput.release_through()` | 30 |  |
+| `ScriptedInput.hold_cross()` | 34 |  |
+| `ScriptedInput.release_cross()` | 38 |  |
+| `ScriptedInput.tackle()` | 42 |  |
+| `ScriptedInput.hold_pass()` | 45 |  |
+| `ScriptedInput.release_pass()` | 49 |  |
+| `ScriptedInput.hold_shoot()` | 53 |  |
+| `ScriptedInput.release_shoot()` | 57 |  |
+| `ScriptedInput.skill()` | 61 |  |
+| `ScriptedInput.request_switch()` | 64 |  |
+| `ScriptedInput.poll(_footballer: Footballer)` | 67 |  |
 <!-- /AUTO -->
 
 <!-- AUTO:signals:scripts/ui/touch_controls.gd -->
@@ -149,3 +157,9 @@ Botones (en `TouchControls._build_buttons`; posición = desplazamiento desde la 
 ## Historial
 
 Ver [CHANGELOG.md](../CHANGELOG.md): «Control asistido».
+
+## Acciones nuevas y mando (2026-10-27)
+
+- `InputFrame`: `through_*` (FILTRADO), `cross_*` (CENTRO), `tackle_pressed` (ENTRADA). `InputBindings.ensure` crea las acciones `through_pass` (O), `cross` (H), `tackle` (N) y el mapeo de mando contextual (A pase/presión, X tiro/entrada, Y filtrado, B centro, RB sprint, LB alto, LT cambio, RT regate, Start pausa).
+- `TouchControls`: botones FILTRADO, CENTRO y ENTRADA; escala de botones y sensibilidad del joystick (`Tuning.touch_scale`, `Tuning.joystick_sensitivity`, menú de pausa).
+- Chanfle: `BallHandler.curl_from` compara la dirección al pulsar y al soltar TIRO/CENTRO.

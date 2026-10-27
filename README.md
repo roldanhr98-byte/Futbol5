@@ -1,8 +1,10 @@
 # Fútbol 5
 
 Juego de fútbol 5 / futsal para Android hecho con **Godot 4.7.2** (GDScript, renderer GL Compatibility, física Jolt a 60 Hz).
-4 contra 4 con arquero en cada equipo, IA, pases y tiros asistidos, conducción con pelota física, barridas, caídas,
-árbitro y una sala de práctica con las 133 animaciones.
+4 contra 4 con arquero en cada equipo, IA, pases y tiros asistidos, conducción con pelota física y toques dados por el
+pie animado, pases filtrados, centros, tiros con chanfle, entradas, reglas con bandas y balón parado, repetición de
+los goles, árbitro que sigue la jugada y una sala de práctica con las 133 animaciones (todas usadas en el juego).
+Inspiración de jugabilidad: eFootball PES 2021 (ver [`docs/technical-index/GAMEPLAY_PES.md`](docs/technical-index/GAMEPLAY_PES.md)).
 
 ## Probar el juego (APK de Android)
 
@@ -25,14 +27,25 @@ tira como si fuera un disparo. Un cono cian marca a quien controlas y uno ámbar
 
 ## Controles
 
-Joystick flotante a la izquierda; a la derecha: **PASE**, **TIRO**, **SPRINT**, **PRESIÓN**, **ALTO** (pase/tiro elevado),
-**REGATE** (ruleta) y **CAMBIO** (cambia al compañero más cercano a la pelota). En PC: WASD mover, J pase, K tiro, I elevado, U regate, L presión, Q cambio, Shift sprint, Esc pausa; desde la pausa se
-abre la **sala de práctica**.
+Joystick flotante a la izquierda; a la derecha: **TIRO**, **PASE**, **FILTRADO** (al espacio), **CENTRO** (desde la
+banda; con ALTO sale raso, con carga alta sale tenso), **SPRINT**, **ALTO** (pase/tiro elevado), **PRESIÓN** (cierra y
+contiene, no roba sola), **ENTRADA** (de pie, carga con el hombro o barrida según la situación), **REGATE** (ruleta) y
+**CAMBIO**. Con un pase, el control pasa al compañero que recibe.
+
+**Chanfle:** pulsa TIRO (o CENTRO) apuntando con el joystick y, antes de soltar, gíralo hacia el lado al que quieres que
+se curve la pelota.
+
+PC: WASD mover, J pase, K tiro, O filtrado, H centro, I alto, L presión, N entrada, U regate, Q cambio, Shift sprint,
+Esc pausa. Mando: A pase/presión, X tiro/entrada, Y filtrado, B centro, RB sprint, LB alto, LT cambio, RT regate,
+Start pausa. En la pausa: duración del partido (3, 5, 7 o 10 min), tamaño de los botones, sensibilidad del joystick,
+asistencias, gráficos y la **sala de práctica**.
 
 ## Desarrollo
 
 - Abrir la carpeta con Godot 4.7.2; la escena principal es `scenes/main/match.tscn`.
-- Pruebas: `tools/run_tests.sh` (suite headless; `tools/run_tests.sh <filtro>` para una parte).
+- Pruebas: `tools/run_tests.sh` (suite headless; `tools/run_tests.sh <filtro>` para una parte). Incluye partidos completos
+  de 3, 5, 7 y 10 minutos. Las pruebas que necesitan el esqueleto animado se ejecutan con
+  `xvfb-run -a godot --rendering-driver opengl3 --fixed-fps 60 --path . res://tests/run_tests.tscn -- --filter live_feet`.
 - Documentación técnica: [`docs/technical-index/INDEX.md`](docs/technical-index/INDEX.md) (sistemas, archivos, parámetros, historial).
 - Las animaciones (Mixamo) están convertidas dentro del juego en `assets/animations/pack_clips.res` y `pack_keeper.res`.
   Para reconvertirlas hace falta el pack original en `pack/` (no se sube), ver
