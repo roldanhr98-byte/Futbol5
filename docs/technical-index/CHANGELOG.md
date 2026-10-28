@@ -11,6 +11,18 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-10-28 — Acceso a Tripo3D y fuentes de animación de conducción (sin gasto)
+
+- Comprobado: sin conector/MCP de Tripo; la API oficial responde desde el entorno (401 sin clave); la sesión no tiene clave
+  (no se accedió a la cuenta, 0 créditos gastados). Capacidades reales según la documentación oficial: presets, rig,
+  retarget, importación y conversión; **sin animación a medida**. Herramienta `tools/tripo/tripo_api.py` preparada (clave
+  solo por variable de entorno, simulación por defecto, tope y reserva de créditos, registro en el ledger; no probada
+  contra la cuenta).
+- Fuente gratuita verificada: «Free mocap pack 05: Soccer» (3 `Dribble` de captura real, golpeos, defensa; FBX 60 fps;
+  uso comercial gratuito). Pendiente de que la persona la descargue.
+- Pases y tiros existentes medidos en el contacto (interior, empeine, por debajo): no falta ninguno básico.
+- Detalle: [DRIBBLE_DIAGNOSIS.md](DRIBBLE_DIAGNOSIS.md#quinta-ronda-2026-10-28-acceso-a-tripo3d-y-fuentes-de-animación-verificadas).
+
 ## 2026-10-28 — Conducción y golpeos frente a los videos A/B: diagnóstico medido, inventario de animaciones, golpeo con la pelota fuera del alcance
 
 Detalle y evidencia: [DRIBBLE_DIAGNOSIS.md](DRIBBLE_DIAGNOSIS.md) · inventario: [ANIMATION_INVENTORY.md](ANIMATION_INVENTORY.md).

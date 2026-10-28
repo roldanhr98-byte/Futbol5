@@ -3136,7 +3136,12 @@
         "conduccion integrada",
         "dribble clip",
         "toques de conduccion",
-        "empuje del pie"
+        "empuje del pie",
+        "tripo api",
+        "tripo3d",
+        "retarget de presets",
+        "creditos",
+        "ledger"
       ],
       "files": [
         "tools/animation_pack/pack_retarget.gd",
@@ -3155,7 +3160,8 @@
         "tools/animation_pack/selection.json",
         "scripts/animation/foot_trajectory.gd",
         "tests/test_animation_inventory.gd",
-        "tools/animation_pack/pack_clip_sheet.gd"
+        "tools/animation_pack/pack_clip_sheet.gd",
+        "tools/tripo/tripo_api.py"
       ],
       "symbols": [
         {

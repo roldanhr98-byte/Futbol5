@@ -183,3 +183,41 @@ trote, carrera, sprint, parada, giros a ambos lados, pase corto, pase largo y ti
 y el pie de cada toque). Comparada con A y B en una misma hoja de fotogramas: en B la pelota va un paso por delante y se
 ve la pierna estirarse al toque; en la prueba la pelota va 0.3–0.7 m por delante y los toques coinciden con las pisadas
 (sin gesto de toque, por falta de animación).
+
+## Quinta ronda (2026-10-28): acceso a Tripo3D y fuentes de animación verificadas
+
+**Acceso a Tripo3D comprobado desde este entorno:** no hay conector ni integración MCP de Tripo (ni instalado ni en el
+directorio de conectores); la API oficial `https://openapi.tripo3d.com/v3` **responde** desde el entorno (401
+«Authentication required» sin clave) y la web `tripo3d.ai` está bloqueada por la red del entorno (403). La sesión **no
+tiene clave**: no se consultó la cuenta ni se gastó nada. Herramienta preparada para cuando haya clave:
+`tools/tripo/tripo_api.py` (`balance`, `usage`, `task`, `retarget` con simulación por defecto, tope de créditos obligatorio,
+reserva de 200 y anotación en `docs/tripo/ledger.jsonl`; la clave solo se lee de la variable `TRIPO_API_KEY` del entorno y
+nunca se muestra). Escrita contra la documentación oficial y **no probada contra la cuenta**.
+
+**Capacidades reales de Tripo (documentación oficial):** generación de modelos, rig (`/animations/rig`, ejemplo 25
+créditos), comprobación de rig, retarget de **presets** (`/animations/retarget`, 1–5 por petición, GLB/FBX, en el sitio,
+ejemplo 10 créditos por animación; pide el `task_id` del modelo ya riggeado), importación de modelos (GLB/FBX/OBJ/STL) y
+conversión de formato. **No genera animaciones a medida** (ni por texto ni por video). En el rig v1.0 (el del jugador)
+hay `preset:biped:dribble` y `preset:biped:crossover_dribble`, sin descripción del deporte; nada de giros, frenada o
+toque largo con pelota. Compatibilidad con el jugador: un retarget sobre la tarea del rig v1.0 da el mismo esqueleto de
+23 huesos que ya usan los 13 clips de Tripo del juego.
+
+**Fuente gratuita verificada (página del autor en Gumroad):** «Free mocap pack 05: Soccer» de Anderson Rohr —
+21 animaciones de captura de movimiento real, entre ellas `01_Dribble_01`, `02_Dribble_02`, `03_Dribble_03`,
+`08_Side_Foot_Kick`, `09_Power_Kick`, `10/11_Penalty_Kick`, `18/19_Defending`; FBX a 60 fps; esqueletos Rokoko Default,
+iClone y UE5 Manny; «free in both personal and commercial projects», sin redistribuir el pack suelto (los FBX no se
+suben al repositorio; solo los clips convertidos, como con el pack de Mixamo). Requiere «comprarlo» a 0 USD con un
+correo: lo descarga la persona. No es el esqueleto de Mixamo: el conversor necesita un mapa de huesos nuevo (el retarget
+respecto al reposo ya existe). Su contenido de movimiento **no está comprobado** hasta medirlo con `FootTrajectory`.
+
+**Lote mínimo propuesto para la conducción:** (1) gratis: los tres `Dribble` del pack de futbol (y `Side_Foot_Kick`,
+`Power_Kick` como referencia de golpeo); (2) opcional en Tripo: `dribble` + `crossover_dribble` en una sola petición =
+20 créditos estimados (más 25 si la tarea del rig ya no existe y hay que volver a riggear). Ninguna operación de pago se
+ejecuta sin autorización explícita.
+
+**Pases y tiros existentes (medido en el instante de contacto, ángulo del pie):** `Soccer_Pass` interior (pie girado
++95°, 8.8 m/s); `strike_foward_jog_inplace` empeine (+36°, punta 19° hacia abajo, 12 m/s); `Chip` por debajo de la pelota
+(punta 62° hacia abajo); `soccer_penalty_kick` interior (+75°); voleas y chilena con contacto medido. Con render: 48–49 de
+50 golpeos con el pie en la pelota. No falta ningún pase ni tiro básico; no hay clip específico de pase de primera
+(se usan los mismos con espera de la pelota) ni de exterior del pie.
+
