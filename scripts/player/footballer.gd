@@ -324,7 +324,7 @@ func _physics_process(delta: float) -> void:
 	# Tope de conduccion solo con la pelota al pie: si el toque se fue largo, el jugador acelera para alcanzarla.
 	# Yendo a golpear la pelota propia que se adelanto (kick_approach_steer) no hay tope: si no, nunca la alcanza.
 	if ball_handler.is_dribbling() and ball_handler.ball_distance() <= ball_handler.possession_radius() and approach.is_empty():
-		cap = locomotion.max_sprint_speed() * lerpf(0.86, 0.97, attributes.norm("ball_carrying"))
+		cap = ball_handler.dribble_speed_cap()
 	var speed_before: float = locomotion.speed
 	locomotion.step(desired_dir, desired_mag, want_sprint, delta, cap)
 	if kicking:

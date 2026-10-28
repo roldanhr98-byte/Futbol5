@@ -70,6 +70,13 @@ func _ready() -> void:
 	label.add_theme_constant_override("outline_size", 6)
 	layer.add_child(label)
 	_cam_pos = _cam_want()
+	# Registro de toques por la salida estandar (instante, fase, tipo, pie y pelota respecto al cuerpo), para localizar
+	# los toques en el video.
+	p.ball_handler.touched_ball.connect(func(k: StringName) -> void:
+		var o: Vector3 = KickModel.flat(ctx.ball.global_position - p.global_position)
+		print("TOQUE t=%.2f s fase=%s tipo=%s/%s pie=%d pelota %.2f m delante %.2f al costado v=%.1f" % [
+			Engine.get_physics_frames() / 60.0, PHASES[maxi(_phase, 0)][1], k, p.ball_handler.last_touch_mode, p.ball_handler.last_touch_foot,
+			o.dot(p.locomotion.forward()), o.dot(p.locomotion.right()), p.locomotion.speed]))
 
 func _player(team: int, pos: Vector3, source: InputSource, id: int) -> Footballer:
 	var f: Footballer = (load("res://scenes/player/footballer.tscn") as PackedScene).instantiate()
@@ -118,9 +125,9 @@ func _physics_process(delta: float) -> void:
 	var off: Vector3 = KickModel.flat(ctx.ball.global_position - p.global_position)
 	var bh: BallHandler = p.ball_handler
 	var foot: String = ["izquierdo", "derecho"][bh.last_touch_foot] if bh.last_touch_foot >= 0 else "sin pie"
-	label.text = "%s\npelota: %.2f m delante, %.2f m al costado | ultimo toque: %s | %.1f m/s\ntoques %d (con el pie %d) | golpeos %s" % [
-		ph2[1], off.dot(p.locomotion.forward()), off.dot(p.locomotion.right()), foot, p.locomotion.speed, bh.dribble_touch_count, bh.foot_touches,
-		str(bh.kick_stats.get("contact", 0))]
+	label.text = "%s\npelota: %.2f m delante, %.2f m al costado | ultimo toque: %s%s | %.1f m/s\ntoques %d (con el pie %d; animacion de toque %d, sin pie en la pelota %d) | golpeos %s" % [
+		ph2[1], off.dot(p.locomotion.forward()), off.dot(p.locomotion.right()), foot, " (animacion de toque)" if bh.last_touch_mode == &"clip" else "",
+		p.locomotion.speed, bh.dribble_touch_count, bh.foot_touches, bh.clip_touch_count, bh.clip_touch_misses, str(bh.kick_stats.get("contact", 0))]
 
 func _release_after(seconds: float, action: StringName) -> void:
 	await get_tree().create_timer(seconds, true, true).timeout
@@ -139,7 +146,7 @@ func _reset_ball(at: Vector3, dir: Vector3) -> void:
 func _process(delta: float) -> void:
 	if p == null:
 		return
-	var target: Vector3 = p.global_position.lerp(ctx.ball.global_position, 0.3) + Vector3(0, 0.6, 0)
+	var target: Vector3 = p.global_position.lerp(ctx.ball.global_position, 0.3) + Vector3(0, 0.3 if _side_cam else 0.6, 0)
 	_heading = _heading.slerp(p.locomotion.forward(), clampf(delta * 1.5, 0.0, 1.0)).normalized()
 	_cam_pos = _cam_pos.lerp(_cam_want(), clampf(delta * 3.0, 0.0, 1.0))
 	cam.look_at_from_position(_cam_pos, target, Vector3.UP)
@@ -147,6 +154,11 @@ func _process(delta: float) -> void:
 ## Camara detras y a un costado del jugador (como las repeticiones del video de referencia), siguiendo su rumbo.
 var _heading := Vector3(1, 0, 0)
 
+## Con DRIBBLE_DEMO_CAM=lateral la camara va de perfil, baja y cerca (para ver el contacto del pie con la pelota).
+static var _side_cam: bool = OS.get_environment("DRIBBLE_DEMO_CAM") == "lateral"
+
 func _cam_want() -> Vector3:
 	var right := Vector3(-_heading.z, 0.0, _heading.x)
+	if _side_cam:
+		return p.global_position + _heading * 0.4 - right * 3.2 + Vector3(0, 0.7, 0)
 	return p.global_position - _heading * 4.6 + right * 2.2 + Vector3(0, 2.6, 0)

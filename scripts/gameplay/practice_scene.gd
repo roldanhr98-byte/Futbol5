@@ -12,7 +12,7 @@ const ROLE_NAMES := {
 	"pase_tiro": "Pases y tiros", "volea": "Voleas", "cabezazo": "Cabezazos", "recepcion": "Recepciones", "habilidad": "Habilidad",
 	"entrada": "Entradas", "contacto_caida": "Contactos y caídas", "suelo": "Suelo y levantarse", "cansancio": "Cansancio",
 	"salto": "Saltos", "festejo": "Festejos", "felicitar": "Felicitar", "lamento": "Lamentos", "calentamiento": "Calentamiento",
-	"arbitro": "Árbitro", "malabares": "Malabares", "practica": "Práctica", "arquero": "Arquero",
+	"arbitro": "Árbitro", "malabares": "Malabares", "practica": "Práctica", "arquero": "Arquero", "toque": "Toques de conducción",
 }
 
 var ctx: MatchContext

@@ -2,6 +2,8 @@ extends Node
 ## Ejecutor de pruebas headless (escena tests/run_tests.tscn, con autoloads disponibles).
 ##   godot --headless --fixed-fps 60 --path . res://tests/run_tests.tscn
 ##   godot --headless --fixed-fps 60 --path . res://tests/run_tests.tscn -- --filter ball
+##   godot --headless --fixed-fps 60 --path . res://tests/run_tests.tscn -- --filter dribble_reference::test_gentle
+## (con "::", la parte de la derecha filtra tambien el nombre del metodo).
 ## Sale con codigo 1 si alguna prueba falla (apto para CI).
 ## Una prueba que no ejecuta ninguna comprobacion se considera FALLIDA (suele indicar un error de script).
 
@@ -16,6 +18,10 @@ func _run() -> void:
 	for i in args.size():
 		if args[i] == "--filter" and i + 1 < args.size():
 			filter = args[i + 1]
+	var method_filter: String = ""
+	if filter.contains("::"):
+		method_filter = filter.get_slice("::", 1)
+		filter = filter.get_slice("::", 0)
 	var files: PackedStringArray = DirAccess.get_files_at("res://tests")
 	files.sort()
 	var total_tests: int = 0
@@ -38,7 +44,7 @@ func _run() -> void:
 		var methods: Array[String] = []
 		for m in probe.get_method_list():
 			var mname: String = m["name"]
-			if mname.begins_with("test_"):
+			if mname.begins_with("test_") and (method_filter == "" or mname.contains(method_filter)):
 				methods.append(mname)
 		methods.sort()
 		for mname in methods:

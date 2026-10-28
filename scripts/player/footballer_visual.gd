@@ -83,6 +83,8 @@ var skeleton: Skeleton3D = null
 var anim_player: AnimationPlayer = null
 var anim_tree: AnimationTree = null
 var pose_modifier: ProceduralPose = null
+## IK del pie en los toques de conduccion (BallHandler le da la correccion); null sin el pack.
+var touch_ik: TouchFootIK = null
 var mesh_instances: Array[MeshInstance3D] = []
 var kit_material: ShaderMaterial = null
 var is_placeholder: bool = false
@@ -107,6 +109,15 @@ var dir_scale_override: float = -1.0
 
 var _pack_clip_node: AnimationNodeAnimation = null
 var _has_carry: bool = false
+## Capa de toque de conduccion por pierna (0 izquierda, 1 derecha): OneShot filtrado a los huesos de esa pierna encima de
+## la marcha con pelota. El clip (TouchClipBuilder) se asigna al disparar (play_touch).
+var _touch_nodes: Array = [null, null]
+## Punto de la mezcla de marcha con pelota de cada clip (clip -> "cN"), para leer su fase (carry_phase).
+var _carry_points: Dictionary = {}
+const TOUCH_LEG_BONES := {
+	0: [&"mixamorig_LeftUpLeg", &"mixamorig_LeftLeg", &"mixamorig_LeftFoot", &"mixamorig_LeftToeBase"],
+	1: [&"mixamorig_RightUpLeg", &"mixamorig_RightLeg", &"mixamorig_RightFoot", &"mixamorig_RightToeBase"],
+}
 var _gait_max_natural: float = 1.0
 var _active_tripo_clip: StringName = &""
 ## true si la accion del pack se recorta antes de acabar el clip (hay que fundirla al expirar el temporizador).
@@ -172,6 +183,11 @@ func build(kit: Dictionary) -> bool:
 	pose_modifier.name = "ProceduralPose"
 	skeleton.add_child(pose_modifier)
 	pose_modifier.setup(skeleton)
+	# Correccion del pie en los toques de conduccion (despues de la pose procedural: corrige la pose final).
+	if uses_pack:
+		touch_ik = TouchFootIK.new()
+		touch_ik.name = "TouchFootIK"
+		skeleton.add_child(touch_ik)
 	return true
 
 func _apply_kit(kit: Dictionary) -> void:
@@ -251,6 +267,7 @@ func _setup_animation_tree() -> void:
 			var cnat: float = float(PackLibrary.meta(cclip).get("natural_speed", 0.0))
 			var cpos: float = cnat if float(pt[1]) < 0.0 else float(pt[1])
 			carry.add_blend_point(_anim_node(PackLibrary.anim_path(cclip)), cpos, -1, StringName("c%d" % ci))
+			_carry_points[cclip] = "c%d" % ci
 			ci += 1
 		if ci >= 2:
 			tree_root.add_node(&"Carry", carry, Vector2(0, 900))
@@ -261,6 +278,23 @@ func _setup_animation_tree() -> void:
 			tree_root.connect_node(&"CarryMix", 1, &"CarryScale")
 			previous = &"CarryMix"
 			_has_carry = true
+			for f in 2:
+				var tnode := AnimationNodeAnimation.new()
+				tnode.animation = StringName("%s/%s" % [PACK_LIB, CARRY_GAIT_POINTS[1][0]])
+				var tone := AnimationNodeOneShot.new()
+				tone.fadein_time = 0.05
+				tone.fadeout_time = 0.06
+				tone.filter_enabled = true
+				for b in TOUCH_LEG_BONES[f]:
+					tone.set_filter_path(NodePath("Armature/Skeleton3D:%s" % b), true)
+				tree_root.add_node(StringName("TouchClip%d" % f), tnode, Vector2(260, 1100 + 160 * f))
+				tree_root.add_node(StringName("TouchScale%d" % f), AnimationNodeTimeScale.new(), Vector2(520, 1100 + 160 * f))
+				tree_root.connect_node(StringName("TouchScale%d" % f), 0, StringName("TouchClip%d" % f))
+				tree_root.add_node(StringName("TouchShot%d" % f), tone, Vector2(1040 + 260 * f, 300))
+				tree_root.connect_node(StringName("TouchShot%d" % f), 0, previous)
+				tree_root.connect_node(StringName("TouchShot%d" % f), 1, StringName("TouchScale%d" % f))
+				previous = StringName("TouchShot%d" % f)
+				_touch_nodes[f] = tnode
 	var x: float = 520.0
 	for clip in ACTION_CLIPS:
 		var shot_name := StringName("Shot_%s" % clip)
@@ -297,6 +331,39 @@ func _setup_animation_tree() -> void:
 	anim_tree.tree_root = tree_root
 	anim_tree.anim_player = anim_tree.get_path_to(anim_player)
 	anim_tree.active = true
+
+## Toque de conduccion: reproduce el clip de toque `id` en la capa de la pierna `foot` a `speed` (la escala de la
+## marcha con pelota). Devuelve false si no hay capa o clip.
+func play_touch(id: StringName, foot: int, speed: float) -> bool:
+	if anim_tree == null or not uses_pack or foot < 0 or foot > 1 or _touch_nodes[foot] == null or not PackLibrary.has_clip(id):
+		return false
+	(_touch_nodes[foot] as AnimationNodeAnimation).animation = PackLibrary.anim_path(id)
+	anim_tree.set("parameters/TouchScale%d/scale" % foot, maxf(speed, 0.05))
+	anim_tree.set("parameters/TouchShot%d/request" % foot, AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
+	return true
+
+## Fase (s) del clip de marcha con pelota `clip` tras el ultimo proceso del AnimationTree; -1 si no esta en la mezcla.
+## Todos los puntos de la mezcla avanzan a la vez (sync), asi que la fase vale aunque ese clip pese poco.
+func carry_phase(clip: StringName) -> float:
+	if anim_tree == null or not _carry_points.has(clip):
+		return -1.0
+	return float(anim_tree.get("parameters/Carry/%s/current_position" % _carry_points[clip]))
+
+## Clip de la marcha con pelota que domina a una velocidad (el punto de la mezcla mas cercano, sin el reposo).
+static func carry_clip_for(speed: float) -> StringName:
+	var best: StringName = &""
+	var best_d: float = INF
+	for i in range(1, CARRY_GAIT_POINTS.size()):
+		var clip: StringName = CARRY_GAIT_POINTS[i][0]
+		if not PackLibrary.has_clip(clip):
+			continue
+		var pos: float = float(CARRY_GAIT_POINTS[i][1])
+		if pos < 0.0:
+			pos = float(PackLibrary.meta(clip).get("natural_speed", 0.0))
+		if absf(speed - pos) < best_d:
+			best_d = absf(speed - pos)
+			best = clip
+	return best
 
 ## Dispara un clip de accion una sola vez. Devuelve su duracion efectiva en segundos.
 func play_action(clip: StringName, speed: float = 1.0) -> float:
@@ -498,6 +565,10 @@ func drive_motion(speed: float, turn_rate: float, delta: float) -> void:
 		if _carry_weight > 0.0:
 			anim_tree.set("parameters/Carry/blend_position", speed)
 			anim_tree.set("parameters/CarryScale/scale", carry_scale_for(speed))
+			# El toque en curso avanza al mismo ritmo que la marcha con pelota (sigue en fase con su ciclo base).
+			for f in 2:
+				if _touch_nodes[f] != null:
+					anim_tree.set("parameters/TouchScale%d/scale" % f, maxf(carry_scale_for(speed), 0.05))
 	if uses_pack:
 		_dir_weight = move_toward(_dir_weight, 1.0 if directional else 0.0, 7.0 * delta)
 		anim_tree.set("parameters/ModeMix/blend_amount", _dir_weight)

@@ -35,7 +35,7 @@
 <!-- AUTO:params:BallTuning -->
 | Parámetro | Defecto | Rango / tipo | Definido en | Dónde se usa (accesos reales) | Descripción |
 |---|---|---|---|---|---|
-| `radius` | `0.1` | float | `scripts/ball/ball_tuning.gd:8` | `scripts/ball/ball.gd:111`, `scripts/ball/ball_predictor.gd:21`, `scripts/ball/ball_predictor.gd:31`, `scripts/ball/ball_predictor.gd:32` (+5) | Radio real en metros (circunferencia ~63 cm). (Cuerpo) |
+| `radius` | `0.1` | float | `scripts/ball/ball_tuning.gd:8` | `scripts/ball/ball.gd:111`, `scripts/ball/ball_predictor.gd:21`, `scripts/ball/ball_predictor.gd:31`, `scripts/ball/ball_predictor.gd:32` (+10) | Radio real en metros (circunferencia ~63 cm). (Cuerpo) |
 | `mass` | `0.42` | float | `scripts/ball/ball_tuning.gd:10` | `scripts/ball/ball.gd:112`, `scripts/ball/ball_predictor.gd:28`, `scripts/assistance/kick_model.gd:64`, `scripts/assistance/kick_model.gd:107` | Masa en kg (futsal: 400-440 g). (Cuerpo) |
 | `visual_scale` | `1.25` | float | `scripts/ball/ball_tuning.gd:12` | `scripts/ball/ball.gd:129`, `scripts/ball/ball.gd:130` | Escala solo visual para que se lea bien con camara alta (no afecta a la fisica). (Cuerpo) |
 | `bounce` | `0.54` | 0.0, 1.0 | `scripts/ball/ball_tuning.gd:16` | `scripts/ball/ball.gd:120`, `scripts/ball/ball_predictor.gd:34` | Coeficiente de restitucion. El balon de futsal rebota ~50-60 % de la altura de caida. (Contacto) |
@@ -43,7 +43,7 @@
 | `angular_damp` | `0.01` | float | `scripts/ball/ball_tuning.gd:18` | `scripts/ball/ball.gd:117` |  (Contacto) |
 | `drag_coefficient` | `0.25` | float | `scripts/ball/ball_tuning.gd:22` | `scripts/ball/ball.gd:306`, `scripts/ball/ball_predictor.gd:28`, `scripts/assistance/kick_model.gd:107` | Cd del balon en el aire. (Resistencia) |
 | `air_density` | `1.2` | float | `scripts/ball/ball_tuning.gd:23` | `scripts/ball/ball.gd:306`, `scripts/ball/ball_predictor.gd:28`, `scripts/assistance/kick_model.gd:107` |  (Resistencia) |
-| `rolling_decel` | `0.55` | float | `scripts/ball/ball_tuning.gd:25` | `scripts/ball/ball.gd:319`, `scripts/ball/ball_predictor.gd:41`, `scripts/assistance/kick_model.gd:108` | Desaceleracion de rodadura sobre el piso (m/s^2). (Resistencia) |
+| `rolling_decel` | `0.55` | float | `scripts/ball/ball_tuning.gd:25` | `scripts/ball/ball.gd:319`, `scripts/ball/ball_predictor.gd:41`, `scripts/assistance/kick_model.gd:108`, `scripts/player/ball_handler.gd:1355` (+4) | Desaceleracion de rodadura sobre el piso (m/s^2). (Resistencia) |
 | `spin_decel_ground` | `6.0` | float | `scripts/ball/ball_tuning.gd:27` | `scripts/ball/ball.gd:327`, `scripts/ball/ball.gd:329` | Perdida de giro sobre el piso (rad/s^2). (Resistencia) |
 | `magnus_k` | `0.0018` | float | `scripts/ball/ball_tuning.gd:29` | `scripts/ball/ball.gd:312`, `scripts/assistance/kick_model.gd:64` | Coeficiente tipo Magnus: F = k * (omega x v). (Resistencia) |
 | `net_damping` | `7.0` | float | `scripts/ball/ball_tuning.gd:31` | `scripts/ball/ball.gd:212` | Dentro de la red: coeficiente de amortiguacion continua (1/s) y restitucion del impacto contra la malla. (Resistencia) |
@@ -57,7 +57,7 @@
 | `driven_pass_extra` | `1.25` | float | `scripts/ball/ball_tuning.gd:42` | `scripts/assistance/pass_assist.gd:101` |  (Pase) |
 | `shot_speed_min` | `9.0` | float | `scripts/ball/ball_tuning.gd:45` | `scripts/assistance/shot_assist.gd:83`, `scripts/assistance/shot_assist.gd:85` |  (Tiro) |
 | `shot_speed_max` | `27.0` | float | `scripts/ball/ball_tuning.gd:46` | `scripts/assistance/shot_assist.gd:83`, `scripts/assistance/shot_assist.gd:85`, `scripts/assistance/shot_assist.gd:89` |  (Tiro) |
-| `shot_charge_time` | `0.9` | float | `scripts/ball/ball_tuning.gd:48` | `scripts/ai/ai_input.gd:471`, `scripts/player/ball_handler.gd:334` | Segundos para cargar el tiro al maximo. (Tiro) |
+| `shot_charge_time` | `0.9` | float | `scripts/ball/ball_tuning.gd:48` | `scripts/ai/ai_input.gd:471`, `scripts/player/ball_handler.gd:341` | Segundos para cargar el tiro al maximo. (Tiro) |
 | `shot_loft_low_deg` | `4.0` | float | `scripts/ball/ball_tuning.gd:49` | `scripts/assistance/shot_assist.gd:123`, `scripts/assistance/shot_assist.gd:129`, `scripts/assistance/shot_assist.gd:130` |  (Tiro) |
 | `shot_loft_high_deg` | `22.0` | float | `scripts/ball/ball_tuning.gd:50` | `scripts/assistance/shot_assist.gd:129`, `scripts/assistance/shot_assist.gd:130` |  (Tiro) |
 | `shot_spin_factor` | `14.0` | float | `scripts/ball/ball_tuning.gd:52` | `scripts/assistance/shot_assist.gd:151` | Factor de efecto (spin) aplicado segun la desviacion lateral del golpeo. (Tiro) |
