@@ -5,7 +5,7 @@
 - **Responsabilidad exacta:** cámara elevada estilo transmisión. Sigue una mezcla entre el jugador controlado y la pelota (con anticipación por velocidad de la pelota), amortigua posición y zoom de forma independiente de los FPS, mantiene un **yaw fijo** (el joystick siempre es relativo a la pantalla) y no baja de la altura de las paredes. También convierte vectores 2D de pantalla en direcciones de mundo (`screen_to_world_dir`).
 - **Estado:** implementado; **sin pruebas que comprueben su comportamiento**. `test_match_flow` instancia `MatchScene` (que crea la cámara y la hace correr), pero ninguna aserción mira el encuadre ni `screen_to_world_dir`.
 - **Última verificación:** <!-- AUTO:verified -->
-2026-10-27
+2026-10-28
 <!-- /AUTO -->
 
 ## Archivos responsables

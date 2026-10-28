@@ -4,7 +4,7 @@
 > El índice documenta el código **real**: lo que cambia con el código (líneas, valores por defecto, listas de
 > funciones, pruebas, acciones de entrada) lo regenera `tools/docs_index.py`; nunca se escribe a mano.
 > Última sincronización: <!-- AUTO:verified -->
-2026-10-27
+2026-10-28
 <!-- /AUTO -->
 
 ## Cómo ir de una petición al código (3 pasos)
@@ -60,6 +60,8 @@ Procedimiento completo y reglas: sección «Procedimiento de trabajo» al final 
 - [GAMEPLAY_PES.md](GAMEPLAY_PES.md): análisis de los videos de referencia, tabla de mecánicas, diagnóstico y pruebas de la jugabilidad inspirada en PES 2021.
 - [ANIMATION_PACK_CLIPS.md](ANIMATION_PACK_CLIPS.md): tabla de los 133 clips del pack de animaciones (duración real, raíz, ciclo, verificación visual, recomendación).
 - [ANIMATION_CONTACT_AUDIT.md](ANIMATION_CONTACT_AUDIT.md): auditoría generada de los clips que tocan la pelota (pie, instante y posición del contacto medidos, raíz, uso en el código); se regenera con `AUDIT_OUT=… tools/run_tests.sh animation_contact_audit`.
+- [DRIBBLE_DIAGNOSIS.md](DRIBBLE_DIAGNOSIS.md): diagnóstico de conducción, animaciones de contacto, pases y tiros con los videos A/B (medido); respuesta a «¿hay animación de carrera con toques?» (no), tabla de necesidades, propuesta para crear el clip (Tripo3D / alternativas) y criterios para validarlo.
+- [ANIMATION_INVENTORY.md](ANIMATION_INVENTORY.md): inventario generado de las 171 animaciones con la trayectoria real de los pies (`FootTrajectory`) y el veredicto de conducción; se regenera con `INVENTORY_OUT=… tools/run_tests.sh animation_inventory` (`DRIBBLE_CANDIDATE=<clip>` valida un clip nuevo).
 - [CODE_MAP.json](CODE_MAP.json): mapa legible por máquina (alias en español/inglés → archivos, símbolos, parámetros, ficha).
 - `docs/tripo/ledger.jsonl`: libro de gasto de créditos de Tripo3D (cada operación de pago, con saldo).
 - `CLAUDE.md` (raíz): instrucciones breves para que cada sesión consulte primero este índice.

@@ -288,6 +288,14 @@ func _physics_process(delta: float) -> void:
 			desired_mag = maxf(desired_mag, 1.0) if away > 1.0 else minf(desired_mag, 0.75)
 			want_sprint = want_sprint or away > 3.5
 
+	# Golpeo pedido con la pelota propia por delante fuera del alcance del pie: se ajusta la carrera y se va a por ella
+	# (la direccion del golpeo sigue siendo la del joystick; solo cambia hacia donde corre el cuerpo).
+	var approach: Array = [] if is_pressing else ball_handler.kick_approach_steer()
+	if not approach.is_empty():
+		desired_dir = approach[0]
+		desired_mag = approach[1]
+		want_sprint = want_sprint or approach[2]
+
 	# Patada con clip en curso: el jugador ya se comprometio con el golpeo. El joystick no lo gira ni lo acelera (el
 	# giro sigue la direccion del inicio, reducido por kick_turn_scale) y la velocidad la fija el balanceo.
 	var kicking: bool = ball_handler.is_clip_kick_in_progress()
@@ -314,7 +322,8 @@ func _physics_process(delta: float) -> void:
 	# Conduciendo la pelota se corre algo mas lento (y menos con peor conduccion).
 	var cap: float = -1.0
 	# Tope de conduccion solo con la pelota al pie: si el toque se fue largo, el jugador acelera para alcanzarla.
-	if ball_handler.is_dribbling() and ball_handler.ball_distance() <= ball_handler.possession_radius():
+	# Yendo a golpear la pelota propia que se adelanto (kick_approach_steer) no hay tope: si no, nunca la alcanza.
+	if ball_handler.is_dribbling() and ball_handler.ball_distance() <= ball_handler.possession_radius() and approach.is_empty():
 		cap = locomotion.max_sprint_speed() * lerpf(0.86, 0.97, attributes.norm("ball_carrying"))
 	var speed_before: float = locomotion.speed
 	locomotion.step(desired_dir, desired_mag, want_sprint, delta, cap)

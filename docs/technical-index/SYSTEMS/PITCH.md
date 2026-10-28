@@ -5,7 +5,7 @@
 - **Responsabilidad exacta:** construir por código la cancha de futsal (por defecto 40 × 20 m): superficie, líneas reglamentarias en **una sola malla**, paredes de contención con colisión, baranda visible, iluminación, elementos ambientales; y los **arcos** (postes y travesaño con colisión física, red visible de una malla, red absorbente, detección de gol).
 - **Estado:** implementado. La opción `PitchConfig.boundary_mode` está **declarada pero ningún código la usa**: las paredes siempre se construyen (`OUT_OF_BOUNDS` no existe).
 - **Última verificación:** <!-- AUTO:verified -->
-2026-10-27
+2026-10-28
 <!-- /AUTO -->
 
 ## Archivos responsables

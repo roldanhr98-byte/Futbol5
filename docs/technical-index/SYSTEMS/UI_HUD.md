@@ -5,7 +5,7 @@
 - **Responsabilidad exacta:** capa de interfaz del partido (`CanvasLayer` en `layer = 10`): marcador «LOC x - y VIS», reloj `mm:ss`, mensajes grandes (saque, gol, fin), controles táctiles (ver [INPUTS](INPUTS.md)), superposición de diagnóstico (ver [PERFORMANCE](PERFORMANCE.md)) y menú de pausa con: continuar, reiniciar jugada, reiniciar partido, ciclo de perfil gráfico, ciclo de nivel de asistencia de pase/tiro/presión, interruptor de diagnóstico, «Práctica de animaciones» (abre la sala de práctica, señal `practice_requested`) y salir (cierra el juego cuando el partido es la escena actual). Los diez botones van en una cuadrícula de 2 columnas.
 - **Estado:** implementado; el menú se construye por código y **solo se prueba el HUD táctil**, no el menú de pausa ni los textos.
 - **Última verificación:** <!-- AUTO:verified -->
-2026-10-27
+2026-10-28
 <!-- /AUTO -->
 
 ## Archivos responsables

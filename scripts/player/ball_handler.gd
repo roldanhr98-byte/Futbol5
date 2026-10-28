@@ -19,6 +19,13 @@ static var foot_sync_enabled: bool = true
 const KICK_LOG_MAX := 64
 ## Segundos que espera un pase o tiro pulsado hasta que algun pie llegue a la pelota antes de descartarse.
 const PENDING_KICK_MAX := 0.5
+## Con la pelota propia por delante fuera del alcance del pie, la orden de golpeo espera hasta este tiempo (s) MIENTRAS
+## el jugador corre hacia ella acercandose (ajuste de la carrera); si deja de acercarse, se cancela con aviso.
+const PENDING_APPROACH_MAX := 1.4
+## Distancia (m) maxima a la pelota propia para ir a buscarla con un golpeo pedido.
+const APPROACH_MAX_DIST := 4.0
+## Velocidad (m/s) minima de acercamiento a la pelota para seguir esperando la orden de golpeo.
+const APPROACH_MIN_CLOSING := 0.3
 ## Ultimos segundos antes del contacto con el pie de apoyo plantado: sin ajuste de paso y con el cuerpo a la velocidad
 ## que pide el propio clip (la que deja quieto en el suelo el pie de apoyo: clip_plant_velocity), asi no patina.
 ## Sin datos del pie de apoyo (cabezazos, voleas) el cuerpo se frena a KICK_PLANT_SPEED de su velocidad.
@@ -281,7 +288,10 @@ func update(frame: InputFrame, stick_world: Vector3, stick_mag: float, desired_d
 		# Pase o tiro de primera: con la pelota viniendo hacia el jugador, la orden espera a que llegue (hasta
 		# PENDING_FIRST_TIME_MAX) en vez de caducar a los PENDING_KICK_MAX.
 		var waiting_first_time: bool = is_waiting_first_time()
-		if _pending_age > PENDING_KICK_MAX and not waiting_first_time:
+		# Corriendo hacia la pelota propia que quedo por delante (kick_approach_steer): la orden sigue en pie mientras
+		# el jugador se acerca de verdad, hasta PENDING_APPROACH_MAX.
+		var approaching: bool = _pending_age <= PENDING_APPROACH_MAX and is_approaching_for_kick()
+		if _pending_age > PENDING_KICK_MAX and not waiting_first_time and not approaching:
 			if uses_clip_kicks():
 				_log_kick(_pending_action, &"out_of_reach", {"stage": "pending"})
 				kick_stats["out_of_reach"] += 1
@@ -867,6 +877,9 @@ var _dt: float = 1.0 / 60.0
 ## Toques de conduccion dados con el pie animado y distancia pie-pelota del ultimo (diagnostico y pruebas).
 var foot_touches: int = 0
 var last_touch_foot_distance: float = -1.0
+## Pie del ultimo toque de conduccion: 0 izquierdo, 1 derecho, -1 toque sin pie del esqueleto cerca (rescate o sin
+## esqueleto vivo). Solo diagnostico y pruebas.
+var last_touch_foot: int = -1
 
 func get_dt() -> float:
 	return _dt
@@ -1012,7 +1025,9 @@ func nearest_opponent(radius: float) -> Footballer:
 func _touch_mode(desired_dir: Vector3, stick_mag: float, turn_angle: float) -> StringName:
 	var t: PlayerTuning = Tuning.player
 	var loco: Locomotion = owner.locomotion
-	if _pending_action != &"":
+	# Con un golpeo pedido, o cargandose en carrera, el toque PREPARA el golpeo (pelota cerca del pie) y no la manda
+	# lejos. Parado y cargando no se toca la pelota (se golpea donde esta).
+	if _pending_action != &"" or ((_pass_active or _shoot_active or _through_active or _cross_active) and stick_mag >= 0.18):
 		return &"setup"
 	if stick_mag < 0.18:
 		return &"settle"
@@ -1114,6 +1129,10 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 		var close_in: bool = off.dot(fwd) < _foot_reach * 0.9 and (mode == &"carry" or mode == &"setup")
 		strike = _foot_strike(b, mode, close_in)
 		if strike < 0:
+			# Con un golpeo pedido y el jugador corriendo a por la pelota (kick_approach_steer) no hay toque sin pie: el
+			# contacto sera el del golpeo (medido: un toque de preparacion sin pie antes de cada golpeo a sprint).
+			if mode == &"setup" and not kick_approach_steer().is_empty():
+				return
 			_foot_wait += get_dt()
 			# En un cambio de rumbo no se puede esperar a la zancada: el toque llega antes (el pie se estira a la pelota).
 			# Si el cuerpo alcanza a la pelota (queda pegada o por detras de la punta del pie) tampoco: el jugador la pisaria.
@@ -1217,6 +1236,7 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 	gap = minf(gap, reach * 1.35 - 0.05)
 	_planned_gap = gap
 	_foot_wait = 0.0
+	last_touch_foot = strike
 	if strike >= 0:
 		foot_touches += 1
 		last_touch_foot_distance = _toe_now[strike].distance_to(b.global_position)
@@ -1366,6 +1386,40 @@ func settle_steer() -> Array:
 	var need: float = maxf(bv.length(), (d - t.settle_gap) * 2.5)
 	var mag: float = clampf(need / maxf(owner.locomotion.max_run_speed(), 0.1), 0.25, 1.0)
 	return [to_t / d, mag]
+
+## Golpeo pedido (cargando o en espera) con la pelota PROPIA por delante, fuera del alcance del pie y a menos de
+## APPROACH_MAX_DIST: el jugador ajusta la carrera y va a por ella para poder golpearla con el pie (en el video del
+## usuario, 58.4 s, el tiro cargado a media velocidad con la pelota 1.3-1.5 m por delante nunca llegaba y se perdia).
+## Devuelve [direccion, magnitud, sprint] o [] si no hace falta. Lo usan igual la persona y la IA (Footballer).
+func kick_approach_steer() -> Array:
+	if _kick_action != &"":
+		return []
+	if _pending_action == &"" and not (_pass_active or _shoot_active or _through_active or _cross_active):
+		return []
+	var b: Ball = ball()
+	if b == null or b.is_held() or b.global_position.y > 0.6 or b.last_toucher != owner:
+		return []
+	var off: Vector3 = ball_offset()
+	var dist: float = off.length()
+	if dist < touch_reach() * 0.9 or dist > APPROACH_MAX_DIST:
+		return []
+	var bv: Vector3 = KickModel.flat(b.linear_velocity)
+	# Donde estara la pelota cuando el jugador llegue (aprox.): un poco por delante de donde esta ahora.
+	var target: Vector3 = off + bv * clampf(dist / 6.0, 0.1, 0.4)
+	if target.length() < 0.05:
+		return []
+	var gap_speed: float = bv.dot(target.normalized())
+	return [target.normalized(), 1.0, dist > 1.6 or gap_speed > owner.locomotion.max_run_speed() * 0.8]
+
+## true si hay un golpeo en espera y el jugador se esta acercando de verdad a su pelota (ver kick_approach_steer).
+func is_approaching_for_kick() -> bool:
+	if kick_approach_steer().is_empty():
+		return false
+	var b: Ball = ball()
+	var dir: Vector3 = ball_offset().normalized()
+	var closing: float = (KickModel.flat(owner.locomotion.velocity) - KickModel.flat(b.linear_velocity)).dot(dir)
+	# Recien empezada la carrera todavia no se acerca: se le da el tiempo de PENDING_KICK_MAX para acelerar.
+	return closing > APPROACH_MIN_CLOSING or _pending_age <= PENDING_KICK_MAX
 
 ## Escala del giro del cuerpo mientras conduce. Con la pelota al alcance pero NO hacia el rumbo pedido (un cambio de
 ## direccion grande), el cuerpo gira a BALL_TURN_SCALE de su ritmo hasta que el toque de giro la lleva hacia alli. Sin

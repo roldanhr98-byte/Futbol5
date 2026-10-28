@@ -6,7 +6,7 @@
 - **Principio de diseño:** la pelota nunca se coloca en el pie ni se anula su velocidad para simular control; los jugadores solo la cambian con `Ball.kick`/`Ball.push` en el instante del contacto.
 - **Estado:** implementado.
 - **Última verificación:** <!-- AUTO:verified -->
-2026-10-27
+2026-10-28
 <!-- /AUTO -->
 
 ## Archivos responsables
@@ -57,7 +57,7 @@
 | `driven_pass_extra` | `1.25` | float | `scripts/ball/ball_tuning.gd:42` | `scripts/assistance/pass_assist.gd:101` |  (Pase) |
 | `shot_speed_min` | `9.0` | float | `scripts/ball/ball_tuning.gd:45` | `scripts/assistance/shot_assist.gd:83`, `scripts/assistance/shot_assist.gd:85` |  (Tiro) |
 | `shot_speed_max` | `27.0` | float | `scripts/ball/ball_tuning.gd:46` | `scripts/assistance/shot_assist.gd:83`, `scripts/assistance/shot_assist.gd:85`, `scripts/assistance/shot_assist.gd:89` |  (Tiro) |
-| `shot_charge_time` | `0.9` | float | `scripts/ball/ball_tuning.gd:48` | `scripts/ai/ai_input.gd:471`, `scripts/player/ball_handler.gd:324` | Segundos para cargar el tiro al maximo. (Tiro) |
+| `shot_charge_time` | `0.9` | float | `scripts/ball/ball_tuning.gd:48` | `scripts/ai/ai_input.gd:471`, `scripts/player/ball_handler.gd:334` | Segundos para cargar el tiro al maximo. (Tiro) |
 | `shot_loft_low_deg` | `4.0` | float | `scripts/ball/ball_tuning.gd:49` | `scripts/assistance/shot_assist.gd:123`, `scripts/assistance/shot_assist.gd:129`, `scripts/assistance/shot_assist.gd:130` |  (Tiro) |
 | `shot_loft_high_deg` | `22.0` | float | `scripts/ball/ball_tuning.gd:50` | `scripts/assistance/shot_assist.gd:129`, `scripts/assistance/shot_assist.gd:130` |  (Tiro) |
 | `shot_spin_factor` | `14.0` | float | `scripts/ball/ball_tuning.gd:52` | `scripts/assistance/shot_assist.gd:151` | Factor de efecto (spin) aplicado segun la desviacion lateral del golpeo. (Tiro) |

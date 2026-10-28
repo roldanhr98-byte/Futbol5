@@ -5,7 +5,7 @@
 - **Responsabilidad exacta (lo implementado):** `PlayerAttributes` (`Resource`): 23 atributos de campo y 8 de arquero en escala 1–100, separados de la identidad y la apariencia. Los atributos **no sustituyen la física**: escalan parámetros, tolerancias y errores dentro de límites (`factor(clave, spread)` → 1.0 con valor 50; `norm(clave)` → 0..1).
 - **Estado real: parcial.** No hay experiencia, niveles, entrenamiento, recompensas, estadísticas por jugador, editor de personaje (`scenes/character_creator/` está vacío), guardado/carga de jugadores ni economía. No hay monetización con dinero real ni existe código para ella.
 - **Última verificación:** <!-- AUTO:verified -->
-2026-10-27
+2026-10-28
 <!-- /AUTO -->
 
 ## Archivos responsables
@@ -22,12 +22,12 @@
 | Atributo (clave) | Nombre visible | Grupo | Consumido en (código) |
 |---|---|---|---|
 | `speed` | Velocidad | campo | `scripts/player/locomotion.gd:57`, `scripts/player/locomotion.gd:60` |
-| `acceleration` | Aceleración | campo | `scripts/player/ball_handler.gd:1163`, `scripts/player/ball_handler.gd:1231`, `scripts/player/locomotion.gd:73`, `scripts/player/locomotion.gd:162` |
+| `acceleration` | Aceleración | campo | `scripts/player/ball_handler.gd:1182`, `scripts/player/ball_handler.gd:1251`, `scripts/player/locomotion.gd:73`, `scripts/player/locomotion.gd:162` |
 | `stamina` | Resistencia | campo | `scripts/player/locomotion.gd:79`, `scripts/player/locomotion.gd:165` |
-| `balance` | Equilibrio | campo | `scripts/assistance/kick_model.gd:81`, `scripts/player/ball_handler.gd:1500`, `scripts/player/player_actions.gd:264`, `scripts/player/player_actions.gd:265` |
-| `agility` | Agilidad | campo | `scripts/player/ball_handler.gd:466`, `scripts/player/locomotion.gd:74`, `scripts/player/locomotion.gd:163` |
-| `ball_control` | Control de balón | campo | `scripts/player/ball_handler.gd:978`, `scripts/player/ball_handler.gd:1457`, `scripts/player/ball_handler.gd:1466`, `scripts/player/ball_handler.gd:1470` |
-| `ball_carrying` | Conducción | campo | `scripts/player/ball_handler.gd:978`, `scripts/player/footballer.gd:318` |
+| `balance` | Equilibrio | campo | `scripts/assistance/kick_model.gd:81`, `scripts/player/ball_handler.gd:1554`, `scripts/player/player_actions.gd:264`, `scripts/player/player_actions.gd:265` |
+| `agility` | Agilidad | campo | `scripts/player/ball_handler.gd:476`, `scripts/player/locomotion.gd:74`, `scripts/player/locomotion.gd:163` |
+| `ball_control` | Control de balón | campo | `scripts/player/ball_handler.gd:991`, `scripts/player/ball_handler.gd:1511`, `scripts/player/ball_handler.gd:1520`, `scripts/player/ball_handler.gd:1524` |
+| `ball_carrying` | Conducción | campo | `scripts/player/ball_handler.gd:991`, `scripts/player/footballer.gd:327` |
 | `dribbling` | Regate | campo | **sin uso todavía** |
 | `short_pass` | Pase corto | campo | `scripts/assistance/pass_assist.gd:85`, `scripts/assistance/pass_assist.gd:213` |
 | `long_pass` | Pase largo | campo | `scripts/assistance/cross_assist.gd:93`, `scripts/assistance/cross_assist.gd:103`, `scripts/assistance/pass_assist.gd:85`, `scripts/assistance/pass_assist.gd:213` |
@@ -37,9 +37,9 @@
 | `finishing` | Finalización | campo | `scripts/assistance/shot_assist.gd:93`, `scripts/assistance/shot_assist.gd:120` |
 | `weak_foot` | Pierna débil | campo | `scripts/assistance/kick_model.gd:97`, `scripts/assistance/kick_model.gd:100` |
 | `reaction` | Reacción | campo | **sin uso todavía** |
-| `marking` | Marcaje | campo | `scripts/player/ball_handler.gd:1492` |
+| `marking` | Marcaje | campo | `scripts/player/ball_handler.gd:1546` |
 | `interception` | Intercepción | campo | **sin uso todavía** |
-| `strength` | Fuerza física | campo | `scripts/player/ball_handler.gd:1500`, `scripts/player/player_actions.gd:264`, `scripts/player/player_actions.gd:265` |
+| `strength` | Fuerza física | campo | `scripts/player/ball_handler.gd:1554`, `scripts/player/player_actions.gd:264`, `scripts/player/player_actions.gd:265` |
 | `jumping` | Salto | campo | **sin uso todavía** |
 | `heading` | Cabeceo | campo | **sin uso todavía** |
 | `composure` | Compostura | campo | `scripts/assistance/pass_assist.gd:116`, `scripts/assistance/pass_assist.gd:255`, `scripts/assistance/shot_assist.gd:104` |

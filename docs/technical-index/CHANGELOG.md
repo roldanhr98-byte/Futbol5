@@ -11,6 +11,39 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-10-28 — Conducción y golpeos frente a los videos A/B: diagnóstico medido, inventario de animaciones, golpeo con la pelota fuera del alcance
+
+Detalle y evidencia: [DRIBBLE_DIAGNOSIS.md](DRIBBLE_DIAGNOSIS.md) · inventario: [ANIMATION_INVENTORY.md](ANIMATION_INVENTORY.md).
+
+- **Fase A (medida):** video B (FTS27) con seguimiento automático: un toque cada 0.60–0.66 s, pelota 0.3–1.2 m por
+  delante, deriva lateral ±0.2 m. Nuestro juego con render (`test_dribble_reference`): trote 0.67 s; carrera un toque
+  por paso alternando pies (0.27 s, 83 % de alternancia, ±0.17 m de deriva); sprint 3 de 8 toques sin pie cerca. En el
+  video A la pelota viaja bajo el cuerpo (25.6–26.8 s) y un tiro cargado no sale (57.6–59.5 s).
+- **Fase B:** `FootTrajectory` (nuevo) mide la trayectoria real de los pies de las 171 animaciones (133 FBX + 38
+  espejos) sobre el esqueleto del jugador; 171/171 con todas sus pistas enlazadas. **No hay animación de carrera con
+  toques integrados**: `Dribble_2` mueve los pies como un trote (pie bajo a 0.16–0.26 m; un trote 0.17–0.24 m) y ningún
+  clip cumple `FootTrajectory.dribble_verdict`.
+- **Fase C: detenida** (sin cambios en distancias, cadencias ni toques de conducción). Propuesta y procedimiento para
+  crear el clip (Tripo3D solo aplica presets; `preset:biped:dribble` sin verificar; alternativas Mixamo / texto a
+  movimiento) y validación automática con `DRIBBLE_CANDIDATE`. No se accedió a Tripo ni se gastaron créditos.
+- **Fase D:** golpeo pedido con la pelota propia por delante fuera del alcance: el jugador ajusta la carrera
+  (`BallHandler.kick_approach_steer`, sin tope de conducción), la orden espera mientras se acerca (hasta 1.4 s) o se
+  cancela con `KICK_WHIFF out_of_reach`; sin toques sin pie yendo a golpear; toque de preparación mientras se carga en
+  carrera. Diagnóstico `BallHandler.last_touch_foot`.
+- **Una misma base persona/IA:** comprobado (`test_shared_ball_mechanics`): la IA no toca la pelota fuera de su
+  `BallHandler`.
+- Archivos: `scripts/animation/foot_trajectory.gd` (nuevo), `scripts/player/ball_handler.gd`,
+  `scripts/player/footballer.gd`; pruebas nuevas `test_animation_inventory`, `test_kick_reach`,
+  `test_shared_ball_mechanics`, `test_dribble_reference`; herramientas `tools/animation_pack/pack_clip_sheet.tscn` y
+  `tools/dribble_demo/dribble_demo.tscn` (demo grabable).
+- Verificación (ejecutada, versión final): suite headless 176 pruebas / 893 comprobaciones / 0 fallos (14 omitidas:
+  necesitan render); con render `live_feet` 7/7, `live_kicks` 4/4 (48/50 golpeos con contacto, 2 anulados porque el
+  rival tocó antes, 0 inválidos), `pack_motion` 2/2, `dribble_reference` 1/1, `kick_reach` 2/2 (7/7 golpeos con el pie a
+  0.02–0.17 m, 0 toques sin pie antes del golpe; antes del cambio 3 de esas situaciones terminaban sin golpeo).
+  Grabación de la prueba controlada: 26.7 s (801 fotogramas a 30 fps).
+- Pendiente: el clip de conducción en carrera (con su espejo); al integrarlo, toques en los instantes del clip,
+  impulso a partir del pie y eliminación de los rescates sin pie.
+
 ## 2026-10-27 — Corrección: el equipo 0 manejado por la IA no se queda quieto con la pelota
 
 - La CI (run 16) falló en `test_full_match::test_seven_minute_match`: pelota quieta 311 s. Con el equipo 0 en manos de

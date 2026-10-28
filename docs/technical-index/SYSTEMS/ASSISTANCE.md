@@ -9,7 +9,7 @@
   - **Modelo de error** (`KickModel`): ruido gaussiano acotado que depende de distancia, potencia, equilibrio, orientación, velocidad, pierna de golpeo y atributos.
 - **Estado:** implementado y probado (sin compañeros reales en la escena de juego: las pruebas los crean).
 - **Última verificación:** <!-- AUTO:verified -->
-2026-10-27
+2026-10-28
 <!-- /AUTO -->
 
 ## Archivos responsables

@@ -5,7 +5,7 @@
 - **Responsabilidad exacta:** verificar la simulación (física de la pelota, locomoción, conducción, pases, tiros, presión, patada sincronizada, reglas de partido, controles táctiles, modelo) **sin pantalla ni dependencias externas**, con un marco propio de ~150 líneas. Cada método `test_*` de una subclase de `TestCase` es una prueba.
 - **Estado:** operativo. **Última ejecución completa (2026-10-26):** headless con las librerías del pack: **121 pruebas, 0 fallidas, 2 omitidas (necesitan render), 686 comprobaciones, 0 `SCRIPT ERROR`, ~92 s**. Con render (`xvfb-run`, por filtro): `gameplay_feel` 10/33, `control_and_keeper` 7/26, `goalkeeper` 5/25, `pack_motion` 2/24, `player_actions` 4/13, `practice` 4/37, todas 0 fallidas y 0 omitidas. La suite completa con render **no se terminó**: `test_ai_match` simula partidos de 120 s con 10 personajes animados y con `llvmpipe` tarda decenas de minutos. **Sin** las librerías del pack: las pruebas del pack, arquero, práctica, sensación de juego e IA se omiten.
 - **Última verificación:** <!-- AUTO:verified -->
-2026-10-27
+2026-10-28
 <!-- /AUTO -->
 
 ## Archivos responsables
@@ -56,6 +56,10 @@
 | `tests/test_gameplay_feel.gd` | 10 | 33 | Sensación de juego medida: conducción lenta, sprint, frenar con la pelota, giros de 90°/180°, control lateral, pase pulsado en carrera, recepción sin frenar, acciones que no bloquean | [PLAYER](PLAYER.md) |
 | `tests/test_control_and_keeper.gd` | 7 | 26 | Cedida recibida con el pie vs disparo atajado, arquero manejado por la persona (joystick, atrapar, sacar), indicadores de jugador, cambio al arquero, saque inicial | [GOALKEEPER](GOALKEEPER.md), [UI_HUD](UI_HUD.md), [MATCH](MATCH.md) |
 | `tests/test_pass_receiver_control.gd` | 4 | 16 | Control de la persona en los pases: receptor controlado al pasar (con y sin destinatario), sin cambio durante el vuelo de un pase largo, control al compañero que se queda con la pelota, la IA del equipo de la persona no pasa ni patea, la IA sigue jugando sin persona | [MATCH](MATCH.md) |
+| `tests/test_animation_inventory.gd` | 2 | 5 | Inventario medido de las 171 animaciones (trayectoria de los pies, empujes, veredicto de conducción); `INVENTORY_OUT` escribe el informe, `DRIBBLE_CANDIDATE` valida un clip nuevo | [ANIMATION_PACK](ANIMATION_PACK.md) |
+| `tests/test_kick_reach.gd` | 2 | 17 (render) / 10 | Golpeo pedido con la pelota propia fuera del alcance: el jugador ajusta la carrera y golpea con contacto o cancela con aviso | [PLAYER](PLAYER.md) |
+| `tests/test_shared_ball_mechanics.gd` | 2 | 8 | La IA usa la misma mecánica de pelota que la persona (sin atajos) | [PLAYER](PLAYER.md) |
+| `tests/test_dribble_reference.gd` | 1 (render) | 6 (render) | Conducción recta medida contra el video de referencia (intervalo, pie, alternancia, distancia, deriva) | [PLAYER](PLAYER.md) |
 | `tests/test_practice.gd` | 4 | 37 | Galería (133 clips, roles), reproducción de todos los clips, raíz y espejo, malabares por impulsos | [ANIMATIONS](ANIMATIONS.md) |
 | **Total (headless)** | **121 + 2 omitidas** | **686** | | |
 
