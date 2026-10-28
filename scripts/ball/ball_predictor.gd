@@ -5,10 +5,9 @@ extends RefCounted
 
 const GRAVITY := 9.81
 const SUBSTEPS := 4
-## Calibracion contra la pelota real (Jolt, medida con la pelota rodando a 9 y 15 m/s): el arrastre efectivo es ~0.5 de la
-## formula cuadratica y la rodadura efectiva ~1.16 de BallTuning.rolling_decel. Sin esto el predictor se queda corto ~4 %.
+## Calibracion contra la pelota real (Jolt, rodando de 1.5 a 16 m/s): el arrastre efectivo es ~0.5 de la formula
+## cuadratica; la rodadura es la de Ball (rolling_decel + rolling_viscous * v, Ball.roll_speed).
 const DRAG_SCALE := 0.5
-const ROLL_SCALE := 1.16
 
 ## Posiciones cada `step` segundos desde ahora (indice 0 = posicion actual) hasta `horizon` segundos.
 static func trajectory(pos: Vector3, vel: Vector3, horizon: float, step: float = 1.0 / 30.0) -> PackedVector3Array:
@@ -38,7 +37,7 @@ static func trajectory(pos: Vector3, vel: Vector3, horizon: float, step: float =
 					v.y = 0.0
 					var hs: float = Vector2(v.x, v.z).length()
 					if hs > 0.0001:
-						var k: float = maxf(hs - bt.rolling_decel * ROLL_SCALE * dt, 0.0) / hs
+						var k: float = Ball.roll_speed(hs, dt) / hs
 						v.x *= k
 						v.z *= k
 		out.append(p)

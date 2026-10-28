@@ -21,8 +21,18 @@ extends Resource
 ## Cd del balon en el aire.
 @export var drag_coefficient: float = 0.25
 @export var air_density: float = 1.2
-## Desaceleracion de rodadura sobre el piso (m/s^2).
-@export var rolling_decel: float = 0.55
+## Rodadura sobre el piso: desaceleracion = rolling_decel + rolling_viscous * v. La parte constante (m/s^2) es la que
+## detiene del todo una pelota lenta.
+@export var rolling_decel: float = 0.3
+## Parte proporcional a la velocidad (1/s), como en First Touch Soccer: alli la pelota conserva 1006/1024 de su velocidad
+## por imagen a 60 Hz (1.06/s; medido en su libreria, CBallProj::Iterate). Con ella cada toque de conduccion sale
+## disparado, frena y espera al jugador (antes, con 0.55 m/s^2 constantes, la pelota rodaba a la par del jugador como
+## atada a una cuerda), y los pases salen rapidos y se apagan.
+@export var rolling_viscous: float = 1.0
+## Velocidad (m/s) por encima de la cual la parte proporcional deja de crecer (desaceleracion constante a + c vk): la
+## conduccion (toques de hasta ~7 m/s) va como en FTS y un pase o tiro fuerte por el suelo pierde ~20 % en 15 m en
+## vez de apagarse (con 1/s puro un tiro raso de 25 m/s llegaba a 10 m/s a 15 m).
+@export var rolling_viscous_knee: float = 7.0
 ## Perdida de giro sobre el piso (rad/s^2).
 @export var spin_decel_ground: float = 6.0
 ## Coeficiente tipo Magnus: F = k * (omega x v).
@@ -45,7 +55,7 @@ extends Resource
 
 @export_group("Pase")
 @export var pass_speed_min: float = 4.0
-@export var pass_speed_max: float = 21.0
+@export var pass_speed_max: float = 28.0
 ## Velocidad a la que queremos que el pase raso llegue al receptor.
 @export var pass_arrival_speed: float = 4.5
 @export var lob_angle_deg: float = 38.0

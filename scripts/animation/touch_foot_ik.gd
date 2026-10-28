@@ -18,6 +18,13 @@ var _weight: Array[float] = [0.0, 0.0]
 ## Imagenes desde la ultima correccion recibida: si nadie la refresca (accion a mitad de toque) se suelta sola.
 var _age: Array[int] = [0, 0]
 var _bones: Array = []
+## Pie llevado a un punto del mundo (pisar la pelota con la suela, DragBack): punta, giro del pie y peso por pie.
+var _abs_target: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
+var _abs_pitch: Array[float] = [0.0, 0.0]
+var _abs_weight: Array[float] = [0.0, 0.0]
+var _abs_age: Array[int] = [0, 0]
+## Punta del pie (mundo) tal como quedo tras el IK de set_target en la ultima imagen (las pruebas miden la suela).
+var abs_toe_world: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 
 ## Correccion de la punta del pie `foot` (0 izquierdo, 1 derecho): desplazamiento en el mundo (se limita a MAX_SHIFT) y
 ## peso 0-1. Se mantiene hasta la siguiente llamada.
@@ -27,6 +34,16 @@ func set_correction(foot: int, shift_world: Vector3, weight: float) -> void:
 	_shift[foot] = shift_world.limit_length(MAX_SHIFT)
 	_weight[foot] = clampf(weight, 0.0, 1.0)
 	_age[foot] = 0
+
+## Lleva la punta del pie `foot` a world_toe (mundo, sin el limite de MAX_SHIFT) con el pie girado pitch rad (negativo =
+## punta abajo), con el peso dado (0 la suelta). Manda sobre la correccion de set_correction. Sin refresco se suelta sola.
+func set_target(foot: int, world_toe: Vector3, pitch: float, weight: float) -> void:
+	if foot < 0 or foot > 1:
+		return
+	_abs_target[foot] = world_toe
+	_abs_pitch[foot] = pitch
+	_abs_weight[foot] = clampf(weight, 0.0, 1.0)
+	_abs_age[foot] = 0
 
 func weight(foot: int) -> float:
 	return _weight[foot] if foot >= 0 and foot <= 1 else 0.0
@@ -38,7 +55,7 @@ func applied_shift(foot: int) -> Vector3:
 
 func _process_modification_with_delta(_delta: float) -> void:
 	var sk: Skeleton3D = get_skeleton()
-	if sk == null or (_weight[0] < 0.001 and _weight[1] < 0.001):
+	if sk == null or (_weight[0] < 0.001 and _weight[1] < 0.001 and _abs_weight[0] < 0.001 and _abs_weight[1] < 0.001):
 		return
 	if _bones.is_empty():
 		for f in 2:
@@ -48,11 +65,23 @@ func _process_modification_with_delta(_delta: float) -> void:
 			_bones.append(ids)
 	var to_skel: Basis = sk.global_transform.basis.inverse()
 	var up: Vector3 = (to_skel * Vector3.UP).normalized()
+	var to_local: Transform3D = sk.global_transform.affine_inverse()
 	for f in 2:
 		_age[f] += 1
 		if _age[f] > 4:
 			_weight[f] *= 0.7
-		if _weight[f] < 0.001 or (_bones[f] as Array).has(-1):
+		_abs_age[f] += 1
+		if _abs_age[f] > 4:
+			_abs_weight[f] *= 0.7
+		if (_bones[f] as Array).has(-1):
+			continue
+		if _abs_weight[f] >= 0.001:
+			var toe_pose: Vector3 = PoseSampler.bone_in_skeleton(sk, _bones[f][3]).origin
+			var w: float = _abs_weight[f]
+			ik_toe(sk, _bones[f], toe_pose.lerp(to_local * _abs_target[f], w), up, _abs_pitch[f] * w)
+			abs_toe_world[f] = sk.global_transform * PoseSampler.bone_in_skeleton(sk, _bones[f][3]).origin
+			continue
+		if _weight[f] < 0.001:
 			continue
 		var toe: Vector3 = PoseSampler.bone_in_skeleton(sk, _bones[f][3]).origin
 		ik_toe(sk, _bones[f], toe + to_skel * (_shift[f] * _weight[f]), up, 0.0)

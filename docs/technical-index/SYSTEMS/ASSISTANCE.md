@@ -97,8 +97,8 @@ Niveles de la interfaz (`Hud._cycle_assist`): `AssistTuning.LEVEL_VALUES` = Desa
 | `PressController.reset()` | 29 |  |
 | `PressController.update(defender: Footballer, ctx: MatchContext, stick_world: Vector3, stick_mag: float, dt: float)` | 32 |  |
 | `PressController._project(vel: Vector3, t: float, decelerates: bool)` | 128 |  |
-| `PressController.defender_pitch_clamp(ctx: MatchContext, p: Vector3)` | 138 |  |
-| `PressController._find_carrier(ctx: MatchContext, ball: Ball, team: int, radius: float)` | 143 |  |
+| `PressController.defender_pitch_clamp(ctx: MatchContext, p: Vector3)` | 136 |  |
+| `PressController._find_carrier(ctx: MatchContext, ball: Ball, team: int, radius: float)` | 141 |  |
 <!-- /AUTO -->
 
 <!-- AUTO:funcs:scripts/assistance/kick_model.gd -->
@@ -118,8 +118,8 @@ Niveles de la interfaz (`Hud._cycle_assist`): `AssistTuning.LEVEL_VALUES` = Desa
 | `KickModel.is_weak_foot(f: Footballer, ball_pos: Vector3)` | 101 | True si el balon queda del lado del pie no dominante. |
 | `KickModel.weak_foot_error_mult(f: Footballer)` | 105 | Penalizacion de la pierna debil segun el atributo (1.0 = sin penalizacion). |
 | `KickModel.weak_foot_power_mult(f: Footballer)` | 108 |  |
-| `KickModel.ground_speed_for_distance(d: float, arrival: float)` | 114 | Velocidad inicial (m/s) para recorrer d metros por el suelo y llegar con "arrival" m/s. Modelo exacto de la pelota: desaceleracion = rodadur |
-| `KickModel.lob_speed_for_distance(d: float, angle_deg: float)` | 122 | Velocidad de lanzamiento para un pase elevado que cubre d metros con el angulo dado (grados). |
+| `KickModel.ground_speed_for_distance(d: float, arrival: float)` | 115 | Velocidad inicial (m/s) para recorrer d metros por el suelo y llegar con "arrival" m/s. Modelo de la pelota: desaceleracion = rodadura (Ball |
+| `KickModel.lob_speed_for_distance(d: float, angle_deg: float)` | 133 | Velocidad de lanzamiento para un pase elevado que cubre d metros con el angulo dado (grados). |
 <!-- /AUTO -->
 
 ## Recorrido de ejecución
@@ -235,8 +235,8 @@ Niveles de la interfaz (`Hud._cycle_assist`): `AssistTuning.LEVEL_VALUES` = Desa
 | `PressController.reset()` | 29 |  |
 | `PressController.update(defender: Footballer, ctx: MatchContext, stick_world: Vector3, stick_mag: float, dt: float)` | 32 |  |
 | `PressController._project(vel: Vector3, t: float, decelerates: bool)` | 128 |  |
-| `PressController.defender_pitch_clamp(ctx: MatchContext, p: Vector3)` | 138 |  |
-| `PressController._find_carrier(ctx: MatchContext, ball: Ball, team: int, radius: float)` | 143 |  |
+| `PressController.defender_pitch_clamp(ctx: MatchContext, p: Vector3)` | 136 |  |
+| `PressController._find_carrier(ctx: MatchContext, ball: Ball, team: int, radius: float)` | 141 |  |
 <!-- /AUTO -->
 
 <!-- AUTO:funcs:scripts/assistance/kick_model.gd -->
@@ -256,8 +256,8 @@ Niveles de la interfaz (`Hud._cycle_assist`): `AssistTuning.LEVEL_VALUES` = Desa
 | `KickModel.is_weak_foot(f: Footballer, ball_pos: Vector3)` | 101 | True si el balon queda del lado del pie no dominante. |
 | `KickModel.weak_foot_error_mult(f: Footballer)` | 105 | Penalizacion de la pierna debil segun el atributo (1.0 = sin penalizacion). |
 | `KickModel.weak_foot_power_mult(f: Footballer)` | 108 |  |
-| `KickModel.ground_speed_for_distance(d: float, arrival: float)` | 114 | Velocidad inicial (m/s) para recorrer d metros por el suelo y llegar con "arrival" m/s. Modelo exacto de la pelota: desaceleracion = rodadur |
-| `KickModel.lob_speed_for_distance(d: float, angle_deg: float)` | 122 | Velocidad de lanzamiento para un pase elevado que cubre d metros con el angulo dado (grados). |
+| `KickModel.ground_speed_for_distance(d: float, arrival: float)` | 115 | Velocidad inicial (m/s) para recorrer d metros por el suelo y llegar con "arrival" m/s. Modelo de la pelota: desaceleracion = rodadura (Ball |
+| `KickModel.lob_speed_for_distance(d: float, angle_deg: float)` | 133 | Velocidad de lanzamiento para un pase elevado que cubre d metros con el angulo dado (grados). |
 <!-- /AUTO -->
 
 ## Recorrido de ejecución

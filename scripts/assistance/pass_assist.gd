@@ -61,8 +61,8 @@ static func compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, c
 	var aim_dir: Vector3 = intent
 	if best != null:
 		var to_t: Vector3 = KickModel.flat(best.global_position - origin)
-		var est_speed: float = clampf(KickModel.ground_speed_for_distance(to_t.length(), ball_tuning.pass_arrival_speed), 5.0, 18.0)
-		var t_flight: float = clampf(to_t.length() / est_speed, 0.1, 1.2)
+		var est_speed: float = clampf(KickModel.ground_speed_for_distance(to_t.length(), ball_tuning.pass_arrival_speed), 5.0, ball_tuning.pass_speed_max)
+		var t_flight: float = clampf(Ball.roll_time(est_speed, to_t.length()), 0.1, 1.2)
 		var lead: Vector3 = KickModel.flat(best.velocity) * t_flight * 0.85
 		res.aim_point = best.global_position + lead
 		var to_aim: Vector3 = KickModel.flat(res.aim_point - origin)

@@ -375,13 +375,13 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 			var ph: float = TAU * _knuckle_freq * _knuckle_t + _knuckle_phase
 			v += (side * sin(ph) + Vector3.UP * (0.4 * cos(1.3 * ph))) * knuckle_accel * dt
 
-	# Rodadura sobre el piso: desacelera linealmente y arrastra el giro para no pelear con la friccion.
+	# Rodadura sobre el piso: desaceleracion rolling_decel + rolling_viscous * v (paso exacto) y arrastra el giro para
+	# no pelear con la friccion.
 	if floor_contact and absf(v.y) < 0.6:
 		var hv := Vector3(v.x, 0.0, v.z)
 		var hs: float = hv.length()
 		if hs > 0.0001:
-			var dec: float = tuning.rolling_decel * dt
-			var new_hs: float = maxf(hs - dec, 0.0)
+			var new_hs: float = _roll_step(hs, dt)
 			var ratio: float = new_hs / hs
 			hv *= ratio
 			v.x = hv.x
@@ -407,6 +407,152 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 
 	state.linear_velocity = v
 	state.angular_velocity = w
+
+# --- Rodadura (modelo compartido con la prediccion, los pases y la conduccion) ------------------------------------
+## Desaceleracion sobre el piso: a + c * min(v, vk) (BallTuning rolling_decel, rolling_viscous, rolling_viscous_knee).
+## Por debajo de vk la parte proporcional manda (cada toque de conduccion sale, se frena y espera al jugador, como en
+## First Touch Soccer); por encima es constante (a + c vk), asi un pase o tiro fuerte no se apaga a mitad de cancha.
+## Medido con la pelota real rodando de 1.5 a 16 m/s: hasta 8 m/s el mejor ajuste es 0.28 + 1.02 v (error < 2 cm a 2 s),
+## igual a BallTuning; las formulas no incluyen el arrastre del aire (k efectivo ~0.5 de la formula, BallPredictor).
+
+## (a, c, vk) de la rodadura.
+static func _roll_params() -> Vector3:
+	var bt: BallTuning = Tuning.ball
+	return Vector3(bt.rolling_decel, maxf(bt.rolling_viscous, 0.0001), maxf(bt.rolling_viscous_knee, 0.0))
+
+## Desaceleracion (m/s2) de la rodadura a la velocidad v.
+static func roll_decel(v: float) -> float:
+	var p: Vector3 = _roll_params()
+	return p.x + p.y * minf(maxf(v, 0.0), p.z)
+
+## Tramo proporcional (v <= vk): velocidad y distancia exactas a los t s, hasta pararse.
+static func _visc_speed(v0: float, t: float, p: Vector3) -> float:
+	var q: float = p.x / p.y
+	return maxf((v0 + q) * exp(-p.y * t) - q, 0.0)
+
+static func _visc_stop_time(v0: float, p: Vector3) -> float:
+	var q: float = p.x / p.y
+	return log((v0 + q) / q) / p.y if v0 > 0.0 else 0.0
+
+static func _visc_distance(v0: float, t: float, p: Vector3) -> float:
+	var q: float = p.x / p.y
+	var tt: float = clampf(t, 0.0, _visc_stop_time(v0, p))
+	return (v0 + q) * (1.0 - exp(-p.y * tt)) / p.y - q * tt
+
+## Velocidad tras rodar dt segundos sobre el piso partiendo de v (modelo exacto de _integrate_forces, sin el aire).
+static func _roll_step(v: float, dt: float) -> float:
+	return roll_speed(v, dt)
+
+## Velocidad (m/s) de una pelota que rueda t segundos partiendo de v0.
+static func roll_speed(v0: float, t: float) -> float:
+	var p: Vector3 = _roll_params()
+	if v0 > p.z:
+		var dk: float = p.x + p.y * p.z
+		var t1: float = (v0 - p.z) / dk
+		if t <= t1:
+			return v0 - dk * t
+		return _visc_speed(p.z, t - t1, p)
+	return _visc_speed(v0, t, p)
+
+## Distancia (m) que recorre en t segundos una pelota que rueda partiendo de v0 (hasta detenerse).
+static func roll_distance(v0: float, t: float) -> float:
+	var p: Vector3 = _roll_params()
+	if v0 > p.z:
+		var dk: float = p.x + p.y * p.z
+		var t1: float = (v0 - p.z) / dk
+		if t <= t1:
+			return v0 * t - 0.5 * dk * t * t
+		return (v0 + p.z) * 0.5 * t1 + _visc_distance(p.z, t - t1, p)
+	return _visc_distance(v0, t, p)
+
+## Tiempo (s) hasta que la pelota que sale a v0 se detiene.
+static func roll_stop_time(v0: float) -> float:
+	var p: Vector3 = _roll_params()
+	if v0 > p.z:
+		return (v0 - p.z) / (p.x + p.y * p.z) + _visc_stop_time(p.z, p)
+	return _visc_stop_time(v0, p)
+
+## Velocidad inicial (m/s) para recorrer dist metros en t segundos rodando (la mas baja que llega, hasta 60 m/s).
+static func roll_speed_for(dist: float, t: float) -> float:
+	var p: Vector3 = _roll_params()
+	var tt: float = maxf(t, 0.01)
+	var d: float = maxf(dist, 0.0)
+	# Todo el recorrido en el tramo proporcional: formula cerrada.
+	var q: float = p.x / p.y
+	var v: float = maxf((d + q * tt) * p.y / (1.0 - exp(-p.y * tt)) - q, 0.0)
+	if v <= p.z and roll_stop_time(v) >= tt - 0.0001:
+		return v
+	var lo: float = 0.0
+	var hi: float = 60.0
+	if roll_distance(hi, tt) < d:
+		return hi
+	for i in 32:
+		var mid: float = 0.5 * (lo + hi)
+		if roll_distance(mid, tt) < d:
+			lo = mid
+		else:
+			hi = mid
+	return 0.5 * (lo + hi)
+
+## Velocidad inicial (m/s) con la que la pelota rueda dist metros y se detiene ahi.
+static func roll_speed_to_stop(dist: float) -> float:
+	if dist <= 0.0:
+		return 0.0
+	var lo: float = 0.0
+	var hi: float = 40.0
+	for i in 32:
+		var mid: float = 0.5 * (lo + hi)
+		if roll_distance(mid, roll_stop_time(mid)) < dist:
+			lo = mid
+		else:
+			hi = mid
+	return 0.5 * (lo + hi)
+
+## Tiempo (s) que tarda en recorrer dist metros una pelota que rueda partiendo de v0 (INF si se detiene antes).
+static func roll_time(v0: float, dist: float) -> float:
+	if dist <= 0.0:
+		return 0.0
+	var t_stop: float = roll_stop_time(v0)
+	if roll_distance(v0, t_stop) < dist:
+		return INF
+	var lo: float = 0.0
+	var hi: float = t_stop
+	for i in 30:
+		var mid: float = 0.5 * (lo + hi)
+		if roll_distance(v0, mid) < dist:
+			lo = mid
+		else:
+			hi = mid
+	return 0.5 * (lo + hi)
+
+## Velocidad (m/s) con la que tiene que salir la pelota para rodar a v_end dentro de t segundos.
+static func roll_start_speed(v_end: float, t: float) -> float:
+	var p: Vector3 = _roll_params()
+	var q: float = p.x / p.y
+	var ve: float = maxf(v_end, 0.0)
+	if ve >= p.z:
+		return ve + (p.x + p.y * p.z) * t
+	var v: float = (ve + q) * exp(p.y * t) - q
+	if v <= p.z:
+		return v
+	var tv: float = log((p.z + q) / (ve + q)) / p.y
+	return p.z + (p.x + p.y * p.z) * maxf(t - tv, 0.0)
+
+## Tiempo (s) en que una pelota tocada desde un cuerpo que va a vp m/s queda `advance` metros mas adelantada que el y
+## con su misma velocidad (el cuerpo la alcanza sin que se escape ni se frene de golpe). 0 si advance <= 0.
+static func roll_catch_time(advance: float, vp: float) -> float:
+	if advance <= 0.0:
+		return 0.0
+	var lo: float = 0.0
+	var hi: float = 3.0
+	for i in 30:
+		var mid: float = 0.5 * (lo + hi)
+		var f: float = roll_distance(roll_start_speed(vp, mid), mid) - vp * mid
+		if f < advance:
+			lo = mid
+		else:
+			hi = mid
+	return 0.5 * (lo + hi)
 
 func _on_body_entered(body: Node) -> void:
 	if body != last_toucher:

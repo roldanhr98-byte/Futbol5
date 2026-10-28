@@ -158,7 +158,8 @@ func test_first_time_pass_from_an_incoming_ball() -> void:
 	if _needs_render():
 		return
 	var incoming := func(ctx: MatchContext, p: Footballer, _s: ScriptedInput) -> void:
-		ctx.ball.reset_at(START + Vector3(4.0, 0.11, 0.2), Vector3(-5.0, 0.0, 0.0))
+		# Llega a 5 m/s: con la rodadura de la pelota (Ball.roll_*) sale mas rapido para recorrer los ~3.5 m.
+		ctx.ball.reset_at(START + Vector3(4.0, 0.11, 0.2), Vector3(-KickModel.ground_speed_for_distance(3.5, 5.0), 0.0, 0.0))
 		await physics_frames(2)
 	var r: Dictionary = await _kick(incoming, &"pass", 4, Vector2(0, -1))
 	_report("pase de primera (pelota que llega a 5 m/s)", r)
@@ -263,8 +264,9 @@ func test_kick_battery_fifty_varied_actions() -> void:
 	# 3) Pelota que se aleja, que llega y que bota.
 	for a in actions:
 		cases.append({"name": "pelota que se aleja a 2.5 m/s, %s" % a, "ball": Vector2(0.6, 0.0), "vel": Vector3(2.5, 0, 0), "action": a, "charge": 6})
-		cases.append({"name": "pelota que llega a 6 m/s, %s de primera" % a, "ball": Vector2(5.0, 0.3), "vel": Vector3(-6.0, 0, 0), "action": a, "charge": 4})
-		cases.append({"name": "pelota que llega cruzada, %s de primera" % a, "ball": Vector2(3.0, 3.0), "vel": Vector3(-3.0, 0, -3.2), "action": a, "charge": 4})
+		# Las pelotas que llegan salen a la velocidad que, con la rodadura, las trae a la nominal junto al jugador.
+		cases.append({"name": "pelota que llega a 6 m/s, %s de primera" % a, "ball": Vector2(5.0, 0.3), "vel": Vector3(-KickModel.ground_speed_for_distance(4.5, 6.0), 0, 0), "action": a, "charge": 4})
+		cases.append({"name": "pelota que llega cruzada, %s de primera" % a, "ball": Vector2(3.0, 3.0), "vel": Vector3(-3.0, 0, -3.2).normalized() * KickModel.ground_speed_for_distance(3.7, 4.4), "action": a, "charge": 4})
 		cases.append({"name": "pelota botando delante, %s" % a, "ball": Vector2(0.8, 0.0), "y": 0.7, "vel": Vector3(-0.5, 1.0, 0), "action": a, "charge": 6})
 	# 4) Pie no dominante y bajo presion.
 	for a in actions:

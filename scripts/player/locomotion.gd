@@ -154,6 +154,33 @@ func step(desired_dir: Vector3, magnitude: float, want_sprint: bool, delta: floa
 	lateral_speed = vl
 	speed = velocity.length()
 
+## Movimiento guiado por una accion del cuerpo con la pelota (DragBack): gira hacia face_dir a rate_deg grados/s por el
+## lado turn_sign (+1 = yaw creciente, -1 = decreciente, 0 = el camino corto; rate_deg <= 0 conserva la orientacion) y la
+## velocidad va hacia target_vel con accel m/s2.
+func step_scripted(face_dir: Vector3, rate_deg: float, turn_sign: float, target_vel: Vector3, accel: float, delta: float) -> void:
+	jockeying = false
+	sprinting = false
+	sharp_turning = false
+	var regen: float = tuning.stamina_regen_standing if speed < 0.5 else tuning.stamina_regen
+	stamina = minf(stamina + regen * attributes.factor("stamina", 0.5) * delta, 1.0)
+	turn_rate = 0.0
+	if rate_deg > 0.0 and face_dir.length_squared() > 0.0001:
+		var diff: float = wrapf(yaw_from_dir(face_dir.normalized()) - yaw, -PI, PI)
+		# Media vuelta: el pivote va por el lado pedido aunque el otro sea igual de corto.
+		if turn_sign != 0.0 and absf(diff) > 0.35 and signf(diff) != signf(turn_sign):
+			diff += signf(turn_sign) * TAU
+		var m: float = deg_to_rad(rate_deg) * delta
+		var applied: float = clampf(diff, -m, m)
+		yaw = wrapf(yaw + applied, -PI, PI)
+		turn_rate = applied / maxf(delta, 0.0001)
+	var before: float = velocity.length()
+	velocity = velocity.move_toward(Vector3(target_vel.x, 0.0, target_vel.z), accel * delta)
+	velocity.y = 0.0
+	braking = velocity.length() < before - 0.01
+	forward_speed = velocity.dot(forward())
+	lateral_speed = velocity.dot(right())
+	speed = velocity.length()
+
 func _step_jockey(desired_dir: Vector3, magnitude: float, delta: float, speed_cap: float) -> void:
 	jockeying = true
 	sprinting = false

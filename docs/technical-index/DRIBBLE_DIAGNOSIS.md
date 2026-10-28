@@ -293,3 +293,56 @@ inclinación del tronco en curvas y cambios de ritmo ([ANIMATIONS](SYSTEMS/ANIMA
 y red de tela ([PITCH](SYSTEMS/PITCH.md#red-de-tela-2026-10-28)). **Pendiente** (lo que el video muestra y el juego aún
 no tiene): giros cerrados con la pelota pegada y arrastrada con el interior o la suela (hoy la conducción de giro la deja
 a 0.5–0.8 m sin animación de toque), el control orientado y el cuerpo agachado al frenar (piden IK de piernas).
+
+## Octava ronda (2026-10-28): First Touch Soccer 27 (APK) y videos `diferenciasfutbol`
+
+**Pedido:** comparar el juego con First Touch Soccer (FTS) en los videos `diferenciasfutbol` (la pelota «atada con una
+cuerda» al conducir; tiros que no salen) y estudiar el APK de FTS 27 de punta a punta: conducción, pases, reglas, tiro,
+la pelota y las animaciones, para replicar su jugabilidad.
+
+**Qué es el APK.** No es Unity: es un mod del motor nativo de First Touch Games (FTS 2015), `lib/armeabi-v7a/libFTS15.so`
+y `lib/x86/libFTS15.so`, con los símbolos C++ exportados (se leyó el código de máquina x86 con `objdump`, sin ejecutar
+nada). Datos (rutas dentro del APK): animaciones en «assets/data/anims/anims.dat» y «animdb.adb» (archivos .sat numerados,
+formato propio no descifrado), texturas de la pelota («models/ball/football_diff_*.png»), vértices fijos de la red
+(«game/staticnetverts.dat»). «FTSdifficulty/new_difficulty.7z» tiene contraseña (no se abrió) y «libdroicergadget.so»
+es una inyección del modder (no se ejecutó). **Se replicó el comportamiento medido, no se copió código ni recursos**
+(animaciones, mallas, texturas): las animaciones de FTS son de su motor y no se pueden usar.
+
+**Unidades de FTS:** posiciones en 1/32768 m, lógica a 60 Hz, mundo escalado ~1.095 (medio arco 4.0, travesaño 2.667,
+gravedad 98 unidades/imagen² = 10.77 m/s², radio de la pelota 0x1000 = 0.125).
+
+| Sistema de FTS (función) | Lo que hace | En Fútbol 5 |
+|---|---|---|
+| Pelota (`CBallProj::Iterate`, tablas de `CGameLoop::InitPitchPhysics`) | En el suelo conserva 1006/1024 de la velocidad por imagen (~1.06/s, **proporcional**); en el aire 2032/2048; cada bote 675/1024 de la vertical. Tres estados de cancha (bote 675/550/615, rozamiento 1006/1010/990 y 1006/996/1001, toque ×1024/1152/1152). | **Replicado:** rodadura 0.3 + 1.0·v hasta 7 m/s ([BALL](SYSTEMS/BALL.md#rodadura-tipo-first-touch-soccer-2026-10-28)). Antes: 0.55 m/s² constantes, la causa de la «cuerda». |
+| Toque de conducción (`GPM_DribbleTouch`, desde `CPlayer::UpdateActionDribble` en el punto de acción de la animación, pelota a menos de ~0.66 m) | FIJA la velocidad de la pelota: rumbo = frente girado hacia el joystick como mucho 22.5°; rapidez = interpolación por la velocidad del jugador (3471–4005 a 4806–5874 unidades/imagen según la habilidad de conducción) + la mitad de la velocidad hacia delante, × azar 0.9375–1.0625 × cancha, ×3/4 si va alta; vertical /8; giro al azar. | Nuestro toque es un impulso calculado con la rodadura para que la pelota llegue al siguiente balanceo (toques de clip). Con la rodadura nueva sale disparada y frena igual que en FTS. |
+| `GPM_DribbleIsValid`, `GetRunSpeed` | Solo con la pelota delante (producto escalar ≥ 0); conduciendo se corre 3–8 % menos (habilidad). | Ya existía: `dribble_speed_cap` (86–97 % del sprint). |
+| Giro (`CPlayer::Turn`, `SetAnimTurn`) | Un giro cerrado es una **acción del cuerpo**: elige una animación de giro cuyo ángulo esté a menos de 45° del pedido (por tipo: parado, caminando, corriendo con su desplazamiento), fija la orientación nueva y reduce la velocidad a la mitad; la pelota se toca en el punto de acción de esa animación. | **Replicado el comportamiento:** vuelta atrás pisando la pelota (`DragBack`): llegar, pisar con la suela, arrastrar y pivotar ([PLAYER](SYSTEMS/PLAYER.md#vuelta-atrás-pisando-la-pelota-giros-y-rodadura-tipo-fts-2026-10-28-octava-ronda)). |
+| Velocidades (`CPlayer::GetRunSpeed`) | Caminar 801, correr 3204–3738, sprint 3738–4539 unidades/imagen (1.5 / 5.9–6.8 / 6.8–8.3 m/s de FTS). | Las nuestras (1.8 / 5.2 / 6.8 m/s) son de futsal; no se cambiaron. |
+
+**Videos `diferenciasfutbol`** (FTS frente a nuestro juego, seguimiento de la pelota y de los pies imagen por imagen):
+
+- Distancia pelota–pies conduciendo a la carrera: FTS **0.15–0.6 m, va y vuelve cada ~0.6 s**; nuestro juego 0.54–0.63 m
+  casi constante (la «cuerda»).
+- Tamaño: la pelota mide ~0.14 de la altura del jugador en los dos juegos: **la circunferencia no es la diferencia**. La
+  de FTS es blanca con paneles celestes (más clara); la nuestra blanca y negra.
+- En control cerrado los jugadores de FTS se encorvan sobre la pelota.
+- El video de nuestro juego es una versión vieja (cámara de 52°, la prerrelease anterior): los tiros que «no saben
+  patear» (raso lento que el arquero recoge) son de antes del rediseño del tiro (tiros dirigidos al arco, efecto natural).
+
+**Qué se cambió:** rodadura proporcional (y todas las predicciones con ella), vuelta atrás pisando la pelota, persecución
+de la pelota que se escapa en giros cerrados, parada con la pelota que se detuvo sola, tronco encorvado en control
+cerrado. **Antes → después** (con render, `test_dribble_reference`, pelota delante del cuerpo p5/media/p95):
+
+| Caso | Antes (commit 10f6377) | Ahora |
+|---|---|---|
+| Trote 2.8 m/s | 0.40 / 0.48 / 0.51 m | 0.27 / 0.42 / 0.50 m |
+| Carrera 5.3 m/s | 0.54 / 0.57 / 0.63 m | 0.48 / 0.72 / 0.82 m |
+| Sprint 6.0 m/s | 0.27 / 0.66 / 0.75 m | 0.30 / 0.74 / 0.92 m |
+| Cambios de ritmo | 0.41 / 0.59 / 0.73 m | 0.33 / 0.61 / 0.87 m |
+| Giro de 135° a la carrera (`live_feet`) | — | avanza 2.78 m en 1.5 s (sin la persecución: −3.24 m) |
+| Golpeos de primera (`live_kicks`, 50 acciones) | 44 de 50 con contacto | 49 de 50 |
+
+**No replicado:** el límite de 22.5° del rumbo del toque (nuestro toque sigue al cuerpo previsto del clip), los colores
+de la pelota y el formato de las animaciones de FTS (no descifrado; no se usarían). La dificultad (`new_difficulty.7z`)
+no se pudo leer.
+

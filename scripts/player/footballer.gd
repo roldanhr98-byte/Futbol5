@@ -326,7 +326,13 @@ func _physics_process(delta: float) -> void:
 	if ball_handler.is_dribbling() and ball_handler.ball_distance() <= ball_handler.possession_radius() and approach.is_empty():
 		cap = ball_handler.dribble_speed_cap()
 	var speed_before: float = locomotion.speed
-	locomotion.step(desired_dir, desired_mag, want_sprint, delta, cap)
+	# Vuelta atras pisando la pelota en curso: el cuerpo lo mueve la accion (llegar, plantarse, pivotar y salir).
+	var scripted: Dictionary = ball_handler.drag_back.body_control()
+	if not scripted.is_empty():
+		locomotion.face_override = Vector3.ZERO
+		locomotion.step_scripted(scripted["face"], scripted["rate"], scripted["sign"], scripted["vel"], scripted["accel"], delta)
+	else:
+		locomotion.step(desired_dir, desired_mag, want_sprint, delta, cap)
 	if kicking:
 		locomotion.velocity = ball_handler.kick_body_velocity()
 		locomotion.speed = locomotion.velocity.length()

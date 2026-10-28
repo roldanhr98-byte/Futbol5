@@ -118,7 +118,11 @@ func _physics_process(delta: float) -> void:
 	if state == State.PAUSED:
 		return
 	ctx.tick += 1
-	ctx.update_ball_stall(delta)
+	# Solo con la pelota en juego: tras un gol (la pelota quieta en la red) o esperando un saque no es una jugada muerta.
+	if state == State.PLAYING:
+		ctx.update_ball_stall(delta)
+	else:
+		ctx.ball_stall_seconds = 0.0
 	match state:
 		State.PRE_KICKOFF:
 			_state_timer -= delta

@@ -32,7 +32,10 @@ func test_rolling_decelerates_and_stops() -> void:
 	await wait_seconds(2.0)
 	var v2: float = ball.ground_speed()
 	check(v2 < v0 - 1.0, "la pelota debe desacelerar al rodar (v0=%.2f, v2=%.2f)" % [v0, v2])
-	check_range(v2, 3.4, 4.7, "con giro de rodadura la deceleracion es ~0.8-1.3 m/s2 (v2=%.2f)" % v2)
+	# Rodadura proporcional a la velocidad (como First Touch Soccer: ~1/s): de 5.7 m/s queda ~0.5 m/s a los 2 s, y el
+	# modelo compartido (Ball.roll_speed) que usan pases, conduccion y prediccion acierta la velocidad real.
+	check_range(v2, 0.3, 0.8, "rodadura 0.3 + 1.0 v: velocidad a los 2 s (v2=%.2f)" % v2)
+	check(absf(v2 - Ball.roll_speed(v0, 2.0)) < 0.1, "Ball.roll_speed predice la pelota real (%.2f vs %.2f)" % [Ball.roll_speed(v0, 2.0), v2])
 	var x2: float = ball.global_position.x
 	await wait_seconds(10.0)
 	note("v0=%.2f m/s, v(2s)=%.2f m/s, recorrido hasta detenerse: %.1f m" % [v0, v2, ball.global_position.x - (-10.0)])
@@ -49,7 +52,8 @@ func test_kick_applies_impulse_not_teleport() -> void:
 	var moved: float = ball.global_position.distance_to(p0)
 	check(moved < 0.25, "un golpe no teletransporta la pelota (se movio %.3f m en 1 paso)" % moved)
 	await physics_frames(5)
-	check_range(ball.linear_velocity.x, 8.5, 10.1, "velocidad x despues del golpe")
+	# 6 pasos de rodadura (0.3 + 1.0 v) y arrastre despues del golpe de 10 m/s.
+	check_range(ball.linear_velocity.x, 7.9, 10.1, "velocidad x despues del golpe")
 
 func test_ball_stays_inside_walls() -> void:
 	var w: Dictionary = await make_world(Vector3(0, 0.3, 0))

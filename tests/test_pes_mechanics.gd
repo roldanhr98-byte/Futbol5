@@ -79,10 +79,15 @@ func test_receiver_runs_to_meet_the_pass_and_human_control_switches_to_him() -> 
 	check(m.controlled == target, "el control de la persona pasa al receptor al pasar")
 	check(target.has_incoming_pass(), "el receptor sabe que la pelota va hacia el")
 	var d0: float = KickModel.flat(target.global_position - m.ball.global_position).length()
-	await wait_seconds(0.5)
+	# Velocidad maxima en el medio segundo: si llega antes al punto de encuentro se planta a esperar la pelota (con la
+	# rodadura proporcional el punto queda mas cerca), asi que la velocidad del final no dice si salio.
+	var vmax: float = 0.0
+	for i in 30:
+		await tree.physics_frame
+		vmax = maxf(vmax, target.locomotion.speed)
 	var moved: float = KickModel.flat(target.global_position - target.incoming_pass_point).length()
-	note("receptor: a %.1f m de la pelota al pasar; tras 0.5 s esta a %.1f m del punto de encuentro" % [d0, moved])
-	check(target.locomotion.speed > 0.5 or target.has_ball(), "el receptor sale al encuentro (%.2f m/s) aunque la persona no toque el joystick" % target.locomotion.speed)
+	note("receptor: a %.1f m de la pelota al pasar; tras 0.5 s esta a %.1f m del punto de encuentro (velocidad maxima %.2f m/s)" % [d0, moved, vmax])
+	check(vmax > 0.5 or target.has_ball(), "el receptor sale al encuentro (%.2f m/s) aunque la persona no toque el joystick" % vmax)
 	check(not passer.is_human_controlled, "el pasador queda en manos de la IA")
 
 # --- Defensa ---------------------------------------------------------------------------------------------------

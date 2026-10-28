@@ -60,6 +60,7 @@
 | `tests/test_kick_reach.gd` | 2 | 17 (render) / 10 | Golpeo pedido con la pelota propia fuera del alcance: el jugador ajusta la carrera y golpea con contacto o cancela con aviso | [PLAYER](PLAYER.md) |
 | `tests/test_shared_ball_mechanics.gd` | 2 | 8 | La IA usa la misma mecánica de pelota que la persona (sin atajos) | [PLAYER](PLAYER.md) |
 | `tests/test_dribble_reference.gd` | 1 (render) | 6 (render) | Conducción recta medida contra el video de referencia (intervalo, pie, alternancia, distancia, deriva) | [PLAYER](PLAYER.md) |
+| `tests/test_drag_back.gd` | 4 | 54 (headless) / 52 (render) | Vuelta atrás pisando la pelota: caminando, al trote y a la carrera en 6 momentos del ciclo (pisada o media vuelta), sprint sin pisada, la IA con la misma mecánica; con render, la suela sobre la pelota | [PLAYER](PLAYER.md) |
 | `tests/test_practice.gd` | 4 | 37 | Galería (133 clips, roles), reproducción de todos los clips, raíz y espejo, malabares por impulsos | [ANIMATIONS](ANIMATIONS.md) |
 | **Total (headless)** | **121 + 2 omitidas** | **686** | | |
 

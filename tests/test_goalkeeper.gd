@@ -71,7 +71,9 @@ func test_slow_shot_to_the_hands_is_caught_and_distributed() -> void:
 	var ctx: MatchContext = w["ctx"]
 	var events: Array = []
 	ctx.event_emitted.connect(func(e: GameEvent) -> void: events.append(e))
-	await _shoot(ctx, Vector3(8.0, 0.11, 1.0), Vector3(20.0, 0.11, 1.2), 8.0)
+	# Con la rodadura proporcional (BallTuning.rolling_viscous) un tiro raso de 13 m/s desde 12 m llega suave (~3 m/s);
+	# uno de 8 m/s ya no llega al arco.
+	await _shoot(ctx, Vector3(8.0, 0.11, 1.0), Vector3(20.0, 0.11, 1.2), 13.0)
 	await wait_seconds(2.2)
 	check(k.stats["catches"] == 1, "ataja un tiro suave raso (%s)" % str(k.stats))
 	var caught: bool = events.any(func(e: GameEvent) -> bool: return e.type == GameEvent.Type.KEEPER_CATCH)

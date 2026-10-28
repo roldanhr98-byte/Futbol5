@@ -97,8 +97,9 @@ func test_kick_requested_with_the_ball_out_of_reach_ahead() -> void:
 func test_kick_is_cancelled_with_a_warning_when_the_ball_cannot_be_reached() -> void:
 	if _skip_if_missing():
 		return
-	# Pelota propia 2.5 m por delante y escapando al doble de la velocidad del jugador: no hay carrera que llegue.
-	var r: Dictionary = await _case(&"shot", 2.5, 2.0, false, 0.3, 0.7, 0.0)
-	note("pelota que se escapa al doble de velocidad: golpeos %d, cancelaciones %d (%s)" % [r["kicked"], r["whiffs"], r["reason"]])
+	# Pelota propia 2.5 m por delante y escapando a 3.5 veces la velocidad del jugador: no hay carrera que llegue. (Al
+	# doble ya si se la alcanza: la rodadura proporcional la frena en ~1 s.)
+	var r: Dictionary = await _case(&"shot", 2.5, 3.5, false, 0.3, 0.7, 0.0)
+	note("pelota que se escapa a 3.5 veces la velocidad: golpeos %d, cancelaciones %d (%s)" % [r["kicked"], r["whiffs"], r["reason"]])
 	check(int(r["kicked"]) == 0, "no hay golpeo sin pie en la pelota (%d)" % r["kicked"])
 	check(int(r["whiffs"]) == 1 and String(r["reason"]) == "out_of_reach", "la orden se cancela con aviso out_of_reach (%d, %s)" % [r["whiffs"], r["reason"]])

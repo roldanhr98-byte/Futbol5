@@ -11,6 +11,46 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-10-28 — Rodadura de First Touch Soccer, vuelta atrás pisando la pelota y giros con la pelota que se escapa
+
+Detalle: [DRIBBLE_DIAGNOSIS](DRIBBLE_DIAGNOSIS.md#octava-ronda-2026-10-28-first-touch-soccer-27-apk-y-videos-diferenciasfutbol) ·
+[BALL](SYSTEMS/BALL.md#rodadura-tipo-first-touch-soccer-2026-10-28) ·
+[PLAYER](SYSTEMS/PLAYER.md#vuelta-atrás-pisando-la-pelota-giros-y-rodadura-tipo-fts-2026-10-28-octava-ronda) ·
+[ANIMATIONS](SYSTEMS/ANIMATIONS.md#control-cerrado-encorvado-y-suela-sobre-la-pelota-2026-10-28).
+
+- **Estudio de First Touch Soccer 27** (APK: motor nativo `libFTS15.so`, no Unity; se leyó el código de máquina sin
+  ejecutarlo) y de los videos `diferenciasfutbol`. La «pelota atada a una cuerda» venía de la rodadura: constante en el
+  nuestro, proporcional a la velocidad en FTS (1006/1024 por imagen). La circunferencia no es la diferencia (misma
+  proporción pelota/jugador). Se replicó el comportamiento, no se copió código ni recursos de FTS.
+- **Rodadura** `rolling_decel` 0.55 → 0.3 + `rolling_viscous` 1.0 /s · `min(v, rolling_viscous_knee` 7 m/s`)`, con
+  paso exacto y un único modelo (`Ball.roll_*`) para la física, la predicción, los pases, la presión, la conducción, los
+  golpeos sobre pelota en movimiento y la pelota que llega. `pass_speed_max` 21 → 28 m/s.
+- **Vuelta atrás pisando la pelota** (`DragBack`, nuevo): llegar, pisar con la suela (IK sobre la pelota), frenar con el
+  cuerpo plantado, arrastrar y pivotar 180°; persona e IA. `Locomotion.step_scripted`, `TouchFootIK.set_target`.
+- **Giros cerrados con la pelota que se escapa**: se sigue tras ella hasta poder tocarla (`carry_steer`,
+  `ESCAPE_STEER_SPEED`). **Parada**: el toque de parada la deja quieta donde se para el cuerpo
+  (`Ball.roll_speed_to_stop`). **Control cerrado** por debajo de 3.2 m/s (cualquier pie, variante `_Close`) con el
+  tronco encorvado (`CARRY_CROUCH`). **Pelota encajada** entre dos cuerpos desde 0.45 m: se saca de lado.
+- Archivos: `scripts/ball/ball.gd`, `ball_tuning.gd`, `ball_predictor.gd`, `scripts/assistance/kick_model.gd`,
+  `pass_assist.gd`, `press_controller.gd`, `scripts/player/ball_handler.gd`, `drag_back.gd` (nuevo), `footballer.gd`,
+  `footballer_visual.gd`, `locomotion.gd`, `scripts/animation/touch_foot_ik.gd`; pruebas `tests/test_drag_back.gd`
+  (nueva) y ajustes de `test_ball_physics` (rodadura nueva), `test_goalkeeper` (tiro suave de 13 m/s), `test_kick_reach`
+  (pelota que se escapa a 3.5×), `test_live_kicks` (las pelotas que llegan salen a la velocidad que las trae a la
+  nominal), `test_pes_mechanics` (velocidad máxima del receptor); herramienta `tools/drag_back_view.tscn`.
+- **Partidos**: la pelota encajada a la altura de la cadera entre dos rivales trababa un partido de 5 min (169 s); ahora
+  se saca de lado (`RESTING_BALL_MIN_Y`, `_body_partner`). `MatchManager` cuenta la pelota muerta
+  (`ball_stall_seconds`) solo con la pelota en juego (tras un gol la pelota quieta en la red sumaba hasta 3 s).
+- Verificación (ejecutada): suite headless **187 pruebas / 1003 comprobaciones / 0 fallos** (15 omitidas: necesitan
+  render). Con render (xvfb): `drag_back` 4/4, `live_feet` 7/7, `dribble_reference` 2/2, `live_kicks` 4/4 (batería de 50
+  acciones: 49 con contacto, antes 44), `pack_motion` 2/2, `gameplay_feel` **10/10** (antes 8/10), `dribbling` 7/7,
+  `kick_reach` 2/2, `kick_timing` 3/3, `animation_contact_audit` 1/1, `shot_keeper` 1/1. Partidos de 3/5/7/10 min:
+  pelota quieta como mucho 0.8–1.3 s, 113 pases y 39 tiros en 10 min; 13 partidos de 5 min con semillas distintas:
+  0.7–3.2 s. Conducción (pelota delante p5/media/p95, antes → ahora): carrera 0.54/0.57/0.63 → 0.48/0.72/0.82 m, trote
+  0.40/0.48/0.51 → 0.27/0.42/0.50 m. Vuelta atrás vista en imágenes renderizadas (`tools/drag_back_view.tscn`).
+- Archivos (además): `scripts/gameplay/match_manager.gd`.
+- Pendiente: el límite de 22.5° del rumbo del toque de FTS, el control orientado y la vuelta pisando a sprint (hoy, la
+  media vuelta por el costado).
+
 ## 2026-10-28 — Red de tela, cámara de transmisión como PES e inclinación del tronco (videos `videoplayback` y `referencia_conduccion`)
 
 Detalle: [PITCH](SYSTEMS/PITCH.md#red-de-tela-2026-10-28) · [CAMERA](SYSTEMS/CAMERA.md#encuadre-de-transmisión-como-pes-2026-10-28) ·
@@ -20,7 +60,7 @@ Detalle: [PITCH](SYSTEMS/PITCH.md#red-de-tela-2026-10-28) · [CAMERA](SYSTEMS/CA
 - **Red de tela** (`GoalNet`, nuevo): cuatro paños atados al marco que la pelota abomba (hasta ~0.6 m con un tiro de
   25–30 m/s), la tela la frena y casi no la devuelve (8–11 % de la velocidad), y vuelve con ondas; por fuera la red
   lateral se hunde y el techo sostiene la pelota. Sustituye la red rígida (88 % de la velocidad perdida de golpe al tocar
-  una caja y amortiguación en todo el volumen del arco). `BallTuning.net_damping`/`net_restitution` → `net_stiffness`,
+  una caja y amortiguación en todo el volumen del arco). BallTuning.net_damping/net_restitution (eliminados) → `net_stiffness`,
   `net_damp_in`, `net_damp_out`, `net_return`, `net_grip`, `net_max_bulge`. Gol: la pelota entera bajo el travesaño.
 - **Cámara de transmisión** como la del video de PES: 30° de inclinación, lente de 28°, 30–38 m (antes 52°, 42°,
   16–27 m).

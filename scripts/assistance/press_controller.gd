@@ -131,9 +131,7 @@ static func _project(vel: Vector3, t: float, decelerates: bool) -> Vector3:
 	var speed: float = vel.length()
 	if speed < 0.01:
 		return Vector3.ZERO
-	var decel: float = 1.1
-	var t_eff: float = minf(t, speed / decel)
-	return vel.normalized() * (speed * t_eff - 0.5 * decel * t_eff * t_eff)
+	return vel.normalized() * Ball.roll_distance(speed, t)
 
 static func defender_pitch_clamp(ctx: MatchContext, p: Vector3) -> Vector3:
 	if ctx.pitch == null:

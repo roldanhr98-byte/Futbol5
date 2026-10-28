@@ -109,14 +109,25 @@ static func weak_foot_power_mult(f: Footballer) -> float:
 	return lerpf(0.84, 0.98, f.attributes.norm("weak_foot"))
 
 ## Velocidad inicial (m/s) para recorrer d metros por el suelo y llegar con "arrival" m/s.
-## Modelo exacto de la pelota: desaceleracion = rodadura + k v^2 (arrastre cuadratico), donde
-## k = 0.5 rho Cd A / m. Integrando v dv / (a + k v^2) se obtiene v0^2 = ((a + k va^2) e^(2kd) - a) / k.
+## Modelo de la pelota: desaceleracion = rodadura (Ball.roll_decel: constante + proporcional a v hasta un tope) + k v^2
+## (arrastre del aire, con k = 0.5 rho Cd A / m y la escala efectiva medida de BallPredictor). Se integra
+## v dv/dx = -(rodadura + k v^2) hacia atras desde la llegada (RK4).
 static func ground_speed_for_distance(d: float, arrival: float) -> float:
 	var bt: BallTuning = Tuning.ball
-	var k: float = 0.5 * bt.air_density * bt.drag_coefficient * PI * bt.radius * bt.radius / bt.mass
-	var a: float = bt.rolling_decel
-	var v0_sq: float = ((a + k * arrival * arrival) * exp(2.0 * k * maxf(d, 0.0)) - a) / k
-	return sqrt(maxf(v0_sq, arrival * arrival))
+	var k: float = BallPredictor.DRAG_SCALE * 0.5 * bt.air_density * bt.drag_coefficient * PI * bt.radius * bt.radius / bt.mass
+	var v: float = maxf(arrival, 0.3)
+	var n: int = 40
+	var h: float = maxf(d, 0.0) / float(n)
+	for i in n:
+		var k1: float = (Ball.roll_decel(v) + k * v * v) / v
+		var v2: float = v + 0.5 * h * k1
+		var k2: float = (Ball.roll_decel(v2) + k * v2 * v2) / v2
+		var v3: float = v + 0.5 * h * k2
+		var k3: float = (Ball.roll_decel(v3) + k * v3 * v3) / v3
+		var v4: float = v + h * k3
+		var k4: float = (Ball.roll_decel(v4) + k * v4 * v4) / v4
+		v += h * (k1 + 2.0 * k2 + 2.0 * k3 + k4) / 6.0
+	return maxf(v, arrival)
 
 ## Velocidad de lanzamiento para un pase elevado que cubre d metros con el angulo dado (grados).
 static func lob_speed_for_distance(d: float, angle_deg: float) -> float:

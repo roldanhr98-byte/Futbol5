@@ -27,30 +27,30 @@
 <!-- AUTO:params:MatchManager -->
 | Parámetro | Defecto | Rango / tipo | Definido en | Dónde se usa (accesos reales) | Descripción |
 |---|---|---|---|---|---|
-| `duration_seconds` | `300.0` | float | `scripts/gameplay/match_manager.gd:23` | `scripts/ui/hud.gd:219`, `scripts/gameplay/match_manager.gd:151`, `scripts/gameplay/match_scene.gd:92` | Duracion en segundos (0 = sin limite, util en el laboratorio). |
-| `goal_celebration_seconds` | `3.0` | float | `scripts/gameplay/match_manager.gd:24` | `scripts/gameplay/match_manager.gd:158`, `scripts/gameplay/match_manager.gd:287`, `scripts/gameplay/match_manager.gd:291` |  |
-| `replay_after_seconds` | `1.3` | float | `scripts/gameplay/match_manager.gd:26` | `scripts/gameplay/match_manager.gd:158` | Segundos de festejo en vivo antes de la repeticion del gol (0 o menos = sin repeticion). |
+| `duration_seconds` | `300.0` | float | `scripts/gameplay/match_manager.gd:23` | `scripts/ui/hud.gd:219`, `scripts/gameplay/match_manager.gd:155`, `scripts/gameplay/match_scene.gd:92` | Duracion en segundos (0 = sin limite, util en el laboratorio). |
+| `goal_celebration_seconds` | `3.0` | float | `scripts/gameplay/match_manager.gd:24` | `scripts/gameplay/match_manager.gd:162`, `scripts/gameplay/match_manager.gd:291`, `scripts/gameplay/match_manager.gd:295` |  |
+| `replay_after_seconds` | `1.3` | float | `scripts/gameplay/match_manager.gd:26` | `scripts/gameplay/match_manager.gd:162` | Segundos de festejo en vivo antes de la repeticion del gol (0 o menos = sin repeticion). |
 | `replay_active` | `false` | bool | `scripts/gameplay/match_manager.gd:28` | `scripts/gameplay/match_manager.gd:89`, `scripts/gameplay/match_scene.gd:238`, `scripts/gameplay/match_scene.gd:242` | true mientras se ve la repeticion (la pausa del juego no se puede abrir encima). |
-| `_replay_done` | `false` | bool | `scripts/gameplay/match_manager.gd:29` | `scripts/gameplay/match_manager.gd:158`, `scripts/gameplay/match_manager.gd:159`, `scripts/gameplay/match_manager.gd:285` |  |
+| `_replay_done` | `false` | bool | `scripts/gameplay/match_manager.gd:29` | `scripts/gameplay/match_manager.gd:162`, `scripts/gameplay/match_manager.gd:163`, `scripts/gameplay/match_manager.gd:289` |  |
 | `pre_kickoff_seconds` | `1.2` | float | `scripts/gameplay/match_manager.gd:30` | `scripts/gameplay/match_manager.gd:111` |  |
 | `intro_seconds` | `0.0` | float | `scripts/gameplay/match_manager.gd:32` | `scripts/gameplay/match_manager.gd:110`, `scripts/gameplay/match_manager.gd:111`, `scripts/gameplay/match_scene.gd:94` | Presentacion antes del primer saque (calentamiento y arbitro). 0 = sin presentacion. |
-| `assist_window_seconds` | `6.0` | float | `scripts/gameplay/match_manager.gd:34` | `scripts/gameplay/match_manager.gd:281` | Ventana para considerar asistencia el pase previo al gol. |
-| `ctx` | `—` | MatchContext | `scripts/gameplay/match_manager.gd:36` | `scripts/gameplay/match_manager.gd:61`, `scripts/gameplay/match_manager.gd:62`, `scripts/gameplay/match_manager.gd:63`, `scripts/gameplay/match_manager.gd:64` (+37) |  |
-| `state` | `State.PRE_KICKOFF` | State | `scripts/gameplay/match_manager.gd:37` | `scripts/ui/hud.gd:241`, `scripts/gameplay/match_manager.gd:79`, `scripts/gameplay/match_manager.gd:91`, `scripts/gameplay/match_manager.gd:94` (+9) |  |
-| `score` | `[0, 0]` | Array[int] | `scripts/gameplay/match_manager.gd:38` | `scripts/ui/hud.gd:78`, `scripts/gameplay/match_manager.gd:68`, `scripts/gameplay/match_manager.gd:154`, `scripts/gameplay/match_manager.gd:155` (+4) |  |
+| `assist_window_seconds` | `6.0` | float | `scripts/gameplay/match_manager.gd:34` | `scripts/gameplay/match_manager.gd:285` | Ventana para considerar asistencia el pase previo al gol. |
+| `ctx` | `—` | MatchContext | `scripts/gameplay/match_manager.gd:36` | `scripts/gameplay/match_manager.gd:61`, `scripts/gameplay/match_manager.gd:62`, `scripts/gameplay/match_manager.gd:63`, `scripts/gameplay/match_manager.gd:64` (+38) |  |
+| `state` | `State.PRE_KICKOFF` | State | `scripts/gameplay/match_manager.gd:37` | `scripts/ui/hud.gd:241`, `scripts/gameplay/match_manager.gd:79`, `scripts/gameplay/match_manager.gd:91`, `scripts/gameplay/match_manager.gd:94` (+10) |  |
+| `score` | `[0, 0]` | Array[int] | `scripts/gameplay/match_manager.gd:38` | `scripts/ui/hud.gd:78`, `scripts/gameplay/match_manager.gd:68`, `scripts/gameplay/match_manager.gd:158`, `scripts/gameplay/match_manager.gd:159` (+4) |  |
 | `kickoff_team` | `0` | int | `scripts/gameplay/match_manager.gd:39` | `scripts/gameplay/match_manager.gd:71`, `scripts/gameplay/match_manager.gd:81`, `scripts/gameplay/match_manager.gd:103` |  |
-| `_state_timer` | `0.0` | float | `scripts/gameplay/match_manager.gd:41` | `scripts/gameplay/match_manager.gd:111`, `scripts/gameplay/match_manager.gd:114`, `scripts/gameplay/match_manager.gd:115`, `scripts/gameplay/match_manager.gd:124` (+11) |  |
-| `active_set_piece` | `null` | SetPiece | `scripts/gameplay/match_manager.gd:44` | `scripts/gameplay/match_manager.gd:106`, `scripts/gameplay/match_manager.gd:136`, `scripts/gameplay/match_manager.gd:137`, `scripts/gameplay/match_manager.gd:141` (+6) | Balon parado en curso (lo crea la escena) o arquero que hace el saque de arco. El juego se reanuda cuando el saque se ejecuta de verdad (la pelota sale del pie o de las manos del ejecutor). |
-| `goal_kick_keeper` | `null` | Node | `scripts/gameplay/match_manager.gd:45` | `scripts/gameplay/match_manager.gd:107`, `scripts/gameplay/match_manager.gd:227`, `scripts/gameplay/match_manager.gd:243`, `scripts/gameplay/match_manager.gd:244` (+2) |  |
-| `set_piece_kind` | `""` | String | `scripts/gameplay/match_manager.gd:46` | `scripts/gameplay/match_manager.gd:223`, `scripts/gameplay/match_manager.gd:253` |  |
-| `set_piece_team` | `-1` | int | `scripts/gameplay/match_manager.gd:47` | `scripts/gameplay/match_manager.gd:224` |  |
-| `training` | `false` | bool | `scripts/gameplay/match_manager.gd:50` | `scripts/gameplay/match_manager.gd:162`, `scripts/gameplay/match_manager.gd:221`, `scripts/gameplay/match_scene.gd:93` | Entrenamiento (sin rivales de campo): los saques siempre los hace el equipo de la persona, salvo el saque de arco del arquero rival; tras un gol vuelve a sacar el equipo de la persona. |
-| `set_piece_pos` | `Vector3.ZERO` | Vector3 | `scripts/gameplay/match_manager.gd:51` | `scripts/gameplay/match_manager.gd:225` |  |
-| `set_piece_setup_seconds` | `0.9` | float | `scripts/gameplay/match_manager.gd:53` | `scripts/gameplay/match_manager.gd:232` | Segundos de pelota muerta antes de habilitar al ejecutor (la escena coloca a los jugadores). |
-| `stats` | `{"throw_in": 0, "corner": 0, "goal_kick": 0, "free_kick": 0, "penalty": 0}` |  | `scripts/gameplay/match_manager.gd:56` | `scripts/gameplay/match_manager.gd:140`, `scripts/gameplay/match_manager.gd:228` |  |
+| `_state_timer` | `0.0` | float | `scripts/gameplay/match_manager.gd:41` | `scripts/gameplay/match_manager.gd:111`, `scripts/gameplay/match_manager.gd:114`, `scripts/gameplay/match_manager.gd:115`, `scripts/gameplay/match_manager.gd:128` (+11) |  |
+| `active_set_piece` | `null` | SetPiece | `scripts/gameplay/match_manager.gd:44` | `scripts/gameplay/match_manager.gd:106`, `scripts/gameplay/match_manager.gd:140`, `scripts/gameplay/match_manager.gd:141`, `scripts/gameplay/match_manager.gd:145` (+6) | Balon parado en curso (lo crea la escena) o arquero que hace el saque de arco. El juego se reanuda cuando el saque se ejecuta de verdad (la pelota sale del pie o de las manos del ejecutor). |
+| `goal_kick_keeper` | `null` | Node | `scripts/gameplay/match_manager.gd:45` | `scripts/gameplay/match_manager.gd:107`, `scripts/gameplay/match_manager.gd:231`, `scripts/gameplay/match_manager.gd:247`, `scripts/gameplay/match_manager.gd:248` (+2) |  |
+| `set_piece_kind` | `""` | String | `scripts/gameplay/match_manager.gd:46` | `scripts/gameplay/match_manager.gd:227`, `scripts/gameplay/match_manager.gd:257` |  |
+| `set_piece_team` | `-1` | int | `scripts/gameplay/match_manager.gd:47` | `scripts/gameplay/match_manager.gd:228` |  |
+| `training` | `false` | bool | `scripts/gameplay/match_manager.gd:50` | `scripts/gameplay/match_manager.gd:166`, `scripts/gameplay/match_manager.gd:225`, `scripts/gameplay/match_scene.gd:93` | Entrenamiento (sin rivales de campo): los saques siempre los hace el equipo de la persona, salvo el saque de arco del arquero rival; tras un gol vuelve a sacar el equipo de la persona. |
+| `set_piece_pos` | `Vector3.ZERO` | Vector3 | `scripts/gameplay/match_manager.gd:51` | `scripts/gameplay/match_manager.gd:229` |  |
+| `set_piece_setup_seconds` | `0.9` | float | `scripts/gameplay/match_manager.gd:53` | `scripts/gameplay/match_manager.gd:236` | Segundos de pelota muerta antes de habilitar al ejecutor (la escena coloca a los jugadores). |
+| `stats` | `{"throw_in": 0, "corner": 0, "goal_kick": 0, "free_kick": 0, "penalty": 0}` |  | `scripts/gameplay/match_manager.gd:56` | `scripts/gameplay/match_manager.gd:144`, `scripts/gameplay/match_manager.gd:232` |  |
 | `_state_before_pause` | `State.PLAYING` | State | `scripts/gameplay/match_manager.gd:57` | `scripts/gameplay/match_manager.gd:80`, `scripts/gameplay/match_manager.gd:93`, `scripts/gameplay/match_manager.gd:95` |  |
-| `_last_touch_time_by_actor` | `{}` | Dictionary | `scripts/gameplay/match_manager.gd:58` | `scripts/gameplay/match_manager.gd:263`, `scripts/gameplay/match_manager.gd:281` |  |
-| `_last_scoring_team` | `0` | int | `scripts/gameplay/match_manager.gd:166` | `scripts/gameplay/match_manager.gd:162`, `scripts/gameplay/match_manager.gd:284` |  |
+| `_last_touch_time_by_actor` | `{}` | Dictionary | `scripts/gameplay/match_manager.gd:58` | `scripts/gameplay/match_manager.gd:267`, `scripts/gameplay/match_manager.gd:285` |  |
+| `_last_scoring_team` | `0` | int | `scripts/gameplay/match_manager.gd:170` | `scripts/gameplay/match_manager.gd:166`, `scripts/gameplay/match_manager.gd:288` |  |
 <!-- /AUTO -->
 
 <!-- AUTO:params:MatchScene -->
@@ -115,17 +115,17 @@
 | `MatchManager.is_playing()` | 99 |  |
 | `MatchManager._begin_kickoff(team: int, intro: bool = false)` | 102 |  |
 | `MatchManager._physics_process(delta: float)` | 117 |  |
-| `MatchManager._check_out_of_play()` | 173 | Con bandas (OUT_OF_BOUNDS): la pelota que cruza COMPLETAMENTE una linea queda fuera. Banda -> saque de banda para el rival del ultimo que la |
-| `MatchManager._on_event(e: GameEvent)` | 200 | Falta: tiro libre para el equipo del jugador derribado, o penal si fue dentro del area del equipo infractor. |
-| `MatchManager.in_penalty_area(p: Vector3, goal_x: float, cfg: PitchConfig)` | 214 | Area de penal de futsal: a menos de penalty_area_radius de la linea entre postes, del lado de la cancha. |
-| `MatchManager._begin_set_piece(kind: String, team: int, pos: Vector3)` | 220 |  |
-| `MatchManager._set_piece_taken()` | 240 |  |
-| `MatchManager._end_set_piece()` | 248 |  |
-| `MatchManager.is_set_piece()` | 257 |  |
-| `MatchManager._on_ball_touched(actor: Node)` | 260 |  |
-| `MatchManager._on_goal(goal: Goal, _ball_pos: Vector3)` | 265 |  |
-| `MatchManager._set_state(s: State)` | 295 |  |
-| `MatchManager.format_clock(seconds: float)` | 299 |  |
+| `MatchManager._check_out_of_play()` | 177 | Con bandas (OUT_OF_BOUNDS): la pelota que cruza COMPLETAMENTE una linea queda fuera. Banda -> saque de banda para el rival del ultimo que la |
+| `MatchManager._on_event(e: GameEvent)` | 204 | Falta: tiro libre para el equipo del jugador derribado, o penal si fue dentro del area del equipo infractor. |
+| `MatchManager.in_penalty_area(p: Vector3, goal_x: float, cfg: PitchConfig)` | 218 | Area de penal de futsal: a menos de penalty_area_radius de la linea entre postes, del lado de la cancha. |
+| `MatchManager._begin_set_piece(kind: String, team: int, pos: Vector3)` | 224 |  |
+| `MatchManager._set_piece_taken()` | 244 |  |
+| `MatchManager._end_set_piece()` | 252 |  |
+| `MatchManager.is_set_piece()` | 261 |  |
+| `MatchManager._on_ball_touched(actor: Node)` | 264 |  |
+| `MatchManager._on_goal(goal: Goal, _ball_pos: Vector3)` | 269 |  |
+| `MatchManager._set_state(s: State)` | 299 |  |
+| `MatchManager.format_clock(seconds: float)` | 303 |  |
 <!-- /AUTO -->
 
 <!-- AUTO:signals:scripts/gameplay/match_manager.gd -->
