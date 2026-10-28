@@ -11,6 +11,62 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-10-28 — Tiros dirigidos al arco (PES/FIFA), efecto natural de cada golpeo, flotado y giro visible del balón
+
+Detalle: [ASSISTANCE](SYSTEMS/ASSISTANCE.md#tiros-dirigidos-al-arco-efecto-natural-del-golpeo-y-arquero-2026-10-28) ·
+[BALL](SYSTEMS/BALL.md#efecto-natural-flotado-y-giro-dibujado-2026-10-28).
+
+- **Tiro asistido rehecho** (`ShotAssist.compute`): el punto de mira está siempre dentro del arco; el joystick elige el
+  punto (donde cruza la línea de gol; fuera del arco, el palo de ese lado) a `ShotAssist.aim_edge` del ancho útil
+  (0.85–1.0 según precisión y definición); sin lado pedido, lejos del arquero (colocado: palo lejano). Con asistencia
+  ≥ `ASSIST_FULL` 0.4 la dirección va del todo al punto; 0 = manual. La calidad la decide la ejecución: carga,
+  equilibrio, desalineación del cuerpo, velocidad, presión rival (`SHOT_PRESSURE_ERROR`, ×1.8 con un rival encima),
+  pierna débil, compostura y definición.
+- **Efecto natural del golpeo**: empeine con rosca hacia el lado del pie (8–16 rad/s según cuánto cruza el tiro por
+  delante del cuerpo), colocado con 26 rad/s, ambos con la salida abierta para cerrar en el punto de mira cuando van por
+  el aire; potente casi sin giro con **flotado** (`KickResult.knuckle_*`, `Ball.set_knuckle`: aceleración lateral
+  oscilante en el aire, 0.1–0.3 m en 18 m); vaselina con contragiro 20 rad/s. `KickModel.kicks_with_right`: con la
+  pelota justo delante golpea el pie bueno (antes el ruido numérico podía elegir la pierna débil).
+- **Giro dibujado** (`Ball._process`, `ball.gdshader`): el patrón se repite cada ~63° y a 6 m/s el giro real de 55° por
+  imagen hacía que la pelota se viera quieta (a 10 m/s, al revés). Ahora la malla gira con el eje real hasta 20° por
+  imagen y el shader desenfoca el patrón a lo largo del giro real de medio fotograma (obturador). Herramienta de revisión
+  `tools/ball_spin_view.tscn`.
+- Archivos: `scripts/assistance/shot_assist.gd`, `scripts/assistance/kick_model.gd`, `scripts/ball/ball.gd`,
+  `assets/ball/ball.gdshader`, `scripts/player/ball_handler.gd`; pruebas `tests/test_shot_keeper.gd` (nueva),
+  `tests/test_ball_curl.gd` (efecto natural por tipo de tiro, giro dibujado), `tests/test_shooting.gd` (la prueba de
+  «la asistencia se desvanece apuntando fuera» se sustituye por «el tiro asistido siempre va al arco y el joystick elige
+  el lado»).
+- Verificación (ejecutada): suite headless 180 pruebas / 928 comprobaciones / 0 fallos (15 omitidas: necesitan render).
+  Con render: `shot_keeper` 1/1 (40 tiros físicos por caso: al arquero ataja 89 %, al palo hacia el que rosca el empeine
+  79 %, al palo del que la aleja 41 %, con rival encima 100 % y 0 goles, potente de 18 m 70 % con 9 goles por el
+  flotado; el tirador de 85 marca 8 frente a 6 del de 60 en el palo difícil), `ball_curl` 4/4, `live_kicks` 4/4,
+  `kick_reach` 2/2. Revisión visual de imágenes consecutivas del balón (pase lento, pase rápido, chanfle, potente).
+- Pendiente: el arquero no lee el efecto (`BallPredictor` sin Magnus; replanifica cada 0.08 s); al palo del que el
+  empeine la aleja entra la mitad de los tiros de 11 m sin oposición (similar a un doble penal de futsal).
+
+## 2026-10-28 — Conducción con toques de clip, curvas a velocidad e IK del pie
+
+Detalle: [PLAYER](SYSTEMS/PLAYER.md#toques-de-clip-conducción-con-animación-de-toque-e-ik-del-pie-2026-10-28-quinta-ronda) ·
+[DRIBBLE_DIAGNOSIS](DRIBBLE_DIAGNOSIS.md#sexta-ronda-2026-10-28-toques-de-clip-curvas-a-velocidad-e-ik-del-pie).
+
+- Toques de conducción con animación (0 créditos): 33 clips de toque por balanceo (`TouchClipBuilder`,
+  `assets/animations/touch_clips.res`), disparo en fase con el ciclo de marcha, plan sobre la punta medida y el cuerpo
+  previsto, contacto por evento con el pie vivo, IK del pie en tiempo real (`TouchFootIK`), impulso con llegada a
+  velocidad relativa ~0. Arrancada con los toques largos de siempre; giros de más de 50° con la conducción de giro.
+- Curvas a velocidad: el cuerpo no se adelanta más de 8° al rumbo de la pelota hasta el siguiente toque (antes giraba
+  hasta 360°/s y la dejaba a 0.8 m al costado). Pelota al costado p95: arco 0.64 → 0.09 m, cambio de carril 0.76 →
+  0.13 m, eslalon 0.49 → 0.33 m (carrera) y 0.74 → 0.38 m (sprint).
+- Archivos: `scripts/player/ball_handler.gd`, `scripts/animation/touch_foot_ik.gd` (nuevo),
+  `scripts/player/footballer_visual.gd`, `scripts/player/footballer.gd`, `tools/animation_pack/*touch*`; pruebas
+  `test_dribble_reference` (casos de ritmo, arrancada, curvas, varias semillas) y `test_live_feet` (zigzag en 4 pasadas,
+  arrancada hasta 0.75 m, justificado en la prueba).
+- Verificación (ejecutada, versión final): suite headless 180 / 928 / 0 fallos; con render `live_feet` 7/7,
+  `live_kicks` 4/4, `pack_motion` 2/2, `kick_reach` 2/2, `dribbling` 7/7, `kick_timing` 3/3,
+  `animation_contact_audit` 1/1, `dribble_reference` 2/2; `gameplay_feel` 8/10: fallan «recibir corriendo sin frenar»
+  (mínimo 0.65 m/s, se pide > 1.1) y «a sprint el toque es más largo» (0.64 frente a 0.50 m, se piden +0.25), que ya
+  fallaban en el commit anterior a esta ronda.
+- Pendiente: zigzag cerrado sin animación de toque (conducción de giro); las dos pruebas de sensación de arriba.
+
 ## 2026-10-28 — Acceso a Tripo3D y fuentes de animación de conducción (sin gasto)
 
 - Comprobado: sin conector/MCP de Tripo; la API oficial responde desde el entorno (401 sin clave); la sesión no tiene clave

@@ -61,73 +61,73 @@
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.apply_tuning",
-          "line": 110,
+          "line": 121,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball._integrate_forces",
-          "line": 278,
+          "line": 338,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.kick",
-          "line": 135,
-          "kind": "func"
-        },
-        {
-          "file": "scripts/ball/ball.gd",
-          "name": "Ball.push",
-          "line": 150,
-          "kind": "func"
-        },
-        {
-          "file": "scripts/ball/ball.gd",
-          "name": "Ball.rolling_spin",
           "line": 146,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
+          "name": "Ball.push",
+          "line": 171,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/ball/ball.gd",
+          "name": "Ball.rolling_spin",
+          "line": 167,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/ball/ball.gd",
           "name": "Ball.reset_at",
-          "line": 169,
+          "line": 190,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.hold",
-          "line": 180,
+          "line": 202,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.release",
-          "line": 189,
+          "line": 212,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.register_touch",
-          "line": 155,
+          "line": 176,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.enter_net",
-          "line": 210,
+          "line": 233,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.exit_net",
-          "line": 214,
+          "line": 237,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball._on_body_entered",
-          "line": 345,
+          "line": 416,
           "kind": "func"
         },
         {
@@ -299,13 +299,13 @@
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.capture_state",
-          "line": 219,
+          "line": 242,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.apply_state",
-          "line": 232,
+          "line": 255,
           "kind": "func"
         }
       ],
@@ -922,49 +922,49 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.update",
-          "line": 269,
+          "line": 272,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._try_dribble_touch",
-          "line": 1584,
+          "line": 1628,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._try_first_touch",
-          "line": 2045,
+          "line": 2104,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.attempt_tackle",
-          "line": 2105,
+          "line": 2164,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.has_possession",
-          "line": 165,
+          "line": 168,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.controls_ball",
-          "line": 240,
+          "line": 243,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.can_reach",
-          "line": 244,
+          "line": 247,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.touch_reach",
-          "line": 254,
+          "line": 257,
           "kind": "func"
         }
       ],
@@ -1102,49 +1102,49 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._update_buttons",
-          "line": 319,
+          "line": 322,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._try_execute_pending",
-          "line": 392,
+          "line": 395,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.contact_delay",
-          "line": 413,
+          "line": 416,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.request_kick",
-          "line": 417,
+          "line": 420,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._finish_kick",
-          "line": 754,
+          "line": 757,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.perform_pass",
-          "line": 811,
+          "line": 814,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.perform_shot",
-          "line": 827,
+          "line": 830,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._after_kick",
-          "line": 844,
+          "line": 849,
           "kind": "func"
         }
       ],
@@ -1280,7 +1280,7 @@
     {
       "id": "assist.shot",
       "system": "ASSISTANCE",
-      "description": "Tiro asistido: corrección moderada hacia el arco que se desvanece si se apunta fuera; potencia por carga, altura por trayectoria y error por atributos.",
+      "description": "Tiro asistido estilo PES/FIFA: siempre al arco; el joystick elige el punto (palo, lejos del arquero) dentro del ancho util segun la calidad del tirador; la ejecucion (carga, equilibrio, orientacion, velocidad, presion rival, pierna, atributos) decide el error; giro natural de cada golpeo (rosca hacia el lado del pie, colocado, potente con flotado, vaselina con contragiro).",
       "keywords": [
         "tiro",
         "tirar",
@@ -1298,19 +1298,53 @@
         "primer palo",
         "segundo palo",
         "cruzado",
-        "gol"
+        "gol",
+        "tiro dirigido",
+        "tiro al arco",
+        "colocado",
+        "tiro colocado",
+        "potente",
+        "tiro potente",
+        "presion",
+        "presión",
+        "pierna debil",
+        "pierna débil",
+        "golazo",
+        "al palo",
+        "shot aim",
+        "finesse"
       ],
       "files": [
         "scripts/assistance/shot_assist.gd",
         "scripts/assistance/kick_model.gd",
         "scripts/assistance/assist_tuning.gd",
-        "scripts/ball/ball_tuning.gd"
+        "scripts/ball/ball_tuning.gd",
+        "tests/test_shooting.gd",
+        "tests/test_shot_keeper.gd"
       ],
       "symbols": [
         {
           "file": "scripts/assistance/shot_assist.gd",
           "name": "ShotAssist.compute",
-          "line": 13,
+          "line": 47,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/assistance/shot_assist.gd",
+          "name": "ShotAssist.aim_edge",
+          "line": 225,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/assistance/shot_assist.gd",
+          "name": "ShotAssist._stick_lateral",
+          "line": 231,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/assistance/kick_model.gd",
+          "name": "KickModel.kicks_with_right",
+          "line": 94,
           "kind": "func"
         }
       ],
@@ -1526,55 +1560,55 @@
         {
           "file": "scripts/assistance/kick_model.gd",
           "name": "KickModel.balance_state",
-          "line": 74,
+          "line": 78,
           "kind": "func"
         },
         {
           "file": "scripts/assistance/kick_model.gd",
           "name": "KickModel.misalignment",
-          "line": 85,
-          "kind": "func"
-        },
-        {
-          "file": "scripts/assistance/kick_model.gd",
-          "name": "KickModel.is_weak_foot",
           "line": 89,
           "kind": "func"
         },
         {
           "file": "scripts/assistance/kick_model.gd",
+          "name": "KickModel.is_weak_foot",
+          "line": 101,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/assistance/kick_model.gd",
           "name": "KickModel.weak_foot_error_mult",
-          "line": 96,
-          "kind": "func"
-        },
-        {
-          "file": "scripts/assistance/kick_model.gd",
-          "name": "KickModel.weak_foot_power_mult",
-          "line": 99,
-          "kind": "func"
-        },
-        {
-          "file": "scripts/assistance/kick_model.gd",
-          "name": "KickModel.ground_speed_for_distance",
           "line": 105,
           "kind": "func"
         },
         {
           "file": "scripts/assistance/kick_model.gd",
+          "name": "KickModel.weak_foot_power_mult",
+          "line": 108,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/assistance/kick_model.gd",
+          "name": "KickModel.ground_speed_for_distance",
+          "line": 114,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/assistance/kick_model.gd",
           "name": "KickModel.lob_speed_for_distance",
-          "line": 113,
+          "line": 122,
           "kind": "func"
         },
         {
           "file": "scripts/assistance/kick_model.gd",
           "name": "KickModel.rotate_toward",
-          "line": 46,
+          "line": 50,
           "kind": "func"
         },
         {
           "file": "scripts/assistance/kick_model.gd",
           "name": "KickModel.gaussian_clipped",
-          "line": 51,
+          "line": 55,
           "kind": "func"
         }
       ],
@@ -3365,43 +3399,43 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.plan_clip_kick",
-          "line": 660,
+          "line": 663,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.contact_samples",
-          "line": 588,
+          "line": 591,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.foot_contact_world",
-          "line": 446,
+          "line": 449,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.predicted_foot_to_ball",
-          "line": 576,
+          "line": 579,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.clip_timing",
-          "line": 458,
+          "line": 461,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.uses_clip_kicks",
-          "line": 440,
+          "line": 443,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._finish_clip_kick",
-          "line": 721,
+          "line": 724,
           "kind": "func"
         }
       ],
@@ -3496,13 +3530,17 @@
         "manos",
         "guantes",
         "dive",
-        "save"
+        "save",
+        "atajar tiros",
+        "porcentaje de atajadas",
+        "buen arquero"
       ],
       "files": [
         "scripts/goalkeeper/goalkeeper.gd",
         "scripts/goalkeeper/keeper_planner.gd",
         "scripts/goalkeeper/keeper_tuning.gd",
-        "scripts/gameplay/match_context.gd"
+        "scripts/gameplay/match_context.gd",
+        "tests/test_shot_keeper.gd"
       ],
       "symbols": [
         {
@@ -4012,7 +4050,7 @@
     {
       "id": "ball.curl",
       "system": "BALL",
-      "description": "Efecto (chanfle / comba): giro lateral que curva la pelota con el Magnus real; se pide girando el joystick entre pulsar y soltar TIRO o CENTRO. La salida se abre y la curva la cierra.",
+      "description": "Efecto de la pelota: giro lateral que curva con el Magnus real. Pedido (chanfle girando el joystick entre pulsar y soltar TIRO o CENTRO) o natural de cada golpeo (rosca hacia el lado del pie, colocado con mas rosca, potente casi sin giro con flotado, vaselina con contragiro). La salida se abre y la curva la cierra.",
       "keywords": [
         "chanfle",
         "comba",
@@ -4022,30 +4060,48 @@
         "curl",
         "magnus",
         "tiro con efecto",
-        "tiro libre con efecto"
+        "tiro libre con efecto",
+        "efecto natural",
+        "flotado",
+        "knuckle",
+        "tiro sin giro",
+        "contragiro",
+        "backspin",
+        "vaselina",
+        "giro del balon",
+        "giro del balón",
+        "la pelota gira"
       ],
       "files": [
         "scripts/assistance/kick_model.gd",
         "scripts/assistance/shot_assist.gd",
-        "scripts/player/ball_handler.gd"
+        "scripts/player/ball_handler.gd",
+        "scripts/ball/ball.gd",
+        "tests/test_ball_curl.gd"
       ],
       "symbols": [
         {
           "file": "scripts/assistance/kick_model.gd",
           "name": "KickModel.curl_spin",
-          "line": 57,
+          "line": 61,
           "kind": "func"
         },
         {
           "file": "scripts/assistance/kick_model.gd",
           "name": "KickModel.curl_preaim_deg",
-          "line": 69,
+          "line": 73,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.curl_from",
-          "line": 375,
+          "line": 378,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/ball/ball.gd",
+          "name": "Ball.set_knuckle",
+          "line": 158,
           "kind": "func"
         }
       ],
@@ -4053,6 +4109,58 @@
       "dependencies": [
         "BALL",
         "ASSISTANCE"
+      ],
+      "documentation": "docs/technical-index/SYSTEMS/BALL.md",
+      "last_verified": "2026-10-28"
+    },
+    {
+      "id": "ball.visual_spin",
+      "system": "BALL",
+      "description": "Giro dibujado del balon: la malla sigue el eje y el sentido del giro real con un maximo de 20 grados por imagen (sin efecto rueda de carro del patron) y el shader desenfoca el patron a lo largo del giro real de medio fotograma (obturador), como en la television. Solo presentacion.",
+      "keywords": [
+        "giro visible",
+        "balon girando",
+        "balón girando",
+        "rotacion del balon",
+        "rotación del balón",
+        "rueda de carro",
+        "desenfoque de movimiento",
+        "motion blur",
+        "se ve quieto",
+        "gira al reves",
+        "gira al revés",
+        "ball spin visual"
+      ],
+      "files": [
+        "scripts/ball/ball.gd",
+        "assets/ball/ball.gdshader",
+        "tests/test_ball_curl.gd",
+        "tools/ball_spin_view.gd",
+        "tools/ball_spin_view.tscn"
+      ],
+      "symbols": [
+        {
+          "file": "scripts/ball/ball.gd",
+          "name": "Ball._process",
+          "line": 274,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/ball/ball.gd",
+          "name": "Ball.VISUAL_SPIN_DEG_PER_FRAME",
+          "line": 265,
+          "kind": "const"
+        },
+        {
+          "file": "scripts/ball/ball.gd",
+          "name": "Ball.VISUAL_SHUTTER",
+          "line": 268,
+          "kind": "const"
+        }
+      ],
+      "parameters": [],
+      "dependencies": [
+        "BALL"
       ],
       "documentation": "docs/technical-index/SYSTEMS/BALL.md",
       "last_verified": "2026-10-28"
@@ -4082,19 +4190,19 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._sample_feet",
-          "line": 896,
+          "line": 901,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._foot_strike",
-          "line": 948,
+          "line": 953,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._try_dribble_touch",
-          "line": 1584,
+          "line": 1628,
           "kind": "func"
         }
       ],
@@ -4152,61 +4260,61 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._clip_touch_update",
-          "line": 1245,
+          "line": 1269,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._plan_clip_touch",
-          "line": 1341,
+          "line": 1371,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._clip_touch_step",
-          "line": 1490,
+          "line": 1520,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._predict_body",
-          "line": 1380,
+          "line": 1410,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._update_touch_ik",
-          "line": 1445,
+          "line": 1475,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._curve_turn_scale",
-          "line": 1990,
+          "line": 2039,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.touch_candidates",
-          "line": 1162,
+          "line": 1169,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.clip_touch_gap",
-          "line": 1236,
+          "line": 1260,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.dribble_speed_cap",
-          "line": 251,
+          "line": 254,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.toe_world",
-          "line": 1438,
+          "line": 1468,
           "kind": "func"
         },
         {

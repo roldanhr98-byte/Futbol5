@@ -221,3 +221,46 @@ ejecuta sin autorización explícita.
 50 golpeos con el pie en la pelota. No falta ningún pase ni tiro básico; no hay clip específico de pase de primera
 (se usan los mismos con espera de la pelota) ni de exterior del pie.
 
+## Sexta ronda (2026-10-28): toques de clip, curvas a velocidad e IK del pie
+
+Lo que la quinta ronda dejó pendiente (el clip de conducción en carrera) se resolvió **sin gastar créditos**: no hacía
+falta un clip nuevo de carrera entera, sino un **toque del pie dentro del ciclo de marcha** que llegue a la pelota. Se
+construyó desde los clips que ya hay (`TouchClipBuilder`: la pierna del balanceo real de `Dribble_2`, `Running_inplace` y
+`Two_Cycle_Sprint_inplace` con IK de dos huesos hasta un punto de contacto con el empeine; 33 clips en
+`assets/animations/touch_clips.res`) y se integró en el juego: disparo en fase con el ciclo, plan sobre el recorrido
+medido de la punta y el cuerpo previsto, contacto por evento con el pie vivo, IK del pie en tiempo real
+(`TouchFootIK`) e impulso que deja la pelota para el siguiente balanceo con velocidad relativa ~0. Diseño y parámetros:
+[PLAYER](SYSTEMS/PLAYER.md#toques-de-clip-conducción-con-animación-de-toque-e-ik-del-pie-2026-10-28-quinta-ronda).
+
+**Curvas a velocidad (la pregunta de «voy doblando un poco a la izquierda o a la derecha»):** antes el cuerpo giraba
+hasta 360°/s, completaba un cambio de 30° en 0.2 s y la pelota quedaba a 0.8 m al costado. Ahora el cuerpo no se adelanta
+más de 8° al rumbo de la pelota hasta que el siguiente toque la lleva al rumbo nuevo, y el toque se planea sobre el arco
+que va a recorrer el cuerpo. Medido con render, 5 semillas (pelota al costado, percentil 95):
+
+| Caso | Antes | Ahora |
+|---|---|---|
+| Arco a la carrera (15°/s) | 0.64 m | 0.09 m |
+| Cambio de carril de 30° a la carrera | 0.76 m | 0.13 m |
+| Eslalon ±25° a la carrera | 0.49 m | 0.33 m |
+| Eslalon ±20° a sprint | 0.74 m | 0.38 m |
+| Zigzag ±37° cada 0.83 s | — | 0.63 m, pelota conservada 92 % |
+
+Rectas: trote un toque de clip cada 0.68 s (video B 0.63 s), carrera un toque con el mismo pie cada 0.55 s con la pelota
+a 0.57 m, sprint con la pelota a 0.65 m (video B 0.66 m); la punta nunca entra en la pelota tras el toque.
+
+**Lo que no se resolvió:** el zigzag cerrado (cambios de 37° cada 0.83 s) sigue en manos de la conducción de giro, cuyos
+toques no tienen animación de toque; y dos pruebas de sensación (`test_gameplay_feel`: recibir un pase corriendo frena
+al receptor hasta 0.65 m/s y la pelota a sprint queda solo 0.14 m más lejos que al trote, se pedían 0.25) fallan igual
+que en el commit anterior a esta ronda: no son regresiones de este trabajo y siguen pendientes.
+
+**Video de PES 2021 («La Jugabilidad de PES 2021 ENAMORABA», 139 s, 30 fps):** recorrido entero a 1 imagen/s para
+ubicar las jugadas y, en las útiles, **imagen por imagen** (30 por segundo, recortes a resolución completa):
+
+| Tramo | Qué se ve imagen por imagen | En el juego |
+|---|---|---|
+| 20.37–21.30 s | Conducción en curva suave siguiendo el círculo central: la pelota va por delante sobre el arco que recorre el cuerpo; el jugador no la deja al costado, la toca de nuevo (21.00–21.07 s) para cerrar más el giro y después pasa. | Curvas: el cuerpo no se adelanta más de 8° al rumbo de la pelota y el toque se planea sobre el arco (tabla de arriba). |
+| 87.02–87.45 s | Remate cercano al primer palo: el arquero se tira abajo, la pelota le pega y **sale hacia arriba** delante del delantero (despeje, no blocaje). | El arquero despeja o bloca según el plan de manos; en `test_shot_keeper` 40–60 % de las atajadas son despejes o con el cuerpo. |
+| 97.43–97.63 s | Pelota rápida cerca de la cámara: los gajos se ven **arrastrados en el sentido del giro**, sin desaparecer. | Giro dibujado con desenfoque direccional a lo largo del giro real (antes: patrón quieto o al revés por el muestreo). |
+| 93.8–100.1 s | Montaje con un recorte fijo de un arquero encima de la imagen: no sirve para medir. | — |
+
+Los videos A y B se midieron en rondas anteriores; las cifras de rectas se comparan con el video B.

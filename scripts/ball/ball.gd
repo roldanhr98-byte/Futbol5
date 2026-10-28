@@ -56,6 +56,17 @@ var _trail_pts: PackedVector3Array = PackedVector3Array()
 var _trail_alpha: float = 0.0
 ## true mientras la estela esta activa (diagnostico y pruebas).
 var trail_active: bool = false
+## Tiro sin giro que "flota" (knuckle, lo pone el tiro potente con set_knuckle): aceleracion lateral oscilante (m/s^2)
+## mientras la pelota va rapida por el aire con poco giro, como la de las pelotas reales sin giro (la estela de aire se
+## desprende de forma irregular). Cualquier golpe, bote o choque la apaga.
+const KNUCKLE_MIN_SPEED := 12.0
+const KNUCKLE_MAX_SPIN := 12.0
+const KNUCKLE_MAX_TIME := 1.5
+var knuckle_accel: float = 0.0
+var _knuckle_freq: float = 0.0
+var _knuckle_phase: float = 0.0
+var _knuckle_t: float = 0.0
+var _knuckle_airborne: bool = false
 
 func _ready() -> void:
 	add_to_group("ball")
@@ -139,7 +150,17 @@ func kick(target_velocity: Vector3, spin: Vector3 = Vector3.ZERO, kicker: Node =
 	apply_central_impulse(dv * mass)
 	var inertia: float = (2.0 / 3.0) * mass * radius * radius
 	apply_torque_impulse((spin - angular_velocity) * inertia)
+	knuckle_accel = 0.0
 	register_touch(kicker)
+
+## Activa el "flotado" del tiro sin giro recien pateado: amplitud (m/s^2), frecuencia (Hz) y fase (rad) de la fuerza
+## lateral. Se llama justo despues de kick().
+func set_knuckle(accel: float, freq: float, phase: float) -> void:
+	knuckle_accel = maxf(accel, 0.0)
+	_knuckle_freq = freq
+	_knuckle_phase = phase
+	_knuckle_t = 0.0
+	_knuckle_airborne = false
 
 ## Giro de rodadura sin deslizamiento para una velocidad horizontal dada (w = up x v / r).
 ## Un golpe raso real transmite este giro; sin el, la pelota resbala y pierde ~30 % de velocidad.
@@ -170,6 +191,7 @@ func reset_at(pos: Vector3, vel: Vector3 = Vector3.ZERO) -> void:
 	if holder != null:
 		release(null)
 	_pending_teleport = true
+	knuckle_accel = 0.0
 	_teleport_pos = pos
 	_teleport_vel = vel
 	last_toucher = null
@@ -180,6 +202,7 @@ func reset_at(pos: Vector3, vel: Vector3 = Vector3.ZERO) -> void:
 func hold(anchor: Node3D, by: Node) -> void:
 	holder = by
 	_hold_anchor = anchor
+	knuckle_accel = 0.0
 	freeze_mode = RigidBody3D.FREEZE_MODE_KINEMATIC
 	freeze = true
 	linear_velocity = Vector3.ZERO
@@ -232,6 +255,43 @@ func capture_state(tick: int = 0) -> BallState:
 func apply_state(s: BallState) -> void:
 	reset_at(s.position, s.linear_velocity)
 	angular_velocity = s.angular_velocity
+
+# --- Giro que se dibuja -------------------------------------------------------
+
+## Grados maximos que gira el balon DIBUJADO por imagen. El patron (parches sobre los 12 vertices de un icosaedro) se
+## repite cada ~63 grados: un pase a 6 m/s rueda a ~57 rad/s = 55 grados por imagen a 60 fps y se ve QUIETO; a 10 m/s,
+## 92 grados por imagen, y parece girar despacio o al reves (efecto rueda de carro). El dibujo sigue el eje y el sentido
+## reales pero sin pasar de este giro por imagen (legible tambien a 30 fps). La fisica (giro real, Magnus) no cambia.
+const VISUAL_SPIN_DEG_PER_FRAME := 20.0
+## Fraccion de la imagen con el obturador abierto: el patron se desenfoca a lo largo del giro REAL de ese tiempo (el
+## shader lo promedia alrededor del eje), como en la television: rapido quedan bandas y se ven los polos del eje.
+const VISUAL_SHUTTER := 0.5
+var _visual_basis := Basis.IDENTITY
+## Giro (grados por imagen) dibujado y arco de desenfoque (grados) de la ultima imagen (diagnostico y pruebas).
+var visual_spin_step_deg: float = 0.0
+var visual_spin_blur_deg: float = 0.0
+
+func _process(delta: float) -> void:
+	if _visual == null:
+		return
+	var w: Vector3 = angular_velocity
+	var rate: float = w.length()
+	var step: float = 0.0
+	var arc: float = 0.0
+	var axis: Vector3 = Vector3.UP
+	if rate > 0.05 and delta > 0.0:
+		step = minf(rate * delta, deg_to_rad(VISUAL_SPIN_DEG_PER_FRAME))
+		_visual_basis = (Basis(w / rate, step) * _visual_basis).orthonormalized()
+		arc = minf(rate * delta * VISUAL_SHUTTER, PI)
+		# Eje del giro en el espacio del balon dibujado (la malla gira con _visual_basis).
+		axis = (_visual_basis.transposed() * (w / rate)).normalized()
+	visual_spin_step_deg = rad_to_deg(step)
+	visual_spin_blur_deg = rad_to_deg(arc)
+	_visual.global_basis = _visual_basis
+	var mat := _visual.material_override as ShaderMaterial
+	if mat != null:
+		mat.set_shader_parameter("spin_axis", axis)
+		mat.set_shader_parameter("spin_arc", arc)
 
 # --- Fisica ----------------------------------------------------------------
 
@@ -311,6 +371,17 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	if not floor_contact and spd > 1.0:
 		v += w.cross(v) * (tuning.magnus_k / mass) * dt
 
+	# Tiro sin giro: oscila a los lados (y algo arriba y abajo) mientras va rapido por el aire.
+	if knuckle_accel > 0.0:
+		_knuckle_t += dt
+		if (floor_contact and _knuckle_airborne) or spd < KNUCKLE_MIN_SPEED or w.length() > KNUCKLE_MAX_SPIN or _knuckle_t > KNUCKLE_MAX_TIME:
+			knuckle_accel = 0.0
+		elif not floor_contact:
+			_knuckle_airborne = true
+			var side: Vector3 = Vector3.UP.cross(Vector3(v.x, 0.0, v.z)).normalized()
+			var ph: float = TAU * _knuckle_freq * _knuckle_t + _knuckle_phase
+			v += (side * sin(ph) + Vector3.UP * (0.4 * cos(1.3 * ph))) * knuckle_accel * dt
+
 	# Rodadura sobre el piso: desacelera linealmente y arrastra el giro para no pelear con la friccion.
 	if floor_contact and absf(v.y) < 0.6:
 		var hv := Vector3(v.x, 0.0, v.z)
@@ -343,6 +414,8 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	state.angular_velocity = w
 
 func _on_body_entered(body: Node) -> void:
+	if body != last_toucher:
+		knuckle_accel = 0.0
 	if body.is_in_group("goal_frame"):
 		hit_goal_frame.emit(global_position, linear_velocity.length())
 	elif body.is_in_group("net_surface"):

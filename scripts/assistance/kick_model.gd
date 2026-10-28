@@ -24,6 +24,10 @@ class KickResult:
 	var on_target: bool = false
 	## Efecto aplicado (-1..1, positivo = curva a la derecha del golpeo).
 	var curl: float = 0.0
+	## Tiro sin giro que "flota" (knuckle): aceleracion lateral oscilante (m/s^2), frecuencia (Hz) y fase (rad). 0 = no.
+	var knuckle_accel: float = 0.0
+	var knuckle_freq: float = 0.0
+	var knuckle_phase: float = 0.0
 
 static func flat(v: Vector3) -> Vector3:
 	return Vector3(v.x, 0.0, v.z)
@@ -85,12 +89,17 @@ static func balance_state(f: Footballer) -> float:
 static func misalignment(f: Footballer, dir: Vector3) -> float:
 	return clampf(angle_between_deg(f.locomotion.forward(), dir) / 180.0, 0.0, 1.0)
 
+## True si golpea con el pie derecho: el del lado del cuerpo en el que esta la pelota. Con la pelota por delante del
+## centro del cuerpo (a menos de 5 cm de su eje) golpea con el bueno.
+static func kicks_with_right(f: Footballer, ball_pos: Vector3) -> bool:
+	var side: float = flat(ball_pos - f.global_position).dot(f.locomotion.right())
+	if absf(side) < 0.05:
+		return f.dominant_right
+	return side > 0.0
+
 ## True si el balon queda del lado del pie no dominante.
 static func is_weak_foot(f: Footballer, ball_pos: Vector3) -> bool:
-	var rel: Vector3 = flat(ball_pos - f.global_position)
-	var side: float = rel.dot(f.locomotion.right())
-	var uses_right: bool = side >= 0.0
-	return uses_right != f.dominant_right
+	return kicks_with_right(f, ball_pos) != f.dominant_right
 
 ## Penalizacion de la pierna debil segun el atributo (1.0 = sin penalizacion).
 static func weak_foot_error_mult(f: Footballer) -> float:

@@ -6,9 +6,43 @@ extends RefCounted
 ## un tiro en gol: hay error por potencia, equilibrio, orientacion, pierna y atributos; la pelota
 ## puede pegar en los postes, ser atajada o irse desviada.
 
+## Asistencia a partir de la cual el tiro va del todo al punto de mira elegido (por debajo se mezcla con la direccion
+## del joystick; 0 = tiro manual, exactamente hacia donde apunta).
+const ASSIST_FULL := 0.4
+## Fraccion del ancho util del arco a la que apunta el joystick hacia un palo: cerca del palo pero por dentro (como
+## FIFA/PES con asistencia), de AIM_EDGE (tirador de 1) a 1.0 (de 99) segun precision y definicion: el buen tirador la
+## pone mas cerca del palo. Al borde del ancho util (0.28 m del palo) la mitad de los tiros a 11 m de un tirador de 60
+## se iban fuera con el error normal de la ejecucion (medido: 7 de 12); a 0.9 el de 85 apuntaba donde llega el arquero
+## (2 goles de 40 al palo hacia el que su empeine la cierra, frente a 8 con el borde por calidad).
+const AIM_EDGE := 0.85
+## Aumento del error del tiro con un rival encima (presion 1 = a menos de 0.8 m): x1.8.
+const SHOT_PRESSURE_ERROR := 0.8
+
 ## Giro maximo (rad/s) de un tiro con efecto (chanfle / comba): con el Magnus de la pelota curva 1.5-3 m en 15-20 m.
 const CURL_SPIN_MIN := 38.0
 const CURL_SPIN_MAX := 58.0
+## Efecto natural del golpeo sin efecto pedido (rad/s). Con el empeine la pelota gira hacia el lado del pie que golpea
+## (diestro: se cierra a la izquierda) y mas cuanto mas cruza el tiro por delante del cuerpo: curva 0.1-0.3 m en 11 m.
+const NATURAL_CURL_MIN := 8.0
+const NATURAL_CURL_MAX := 16.0
+## Cruce (grados entre el frente del cuerpo y el tiro, hacia el lado contrario al pie) con el efecto natural maximo.
+const NATURAL_CURL_ACROSS_DEG := 40.0
+## Rosca del tiro colocado (interior del pie), hacia el lado del pie: curva ~0.5 m en 11 m.
+const PLACED_CURL_SPIN := 26.0
+## Contragiro de la vaselina (rad/s): la pelota flota algo mas y frena al botar.
+const LOB_BACKSPIN := 20.0
+## Contragiro del tiro de empeine a media altura (rad/s).
+const DRIVE_BACKSPIN := 14.0
+## Tiro potente con el empeine por el centro de la pelota: casi sin giro y con el "flotado" (knuckle) de las pelotas
+## rapidas sin giro. Aceleracion lateral oscilante (m/s^2) a partir de TIRO_KNUCKLE_SPEED m/s y su frecuencia (Hz):
+## desvia la pelota 0.1-0.3 m en 18 m, a un lado o al otro, sin que el arquero lo pueda prever.
+const KNUCKLE_ACCEL := 5.0
+const KNUCKLE_SPEED := 18.0
+const KNUCKLE_FREQ_MIN := 1.4
+const KNUCKLE_FREQ_MAX := 2.6
+## Altura de salida (vy, m/s) a partir de la cual la pelota va por el aire lo bastante como para que el efecto la curve:
+## solo entonces se abre la salida para que la curva cierre sobre el punto de mira.
+const CURL_AIR_VY := 2.0
 
 static func compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, charge: float, lob: bool,
 		rng: RandomNumberGenerator, assist_level: float, curl: float = 0.0) -> KickModel.KickResult:
@@ -39,24 +73,19 @@ static func compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, c
 		res.kind = &"power_shot"
 	var usable: float = maxf(pitch_cfg.half_goal() - cfg.shot_post_margin, 0.1)
 
-	# --- Hacia donde apunta la intencion respecto al arco ---
-	var weight: float = 0.0
-	var z_hit: float = 0.0
-	var toward_goal: bool = intent.x * to_goal_x > 0.05
-	if toward_goal and assist_level > 0.0 and dist_goal > 0.5:
-		var t: float = to_goal_x / intent.x
-		z_hit = origin.z + intent.z * t
-		var extra_allowed: float = dist_goal * tan(deg_to_rad(cfg.shot_cone_deg * 0.5)) * 0.55
-		var outside: float = maxf(absf(z_hit) - usable, 0.0)
-		weight = clampf(1.0 - outside / maxf(extra_allowed, 0.2), 0.0, 1.0)
-
-	# --- Punto de mira dentro del arco ---
-	var lateral: float = clampf(z_hit / usable, -1.0, 1.0)
-	if placed and weight > 0.0:
-		# Colocado: al palo lejano respecto de la posicion de la pelota (cerrando hacia dentro).
-		lateral = clampf(-signf(origin.z) * 0.8 if absf(origin.z) > 0.5 else (lateral if absf(lateral) > 0.3 else 0.8), -0.85, 0.85)
-	elif weight > 0.0 and absf(lateral) < 0.22 and assist_level >= 0.4:
-		# Intencion centrada: sugerir el lado contrario al arquero.
+	# --- Punto de mira: SIEMPRE dentro del arco (como PES y FIFA con asistencia) ---
+	# El joystick elige el punto: donde su direccion cruza la linea de gol; apuntando fuera del arco, el palo de ese lado
+	# (un tiro al palo con el error de la ejecucion puede irse fuera). Sin direccion clara hacia un lado (joystick hacia
+	# el centro del arco o suelto) se elige el lado contrario al arquero. La precision la dan la ejecucion y la situacion
+	# (error mas abajo), no lo bien que se apunta: apuntar no es acertar.
+	var edge: float = aim_edge(kicker)
+	var lateral: float = _stick_lateral(intent, origin, goal, usable) * edge
+	var stick_set: bool = KickModel.flat(stick_dir).length() >= 0.2 and absf(lateral) >= 0.22 * edge
+	var weight: float = clampf(assist_level / ASSIST_FULL, 0.0, 1.0)
+	if placed and not stick_set:
+		# Colocado sin lado pedido: al palo lejano respecto de la posicion de la pelota (cerrando hacia dentro).
+		lateral = -signf(origin.z) * 0.8 if absf(origin.z) > 0.5 else (1.0 if rng.randf() < 0.5 else -1.0) * 0.8
+	elif not stick_set:
 		var keeper: Node = ctx.keeper_defending(1 - kicker.team)
 		var side: float = 1.0
 		if keeper != null:
@@ -68,15 +97,13 @@ static func compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, c
 		height_ratio = minf(height_ratio, 0.3)
 	res.aim_point = goal.aim_point(lateral, height_ratio, cfg.shot_post_margin)
 
-	# --- Direccion final ---
+	# --- Direccion final: hacia el punto de mira (asistencia completa) o la del joystick (manual) ---
 	var final_dir: Vector3 = intent
-	if weight > 0.0:
-		var aim_dir: Vector3 = KickModel.flat(res.aim_point - origin).normalized()
+	var aim_dir: Vector3 = KickModel.flat(res.aim_point - origin).normalized()
+	if weight > 0.0 and aim_dir.length() > 0.5:
 		var diff: float = KickModel.signed_angle_deg(intent, aim_dir)
-		var max_corr: float = cfg.shot_max_correction_deg * assist_level
-		var applied: float = clampf(diff * assist_level * weight, -max_corr, max_corr)
-		res.assisted_correction_deg = applied
-		final_dir = intent.rotated(Vector3.UP, deg_to_rad(applied))
+		res.assisted_correction_deg = diff * weight
+		final_dir = intent.rotated(Vector3.UP, deg_to_rad(diff * weight))
 
 	# --- Potencia ---
 	var power_mult: float = kicker.attributes.factor("shot_power", 0.14)
@@ -102,8 +129,8 @@ static func compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, c
 	if dist_goal < 10.0:
 		sigma *= lerpf(1.15, 0.85, fin)
 	sigma *= lerpf(1.1, 0.88, kicker.attributes.norm("composure"))
-	# Presion rival encima: el tiro sale peor.
-	sigma *= 1.0 + 0.4 * PassAssist.pressure(kicker)
+	# Presion rival encima: el tiro sale peor (como en FIFA/PES, tirar con un rival pegado es arriesgado).
+	sigma *= 1.0 + SHOT_PRESSURE_ERROR * PassAssist.pressure(kicker)
 	if placed:
 		sigma *= 0.72
 	if res.weak_foot:
@@ -123,7 +150,6 @@ static func compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, c
 		var vh_est: float = speed * cos(deg_to_rad(bt.shot_loft_low_deg))
 		final_dir = final_dir.rotated(Vector3.UP, deg_to_rad(KickModel.curl_preaim_deg(d_aim, vh_est, curl, curl_rad)))
 		res.kind = &"curl_shot"
-	res.final_dir = final_dir
 
 	# --- Altura / trayectoria ---
 	var v_h: float = speed * cos(deg_to_rad(lerpf(bt.shot_loft_low_deg, bt.shot_loft_high_deg, 1.0 if lob else 0.0)))
@@ -143,24 +169,77 @@ static func compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, c
 		vy = maxf(vy, 3.4)
 	v_h = sqrt(maxf(speed * speed - vy * vy, 0.25 * speed * speed))
 
-	res.velocity = Vector3(final_dir.x * v_h, vy, final_dir.z * v_h)
-	if vy < 1.5:
-		res.spin = Vector3.UP.cross(KickModel.flat(res.velocity)) / maxf(bt.radius, 0.01) * 0.7
-	else:
-		res.spin = -Vector3.UP.cross(final_dir) * 14.0
-	res.spin += Vector3.UP * (-err_h * bt.shot_spin_factor * 0.25)
-	if curl_rad > 0.0:
-		# Chanfle: el giro lateral sustituye al de rodadura (la pelota va por el aire y el Magnus la curva).
+	# --- Giro de la pelota segun el golpeo (el efecto Magnus de la fisica de la pelota hace el resto) ---
+	var line_dir: Vector3 = final_dir
+	# Giro lateral del golpe imperfecto (no se le pega justo por el eje): rosca de vuelta hacia el punto de mira.
+	var err_side_spin: float = -err_h * bt.shot_spin_factor * 0.25
+	var backspin: Vector3 = -Vector3.UP.cross(final_dir)
+	var knuckle: bool = power and curl_rad <= 0.0 and speed > KNUCKLE_SPEED
+	if lob:
+		# Vaselina: por debajo de la pelota, con contragiro.
+		res.spin = backspin * LOB_BACKSPIN + Vector3.UP * err_side_spin
+	elif curl_rad > 0.0:
+		# Chanfle pedido: el giro lateral sustituye al de rodadura (la pelota va por el aire y el Magnus la curva).
 		res.spin = KickModel.curl_spin(final_dir, curl, curl_rad) - Vector3.UP.cross(final_dir) * 6.0
-	elif placed:
-		# Rosca: la pelota se cierra hacia el palo (efecto Magnus de la pelota real).
-		var toward_center: float = signf(-origin.z) if absf(origin.z) > 0.3 else 1.0
-		res.spin += Vector3.UP * toward_center * (1.0 if to_goal_x > 0.0 else -1.0) * 22.0
+	elif knuckle:
+		# Potente con el empeine por el centro: casi sin giro (se ven los gajos) y la pelota "flota".
+		res.spin = backspin * 3.0 + Vector3.UP * err_side_spin * 0.15
+		res.knuckle_accel = KNUCKLE_ACCEL * clampf((speed - KNUCKLE_SPEED) / 7.0, 0.0, 1.0) * rng.randf_range(0.5, 1.0)
+		res.knuckle_freq = rng.randf_range(KNUCKLE_FREQ_MIN, KNUCKLE_FREQ_MAX)
+		res.knuckle_phase = rng.randf() * TAU
+	else:
+		# Empeine (o interior en el colocado): rosca natural hacia el lado del pie que golpea.
+		var right_foot: bool = KickModel.kicks_with_right(kicker, origin)
+		var nat_curl: float = -1.0 if right_foot else 1.0
+		var nat_spin: float = PLACED_CURL_SPIN
+		if not placed:
+			var across_deg: float = KickModel.signed_angle_deg(kicker.locomotion.forward(), final_dir) * (1.0 if right_foot else -1.0)
+			nat_spin = lerpf(NATURAL_CURL_MIN, NATURAL_CURL_MAX, clampf(across_deg / NATURAL_CURL_ACROSS_DEG, 0.0, 1.0))
+		if vy >= CURL_AIR_VY:
+			# Por el aire la curva se nota: la salida se abre lo justo para que cierre sobre el punto de mira.
+			final_dir = final_dir.rotated(Vector3.UP, deg_to_rad(KickModel.curl_preaim_deg(
+				KickModel.flat(res.aim_point - origin).length(), v_h, nat_curl, nat_spin)))
+		if vy >= 1.5:
+			res.spin = backspin * DRIVE_BACKSPIN
+		else:
+			# Raso: rueda (giro de rodadura algo menor por el deslizamiento del golpe); el efecto apenas actua en el suelo.
+			res.spin = Vector3.UP.cross(KickModel.flat(final_dir) * v_h) / maxf(bt.radius, 0.01) * 0.7
+		res.spin += KickModel.curl_spin(final_dir, nat_curl, nat_spin) + Vector3.UP * err_side_spin
+		res.curl = nat_curl * nat_spin / CURL_SPIN_MAX
+	res.final_dir = final_dir
+	res.velocity = Vector3(final_dir.x * v_h, vy, final_dir.z * v_h)
 
 	# Prediccion simple (sin resistencia) de si iria al arco, para estadisticas de intencion.
-	if final_dir.x * to_goal_x > 0.0:
-		var t_goal: float = to_goal_x / (final_dir.x * v_h)
-		var z_end: float = origin.z + final_dir.z * v_h * t_goal
+	# Con el efecto se usa la linea antes de abrir la salida (la curva la devuelve a ella).
+	if curl_rad > 0.0:
+		line_dir = final_dir.rotated(Vector3.UP, -deg_to_rad(KickModel.curl_preaim_deg(
+			KickModel.flat(res.aim_point - origin).length(), speed * cos(deg_to_rad(bt.shot_loft_low_deg)), curl, curl_rad)))
+	if line_dir.x * to_goal_x > 0.0:
+		var t_goal: float = to_goal_x / (line_dir.x * v_h)
+		var z_end: float = origin.z + line_dir.z * v_h * t_goal
 		var y_end: float = origin.y + vy * t_goal - 0.5 * KickModel.G * t_goal * t_goal
 		res.on_target = absf(z_end) <= pitch_cfg.half_goal() and y_end >= 0.0 and y_end <= pitch_cfg.goal_height
 	return res
+
+## Fraccion del ancho util a la que apunta el joystick hacia un palo para este tirador (ver AIM_EDGE).
+static func aim_edge(kicker: Footballer) -> float:
+	var tech: float = 0.5 * kicker.attributes.norm("shot_accuracy") + 0.5 * kicker.attributes.norm("finishing")
+	return lerpf(AIM_EDGE, 1.0, tech)
+
+## Punto lateral del arco (-1..1 del ancho util) que elige el joystick: donde su direccion cruza la linea de gol; si no
+## la cruza dentro del arco (apunta fuera, de lado o hacia atras) el palo del lado hacia el que gira respecto al centro.
+static func _stick_lateral(intent: Vector3, origin: Vector3, goal: Goal, usable: float) -> float:
+	var center: Vector3 = Vector3(goal.global_position.x, 0.0, 0.0)
+	var to_center: Vector3 = KickModel.flat(center - origin)
+	if to_center.length() < 0.3:
+		return 0.0
+	var dx: float = center.x - origin.x
+	if intent.x * dx > 0.05:
+		var z_hit: float = origin.z + intent.z * (dx / intent.x)
+		if absf(z_hit) <= usable:
+			return z_hit / usable
+	# Fuera del arco: el palo del lado al que apunta el joystick respecto a la linea al centro del arco.
+	var side: float = signf(to_center.normalized().cross(intent).y)
+	# En el sistema del arco, +lateral es +Z: girar a la izquierda del eje al centro (cruz +Y) mira a +Z si se ataca -X
+	# y a -Z si se ataca +X.
+	return clampf(-side * signf(dx), -1.0, 1.0) if side != 0.0 else 0.0

@@ -29,22 +29,28 @@ func test_assist_improves_on_target_rate_but_never_guarantees() -> void:
 	check(with_assist > without + 0.2, "la asistencia mejora claramente el acierto al arco")
 	check(with_assist < 0.97, "pero no es un sistema de goles automaticos (%.0f %%)" % (with_assist * 100.0))
 
-func test_assist_fades_when_aiming_clearly_away_from_goal() -> void:
+## Como PES y FIFA con asistencia: el tiro va SIEMPRE al arco y el joystick elige el punto (apuntando fuera, el palo de
+## ese lado; hacia el centro o suelto, el lado contrario al arquero). En manual (asistencia 0) va adonde apunta.
+func test_assisted_shot_always_goes_at_goal_and_the_stick_picks_the_side() -> void:
 	var ctx: MatchContext = await make_match(Vector3(10.5, 0.11, 0.0))
 	var p: Footballer = _shooter(ctx, Vector3(10.0, 0.0, 0.0))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 5
-	var away: Vector3 = Vector3(0.0, 0.0, -1.0)    # perpendicular al arco
-	var r_away: KickModel.KickResult = ShotAssist.compute(p, ctx, away, 0.8, false, rng, 0.95)
-	check(absf(r_away.assisted_correction_deg) < 0.001, "apuntar claramente fuera: sin correccion (%.2f grados)" % r_away.assisted_correction_deg)
+	var left: Vector3 = Vector3(0.0, 0.0, -1.0)    # perpendicular al arco, hacia -Z
+	var r_left: KickModel.KickResult = ShotAssist.compute(p, ctx, left, 0.6, false, rng, 0.55)
+	note("joystick de lado (-Z): punto de mira %s, direccion final %s" % [r_left.aim_point, r_left.final_dir])
+	check(r_left.final_dir.x > 0.8, "apuntando de lado el tiro va al arco (direccion %s)" % r_left.final_dir)
+	check(r_left.aim_point.z < -0.8, "al palo del lado al que apunta el joystick (z %.2f)" % r_left.aim_point.z)
+	var right: Vector3 = Vector3(0.0, 0.0, 1.0)
+	var r_right: KickModel.KickResult = ShotAssist.compute(p, ctx, right, 0.6, false, rng, 0.55)
+	check(r_right.aim_point.z > 0.8, "joystick al otro lado: el otro palo (z %.2f)" % r_right.aim_point.z)
 	var back: Vector3 = Vector3(-1.0, 0.0, 0.0)
-	var r_back: KickModel.KickResult = ShotAssist.compute(p, ctx, back, 0.8, false, rng, 0.95)
-	check(absf(r_back.assisted_correction_deg) < 0.001, "apuntar hacia atras: sin correccion")
-	check(r_back.final_dir.x < 0.0, "el tiro respeta la direccion del usuario")
-	var near_goal: Vector3 = Vector3(cos(deg_to_rad(12.0)), 0.0, -sin(deg_to_rad(12.0)))
-	var r_near: KickModel.KickResult = ShotAssist.compute(p, ctx, near_goal, 0.8, false, rng, 0.95)
-	note("correccion con intencion hacia el arco (12 grados): %.2f grados (maximo %.1f)" % [r_near.assisted_correction_deg, Tuning.assist.shot_max_correction_deg * 0.95])
-	check(absf(r_near.assisted_correction_deg) <= Tuning.assist.shot_max_correction_deg * 0.95 + 0.01, "la correccion esta acotada")
+	var r_back: KickModel.KickResult = ShotAssist.compute(p, ctx, back, 0.6, false, rng, 0.55)
+	check(r_back.final_dir.x > 0.8, "hacia atras asistido: tambien al arco")
+	var usable: float = Tuning.pitch.half_goal() - Tuning.assist.shot_post_margin
+	check(absf(r_left.aim_point.z) <= usable * ShotAssist.aim_edge(p) + 0.01, "el punto de mira queda por dentro del palo")
+	var manual: KickModel.KickResult = ShotAssist.compute(p, ctx, back, 0.6, false, rng, 0.0)
+	check(manual.final_dir.x < -0.8, "en manual (asistencia 0) el tiro respeta el joystick")
 
 func test_charge_controls_power_and_attributes_scale_it_moderately() -> void:
 	var ctx: MatchContext = await make_match(Vector3(10.5, 0.11, 0.0))

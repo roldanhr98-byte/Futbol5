@@ -833,6 +833,8 @@ func perform_shot(stick_world: Vector3, charge: float, lob: bool) -> KickModel.K
 	shot_curl = 0.0
 	var b: Ball = ball()
 	b.kick(res.velocity, res.spin, owner)
+	if res.knuckle_accel > 0.0:
+		b.set_knuckle(res.knuckle_accel, res.knuckle_freq, res.knuckle_phase)
 	_after_kick(&"shot", res)
 	var data: Dictionary = {
 		"kind": String(res.kind), "charge": charge, "error_deg": res.error_deg,

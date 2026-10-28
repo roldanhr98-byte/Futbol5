@@ -22,27 +22,27 @@
 | Atributo (clave) | Nombre visible | Grupo | Consumido en (código) |
 |---|---|---|---|
 | `speed` | Velocidad | campo | `scripts/player/locomotion.gd:57`, `scripts/player/locomotion.gd:60` |
-| `acceleration` | Aceleración | campo | `scripts/player/ball_handler.gd:1383`, `scripts/player/ball_handler.gd:1384`, `scripts/player/ball_handler.gd:1696`, `scripts/player/ball_handler.gd:1769`, `scripts/player/locomotion.gd:73`, `scripts/player/locomotion.gd:162` |
+| `acceleration` | Aceleración | campo | `scripts/player/ball_handler.gd:1413`, `scripts/player/ball_handler.gd:1414`, `scripts/player/ball_handler.gd:1740`, `scripts/player/ball_handler.gd:1815`, `scripts/player/locomotion.gd:73`, `scripts/player/locomotion.gd:162` |
 | `stamina` | Resistencia | campo | `scripts/player/locomotion.gd:79`, `scripts/player/locomotion.gd:165` |
-| `balance` | Equilibrio | campo | `scripts/assistance/kick_model.gd:81`, `scripts/player/ball_handler.gd:2120`, `scripts/player/player_actions.gd:264`, `scripts/player/player_actions.gd:265` |
-| `agility` | Agilidad | campo | `scripts/player/ball_handler.gd:483`, `scripts/player/ball_handler.gd:1387`, `scripts/player/locomotion.gd:74`, `scripts/player/locomotion.gd:163` |
-| `ball_control` | Control de balón | campo | `scripts/player/ball_handler.gd:998`, `scripts/player/ball_handler.gd:2077`, `scripts/player/ball_handler.gd:2086`, `scripts/player/ball_handler.gd:2090` |
-| `ball_carrying` | Conducción | campo | `scripts/player/ball_handler.gd:252`, `scripts/player/ball_handler.gd:998` |
+| `balance` | Equilibrio | campo | `scripts/assistance/kick_model.gd:85`, `scripts/player/ball_handler.gd:2179`, `scripts/player/player_actions.gd:264`, `scripts/player/player_actions.gd:265` |
+| `agility` | Agilidad | campo | `scripts/player/ball_handler.gd:486`, `scripts/player/ball_handler.gd:1417`, `scripts/player/locomotion.gd:74`, `scripts/player/locomotion.gd:163` |
+| `ball_control` | Control de balón | campo | `scripts/player/ball_handler.gd:1003`, `scripts/player/ball_handler.gd:2136`, `scripts/player/ball_handler.gd:2145`, `scripts/player/ball_handler.gd:2149` |
+| `ball_carrying` | Conducción | campo | `scripts/player/ball_handler.gd:255`, `scripts/player/ball_handler.gd:1003` |
 | `dribbling` | Regate | campo | **sin uso todavía** |
 | `short_pass` | Pase corto | campo | `scripts/assistance/pass_assist.gd:85`, `scripts/assistance/pass_assist.gd:213` |
 | `long_pass` | Pase largo | campo | `scripts/assistance/cross_assist.gd:93`, `scripts/assistance/cross_assist.gd:103`, `scripts/assistance/pass_assist.gd:85`, `scripts/assistance/pass_assist.gd:213` |
 | `pass_accuracy` | Precisión de pase | campo | `scripts/assistance/pass_assist.gd:106`, `scripts/assistance/pass_assist.gd:247`, `scripts/gameplay/set_piece.gd:392` |
-| `shot_power` | Potencia de tiro | campo | `scripts/assistance/shot_assist.gd:82` |
-| `shot_accuracy` | Precisión de tiro | campo | `scripts/assistance/shot_assist.gd:92`, `scripts/assistance/shot_assist.gd:120` |
-| `finishing` | Finalización | campo | `scripts/assistance/shot_assist.gd:93`, `scripts/assistance/shot_assist.gd:120` |
-| `weak_foot` | Pierna débil | campo | `scripts/assistance/kick_model.gd:97`, `scripts/assistance/kick_model.gd:100` |
+| `shot_power` | Potencia de tiro | campo | `scripts/assistance/shot_assist.gd:109` |
+| `shot_accuracy` | Precisión de tiro | campo | `scripts/assistance/shot_assist.gd:119`, `scripts/assistance/shot_assist.gd:147`, `scripts/assistance/shot_assist.gd:226` |
+| `finishing` | Finalización | campo | `scripts/assistance/shot_assist.gd:120`, `scripts/assistance/shot_assist.gd:147`, `scripts/assistance/shot_assist.gd:226` |
+| `weak_foot` | Pierna débil | campo | `scripts/assistance/kick_model.gd:106`, `scripts/assistance/kick_model.gd:109` |
 | `reaction` | Reacción | campo | **sin uso todavía** |
-| `marking` | Marcaje | campo | `scripts/player/ball_handler.gd:2112` |
+| `marking` | Marcaje | campo | `scripts/player/ball_handler.gd:2171` |
 | `interception` | Intercepción | campo | **sin uso todavía** |
-| `strength` | Fuerza física | campo | `scripts/player/ball_handler.gd:2120`, `scripts/player/player_actions.gd:264`, `scripts/player/player_actions.gd:265` |
+| `strength` | Fuerza física | campo | `scripts/player/ball_handler.gd:2179`, `scripts/player/player_actions.gd:264`, `scripts/player/player_actions.gd:265` |
 | `jumping` | Salto | campo | **sin uso todavía** |
 | `heading` | Cabeceo | campo | **sin uso todavía** |
-| `composure` | Compostura | campo | `scripts/assistance/pass_assist.gd:116`, `scripts/assistance/pass_assist.gd:255`, `scripts/assistance/shot_assist.gd:104` |
+| `composure` | Compostura | campo | `scripts/assistance/pass_assist.gd:116`, `scripts/assistance/pass_assist.gd:255`, `scripts/assistance/shot_assist.gd:131` |
 | `decision` | Capacidad de decisión | campo | **sin uso todavía** |
 | `reflexes` | Reflejos | arquero | **sin uso todavía** |
 | `positioning` | Posicionamiento | arquero | **sin uso todavía** |
