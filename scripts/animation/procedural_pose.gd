@@ -21,10 +21,17 @@ var _contact_time: float = 0.12
 var _power: float = 0.5
 var _side: int = 1                 # +1 pierna derecha, -1 izquierda
 var _weight: float = 1.0
+## Inclinacion del tronco (rad) que pide la marcha: hacia delante (+) / atras y hacia la izquierda (+) / derecha. Se
+## reparte por la columna (Spine, Spine1, Spine2); caderas y piernas no se tocan (los pies siguen donde los pone la
+## animacion para tocar la pelota).
+var lean_pitch: float = 0.0
+var lean_roll: float = 0.0
+const LEAN_SHARE := [0.4, 0.3, 0.3]
+const FORWARD := Vector3(1, 0, 0)
 
 func setup(skel: Skeleton3D) -> void:
 	skeleton = skel
-	for key in ["RightUpLeg", "RightLeg", "RightFoot", "LeftUpLeg", "LeftLeg", "LeftFoot", "Spine1", "Spine2", "Hips"]:
+	for key in ["RightUpLeg", "RightLeg", "RightFoot", "LeftUpLeg", "LeftLeg", "LeftFoot", "Spine", "Spine1", "Spine2", "Hips"]:
 		_bones[key] = skel.find_bone("mixamorig_%s" % key)
 
 ## Inicia una patada. contact_time = segundos hasta el golpeo; power 0..1; side +1 derecha / -1 izquierda.
@@ -48,7 +55,10 @@ func total_duration() -> float:
 	return _contact_time + FOLLOW_THROUGH + RECOVERY
 
 func _process_modification_with_delta(delta: float) -> void:
-	if not _kicking or skeleton == null:
+	if skeleton == null:
+		return
+	_apply_lean()
+	if not _kicking:
 		return
 	_t += delta
 	if _t >= total_duration():
@@ -68,6 +78,17 @@ func apply_at(t: float) -> void:
 	_rotate(knee, LATERAL, angles["knee"] * w)
 	_rotate(support_knee, LATERAL, angles["support_knee"] * w)
 	_rotate(spine, LATERAL, angles["torso"] * w)
+
+## Inclinacion del tronco: en el espacio del esqueleto adelante = +X, derecha = +Z; girar la columna sobre +Z en
+## negativo la lleva hacia delante y sobre +X en negativo, hacia la izquierda.
+func _apply_lean() -> void:
+	if absf(lean_pitch) < 0.002 and absf(lean_roll) < 0.002:
+		return
+	var names := ["Spine", "Spine1", "Spine2"]
+	for i in 3:
+		var b: int = _bones.get(names[i], -1)
+		_rotate(b, LATERAL, -lean_pitch * LEAN_SHARE[i])
+		_rotate(b, FORWARD, -lean_roll * LEAN_SHARE[i])
 
 func _rotate(bone: int, axis: Vector3, angle: float) -> void:
 	if bone < 0 or absf(angle) < 0.0001:

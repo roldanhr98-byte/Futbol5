@@ -11,6 +11,31 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-10-28 — Red de tela, cámara de transmisión como PES e inclinación del tronco (videos `videoplayback` y `referencia_conduccion`)
+
+Detalle: [PITCH](SYSTEMS/PITCH.md#red-de-tela-2026-10-28) · [CAMERA](SYSTEMS/CAMERA.md#encuadre-de-transmisión-como-pes-2026-10-28) ·
+[ANIMATIONS](SYSTEMS/ANIMATIONS.md#inclinación-del-tronco-en-curvas-y-cambios-de-ritmo-2026-10-28) ·
+[DRIBBLE_DIAGNOSIS](DRIBBLE_DIAGNOSIS.md#séptima-ronda-2026-10-28-videos-videoplayback-y-referencia_conduccion_recortada).
+
+- **Red de tela** (`GoalNet`, nuevo): cuatro paños atados al marco que la pelota abomba (hasta ~0.6 m con un tiro de
+  25–30 m/s), la tela la frena y casi no la devuelve (8–11 % de la velocidad), y vuelve con ondas; por fuera la red
+  lateral se hunde y el techo sostiene la pelota. Sustituye la red rígida (88 % de la velocidad perdida de golpe al tocar
+  una caja y amortiguación en todo el volumen del arco). `BallTuning.net_damping`/`net_restitution` → `net_stiffness`,
+  `net_damp_in`, `net_damp_out`, `net_return`, `net_grip`, `net_max_bulge`. Gol: la pelota entera bajo el travesaño.
+- **Cámara de transmisión** como la del video de PES: 30° de inclinación, lente de 28°, 30–38 m (antes 52°, 42°,
+  16–27 m).
+- **Inclinación del tronco** hacia dentro de las curvas (física × 0.75, hasta 22°) y hacia delante/atrás al
+  acelerar/frenar, en la columna (`ProceduralPose`), sin mover los pies.
+- Archivos: `scripts/pitch/goal_net.gd` (nuevo), `scripts/pitch/goal.gd`, `scripts/ball/ball.gd`,
+  `scripts/ball/ball_tuning.gd`, `scripts/camera/match_camera.gd`, `scripts/animation/procedural_pose.gd`,
+  `scripts/player/footballer_visual.gd`; prueba `tests/test_goal_net.gd` (nueva); herramienta `tools/net_view.tscn`.
+- Verificación (ejecutada): suite headless 183 pruebas / 951 comprobaciones / 0 fallos (15 omitidas: necesitan render).
+  Con render: `live_feet` 7/7, `live_kicks` 4/4, `pack_motion` 2/2, `kick_reach` 2/2, `dribbling` 7/7, `kick_timing`
+  3/3, `animation_contact_audit` 1/1, `dribble_reference` 2/2, `shot_keeper` 1/1; `gameplay_feel` 8/10 con los mismos
+  dos fallos de antes. Curvas a velocidad con la inclinación (5 semillas): sin cambios (0.33 / 0.38 / 0.09 / 0.13 /
+  0.63 m). Red vista en imágenes renderizadas de frente y de costado; cámara comparada con el video en tres encuadres.
+- Pendiente: giros cerrados con la pelota pegada (interior/suela), control orientado y cuerpo agachado al frenar.
+
 ## 2026-10-28 — Tiros dirigidos al arco (PES/FIFA), efecto natural de cada golpeo, flotado y giro visible del balón
 
 Detalle: [ASSISTANCE](SYSTEMS/ASSISTANCE.md#tiros-dirigidos-al-arco-efecto-natural-del-golpeo-y-arquero-2026-10-28) ·

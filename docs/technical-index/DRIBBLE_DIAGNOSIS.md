@@ -264,3 +264,32 @@ ubicar las jugadas y, en las útiles, **imagen por imagen** (30 por segundo, rec
 | 93.8–100.1 s | Montaje con un recorte fijo de un arquero encima de la imagen: no sirve para medir. | — |
 
 Los videos A y B se midieron en rondas anteriores; las cifras de rectas se comparan con el video B.
+
+## Séptima ronda (2026-10-28): videos `videoplayback` y `referencia_conduccion_recortada`
+
+**`videoplayback`** (63.6 s, 1280×720, 29.97 fps): un partido online de PES 2021 (eFootball, myClub) del minuto 57 al
+66 con la cámara de transmisión amplia. Se recorrió entero a 1 y 2 imágenes por segundo y los tramos con pelota
+imagen por imagen (seguimiento automático de la pelota en los 1906 fotogramas; la encuentra en 1020, el resto tapada o
+fuera de cuadro). Lo que muestra: cámara de costado y baja con lente cerrada que sigue a la pelota sin girar; los dos
+equipos en bloques con apoyos constantes; conducciones cortas con la pelota pegada (Davies, 9.5–10.6 s: un toque cada
+~0.3 s, pelota a menos de medio metro); HUD mínimo (marcador, radar y nombre del controlado con su cursor). No hay goles
+en el video (el marcador sigue 3-0 de principio a fin; 0–6 s: una llegada al área que acaba con la pelota fuera junto al banderín; 61–63 s: repetición).
+
+**`referencia_conduccion_recortada`** (95 s, 640×360, 30 fps): material de desarrollo de un juego con jugadores
+entrenados para imitar captura de movimiento (física de personaje), con la dirección del joystick (verde) y de la pelota
+(amarillo) dibujadas. Se revisaron imagen por imagen los tramos con pelota (0–15 s, 21.4–27 s y 58.9–84 s):
+
+| Tramo | Qué se ve |
+|---|---|
+| 0.0–1.6 s | Recibe la pelota que llega por su izquierda: cuerpo bajo, de costado, la frena con el interior y la deja pegada. |
+| 3.2–4.8 s | Rodea un poste: arrastra la pelota con el interior muy inclinado hacia dentro y la saca con un toque largo (1.5 m). |
+| 6.8–7.2 s | Control orientado de una pelota que llega de la derecha: el primer toque la deja ya en la dirección nueva. |
+| 8.4–11.2 s | Conducción al trote: pelota a 0.3–0.5 m, un toque por paso, tronco hacia delante, brazos abiertos. |
+| 11.2–14.4 s | Giros cerrados con muchos toques cortos (interior y suela), muy agachado. |
+| 21.6–27 s, 59–65 s | Sin pelota: arrancadas muy inclinadas hacia delante y curvas con el cuerpo inclinado hacia dentro. |
+
+**Qué se hizo con esto:** cámara de transmisión como la de PES ([CAMERA](SYSTEMS/CAMERA.md#encuadre-de-transmisión-como-pes-2026-10-28)),
+inclinación del tronco en curvas y cambios de ritmo ([ANIMATIONS](SYSTEMS/ANIMATIONS.md#inclinación-del-tronco-en-curvas-y-cambios-de-ritmo-2026-10-28))
+y red de tela ([PITCH](SYSTEMS/PITCH.md#red-de-tela-2026-10-28)). **Pendiente** (lo que el video muestra y el juego aún
+no tiene): giros cerrados con la pelota pegada y arrastrada con el interior o la suela (hoy la conducción de giro la deja
+a 0.5–0.8 m sin animación de toque), el control orientado y el cuerpo agachado al frenar (piden IK de piernas).

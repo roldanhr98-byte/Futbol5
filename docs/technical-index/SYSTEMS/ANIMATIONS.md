@@ -14,7 +14,7 @@
 |---|---|---|---|
 | `scripts/player/footballer_visual.gd` | Clase `FootballerVisual` (`Node3D`): carga el modelo, aplica el kit, construye el `AnimationTree`, `play_action`, `update_motion` (cadencia + inclinación), maniquí provisional si falta el modelo | `FootballerVisual.build`, `FootballerVisual._setup_animation_tree`, `FootballerVisual.update_motion`, `FootballerVisual.play_action`, `FootballerVisual.default_kit`, `FootballerVisual.keeper_kit` | `ProceduralPose`, `Footballer` (recibe `locomotion`) |
 | `scripts/animation/animation_catalog.gd`, `scripts/animation/pack_library.gd` | Catálogo único situación → clip (pack o Tripo) y carga de la librería local del pack | `AnimationCatalog.resolve`, `AnimationCatalog.kick_candidates`, `PackLibrary.clip`, `PackLibrary.meta` | `assets/animations/pack_clips.res` (local, restringida) |
-| `scripts/animation/procedural_pose.gd` | `ProceduralPose` (`SkeletonModifier3D`): patada con fases (balanceo → golpeo en `contact_time` → continuación → recuperación) aplicada **después** del árbol | `ProceduralPose.start_kick`, `ProceduralPose.kick_angles`, `ProceduralPose.envelope`, `ProceduralPose.apply_at` | `Skeleton3D` (huesos `mixamorig_*`) |
+| `scripts/animation/procedural_pose.gd` | `ProceduralPose` (`SkeletonModifier3D`): patada con fases (balanceo → golpeo en `contact_time` → continuación → recuperación) e inclinación del tronco (`lean_pitch`, `lean_roll`, repartida por la columna) aplicadas **después** del árbol | `ProceduralPose.start_kick`, `ProceduralPose.kick_angles`, `ProceduralPose.envelope`, `ProceduralPose.apply_at`, `ProceduralPose._apply_lean` | `Skeleton3D` (huesos `mixamorig_*`) |
 | `scripts/animation/pose_sampler.gd` | `PoseSampler`: evalúa una `Animation` sobre un esqueleto sin `AnimationPlayer` (herramientas y pruebas) | `PoseSampler.bind`, `PoseSampler.apply`, `PoseSampler.bone_in_skeleton` | — |
 | `assets/characters/player/player_base.glb` | Malla (7640 triángulos medidos) + esqueleto v1.0 | — | — |
 | `assets/characters/player/player_kit.gdshader` | Shader de recoloreado por regiones (conserva el sombreado por luminancia relativa) | uniforms `jersey_color`, `shorts_color`, `socks_color`, `boots_color`, `skin_color`, `hair_color`, `mask_a`, `mask_b` | máscaras `player_mask_a.png`, `player_mask_b.png`, `player_albedo.jpg`, `player_regions.json` |
@@ -54,7 +54,11 @@ Esta capa **no usa recursos de parámetros**: todo son constantes del código (v
 | `FootballerVisual.CARRY_GAIT_POINTS` | `[[&"Soccer_Idle", 0.0], [&"Dribble_2", -1.0], [&"Running_inplace", 3.6], [&"T...` | 74 | Marcha CON la pelota: mismos tramos que la marcha normal pero con los clips de conduccion (el jugador mira la pelota, da zancadas mas cortas y mueve los brazos distinto). Se mezcla con la marcha normal segun la posesion. Con la pelota la carrera usa Running_inplace (braceo distinto al trote sin pelota) y el sprint, Two_Cycle_Sprint_inplace (dos zancadas por ciclo: la conduccion larga a toda velocidad). |
 | `FootballerVisual.CARRY_BLEND_RATE` | `4.0` | 76 | Velocidad (m/s) con la que la mezcla de conduccion llega a su peso maximo al recuperar la pelota. |
 | `FootballerVisual.TOUCH_LEG_BONES` | `{ 0: [&"mixamorig_LeftUpLeg", &"mixamorig_LeftLeg", &"mixamorig_LeftFoot", &"...` | 117 |  |
-| `FootballerVisual.GAIT_CYCLES` | `{&"Jogging_inplace": 3, &"Jogging": 3, &"Two_Cycle_Sprint_inplace": 2, &"Two_...` | 383 | Ciclos de zancada (dos apoyos) que contiene cada clip de marcha. Casi todos son de un ciclo; el trote lento (Jogging_inplace, 2.57 s) trae tres y Two_Cycle_Sprint dos (contados en las punta de pie del clip). |
+| `FootballerVisual.LEAN_TURN_GAIN` | `0.75` | 134 | Inclinacion del tronco hacia dentro de la curva: fraccion de la fisica (tan = v * giro / g) y maximo (rad). La del cuerpo entero es ~1/20 de la fisica (2 grados a 6 m/s girando 1 rad/s): no se veia. |
+| `FootballerVisual.LEAN_ROLL_MAX` | `0.38` | 135 |  |
+| `FootballerVisual.LEAN_ACCEL_MAX` | `0.18` | 137 | Inclinacion maxima del tronco (rad) hacia delante al acelerar y hacia atras al frenar. |
+| `FootballerVisual.LEAN_BRAKE_MAX` | `0.1` | 138 |  |
+| `FootballerVisual.GAIT_CYCLES` | `{&"Jogging_inplace": 3, &"Jogging": 3, &"Two_Cycle_Sprint_inplace": 2, &"Two_...` | 394 | Ciclos de zancada (dos apoyos) que contiene cada clip de marcha. Casi todos son de un ciclo; el trote lento (Jogging_inplace, 2.57 s) trae tres y Two_Cycle_Sprint dos (contados en las punta de pie del clip). |
 <!-- /AUTO -->
 
 <!-- AUTO:consts:scripts/animation/procedural_pose.gd -->
@@ -63,6 +67,8 @@ Esta capa **no usa recursos de parámetros**: todo son constantes del código (v
 | `ProceduralPose.LATERAL` | `Vector3(0, 0, 1)` | 11 | Capa de animacion PROCEDURAL aplicada despues del AnimationTree (los clips de Tripo no incluyen patadas). Hoy implementa la patada (pase / tiro) con fases: balanceo hacia atras -> golpeo en el instante de contacto -> continuacion -> recuperacion. El contacto ocurre exactamente en contact_time desde start_kick(), y es el momento en el que BallHandler aplica el impulso a la pelota (sincronia cuerpo-pelota).  Convencion del esqueleto (espacio del Skeleton3D, sin rotacion en el GLB): adelante = +X, arriba = +Y, lateral = Z. Una rotacion POSITIVA alrededor de +Z balancea una pierna hacia ADELANTE. |
 | `ProceduralPose.FOLLOW_THROUGH` | `0.16` | 12 |  |
 | `ProceduralPose.RECOVERY` | `0.32` | 13 |  |
+| `ProceduralPose.LEAN_SHARE` | `[0.4, 0.3, 0.3]` | 29 |  |
+| `ProceduralPose.FORWARD` | `Vector3(1, 0, 0)` | 30 |  |
 <!-- /AUTO -->
 
 ### Riesgos al modificar
@@ -83,58 +89,59 @@ Esta capa **no usa recursos de parámetros**: todo son constantes del código (v
 <!-- AUTO:funcs:scripts/player/footballer_visual.gd -->
 | Función | Línea | Qué hace |
 |---|---|---|
-| `FootballerVisual.default_kit(team: int)` | 133 | Colores por defecto del kit (camiseta, short, medias, botines, piel, pelo). |
-| `FootballerVisual.referee_kit()` | 140 |  |
-| `FootballerVisual.keeper_kit()` | 144 |  |
-| `FootballerVisual.build(kit: Dictionary)` | 149 | Carga el modelo y aplica el kit. Devuelve false si se uso el maniqui provisional. |
-| `FootballerVisual._apply_kit(kit: Dictionary)` | 193 |  |
-| `FootballerVisual.set_kit(kit: Dictionary)` | 204 |  |
-| `FootballerVisual._anim_node(clip: StringName)` | 211 |  |
-| `FootballerVisual._setup_animation_tree()` | 216 |  |
-| `FootballerVisual.play_touch(id: StringName, foot: int, speed: float)` | 337 | Toque de conduccion: reproduce el clip de toque `id` en la capa de la pierna `foot` a `speed` (la escala de la marcha con pelota). Devuelve  |
-| `FootballerVisual.carry_phase(clip: StringName)` | 347 | Fase (s) del clip de marcha con pelota `clip` tras el ultimo proceso del AnimationTree; -1 si no esta en la mezcla. Todos los puntos de la m |
-| `FootballerVisual.carry_clip_for(speed: float)` | 353 | Clip de la marcha con pelota que domina a una velocidad (el punto de la mezcla mas cercano, sin el reposo). |
-| `FootballerVisual.play_action(clip: StringName, speed: float = 1.0)` | 369 | Dispara un clip de accion una sola vez. Devuelve su duracion efectiva en segundos. |
-| `FootballerVisual.cycle_seconds(clip: StringName)` | 386 | Duracion (s) de UN ciclo de zancada del clip. |
-| `FootballerVisual.gait_table()` | 392 |  |
-| `FootballerVisual.gait_scale_for(speed: float)` | 402 | Escala de tiempo de la marcha del pack a una velocidad: velocidad / velocidad natural de lo que se esta mezclando. |
-| `FootballerVisual.gait_time_scale(speed: float)` | 416 |  |
-| `FootballerVisual.carry_gait_table()` | 422 | Tabla de la marcha CON balon, igual que gait_table pero con los clips de conduccion. |
-| `FootballerVisual.carry_scale_for(speed: float)` | 433 |  |
-| `FootballerVisual.step_interval_for(speed: float)` | 449 | Segundos entre apoyos consecutivos (un pie tras otro) de la marcha del pack a una velocidad, ya con la escala de tiempo con la que se reprod |
-| `FootballerVisual.play_pack_clip(id: StringName, speed: float = 1.0, start: float = 0.0, play_for: float = -1.0)` | 468 | Dispara un clip del pack una sola vez, con velocidad de reproduccion y punto de inicio (s). Devuelve su duracion efectiva en segundos (0 si  |
-| `FootballerVisual.play_situation(situation: StringName, pick: int = 0, speed: float = 1.0, play_for: float = -1.0)` | 492 | Reproduce la situacion de juego pedida (AnimationCatalog): clip del pack si existe, si no el de Tripo. Devuelve {"source", "clip", "duration |
-| `FootballerVisual.stop_current_action()` | 503 | Corta con un fundido la accion en curso (de Tripo o del pack). |
-| `FootballerVisual.stop_action(clip: StringName)` | 515 |  |
-| `FootballerVisual.start_kick(contact_time: float, power: float, side: int)` | 524 | Inicia la patada procedural: el golpeo ocurre a los contact_time segundos. side: +1 derecha, -1 izquierda. |
-| `FootballerVisual.is_action_playing()` | 528 |  |
-| `FootballerVisual.update_motion(f: Footballer, delta: float)` | 532 | Llamado cada paso de fisica por el futbolista. |
-| `FootballerVisual.drive_motion(speed: float, turn_rate: float, delta: float)` | 536 | Version por valores (la usan el futbolista y el arquero): velocidad horizontal y velocidad de giro (rad/s). |
-| `FootballerVisual._build_placeholder(shirt_color: Color)` | 598 |  |
-| `FootballerVisual._update_placeholder(speed: float, delta: float)` | 610 |  |
-| `FootballerVisual._add_mesh(mesh: Mesh, mat: Material, pos: Vector3)` | 617 |  |
-| `FootballerVisual._capsule(r: float, h: float)` | 625 |  |
-| `FootballerVisual._sphere(r: float)` | 633 |  |
-| `FootballerVisual._box(size: Vector3)` | 641 |  |
+| `FootballerVisual.default_kit(team: int)` | 144 | Colores por defecto del kit (camiseta, short, medias, botines, piel, pelo). |
+| `FootballerVisual.referee_kit()` | 151 |  |
+| `FootballerVisual.keeper_kit()` | 155 |  |
+| `FootballerVisual.build(kit: Dictionary)` | 160 | Carga el modelo y aplica el kit. Devuelve false si se uso el maniqui provisional. |
+| `FootballerVisual._apply_kit(kit: Dictionary)` | 204 |  |
+| `FootballerVisual.set_kit(kit: Dictionary)` | 215 |  |
+| `FootballerVisual._anim_node(clip: StringName)` | 222 |  |
+| `FootballerVisual._setup_animation_tree()` | 227 |  |
+| `FootballerVisual.play_touch(id: StringName, foot: int, speed: float)` | 348 | Toque de conduccion: reproduce el clip de toque `id` en la capa de la pierna `foot` a `speed` (la escala de la marcha con pelota). Devuelve  |
+| `FootballerVisual.carry_phase(clip: StringName)` | 358 | Fase (s) del clip de marcha con pelota `clip` tras el ultimo proceso del AnimationTree; -1 si no esta en la mezcla. Todos los puntos de la m |
+| `FootballerVisual.carry_clip_for(speed: float)` | 364 | Clip de la marcha con pelota que domina a una velocidad (el punto de la mezcla mas cercano, sin el reposo). |
+| `FootballerVisual.play_action(clip: StringName, speed: float = 1.0)` | 380 | Dispara un clip de accion una sola vez. Devuelve su duracion efectiva en segundos. |
+| `FootballerVisual.cycle_seconds(clip: StringName)` | 397 | Duracion (s) de UN ciclo de zancada del clip. |
+| `FootballerVisual.gait_table()` | 403 |  |
+| `FootballerVisual.gait_scale_for(speed: float)` | 413 | Escala de tiempo de la marcha del pack a una velocidad: velocidad / velocidad natural de lo que se esta mezclando. |
+| `FootballerVisual.gait_time_scale(speed: float)` | 427 |  |
+| `FootballerVisual.carry_gait_table()` | 433 | Tabla de la marcha CON balon, igual que gait_table pero con los clips de conduccion. |
+| `FootballerVisual.carry_scale_for(speed: float)` | 444 |  |
+| `FootballerVisual.step_interval_for(speed: float)` | 460 | Segundos entre apoyos consecutivos (un pie tras otro) de la marcha del pack a una velocidad, ya con la escala de tiempo con la que se reprod |
+| `FootballerVisual.play_pack_clip(id: StringName, speed: float = 1.0, start: float = 0.0, play_for: float = -1.0)` | 479 | Dispara un clip del pack una sola vez, con velocidad de reproduccion y punto de inicio (s). Devuelve su duracion efectiva en segundos (0 si  |
+| `FootballerVisual.play_situation(situation: StringName, pick: int = 0, speed: float = 1.0, play_for: float = -1.0)` | 503 | Reproduce la situacion de juego pedida (AnimationCatalog): clip del pack si existe, si no el de Tripo. Devuelve {"source", "clip", "duration |
+| `FootballerVisual.stop_current_action()` | 514 | Corta con un fundido la accion en curso (de Tripo o del pack). |
+| `FootballerVisual.stop_action(clip: StringName)` | 526 |  |
+| `FootballerVisual.start_kick(contact_time: float, power: float, side: int)` | 535 | Inicia la patada procedural: el golpeo ocurre a los contact_time segundos. side: +1 derecha, -1 izquierda. |
+| `FootballerVisual.is_action_playing()` | 539 |  |
+| `FootballerVisual.update_motion(f: Footballer, delta: float)` | 543 | Llamado cada paso de fisica por el futbolista. |
+| `FootballerVisual.drive_motion(speed: float, turn_rate: float, delta: float)` | 547 | Version por valores (la usan el futbolista y el arquero): velocidad horizontal y velocidad de giro (rad/s). |
+| `FootballerVisual._build_placeholder(shirt_color: Color)` | 624 |  |
+| `FootballerVisual._update_placeholder(speed: float, delta: float)` | 636 |  |
+| `FootballerVisual._add_mesh(mesh: Mesh, mat: Material, pos: Vector3)` | 643 |  |
+| `FootballerVisual._capsule(r: float, h: float)` | 651 |  |
+| `FootballerVisual._sphere(r: float)` | 659 |  |
+| `FootballerVisual._box(size: Vector3)` | 667 |  |
 <!-- /AUTO -->
 
 <!-- AUTO:funcs:scripts/animation/procedural_pose.gd -->
 | Función | Línea | Qué hace |
 |---|---|---|
-| `ProceduralPose.setup(skel: Skeleton3D)` | 25 |  |
-| `ProceduralPose.start_kick(contact_time: float, power: float, side: int)` | 31 | Inicia una patada. contact_time = segundos hasta el golpeo; power 0..1; side +1 derecha / -1 izquierda. |
-| `ProceduralPose.is_kicking()` | 38 |  |
-| `ProceduralPose.kick_time()` | 41 |  |
-| `ProceduralPose.cancel()` | 44 |  |
-| `ProceduralPose.total_duration()` | 47 |  |
-| `ProceduralPose._process_modification_with_delta(delta: float)` | 50 |  |
-| `ProceduralPose.apply_at(t: float)` | 60 | Aplica la pose de patada correspondiente al instante t (sin avanzar el tiempo). Util para herramientas. |
-| `ProceduralPose._rotate(bone: int, axis: Vector3, angle: float)` | 72 |  |
-| `ProceduralPose.kick_angles(t: float, contact: float, power: float)` | 79 | Curvas de la patada (radianes) en funcion del tiempo. Pura: se puede probar sin esqueleto. |
-| `ProceduralPose.envelope(t: float, contact: float)` | 116 | Peso de mezcla con la animacion base: entra rapido, sale al final de la recuperacion. |
-| `ProceduralPose._ease_out(x: float)` | 122 |  |
-| `ProceduralPose._ease_in(x: float)` | 126 |  |
-| `ProceduralPose._smooth(x: float)` | 130 |  |
+| `ProceduralPose.setup(skel: Skeleton3D)` | 32 |  |
+| `ProceduralPose.start_kick(contact_time: float, power: float, side: int)` | 38 | Inicia una patada. contact_time = segundos hasta el golpeo; power 0..1; side +1 derecha / -1 izquierda. |
+| `ProceduralPose.is_kicking()` | 45 |  |
+| `ProceduralPose.kick_time()` | 48 |  |
+| `ProceduralPose.cancel()` | 51 |  |
+| `ProceduralPose.total_duration()` | 54 |  |
+| `ProceduralPose._process_modification_with_delta(delta: float)` | 57 |  |
+| `ProceduralPose.apply_at(t: float)` | 70 | Aplica la pose de patada correspondiente al instante t (sin avanzar el tiempo). Util para herramientas. |
+| `ProceduralPose._apply_lean()` | 84 | Inclinacion del tronco: en el espacio del esqueleto adelante = +X, derecha = +Z; girar la columna sobre +Z en negativo la lleva hacia delant |
+| `ProceduralPose._rotate(bone: int, axis: Vector3, angle: float)` | 93 |  |
+| `ProceduralPose.kick_angles(t: float, contact: float, power: float)` | 100 | Curvas de la patada (radianes) en funcion del tiempo. Pura: se puede probar sin esqueleto. |
+| `ProceduralPose.envelope(t: float, contact: float)` | 137 | Peso de mezcla con la animacion base: entra rapido, sale al final de la recuperacion. |
+| `ProceduralPose._ease_out(x: float)` | 143 |  |
+| `ProceduralPose._ease_in(x: float)` | 147 |  |
+| `ProceduralPose._smooth(x: float)` | 151 |  |
 <!-- /AUTO -->
 
 <!-- AUTO:funcs:scripts/animation/pose_sampler.gd -->
@@ -223,3 +230,17 @@ marcha normal sin salto. El control lateral y la protección reutilizan la mezcl
 ## Historial
 
 Ver [CHANGELOG.md](../CHANGELOG.md): «Futbolista con Tripo3D», «Esqueleto único v1.0».
+
+## Inclinación del tronco en curvas y cambios de ritmo (2026-10-28)
+
+Del video de referencia de conducción (`referencia_conduccion_recortada`, revisado imagen por imagen): al doblar con
+la pelota el jugador se inclina hacia dentro de la curva, al arrancar se echa hacia delante y al frenar hacia atrás.
+Antes el cuerpo entero se inclinaba ~1/20 de lo que pide la física (2° a 6 m/s girando 1 rad/s): no se veía.
+
+- `FootballerVisual.drive_motion` calcula la inclinación física hacia dentro, `atan(v·giro/g)·LEAN_TURN_GAIN` (0.75,
+  máximo `LEAN_ROLL_MAX` 0.38 rad ≈ 22°), y la de la aceleración (`a/g`, hasta `LEAN_ACCEL_MAX` 0.18 rad delante y
+  `LEAN_BRAKE_MAX` 0.1 rad atrás), y se la pasa a `ProceduralPose.lean_roll` / `lean_pitch`.
+- `ProceduralPose._apply_lean` la reparte por la columna (`Spine` 40 %, `Spine1` 30 %, `Spine2` 30 %) sin tocar caderas
+  ni piernas. Se probó primero inclinando el cuerpo entero (`rig`): movía los pies y la conducción en curva empeoró
+  (eslalon a la carrera p95 0.33 → 0.54 m, cambio de carril 0.13 → 0.59 m, 5 semillas). Con el tronco las cifras quedan
+  exactamente igual que sin inclinación (0.33 / 0.38 / 0.09 / 0.13 / 0.63 m).

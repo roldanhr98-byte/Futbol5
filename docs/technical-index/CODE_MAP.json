@@ -61,73 +61,61 @@
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.apply_tuning",
-          "line": 121,
+          "line": 122,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball._integrate_forces",
-          "line": 338,
+          "line": 330,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.kick",
-          "line": 146,
+          "line": 147,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.push",
-          "line": 171,
+          "line": 172,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.rolling_spin",
-          "line": 167,
+          "line": 168,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.reset_at",
-          "line": 190,
+          "line": 191,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.hold",
-          "line": 202,
+          "line": 203,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.release",
-          "line": 212,
+          "line": 213,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.register_touch",
-          "line": 176,
-          "kind": "func"
-        },
-        {
-          "file": "scripts/ball/ball.gd",
-          "name": "Ball.enter_net",
-          "line": 233,
-          "kind": "func"
-        },
-        {
-          "file": "scripts/ball/ball.gd",
-          "name": "Ball.exit_net",
-          "line": 237,
+          "line": 177,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball._on_body_entered",
-          "line": 416,
+          "line": 411,
           "kind": "func"
         },
         {
@@ -230,27 +218,21 @@
         },
         {
           "file": "scripts/ball/ball_tuning.gd",
-          "name": "BallTuning.net_damping",
-          "default": "7.0",
-          "line": 31
-        },
-        {
-          "file": "scripts/ball/ball_tuning.gd",
-          "name": "BallTuning.net_restitution",
-          "default": "0.12",
-          "line": 32
-        },
-        {
-          "file": "scripts/ball/ball_tuning.gd",
           "name": "BallTuning.max_speed",
           "default": "38.0",
-          "line": 33
+          "line": 43
         },
         {
           "file": "scripts/ball/ball_tuning.gd",
           "name": "BallTuning.max_spin",
           "default": "150.0",
-          "line": 34
+          "line": 44
+        },
+        {
+          "file": "scripts/ball/ball_tuning.gd",
+          "name": "BallTuning.net_stiffness",
+          "default": "1800.0",
+          "line": 32
         }
       ],
       "dependencies": [
@@ -299,13 +281,13 @@
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.capture_state",
-          "line": 242,
+          "line": 234,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.apply_state",
-          "line": 255,
+          "line": 247,
           "kind": "func"
         }
       ],
@@ -549,43 +531,43 @@
         {
           "file": "scripts/pitch/goal.gd",
           "name": "Goal.setup",
-          "line": 19,
+          "line": 22,
           "kind": "func"
         },
         {
           "file": "scripts/pitch/goal.gd",
           "name": "Goal._build_frame",
-          "line": 37,
+          "line": 45,
           "kind": "func"
         },
         {
           "file": "scripts/pitch/goal.gd",
           "name": "Goal._build_net",
-          "line": 75,
+          "line": 83,
           "kind": "func"
         },
         {
           "file": "scripts/pitch/goal.gd",
           "name": "Goal._physics_process",
-          "line": 134,
+          "line": 106,
           "kind": "func"
         },
         {
           "file": "scripts/pitch/goal.gd",
           "name": "Goal.is_ball_in_goal",
-          "line": 148,
+          "line": 121,
           "kind": "func"
         },
         {
           "file": "scripts/pitch/goal.gd",
           "name": "Goal.aim_point",
-          "line": 161,
+          "line": 134,
           "kind": "func"
         },
         {
           "file": "scripts/pitch/goal.gd",
           "name": "Goal.reset_latch",
-          "line": 32,
+          "line": 40,
           "kind": "func"
         }
       ],
@@ -618,6 +600,106 @@
       "dependencies": [
         "BALL",
         "MATCH"
+      ],
+      "documentation": "docs/technical-index/SYSTEMS/PITCH.md",
+      "last_verified": "2026-10-28"
+    },
+    {
+      "id": "pitch.goal_net",
+      "system": "PITCH",
+      "description": "Red del arco con fisica de tela: cuatro panos atados al marco (membranas) que la pelota abomba con su forma; la tela la frena (muelle amortiguado implicito, mas rigido junto al marco), casi no la devuelve y vuelve con ondas. Por dentro y por fuera (red lateral, techo).",
+      "keywords": [
+        "red",
+        "red del arco",
+        "tela",
+        "net",
+        "goal net",
+        "abombar",
+        "se mueve la red",
+        "frena la pelota",
+        "red lateral",
+        "techo de la red",
+        "rebote en la red",
+        "fisica de la red",
+        "física de la red"
+      ],
+      "files": [
+        "scripts/pitch/goal_net.gd",
+        "scripts/pitch/goal.gd",
+        "scripts/ball/ball.gd",
+        "scripts/ball/ball_tuning.gd",
+        "assets/pitch/net.gdshader",
+        "tests/test_goal_net.gd",
+        "tools/net_view.gd",
+        "tools/net_view.tscn"
+      ],
+      "symbols": [
+        {
+          "file": "scripts/pitch/goal_net.gd",
+          "name": "GoalNet.setup",
+          "line": 76,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/pitch/goal_net.gd",
+          "name": "GoalNet._ball_contact",
+          "line": 153,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/pitch/goal_net.gd",
+          "name": "GoalNet._press",
+          "line": 225,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/pitch/goal_net.gd",
+          "name": "GoalNet._step",
+          "line": 246,
+          "kind": "func"
+        }
+      ],
+      "parameters": [
+        {
+          "file": "scripts/ball/ball_tuning.gd",
+          "name": "BallTuning.net_stiffness",
+          "default": "1800.0",
+          "line": 32
+        },
+        {
+          "file": "scripts/ball/ball_tuning.gd",
+          "name": "BallTuning.net_damp_in",
+          "default": "0.25",
+          "line": 35
+        },
+        {
+          "file": "scripts/ball/ball_tuning.gd",
+          "name": "BallTuning.net_damp_out",
+          "default": "1.2",
+          "line": 36
+        },
+        {
+          "file": "scripts/ball/ball_tuning.gd",
+          "name": "BallTuning.net_return",
+          "default": "0.05",
+          "line": 38
+        },
+        {
+          "file": "scripts/ball/ball_tuning.gd",
+          "name": "BallTuning.net_grip",
+          "default": "7.0",
+          "line": 40
+        },
+        {
+          "file": "scripts/ball/ball_tuning.gd",
+          "name": "BallTuning.net_max_bulge",
+          "default": "0.6",
+          "line": 42
+        }
+      ],
+      "dependencies": [
+        "BALL",
+        "PITCH"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PITCH.md",
       "last_verified": "2026-10-28"
@@ -1159,7 +1241,7 @@
           "file": "scripts/ball/ball_tuning.gd",
           "name": "BallTuning.shot_charge_time",
           "default": "0.9",
-          "line": 48
+          "line": 58
         }
       ],
       "dependencies": [
@@ -1383,37 +1465,37 @@
           "file": "scripts/ball/ball_tuning.gd",
           "name": "BallTuning.shot_speed_min",
           "default": "9.0",
-          "line": 45
+          "line": 55
         },
         {
           "file": "scripts/ball/ball_tuning.gd",
           "name": "BallTuning.shot_speed_max",
           "default": "27.0",
-          "line": 46
+          "line": 56
         },
         {
           "file": "scripts/ball/ball_tuning.gd",
           "name": "BallTuning.shot_charge_time",
           "default": "0.9",
-          "line": 48
+          "line": 58
         },
         {
           "file": "scripts/ball/ball_tuning.gd",
           "name": "BallTuning.shot_loft_low_deg",
           "default": "4.0",
-          "line": 49
+          "line": 59
         },
         {
           "file": "scripts/ball/ball_tuning.gd",
           "name": "BallTuning.shot_loft_high_deg",
           "default": "22.0",
-          "line": 50
+          "line": 60
         },
         {
           "file": "scripts/ball/ball_tuning.gd",
           "name": "BallTuning.shot_spin_factor",
           "default": "14.0",
-          "line": 52
+          "line": 62
         }
       ],
       "dependencies": [
@@ -1658,55 +1740,55 @@
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.build",
-          "line": 149,
+          "line": 160,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual._setup_animation_tree",
-          "line": 216,
+          "line": 227,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.play_action",
-          "line": 369,
+          "line": 380,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.stop_action",
-          "line": 515,
+          "line": 526,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.update_motion",
-          "line": 532,
+          "line": 543,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.start_kick",
-          "line": 524,
+          "line": 535,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.set_kit",
-          "line": 204,
+          "line": 215,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.default_kit",
-          "line": 133,
+          "line": 144,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.keeper_kit",
-          "line": 144,
+          "line": 155,
           "kind": "func"
         },
         {
@@ -1782,31 +1864,31 @@
         {
           "file": "scripts/animation/procedural_pose.gd",
           "name": "ProceduralPose.start_kick",
-          "line": 31,
+          "line": 38,
           "kind": "func"
         },
         {
           "file": "scripts/animation/procedural_pose.gd",
           "name": "ProceduralPose.apply_at",
-          "line": 60,
+          "line": 70,
           "kind": "func"
         },
         {
           "file": "scripts/animation/procedural_pose.gd",
           "name": "ProceduralPose._process_modification_with_delta",
-          "line": 50,
+          "line": 57,
           "kind": "func"
         },
         {
           "file": "scripts/animation/procedural_pose.gd",
           "name": "ProceduralPose.kick_angles",
-          "line": 79,
+          "line": 100,
           "kind": "func"
         },
         {
           "file": "scripts/animation/procedural_pose.gd",
           "name": "ProceduralPose.envelope",
-          "line": 116,
+          "line": 137,
           "kind": "func"
         },
         {
@@ -2006,7 +2088,13 @@
         "distancia",
         "fov",
         "vista",
-        "pantalla a mundo"
+        "pantalla a mundo",
+        "camara de transmision",
+        "cámara de transmisión",
+        "como pes",
+        "broadcast",
+        "vista de costado",
+        "angulo de camara"
       ],
       "files": [
         "scripts/camera/match_camera.gd"
@@ -2015,43 +2103,43 @@
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.setup",
-          "line": 49,
+          "line": 53,
           "kind": "func"
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.snap_to_target",
-          "line": 59,
+          "line": 63,
           "kind": "func"
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera._process",
-          "line": 65,
+          "line": 69,
           "kind": "func"
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera._target_focus",
-          "line": 76,
+          "line": 80,
           "kind": "func"
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera._target_distance",
-          "line": 130,
+          "line": 134,
           "kind": "func"
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera._apply_transform",
-          "line": 141,
+          "line": 145,
           "kind": "func"
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.screen_to_world_dir",
-          "line": 159,
+          "line": 163,
           "kind": "func"
         }
       ],
@@ -2059,50 +2147,50 @@
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.pitch_deg",
-          "default": "52.0",
-          "line": 10
+          "default": "30.0",
+          "line": 13
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.base_distance",
-          "default": "16.0",
-          "line": 11
+          "default": "30.0",
+          "line": 15
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.max_distance",
-          "default": "27.0",
-          "line": 12
+          "default": "38.0",
+          "line": 16
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.follow_halflife",
           "default": "0.22",
-          "line": 22
+          "line": 26
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.zoom_halflife",
           "default": "0.55",
-          "line": 23
+          "line": 27
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.ball_lead_time",
           "default": "0.28",
-          "line": 24
+          "line": 28
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.focus_weight_with_ball",
           "default": "0.4",
-          "line": 25
+          "line": 29
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.focus_weight_without_ball",
           "default": "0.72",
-          "line": 26
+          "line": 30
         }
       ],
       "dependencies": [
@@ -3316,31 +3404,31 @@
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.play_pack_clip",
-          "line": 468,
+          "line": 479,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.play_situation",
-          "line": 492,
-          "kind": "func"
-        },
-        {
-          "file": "scripts/player/footballer_visual.gd",
-          "name": "FootballerVisual.stop_current_action",
           "line": 503,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
+          "name": "FootballerVisual.stop_current_action",
+          "line": 514,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.gait_scale_for",
-          "line": 402,
+          "line": 413,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.step_interval_for",
-          "line": 449,
+          "line": 460,
           "kind": "func"
         },
         {
@@ -4101,7 +4189,7 @@
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.set_knuckle",
-          "line": 158,
+          "line": 159,
           "kind": "func"
         }
       ],
@@ -4142,19 +4230,19 @@
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball._process",
-          "line": 274,
+          "line": 266,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.VISUAL_SPIN_DEG_PER_FRAME",
-          "line": 265,
+          "line": 257,
           "kind": "const"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.VISUAL_SHUTTER",
-          "line": 268,
+          "line": 260,
           "kind": "const"
         }
       ],
@@ -4338,13 +4426,13 @@
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.play_touch",
-          "line": 337,
+          "line": 348,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.carry_phase",
-          "line": 347,
+          "line": 358,
           "kind": "func"
         },
         {

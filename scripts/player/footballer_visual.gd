@@ -125,6 +125,17 @@ var _action_cut: bool = false
 
 var _lean_pitch: float = 0.0
 var _lean_roll: float = 0.0
+var _lean_prev_speed: float = 0.0
+var _lean_accel: float = 0.0
+var _trunk_pitch: float = 0.0
+var _trunk_roll: float = 0.0
+## Inclinacion del tronco hacia dentro de la curva: fraccion de la fisica (tan = v * giro / g) y maximo (rad). La del
+## cuerpo entero es ~1/20 de la fisica (2 grados a 6 m/s girando 1 rad/s): no se veia.
+const LEAN_TURN_GAIN := 0.75
+const LEAN_ROLL_MAX := 0.38
+## Inclinacion maxima del tronco (rad) hacia delante al acelerar y hacia atras al frenar.
+const LEAN_ACCEL_MAX := 0.18
+const LEAN_BRAKE_MAX := 0.1
 var _phase: float = 0.0
 var _legs: Array[MeshInstance3D] = []
 var _action_timer: float = 0.0
@@ -584,14 +595,29 @@ func drive_motion(speed: float, turn_rate: float, delta: float) -> void:
 				p = dir_blend_override
 			anim_tree.set("parameters/Dir/blend_position", p)
 			anim_tree.set("parameters/DirScale/scale", dir_scale_override if dir_scale_override > 0.0 else (clampf(ds / ref, 0.6, 2.2) if ds > 0.2 else 1.0))
-	# Inclinacion del cuerpo: hacia delante al acelerar/sprintar y hacia dentro en las curvas.
+	# Inclinacion del cuerpo (como en el video de referencia de conduccion): hacia delante con la velocidad y al
+	# acelerar, hacia atras al frenar, y hacia dentro en las curvas como pide la fisica (tan = v * giro / g), algo menos.
+	var accel: float = 0.0
+	if delta > 0.0:
+		accel = (speed - _lean_prev_speed) / delta
+	_lean_prev_speed = speed
+	_lean_accel = lerpf(_lean_accel, accel, 1.0 - exp(-6.0 * delta))
+	# El cuerpo entero (rig) se inclina poco, como antes, para no mover los pies que tocan la pelota; la inclinacion
+	# grande la lleva el tronco (ProceduralPose: columna, sin tocar caderas ni piernas).
 	var target_pitch: float = clampf(speed / 7.0, 0.0, 1.0) * 0.12
 	var target_roll: float = clampf(turn_rate * speed * 0.0042, -0.28, 0.28)
+	var trunk_pitch: float = clampf(_lean_accel / 9.81, -LEAN_BRAKE_MAX, LEAN_ACCEL_MAX)
+	var trunk_roll: float = clampf(atan(turn_rate * speed / 9.81) * LEAN_TURN_GAIN, -LEAN_ROLL_MAX, LEAN_ROLL_MAX)
 	var k: float = 1.0 - exp(-10.0 * delta)
 	_lean_pitch = lerpf(_lean_pitch, target_pitch, k)
 	_lean_roll = lerpf(_lean_roll, target_roll, k)
+	_trunk_pitch = lerpf(_trunk_pitch, trunk_pitch, k)
+	_trunk_roll = lerpf(_trunk_roll, trunk_roll, k)
 	rig.rotation.x = -_lean_pitch
 	rig.rotation.z = _lean_roll
+	if pose_modifier != null:
+		pose_modifier.lean_pitch = _trunk_pitch
+		pose_modifier.lean_roll = _trunk_roll
 
 # --- Maniqui provisional (solo si falta el modelo) --------------------------
 

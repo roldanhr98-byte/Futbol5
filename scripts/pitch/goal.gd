@@ -1,7 +1,7 @@
 class_name Goal
 extends Node3D
-## Arco: postes y travesano con colision fisica (rebotes reales), red visible de una sola malla,
-## colisiones simples para la red y deteccion de gol cuando la pelota cruza COMPLETAMENTE la linea.
+## Arco: postes y travesano con colision fisica (rebotes reales), red de tela que frena la pelota (GoalNet), colisiones
+## simples de la red para los jugadores y deteccion de gol cuando la pelota cruza COMPLETAMENTE la linea.
 ##
 ## Marco local: +X apunta hacia afuera del campo (detras del arco), +Y arriba, Z lateral.
 
@@ -15,6 +15,9 @@ var side: int = 1
 var ball: Ball = null
 var _latched: bool = false
 var _frame_material: StandardMaterial3D
+## Red de tela del arco.
+var net: GoalNet = null
+var _net_bodies: Array = []
 
 func setup(cfg: PitchConfig, goal_side: int) -> void:
 	config = cfg
@@ -28,6 +31,11 @@ func setup(cfg: PitchConfig, goal_side: int) -> void:
 
 func set_ball(b: Ball) -> void:
 	ball = b
+	if net != null:
+		net.ball = b
+	if b != null:
+		for body in _net_bodies:
+			b.add_collision_exception_with(body)
 
 func reset_latch() -> void:
 	_latched = false
@@ -76,58 +84,22 @@ func _build_net() -> void:
 	var d: float = config.goal_depth
 	var h: float = config.goal_height
 	var hw: float = config.half_goal()
-	var verts := PackedVector3Array()
-	var normals := PackedVector3Array()
-	var uvs := PackedVector2Array()
-	var idx := PackedInt32Array()
-	# Fondo, techo y laterales (caja abierta por delante).
-	MeshUtil.add_quad(verts, normals, uvs, idx,
-		Vector3(d, 0, -hw), Vector3(d, 0, hw), Vector3(d, h, hw), Vector3(d, h, -hw))
-	MeshUtil.add_quad(verts, normals, uvs, idx,
-		Vector3(0, h, -hw), Vector3(d, h, -hw), Vector3(d, h, hw), Vector3(0, h, hw))
-	MeshUtil.add_quad(verts, normals, uvs, idx,
-		Vector3(0, 0, -hw), Vector3(d, 0, -hw), Vector3(d, h, -hw), Vector3(0, h, -hw))
-	MeshUtil.add_quad(verts, normals, uvs, idx,
-		Vector3(0, 0, hw), Vector3(d, 0, hw), Vector3(d, h, hw), Vector3(0, h, hw))
-	var mi := MeshInstance3D.new()
-	mi.name = "Net"
-	mi.mesh = MeshUtil.build_mesh(verts, normals, uvs, idx)
+	# Red de tela (GoalNet): se abomba con la pelota, la frena y vuelve con ondas.
 	var mat := ShaderMaterial.new()
 	mat.shader = NET_SHADER
-	mi.material_override = mat
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(mi)
+	net = GoalNet.new()
+	net.name = "Net"
+	add_child(net)
+	net.setup(d, h, hw, mat)
 
-	# Colisiones simples para contener la pelota dentro de la red.
+	# Colisiones simples de la red para los jugadores y el arquero (la pelota no las ve: la frena la tela).
 	var t: float = 0.06
-	# Grupo "net_surface": la pelota pierde casi toda su energia al tocarlas (ver Ball._on_body_entered).
-	MeshUtil.add_box_body(self, Vector3(t, h, config.goal_width), Vector3(d + t * 0.5, h * 0.5, 0), Ball.LAYER_WORLD, &"net_surface")
-	MeshUtil.add_box_body(self, Vector3(d, h, t), Vector3(d * 0.5, h * 0.5, -hw - t * 0.5), Ball.LAYER_WORLD, &"net_surface")
-	MeshUtil.add_box_body(self, Vector3(d, h, t), Vector3(d * 0.5, h * 0.5, hw + t * 0.5), Ball.LAYER_WORLD, &"net_surface")
-	MeshUtil.add_box_body(self, Vector3(d, t, config.goal_width + 2.0 * t), Vector3(d * 0.5, h + t * 0.5, 0), Ball.LAYER_WORLD, &"net_surface")
-
-	# Volumen de red: amortigua la pelota que entra (la red absorbe energia).
-	var area := Area3D.new()
-	area.collision_layer = 0
-	area.collision_mask = Ball.LAYER_BALL
-	area.monitorable = false
-	var acs := CollisionShape3D.new()
-	var box := BoxShape3D.new()
-	box.size = Vector3(d, h, config.goal_width)
-	acs.shape = box
-	area.add_child(acs)
-	area.position = Vector3(d * 0.5, h * 0.5, 0)
-	area.body_entered.connect(_on_net_entered)
-	area.body_exited.connect(_on_net_exited)
-	add_child(area)
-
-func _on_net_entered(body: Node3D) -> void:
-	if body is Ball:
-		(body as Ball).enter_net()
-
-func _on_net_exited(body: Node3D) -> void:
-	if body is Ball:
-		(body as Ball).exit_net()
+	_net_bodies = [
+		MeshUtil.add_box_body(self, Vector3(t, h, config.goal_width), Vector3(d + t * 0.5, h * 0.5, 0), Ball.LAYER_WORLD, &"net_surface"),
+		MeshUtil.add_box_body(self, Vector3(d, h, t), Vector3(d * 0.5, h * 0.5, -hw - t * 0.5), Ball.LAYER_WORLD, &"net_surface"),
+		MeshUtil.add_box_body(self, Vector3(d, h, t), Vector3(d * 0.5, h * 0.5, hw + t * 0.5), Ball.LAYER_WORLD, &"net_surface"),
+		MeshUtil.add_box_body(self, Vector3(d, t, config.goal_width + 2.0 * t), Vector3(d * 0.5, h + t * 0.5, 0), Ball.LAYER_WORLD, &"net_surface"),
+	]
 
 # --- Deteccion de gol ------------------------------------------------------
 
@@ -144,12 +116,13 @@ func _physics_process(_delta: float) -> void:
 		goal_scored.emit(self, ball.global_position)
 
 ## La pelota cuenta como gol cuando su centro esta al menos un radio detras de la linea
-## (cruzo completamente) y dentro del marco (entre postes y bajo el travesano).
+## (cruzo completamente) y dentro del marco (entre postes y entera bajo el travesano: una pelota sobre el techo de la
+## red, que cede con su peso, no es gol).
 func is_ball_in_goal(local_ball_pos: Vector3) -> bool:
 	var r: float = ball.radius if ball != null else 0.1
 	return local_ball_pos.x >= r \
 		and absf(local_ball_pos.z) <= config.half_goal() \
-		and local_ball_pos.y <= config.goal_height
+		and local_ball_pos.y <= config.goal_height - r
 
 # --- Datos para la IA y las asistencias ------------------------------------
 

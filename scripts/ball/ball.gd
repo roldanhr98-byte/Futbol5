@@ -35,9 +35,10 @@ var last_touch_frame: int = 0
 var holder: Node = null
 var _hold_anchor: Node3D = null
 
-## Amortiguacion extra mientras esta dentro de la red del arco.
-var net_damping: float = 0.0
-var _net_volumes: int = 0
+## Aceleracion que le aplica la red del arco en el proximo paso de fisica (GoalNet la acumula en su _physics_process,
+## que corre antes del paso) y si esta metida en la tela (frena tambien el giro).
+var net_accel: Vector3 = Vector3.ZERO
+var net_contact: bool = false
 
 var _grounded: bool = false
 var _pending_teleport: bool = false
@@ -230,15 +231,6 @@ func speed() -> float:
 func ground_speed() -> float:
 	return Vector2(linear_velocity.x, linear_velocity.z).length()
 
-func enter_net() -> void:
-	_net_volumes += 1
-	net_damping = tuning.net_damping
-
-func exit_net() -> void:
-	_net_volumes = maxi(0, _net_volumes - 1)
-	if _net_volumes == 0:
-		net_damping = 0.0
-
 func capture_state(tick: int = 0) -> BallState:
 	var s := BallState.new()
 	s.tick = tick
@@ -341,6 +333,7 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		state.transform = Transform3D(Basis.IDENTITY, _teleport_pos)
 		state.linear_velocity = _teleport_vel
 		state.angular_velocity = Vector3.ZERO
+		net_accel = Vector3.ZERO
 		return
 	var dt: float = state.step
 	var v: Vector3 = state.linear_velocity
@@ -399,11 +392,13 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		if hs < 0.05:
 			w = w.move_toward(Vector3.ZERO, tuning.spin_decel_ground * dt)
 
-	# Red del arco: frena la pelota de forma agresiva.
-	if net_damping > 0.0:
-		var k: float = exp(-net_damping * dt)
-		v *= k
-		w *= k
+	# Red del arco: la tela empuja y frena la pelota (GoalNet).
+	if net_accel != Vector3.ZERO:
+		v += net_accel * dt
+		net_accel = Vector3.ZERO
+	if net_contact:
+		w *= exp(-tuning.net_grip * dt)
+		net_contact = false
 
 	if v.length() > tuning.max_speed:
 		v = v.normalized() * tuning.max_speed
@@ -418,7 +413,3 @@ func _on_body_entered(body: Node) -> void:
 		knuckle_accel = 0.0
 	if body.is_in_group("goal_frame"):
 		hit_goal_frame.emit(global_position, linear_velocity.length())
-	elif body.is_in_group("net_surface"):
-		# La red cede: absorbe la mayor parte de la energia del impacto (la pelota cae en la red).
-		linear_velocity *= tuning.net_restitution
-		angular_velocity *= 0.3

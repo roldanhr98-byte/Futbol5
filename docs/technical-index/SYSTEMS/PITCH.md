@@ -13,7 +13,8 @@
 | Ruta | Función | Símbolos / nodos | Dependencias directas |
 |---|---|---|---|
 | `scripts/pitch/pitch.gd` | Clase `Pitch` (`Node3D`): `build(cfg)` crea piso, líneas, paredes, arcos, luz y ambiente | `Pitch.build`, `Pitch._build_floor`, `Pitch._build_lines`, `Pitch._build_walls`, `Pitch._build_goals`, `Pitch._build_lighting`, `Pitch._build_ambient`, clase interna `Pitch.LineBuilder` | `PitchConfig`, `Goal`, `MeshUtil`, `GraphicsSettings` |
-| `scripts/pitch/goal.gd` | Clase `Goal`: marco, red, volumen de red, detección de gol | `Goal.setup`, `Goal._build_frame`, `Goal._build_net`, `Goal._physics_process`, `Goal.is_ball_in_goal`, `Goal.aim_point` | `PitchConfig`, `Ball`, `MeshUtil` |
+| `scripts/pitch/goal.gd` | Clase `Goal`: marco, red de tela, colisiones de la red para jugadores, detección de gol | `Goal.setup`, `Goal._build_frame`, `Goal._build_net`, `Goal._physics_process`, `Goal.is_ball_in_goal`, `Goal.aim_point` | `PitchConfig`, `Ball`, `MeshUtil`, `GoalNet` |
+| `scripts/pitch/goal_net.gd` | Clase `GoalNet`: red de tela (cuatro paños atados al marco) que la pelota abomba; la frena y vuelve con ondas | `GoalNet.setup`, `GoalNet._ball_contact`, `GoalNet._press`, `GoalNet._step`, `GoalNet.displacement_at` | `Ball` (`net_accel`, `net_contact`), `BallTuning` (`net_*`) |
 | `scripts/pitch/pitch_config.gd` | Recurso `PitchConfig` con todas las medidas | ver «Mapa de parámetros» | — |
 | `scripts/pitch/mesh_util.gd` | Utilidades de malla/cuerpos estáticos/materiales | `MeshUtil.add_box_body`, `MeshUtil.add_quad`, `MeshUtil.build_mesh` | — |
 | `assets/pitch/court.gdshader` | Superficie de juego (franjas y ruido, sin texturas) | uniforms `color_a`, `color_b`, `stripe_width` | — |
@@ -28,10 +29,10 @@
 |---|---|---|---|---|---|
 | `length` | `40.0` | float | `scripts/pitch/pitch_config.gd:10` | `scripts/ai/ai_input.gd:625`, `scripts/ai/ai_input.gd:628`, `scripts/pitch/pitch.gd:73`, `scripts/pitch/pitch.gd:85` (+2) |  (Dimensiones) |
 | `width` | `20.0` | float | `scripts/pitch/pitch_config.gd:11` | `scripts/ai/ai_input.gd:630`, `scripts/gameplay/match_scene.gd:89`, `scripts/pitch/pitch.gd:74`, `scripts/pitch/pitch.gd:85` (+3) |  (Dimensiones) |
-| `goal_width` | `3.0` | float | `scripts/pitch/pitch_config.gd:14` | `scripts/pitch/goal.gd:44`, `scripts/pitch/goal.gd:104`, `scripts/pitch/goal.gd:107`, `scripts/pitch/goal.gd:116` (+1) |  (Arco) |
-| `goal_height` | `2.0` | float | `scripts/pitch/pitch_config.gd:15` | `scripts/assistance/shot_assist.gd:221`, `scripts/gameplay/match_manager.gd:190`, `scripts/goalkeeper/goalkeeper.gd:323`, `scripts/pitch/goal.gd:39` (+5) |  (Arco) |
-| `goal_depth` | `1.0` | float | `scripts/pitch/pitch_config.gd:16` | `scripts/pitch/goal.gd:76`, `scripts/pitch/pitch.gd:259`, `scripts/pitch/pitch.gd:260` |  (Arco) |
-| `post_radius` | `0.04` | float | `scripts/pitch/pitch_config.gd:17` | `scripts/gameplay/match_manager.gd:190`, `scripts/pitch/goal.gd:38`, `scripts/pitch/pitch.gd:242`, `scripts/pitch/pitch.gd:257` (+1) |  (Arco) |
+| `goal_width` | `3.0` | float | `scripts/pitch/pitch_config.gd:14` | `scripts/pitch/goal.gd:52`, `scripts/pitch/goal.gd:98`, `scripts/pitch/goal.gd:101`, `scripts/pitch/pitch_config.gd:45` |  (Arco) |
+| `goal_height` | `2.0` | float | `scripts/pitch/pitch_config.gd:15` | `scripts/assistance/shot_assist.gd:221`, `scripts/gameplay/match_manager.gd:190`, `scripts/goalkeeper/goalkeeper.gd:323`, `scripts/pitch/goal.gd:47` (+5) |  (Arco) |
+| `goal_depth` | `1.0` | float | `scripts/pitch/pitch_config.gd:16` | `scripts/pitch/goal.gd:84`, `scripts/pitch/pitch.gd:259`, `scripts/pitch/pitch.gd:260` |  (Arco) |
+| `post_radius` | `0.04` | float | `scripts/pitch/pitch_config.gd:17` | `scripts/gameplay/match_manager.gd:190`, `scripts/pitch/goal.gd:46`, `scripts/pitch/pitch.gd:242`, `scripts/pitch/pitch.gd:257` (+1) |  (Arco) |
 | `line_width` | `0.08` | float | `scripts/pitch/pitch_config.gd:20` | `scripts/pitch/pitch.gd:172`, `scripts/pitch/pitch.gd:173`, `scripts/pitch/pitch.gd:174`, `scripts/pitch/pitch.gd:182` (+5) |  (Marcas) |
 | `center_circle_radius` | `3.0` | float | `scripts/pitch/pitch_config.gd:21` | `scripts/pitch/pitch.gd:182` |  (Marcas) |
 | `penalty_area_radius` | `6.0` | float | `scripts/pitch/pitch_config.gd:23` | `scripts/ai/ai_input.gd:377`, `scripts/gameplay/match_manager.gd:218`, `scripts/gameplay/match_scene.gd:361`, `scripts/goalkeeper/goalkeeper.gd:439` (+1) | Radio de los cuartos de circulo del area de penal (desde cada poste). (Marcas) |
@@ -40,7 +41,7 @@
 | `corner_arc_radius` | `0.25` | float | `scripts/pitch/pitch_config.gd:27` | `scripts/pitch/pitch.gd:205` |  (Marcas) |
 | `substitution_zone_length` | `5.0` | float | `scripts/pitch/pitch_config.gd:28` | `scripts/pitch/pitch.gd:203` |  (Marcas) |
 | `boundary_mode` | `BoundaryMode.WALLS` | BoundaryMode | `scripts/pitch/pitch_config.gd:31` | `scripts/gameplay/match_manager.gd:175`, `scripts/gameplay/match_scene.gd:69`, `scripts/player/player_actions.gd:371`, `scripts/pitch/pitch.gd:226` |  (Entorno) |
-| `wall_height` | `3.0` | float | `scripts/pitch/pitch_config.gd:33` | `scripts/camera/match_camera.gd:146`, `scripts/pitch/pitch.gd:223` | Altura de las paredes que mantienen la pelota en juego. (Entorno) |
+| `wall_height` | `3.0` | float | `scripts/pitch/pitch_config.gd:33` | `scripts/camera/match_camera.gd:150`, `scripts/pitch/pitch.gd:223` | Altura de las paredes que mantienen la pelota en juego. (Entorno) |
 | `barrier_visible_height` | `1.0` | float | `scripts/pitch/pitch_config.gd:35` | `scripts/pitch/pitch.gd:264` | Altura visible de la valla/baranda (el resto es colision invisible). (Entorno) |
 | `run_off` | `2.5` | float | `scripts/pitch/pitch_config.gd:36` | `scripts/player/player_actions.gd:371`, `scripts/pitch/pitch.gd:73`, `scripts/pitch/pitch.gd:74`, `scripts/pitch/pitch.gd:227` |  (Entorno) |
 <!-- /AUTO -->
@@ -91,18 +92,16 @@ Quedan **fijos en el código** (no derivan del tamaño): `MatchScene.kickoff_pos
 <!-- AUTO:funcs:scripts/pitch/goal.gd -->
 | Función | Línea | Qué hace |
 |---|---|---|
-| `Goal.setup(cfg: PitchConfig, goal_side: int)` | 19 |  |
-| `Goal.set_ball(b: Ball)` | 29 |  |
-| `Goal.reset_latch()` | 32 |  |
-| `Goal._build_frame()` | 37 |  |
-| `Goal._add_frame_piece(pos: Vector3, shape: CylinderShape3D, r: float, h: float, horizontal: bool)` | 46 |  |
-| `Goal._build_net()` | 75 |  |
-| `Goal._on_net_entered(body: Node3D)` | 124 |  |
-| `Goal._on_net_exited(body: Node3D)` | 128 |  |
-| `Goal._physics_process(_delta: float)` | 134 |  |
-| `Goal.is_ball_in_goal(local_ball_pos: Vector3)` | 148 | La pelota cuenta como gol cuando su centro esta al menos un radio detras de la linea (cruzo completamente) y dentro del marco (entre postes  |
-| `Goal.goal_center_world()` | 156 |  |
-| `Goal.aim_point(lateral: float, height_ratio: float, margin: float)` | 161 | Punto objetivo dentro del arco. lateral: -1..1 (a lo largo de la linea, en el eje mundial Z), height: 0..1 de la altura util. |
+| `Goal.setup(cfg: PitchConfig, goal_side: int)` | 22 |  |
+| `Goal.set_ball(b: Ball)` | 32 |  |
+| `Goal.reset_latch()` | 40 |  |
+| `Goal._build_frame()` | 45 |  |
+| `Goal._add_frame_piece(pos: Vector3, shape: CylinderShape3D, r: float, h: float, horizontal: bool)` | 54 |  |
+| `Goal._build_net()` | 83 |  |
+| `Goal._physics_process(_delta: float)` | 106 |  |
+| `Goal.is_ball_in_goal(local_ball_pos: Vector3)` | 121 | La pelota cuenta como gol cuando su centro esta al menos un radio detras de la linea (cruzo completamente) y dentro del marco (entre postes  |
+| `Goal.goal_center_world()` | 129 |  |
+| `Goal.aim_point(lateral: float, height_ratio: float, margin: float)` | 134 | Punto objetivo dentro del arco. lateral: -1..1 (a lo largo de la linea, en el eje mundial Z), height: 0..1 de la altura util. |
 <!-- /AUTO -->
 
 <!-- AUTO:signals:scripts/pitch/pitch.gd -->
@@ -114,7 +113,7 @@ Quedan **fijos en el código** (no derivan del tamaño): `MatchScene.kickoff_pos
 <!-- AUTO:signals:scripts/pitch/goal.gd -->
 | Señal | Línea | Descripción |
 |---|---|---|
-| `Goal.goal_scored(goal: Goal, ball_position: Vector3)` | 8 | Arco: postes y travesano con colision fisica (rebotes reales), red visible de una sola malla, colisiones simples para la red y deteccion de gol cuando la pelota cruza COMPLETAMENTE la linea.  Marco local: +X apunta hacia afuera del campo (detras del arco), +Y arriba, Z lateral. |
+| `Goal.goal_scored(goal: Goal, ball_position: Vector3)` | 8 | Arco: postes y travesano con colision fisica (rebotes reales), red de tela que frena la pelota (GoalNet), colisiones simples de la red para los jugadores y deteccion de gol cuando la pelota cruza COMPLETAMENTE la linea.  Marco local: +X apunta hacia afuera del campo (detras del arco), +Y arriba, Z lateral. |
 <!-- /AUTO -->
 
 ## Recorrido de ejecución
@@ -123,11 +122,13 @@ Quedan **fijos en el código** (no derivan del tamaño): `MatchScene.kickoff_pos
 2. `Pitch.build`: `_build_floor` (cuerpo estático con material `friction 0.8 / bounce 0.0`, plano con `court.gdshader`, zona exterior) → `_build_lines` (todos los trazos en una `ArrayMesh`, elevada 2.5 cm) → `_build_walls` (paredes laterales, fondos con hueco para el arco, dintel, baranda visible) → `_build_goals` (un `Goal` por lado, `side = ±1`) → `_build_lighting` (sol direccional en el grupo `sun_light`, `Environment`) → `_build_ambient` (bancos, gradas, torres de luz; se oculta según `GraphicsSettings.ambient_props_enabled`).
 3. `Pitch.set_ball(ball)` entrega la pelota a cada `Goal`.
 4. Cada paso de física `Goal._physics_process` convierte la posición de la pelota al marco local del arco y, si `is_ball_in_goal`, emite `goal_scored` una vez (cerrojo `_latched`, que se libera cuando la pelota vuelve a estar más de 0.5 m delante de la línea o con `reset_latch`). `Pitch` reenvía la señal; `MatchManager._on_goal` la consume.
-5. La red: `Area3D` llama `Ball.enter_net`/`exit_net` (amortigua) y las superficies del grupo `net_surface` frenan el impacto (`Ball._on_body_entered`).
+5. La red (`GoalNet`, desde el 2026-10-28): cuatro paños (fondo, techo y laterales) con los bordes atados al marco, cada uno una membrana de nodos cada 0.2 m. En su `_physics_process` (antes del paso de física) mira si la pelota llega a un paño (por dentro o por fuera, también si llega durante el paso), abomba la tela con su forma (campana de 0.28 m) y deja en `Ball.net_accel` la aceleración de la tela: muelle amortiguado integrado de forma implícita (`BallTuning.net_stiffness`, más rígido junto al marco), que mientras la pelota entra como mucho la para; al devolverla empuja con `net_return` (5 %) de la rigidez, y apoyada con el 30 % (el techo cede ~5 cm). La pelota que tocó la red por dentro y sigue en el arco se frena (la tela la enreda). Las cajas `net_surface` siguen para jugadores y arqueros; la pelota no las ve (excepción de colisión en `Goal.set_ball`). Sin pelota en la tela y con la red quieta no calcula nada (0.09 ms por paso de tela y 0.17 ms de malla mientras se mueve, escritorio).
+6. Gol: centro de la pelota un radio detrás de la línea, entre postes y **entera bajo el travesaño** (`y ≤ alto − radio`): una pelota sobre el techo, que cede con su peso, no es gol.
 
 ## Pruebas
 
-- **Ejecutar:** `tools/run_tests.sh ball_physics` (gol, línea, postes, travesaño, paredes) y `tools/run_tests.sh match_flow` (gol → marcador).
+- **Ejecutar:** `tools/run_tests.sh ball_physics` (gol, línea, postes, travesaño, paredes), `tools/run_tests.sh goal_net` (red de tela) y `tools/run_tests.sh match_flow` (gol → marcador).
+- **Red de tela medida (`test_goal_net`):** raso a 15 m/s: llega a 1.12 m detrás de la línea (fondo a 1.0), red abombada 0.26 m, vuelve a 1.8 m/s (11 %); a media altura a 25 m/s: 1.44 m, 0.68 m, 2.3 m/s (9 %); potente al ángulo a 30 m/s: 1.46 m, 0.58 m, 2.6 m/s (8 %); en los tres queda dentro del arco y la red vuelve al reposo. Red lateral por fuera: se hunde 0.11 m y la pelota queda fuera; pelota sobre el techo: cede 0.15 m y la sostiene. Revisión visual: `tools/net_view.tscn` (`NET_CAM=lado`).
 - **Comprobación visual (renderizado por software):** `tools/shot_runner.gd` (ver [TOOLS_AND_ASSETS](TOOLS_AND_ASSETS.md)); la cancha se vio correcta en capturas del 2026-10-26 (círculo central, áreas, arcos con red, baranda, gradas).
 - **Qué podría romperse:** colisiones de paredes (la pelota saldría del campo), gol doble (cerrojo), hueco de pared de fondo desalineado con los postes, altura del dintel.
 
@@ -154,3 +155,12 @@ Quedan **fijos en el código** (no derivan del tamaño): `MatchScene.kickoff_pos
 ## Historial
 
 Ver [CHANGELOG.md](../CHANGELOG.md): «Base física» (cancha, arcos, red absorbente).
+
+## Red de tela (2026-10-28)
+
+Pedido: «física a la red para que los tiros se sientan más satisfactorios y realistas: tela que frena la pelota y se
+mueve». Antes la red era una malla fija: al tocar una caja `net_surface` la pelota perdía el 88 % de la velocidad de golpe
+y dentro del volumen del arco se amortiguaba (7/s) aunque no tocara nada. Ahora la red es tela (`GoalNet`, arriba): se
+abomba con la pelota hasta ~0.6 m, la frena en ~0.05–0.1 s, casi no la devuelve y vuelve con ondas. Parámetros de juego en
+`BallTuning` (`net_stiffness`, `net_damp_in`, `net_damp_out`, `net_return`, `net_grip`, `net_max_bulge`); de la tela visual,
+constantes de `GoalNet`.

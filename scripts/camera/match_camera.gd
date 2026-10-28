@@ -1,15 +1,19 @@
 class_name MatchCamera
 extends Camera3D
-## Camara elevada estilo transmision deportiva. Sigue una mezcla entre el jugador controlado
+## Camara de transmision deportiva (de costado, como PES). Sigue una mezcla entre el jugador controlado
 ## y la pelota con amortiguacion exponencial (independiente de los FPS), ajusta el encuadre
 ## segun la separacion entre ambos y nunca entra en el volumen de las paredes.
 ## Mantiene un yaw fijo: el joystick siempre es relativo a la pantalla.
 ## Con el contexto del partido (ctx) el encuadre es dinamico: mas cerca que una vista general, se adelanta hacia donde
 ## ataca el equipo con la pelota y se abre lo justo para que las opciones de pase del poseedor sigan en cuadro.
 
-@export var pitch_deg: float = 52.0
-@export var base_distance: float = 16.0
-@export var max_distance: float = 27.0
+## Encuadre de transmision como el de PES (video `videoplayback`): camara de costado, baja (30 grados) y lejos con
+## lente cerrada; se ve el largo de la cancha de lado y el ancho entero, y los jugadores siguen grandes en el movil.
+## Antes: 52 grados, 16 m y 42 grados de lente (casi cenital).
+@export var pitch_deg: float = 30.0
+@export var view_fov: float = 28.0
+@export var base_distance: float = 30.0
+@export var max_distance: float = 38.0
 ## Metros que el foco se adelanta hacia el arco que ataca el equipo con la pelota (se ve el espacio por delante).
 @export var attack_lead: float = 2.5
 ## Desplazamiento lateral de la imagen (m): la jugada queda algo a la izquierda, lejos de los botones de accion.
@@ -36,7 +40,7 @@ var _distance: float = 20.0
 var _initialized: bool = false
 
 func _ready() -> void:
-	fov = 42.0
+	fov = view_fov
 	near = 0.5
 	far = 140.0
 	keep_aspect = Camera3D.KEEP_HEIGHT
