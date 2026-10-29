@@ -158,6 +158,7 @@ func _build_pause_menu(root: Control) -> void:
 	_add_menu_button(grid, "camera_zoom", "", func() -> void: _cycle_camera_zoom())
 	_add_menu_button(grid, "sound", "", func() -> void: _toggle_sound())
 	_add_menu_button(grid, "gameplay_mode", "", func() -> void: _cycle_gameplay_mode())
+	_add_menu_button(grid, "json_model", "", func() -> void: _cycle_json_model())
 	_add_menu_button(grid, "quit", "Salir", func() -> void: _close_pause(); quit_requested.emit())
 	_refresh_menu_labels()
 
@@ -193,6 +194,7 @@ func _refresh_menu_labels() -> void:
 	(_pause_buttons["camera_zoom"] as Button).text = "Zoom de cámara: %s" % Tuning.CAMERA_ZOOM_NAMES[_nearest_index(Tuning.CAMERA_ZOOMS, Tuning.camera_zoom)]
 	(_pause_buttons["sound"] as Button).text = "Sonido: %s" % ("Sí" if Tuning.sound_on else "No")
 	(_pause_buttons["gameplay_mode"] as Button).text = "Modo de juego: %s" % Tuning.GAMEPLAY_MODE_NAMES.get(Tuning.gameplay_mode, str(Tuning.gameplay_mode))
+	(_pause_buttons["json_model"] as Button).text = "Modelo Json: %s" % Tuning.JSON_MODEL_NAMES.get(Tuning.json_model, str(Tuning.json_model))
 	(_pause_buttons["training"] as Button).text = "Volver al partido" if MatchScene.training_mode else "Entrenamiento sin rivales"
 	(_pause_buttons["diagnostics"] as Button).text = "Diagnóstico: %s" % ("ACTIVADO" if Tuning.show_diagnostics else "desactivado")
 
@@ -233,6 +235,16 @@ func _cycle_gameplay_mode() -> void:
 	Tuning.save_user_settings()
 	_refresh_menu_labels()
 	gameplay_mode_changed.emit()
+
+## Modelo del modo 4 (Json): Tripo adaptado o humanoide realista. Se guarda; si el modo Json esta activo el partido se vuelve a
+## montar con el modelo elegido.
+func _cycle_json_model() -> void:
+	var opts: Array = Tuning.JSON_MODELS
+	Tuning.json_model = opts[(opts.find(Tuning.json_model) + 1) % opts.size()]
+	Tuning.save_user_settings()
+	_refresh_menu_labels()
+	if Tuning.gameplay_mode == 4:
+		gameplay_mode_changed.emit()
 
 ## Sonido del partido: se apaga o enciende en el acto (publico incluido) y se guarda.
 func _toggle_sound() -> void:

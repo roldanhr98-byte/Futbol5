@@ -96,6 +96,14 @@ func tick(delta: float) -> bool:
 	var rv: Vector2 = motion.step(delta)
 	var loco: Locomotion = owner.locomotion
 	var wv: Vector3 = loco.forward() * rv.x + loco.right() * rv.y
+	# Modo 4: la raiz de una caida o barrida puede llevar varios metros; el cuerpo no se sale del area de juego (+0.8 m).
+	if PackLibrary.json_mode() and owner.ctx != null and owner.ctx.pitch != null:
+		var cfg: PitchConfig = owner.ctx.pitch.config
+		var nxt: Vector3 = owner.global_position + wv * delta
+		if absf(nxt.x) > cfg.half_length() + 0.8 and signf(wv.x) == signf(nxt.x):
+			wv.x = 0.0
+		if absf(nxt.z) > cfg.half_width() + 0.8 and signf(wv.z) == signf(nxt.z):
+			wv.z = 0.0
 	owner.velocity.x = wv.x
 	owner.velocity.z = wv.z
 	if owner.is_on_floor():

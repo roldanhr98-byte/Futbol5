@@ -35,8 +35,10 @@
 | `Tuning.MATCH_MINUTES` | `[3, 5, 7, 10]` | 24 | Duracion del partido elegida (minutos): 3, 5, 7 o 10. |
 | `Tuning.CAMERA_ZOOMS` | `[0.55, 0.7, 0.85, 1.0]` | 29 | Zoom de la camara del partido: factor sobre la distancia de MatchCamera (menor = mas cerca). Niveles del menu: muy cerca, cerca (por defecto: la camara a 0.7 de la distancia de la transmision lejana), media y lejos (la transmision de antes). |
 | `Tuning.CAMERA_ZOOM_NAMES` | `["Muy cerca", "Cerca", "Media", "Lejos"]` | 30 |  |
-| `Tuning.GAMEPLAY_MODES` | `[1, 2, 3]` | 37 | Modo de jugabilidad: 1 = animaciones del pack actual; 2 = «Mocap Pack 05 Soccer» (capturas de movimiento de futbol: pase de interior, tiro potente, penal y festejos; ver AnimationCatalog.mocap_mode); 3 = solo Tripo3D (el modelo y sus animaciones prefijadas, patada procedural; FootballerVisual.build). Se elige en el menu de pausa (reinicia el partido). |
-| `Tuning.GAMEPLAY_MODE_NAMES` | `{1: "1 · Pack actual", 2: "2 · Mocap fútbol", 3: "3 · Tripo"}` | 38 |  |
+| `Tuning.GAMEPLAY_MODES` | `[1, 2, 3, 4]` | 38 | Modo de jugabilidad: 1 = animaciones del pack actual; 2 = «Mocap Pack 05 Soccer» (capturas de movimiento de futbol: pase de interior, tiro potente, penal y festejos; ver AnimationCatalog.mocap_mode); 3 = solo Tripo3D (el modelo y sus animaciones prefijadas, patada procedural; FootballerVisual.build); 4 = Json (las animaciones de animaciones_futbol5_JSON sobre el esqueleto canonico JsonRig, con el modelo elegido en json_model). Se elige en el menu de pausa (reinicia el partido). |
+| `Tuning.GAMEPLAY_MODE_NAMES` | `{1: "1 · Pack actual", 2: "2 · Mocap fútbol", 3: "3 · Tripo", 4: "4 · Json"}` | 39 |  |
+| `Tuning.JSON_MODELS` | `[0, 1]` | 42 | Modelo del modo 4 (Json): 0 = el GLB de Tripo adaptado al esqueleto de las animaciones, 1 = humanoide realista propio. |
+| `Tuning.JSON_MODEL_NAMES` | `{0: "Tripo adaptado", 1: "Humanoide realista"}` | 43 |  |
 <!-- /AUTO -->
 
 Rutas esperadas de los `.tres` (**ninguna existe hoy**): las constantes `BALL_PATH`, `PLAYER_PATH`, `ASSIST_PATH`, `KEEPER_PATH` y `PITCH_PATH` de arriba, todas dentro de `resources/tuning/`. Un `.tres` cuyo script no coincide con la clase se ignora con un aviso.
@@ -57,12 +59,12 @@ Preferencias del usuario (`user://settings.cfg`, `Tuning.save_user_settings`): s
 <!-- AUTO:funcs:scripts/gameplay/tuning.gd -->
 | Función | Línea | Qué hace |
 |---|---|---|
-| `Tuning._init()` | 41 |  |
-| `Tuning._ready()` | 44 |  |
-| `Tuning.reload()` | 48 | Recarga todos los parametros desde disco (util al ajustar valores en el laboratorio). |
-| `Tuning.load_user_settings()` | 57 | Aplica las preferencias del usuario (niveles de asistencia, diagnostico) sobre los parametros. |
-| `Tuning.save_user_settings()` | 74 |  |
-| `Tuning._load_or_default(path: String, script: GDScript)` | 90 |  |
+| `Tuning._init()` | 46 |  |
+| `Tuning._ready()` | 49 |  |
+| `Tuning.reload()` | 53 | Recarga todos los parametros desde disco (util al ajustar valores en el laboratorio). |
+| `Tuning.load_user_settings()` | 62 | Aplica las preferencias del usuario (niveles de asistencia, diagnostico) sobre los parametros. |
+| `Tuning.save_user_settings()` | 81 |  |
+| `Tuning._load_or_default(path: String, script: GDScript)` | 98 |  |
 <!-- /AUTO -->
 
 ## Recorrido de ejecución

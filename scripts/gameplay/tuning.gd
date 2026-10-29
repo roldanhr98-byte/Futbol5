@@ -33,10 +33,15 @@ var camera_zoom: float = 0.7
 var sound_on: bool = true
 ## Modo de jugabilidad: 1 = animaciones del pack actual; 2 = «Mocap Pack 05 Soccer» (capturas de movimiento de futbol:
 ## pase de interior, tiro potente, penal y festejos; ver AnimationCatalog.mocap_mode); 3 = solo Tripo3D (el modelo y sus
-## animaciones prefijadas, patada procedural; FootballerVisual.build). Se elige en el menu de pausa (reinicia el partido).
-const GAMEPLAY_MODES := [1, 2, 3]
-const GAMEPLAY_MODE_NAMES := {1: "1 · Pack actual", 2: "2 · Mocap fútbol", 3: "3 · Tripo"}
+## animaciones prefijadas, patada procedural; FootballerVisual.build); 4 = Json (las animaciones de animaciones_futbol5_JSON
+## sobre el esqueleto canonico JsonRig, con el modelo elegido en json_model). Se elige en el menu de pausa (reinicia el partido).
+const GAMEPLAY_MODES := [1, 2, 3, 4]
+const GAMEPLAY_MODE_NAMES := {1: "1 · Pack actual", 2: "2 · Mocap fútbol", 3: "3 · Tripo", 4: "4 · Json"}
 var gameplay_mode: int = 1
+## Modelo del modo 4 (Json): 0 = el GLB de Tripo adaptado al esqueleto de las animaciones, 1 = humanoide realista propio.
+const JSON_MODELS := [0, 1]
+const JSON_MODEL_NAMES := {0: "Tripo adaptado", 1: "Humanoide realista"}
+var json_model: int = 1
 
 func _init() -> void:
 	reload()
@@ -70,6 +75,8 @@ func load_user_settings() -> void:
 	sound_on = bool(cfg.get_value("ui", "sound_on", true))
 	var gm: int = int(cfg.get_value("match", "gameplay_mode", 1))
 	gameplay_mode = gm if GAMEPLAY_MODES.has(gm) else 1
+	var jm: int = int(cfg.get_value("match", "json_model", 1))
+	json_model = jm if JSON_MODELS.has(jm) else 1
 
 func save_user_settings() -> void:
 	var cfg := ConfigFile.new()
@@ -83,6 +90,7 @@ func save_user_settings() -> void:
 	cfg.set_value("ui", "camera_zoom", camera_zoom)
 	cfg.set_value("ui", "sound_on", sound_on)
 	cfg.set_value("match", "gameplay_mode", gameplay_mode)
+	cfg.set_value("match", "json_model", json_model)
 	var err: int = cfg.save(USER_SETTINGS_PATH)
 	if err != OK:
 		push_warning("No se pudieron guardar las preferencias (error %d)" % err)

@@ -35,6 +35,14 @@ const KICK_PLANT_SPEED := 0.4
 const PLANT_FOOT_MAX_Y := 0.06
 ## m/s que la velocidad de apoyo de un clip puede superar a la del cuerpo al empezar la patada.
 const PLANT_SPEED_GAIN_MAX := 1.5
+## Modo 4: margen de puntaje (m de residuo equivalentes) dentro del cual se elige al azar entre los clips de patada.
+const JSON_KICK_VARIETY := 0.05
+## Modo 4: coste (m de residuo equivalentes por m/s) de elegir un clip cuyo pie de apoyo retrocede a una velocidad distinta de la del
+## jugador: el pie plantado patinaria. Mas alto que en el modo 1 porque hay clips de todas las velocidades (parado a sprint).
+const JSON_PLANT_MISMATCH_COST := 0.28
+## Modo 4: coste (m de residuo por m de ajuste de zancada): con tantos clips se prefiere el que apenas obliga a mover el cuerpo
+## (y el pie del lado de la pelota al del lado contrario).
+const JSON_STEP_COST := 0.35
 ## Latencia extra (s) de los golpeos del mocap de futbol (modo 2), ver clip_timing.
 const MOCAP_EXTRA_LATENCY := 0.08
 ## Coste (m de residuo equivalentes por m/s) de elegir un clip cuya velocidad de apoyo no encaja con la del jugador.
@@ -654,6 +662,22 @@ func _steer_clip_kick() -> void:
 	var flat_d := Vector3(delta.x, 0.0, delta.z)
 	owner.nudge_velocity = (flat_d / maxf(_kick_timer - KICK_PLANT_TIME, 0.04)).limit_length(kick_nudge_cap(_kick_v0))
 
+## Lo comun a todos los clips de una accion en predicted_foot_to_ball (misma latencia): giro previsto, pelota prevista y velocidad.
+func _fast_prediction(latency: float) -> Dictionary:
+	var b: Ball = ball()
+	var loco: Locomotion = owner.locomotion
+	var bp: Vector3 = b.global_position + ball_travel(b, latency)
+	bp.y = b.global_position.y
+	var plant: float = minf(latency, KICK_PLANT_TIME)
+	var v: Vector3 = loco.velocity
+	return {"yaw": _predicted_yaw(latency), "bp": bp, "v": v, "plant": plant, "cruise": Vector3(v.x, 0.0, v.z) * (latency - plant)}
+
+## predicted_foot_to_ball con lo precalculado por _fast_prediction (mismas cuentas, sin repetir las comunes).
+func _foot_to_ball_fast(contact: Dictionary, pre: Dictionary) -> Vector3:
+	var yaw: float = pre["yaw"]
+	var p: Vector3 = owner.global_position + (pre["cruise"] as Vector3) + plant_velocity(contact, yaw, pre["v"]) * float(pre["plant"])
+	return (pre["bp"] as Vector3) - foot_contact_world(contact, p, yaw)
+
 func predicted_foot_to_ball(contact: Dictionary, latency: float, body_v: Variant = null) -> Vector3:
 	var b: Ball = ball()
 	var loco: Locomotion = owner.locomotion
@@ -679,6 +703,24 @@ static func contact_samples(contact: Dictionary) -> Array:
 			out.append({"time": float(contact["path_t0"]) + k * dt, "pos": path[k]})
 	return out if not out.is_empty() else [{"time": float(contact["time"]), "pos": contact["pos"]}]
 
+static var _samples_cache: Dictionary = {}
+
+## contact_samples de un clip, con a lo sumo MAX_SAMPLES instantes repartidos por la trayectoria (modo 4), guardado por clip.
+static func contact_samples_cached(clip: StringName, contact: Dictionary) -> Array:
+	if _samples_cache.has(clip):
+		return _samples_cache[clip]
+	var all: Array = contact_samples(contact)
+	var out: Array = all
+	if all.size() > MAX_SAMPLES:
+		out = []
+		for i in MAX_SAMPLES:
+			out.append(all[int(round(float(i) * float(all.size() - 1) / float(MAX_SAMPLES - 1)))])
+	_samples_cache[clip] = out
+	return out
+
+## Instantes de contacto que se prueban por clip en el modo 4.
+const MAX_SAMPLES := 3
+
 ## Clips de pelota en el aire: cabezazos (trayectoria de la cabeza) y voleas/acrobacias (punta del pie), con su espejo.
 const AERIAL_SETS := [
 	{"clips": [&"Header", &"Soccer_Header", &"header_soccerball", &"header_soccerball_2", &"Jumping_Up"], "keys": ["head"], "min_speed": 1.6, "kind": &"header"},
@@ -699,7 +741,11 @@ func plan_aerial_kick(action: StringName, charge: float) -> Dictionary:
 	var best: Dictionary = {}
 	var best_score: float = INF
 	for set in AERIAL_SETS:
-		for base in set["clips"]:
+		# Modo 4: los clips de cada conjunto son todos los del rol (cabezazo / volea), ya con sus espejos.
+		var clip_list: Array = set["clips"]
+		if PackLibrary.json_mode():
+			clip_list = PackLibrary.by_role(&"header" if set["kind"] == &"header" else &"volley")
+		for base in clip_list:
 			for clip in [base, StringName(String(base) + "_mirror")]:
 				if not PackLibrary.has_clip(clip):
 					continue
@@ -708,7 +754,8 @@ func plan_aerial_kick(action: StringName, charge: float) -> Dictionary:
 					if not paths.has(key):
 						continue
 					var path: PackedVector3Array = paths[key]
-					for k in range(4, path.size() - 1):
+					# Modo 4 (muchos clips): un instante de cada dos (a 30 Hz sobran).
+					for k in range(4, path.size() - 1, 2 if PackLibrary.json_mode() else 1):
 						var v: float = (path[k + 1] - path[k - 1]).length() * 15.0
 						if v < float(set["min_speed"]):
 							continue
@@ -749,21 +796,51 @@ func plan_clip_kick(action: StringName, charge: float, lob: bool) -> Dictionary:
 	var best: Dictionary = {}
 	var best_score: float = INF
 	var kind_key: StringName = action if action == &"cross" else (&"lob" if lob else action)
-	for cand in AnimationCatalog.kick_candidates(kind_key):
-		for smp in contact_samples(cand["contact"]):
+	var pool: Array = []
+	var fast: Dictionary = {}
+	var json: bool = PackLibrary.json_mode()
+	# Modo 4 (decenas de clips): se descartan, con una cuenta barata, los clips cuyo contacto queda lejos de donde esta la pelota
+	# ahora (mas el ajuste de zancada y lo que ella y el cuerpo pueden moverse en la latencia), y de los demas se prueban pocos
+	# instantes de contacto. Sin esto, planificar costaba ~15 ms y se repite cada paso mientras la orden espera.
+	var bo: Vector3 = ball_offset()
+	var bfwd: float = bo.dot(owner.locomotion.forward())
+	var bright: float = bo.dot(owner.locomotion.right())
+	var margin: float = adjust_max + t.kick_start_residual + 0.2 + 0.35 * KickModel.flat(b.linear_velocity - owner.locomotion.velocity).length()
+	for cand in AnimationCatalog.kick_candidates(kind_key, charge):
+		var samples: Array = contact_samples_cached(cand["clip"], cand["contact"]) if json else contact_samples(cand["contact"])
+		if json:
+			var cp: Vector3 = cand["contact"]["pos"]
+			if Vector2(cp.x - bfwd, cp.z - bright).length() > margin:
+				continue
+		for smp in samples:
 			var c := {"time": smp["time"], "pos": smp["pos"], "foot": cand["foot"]}
 			var timing: Dictionary = clip_timing(float(c["time"]), action, charge, bool(PackLibrary.meta(cand["clip"]).get("mocap", false)))
 			c["plant"] = clip_plant_velocity(cand["clip"], float(c["time"]), int(c["foot"]), float(timing["speed"]))
-			var delta: Vector3 = predicted_foot_to_ball(c, timing["latency"])
+			var delta: Vector3
+			if json:
+				# La latencia es la misma para todos los clips de la accion: la pelota y el giro previstos se calculan una vez.
+				if fast.is_empty():
+					fast = _fast_prediction(float(timing["latency"]))
+				delta = _foot_to_ball_fast(c, fast)
+			else:
+				delta = predicted_foot_to_ball(c, timing["latency"])
 			var flat_d := Vector3(delta.x, 0.0, delta.z)
 			# El ajuste solo cabe antes de plantar el pie: no se planifica uno que el cuerpo no puede dar.
 			var step: Vector3 = flat_d.limit_length(minf(adjust_max, kick_adjust_capacity(owner.locomotion.velocity, float(timing["latency"]))))
 			var residual: float = Vector3(flat_d.x - step.x, delta.y, flat_d.z - step.z).length()
 			var mismatch: float = absf((c["plant"] as Vector2).length() - owner.locomotion.speed)
-			var score: float = residual + 0.15 * step.length() + PLANT_MISMATCH_COST * mismatch
+			var score: float = residual + (JSON_STEP_COST if json else 0.15) * step.length() + (JSON_PLANT_MISMATCH_COST if json else PLANT_MISMATCH_COST) * mismatch
+			var plan: Dictionary = timing.merged({"clip": cand["clip"], "contact": c, "distance": delta.length(), "residual": residual, "adjust": step})
 			if score < best_score:
 				best_score = score
-				best = timing.merged({"clip": cand["clip"], "contact": c, "distance": delta.length(), "residual": residual, "adjust": step})
+				best = plan
+			pool.append([score, plan])
+	# Modo 4 (hay muchos clips): entre los que encajan casi igual de bien se elige uno al azar, para que el jugador no repita
+	# siempre el mismo gesto.
+	if PackLibrary.json_mode() and not best.is_empty() and best["residual"] <= t.kick_start_residual:
+		var ok: Array = pool.filter(func(e: Array) -> bool: return float(e[0]) <= best_score + JSON_KICK_VARIETY and float((e[1] as Dictionary)["residual"]) <= t.kick_start_residual)
+		if ok.size() > 1:
+			best = (ok[rng.randi() % ok.size()] as Array)[1]
 	return best if not best.is_empty() and best["residual"] <= t.kick_start_residual else {}
 
 func _start_clip_kick(action: StringName, plan: Dictionary, stick_world: Vector3, charge: float, lob: bool) -> void:
@@ -1089,7 +1166,7 @@ func _touch_interval(ratio: float) -> float:
 	var v: FootballerVisual = owner.visual
 	if v == null or not v.uses_pack or v.is_placeholder:
 		return fixed
-	var step: float = FootballerVisual.step_interval_for(owner.locomotion.speed)
+	var step: float = FootballerVisual.step_interval_for(owner.locomotion.speed, true)
 	if step <= 0.0:
 		return fixed
 	# Con pies vivos se toca en cada apoyo hasta la carrera (el pie que llega a la pelota) y cada dos a sprint.
@@ -1238,6 +1315,11 @@ const TOUCH_SYNC_KEEP := 1.6
 ## Toques de clip por ciclo base (cache): base -> [{clip, foot, contact, aim, t0, base_len, touch_time, peak_time, path,
 ## path_dt, gaps}].
 static var _touch_cache: Dictionary = {}
+
+## Vacia los datos calculados con la libreria de clips (cambian al cambiar de modo).
+static func reset_caches() -> void:
+	_touch_cache = {}
+	_samples_cache = {}
 
 var _touch_active: Dictionary = {}
 var _touch_sync: float = 0.0

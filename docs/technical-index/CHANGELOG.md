@@ -11,6 +11,44 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-10-29 — Modo 4 «Json»: las animaciones JSON sobre un esqueleto canónico, con dos modelos (Tripo adaptado y humanoide realista)
+
+Detalle: [JSON_MODE](SYSTEMS/JSON_MODE.md) · herramientas: `tools/json_anim/README.md`.
+
+- **Datos**: `animaciones_futbol5_JSON_limpios.zip` (2 022 clips; solo posiciones de 19 articulaciones, fotogramas clave irregulares,
+  raíz y metadatos de golpeo/toques/apoyos). No se versiona el zip; se versiona el resultado.
+- **Retarget** (`JsonRig`, `JsonRetarget`): esqueleto canónico de 23 huesos con los nombres del futbolista y las longitudes medidas de los
+  datos; cada hueso toma un marco (dirección + eje de bisagra / lateral / arriba) calculado igual en el reposo de cada modelo y en cada
+  instante, e IK de dos huesos para brazos y piernas porque en los datos rodilla–tobillo (0.31–0.42 m) y codo–muñeca (0.18–0.35 m) no
+  son rígidos. Tobillos, muñecas y puntas quedan a **0.0 cm** del dato; pecho 1–3 cm, cabeza 4–5 cm.
+- **Conversor** (`tools/json_anim/build_json_library.gd`, selección `make_selection.py`): `json_clips.res` (263 clips de campo) y
+  `json_keeper.res` (155 del arquero), 5.5 MB (`Animation.compress`; manos y puntas sin pista). Quita el rumbo del clip, recorta ciclos de
+  marcha y conducción entre dos apoyos del mismo pie (empiezan en el izquierdo), mide el contacto de cada patada a 120 Hz, las
+  trayectorias del pie/cabeza/manos, la suelta de los lanzamientos y la velocidad natural; cada clip declara los nombres del pack de
+  Mixamo que sustituye (`alias`).
+- **Modelos**: `json_tripo.scn` (la malla, UV y pesos de `player_base.glb` sin cambios sobre el esqueleto canónico en pose T) y
+  `json_human.scn` (humanoide de ~7 200 triángulos con zonas de kit en `COLOR.r`, oclusión en `COLOR.g`, cara, manos y botines;
+  `json_kit.gdshader`). Selector en el menú de pausa («Modelo Json»), `Tuning.json_model`.
+- **Juego**: `Tuning.gameplay_mode = 4`; `PackLibrary` (librerías JSON, `resolve` por alias, `by_role`, recarga al cambiar de modo);
+  `JsonCatalog` (escalones de marcha, direcciones, candidatos de patada por potencia); `FootballerVisual` (ciclos con línea de
+  tiempo común, sin clips de Tripo, menos inclinación propia); `BallHandler` (variedad entre patadas que encajan igual, coste de
+  deslizamiento del pie de apoyo y de ajuste de zancada propios del modo, cabezazos/voleas por rol); `KeeperPlanner` (candidatos por
+  rol); `SetPiece` (suelta del saque medida), `Referee` (marcha JSON), `PlayerActions` (el cuerpo no sale del área con la raíz de una
+  caída), `Hud`.
+- Archivos nuevos: `scripts/animation/json_{rig,retarget,catalog}.gd`, `assets/characters/json/*`, `assets/animations/json_*.res`,
+  `tools/json_anim/*`, `tests/test_json_mode.gd`; modificados: ver la ficha. CI: `android.yml` verifica las librerías JSON dentro de la
+  APK y corre `json_mode` con render. `tests/run_tests.gd`: `TEST_GAMEPLAY_MODE` ejecuta cualquier prueba en otro modo.
+- Verificación (real, no estimada): `test_json_mode` 10/192/0 (headless; el de render 24 comprobaciones más); con render
+  `LIVE_KICKS_MODE=4 test_live_kicks` **49 de 50 golpeos con contacto**, punta del pie a 0.01–0.06 m de la pelota, pie de apoyo
+  ≤ 0.7 m/s; conducción con el esqueleto animado (los dos modelos) pelota a 0.41–0.64 m del cuerpo de mediana y ≤ 0.96 m de
+  máximo en trote, carrera, sprint y zigzag; `TEST_GAMEPLAY_MODE=4 test_live_feet` 6 de 7 (el séptimo: «pisa la pelota» 5 % frente a
+  un límite de 5 % calibrado para el modo 1). Atajada con estirada, barrida, caída, levantarse, festejo y partido completo revisados en
+  imágenes. Suite headless completa (modos 1–3 sin cambios de comportamiento): 215 pruebas, 1342 comprobaciones, 0 fallos (16 omitidas, las de render).
+- Pendiente: nada se probó en Android ni en un dispositivo; los toques de conducción no usan los eventos `touches` del JSON; sin clips
+  de giro, de regate ni de arranque en este modo.
+
+---
+
 ## 2026-10-29 — Modelo propio del modo 2 (Newton), saque y tarjeta de la captura, modo 3 «Tripo» y rodilla en la pisada
 
 Detalle: [ANIMATION_PACK](SYSTEMS/ANIMATION_PACK.md#modo-2-de-jugabilidad-mocap-pack-05-soccer-2026-10-29) ·

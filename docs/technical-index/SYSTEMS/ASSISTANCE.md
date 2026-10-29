@@ -29,7 +29,7 @@
 <!-- AUTO:params:AssistTuning -->
 | Parámetro | Defecto | Rango / tipo | Definido en | Dónde se usa (accesos reales) | Descripción |
 |---|---|---|---|---|---|
-| `pass_assist` | `0.65` | 0.0, 1.0 | `scripts/assistance/assist_tuning.gd:16` | `scripts/ui/hud.gd:187`, `scripts/assistance/assist_tuning.gd:57`, `scripts/gameplay/tuning.gd:61`, `scripts/gameplay/tuning.gd:76` (+1) |  (Pase) |
+| `pass_assist` | `0.65` | 0.0, 1.0 | `scripts/assistance/assist_tuning.gd:16` | `scripts/ui/hud.gd:188`, `scripts/assistance/assist_tuning.gd:57`, `scripts/gameplay/tuning.gd:66`, `scripts/gameplay/tuning.gd:83` (+1) |  (Pase) |
 | `pass_cone_deg` | `52.0` | float | `scripts/assistance/assist_tuning.gd:18` | `scripts/assistance/pass_assist.gd:18`, `scripts/assistance/pass_assist.gd:158` | Angulo maximo entre la direccion del joystick y un companero para considerarlo. (Pase) |
 | `pass_max_distance` | `24.0` | float | `scripts/assistance/assist_tuning.gd:20` | `scripts/assistance/pass_assist.gd:25`, `scripts/assistance/pass_assist.gd:162` | Alcance maximo de busqueda (m). (Pase) |
 | `pass_max_correction_deg` | `18.0` | float | `scripts/assistance/assist_tuning.gd:22` | `scripts/assistance/pass_assist.gd:79`, `scripts/assistance/pass_assist.gd:206` | Correccion angular maxima (grados) cuando la asistencia es 1. (Pase) |
@@ -38,15 +38,15 @@
 | `pass_weight_lane` | `0.8` | float | `scripts/assistance/assist_tuning.gd:25` | `scripts/assistance/pass_assist.gd:33` |  (Pase) |
 | `pass_lane_block_radius` | `0.8` | float | `scripts/assistance/assist_tuning.gd:27` | `scripts/assistance/pass_assist.gd:32`, `scripts/assistance/pass_assist.gd:190` | Radio de un rival para bloquear la linea de pase. (Pase) |
 | `pass_error_deg` | `2.6` | float | `scripts/assistance/assist_tuning.gd:29` | `scripts/assistance/pass_assist.gd:110`, `scripts/assistance/pass_assist.gd:249` | Error base de pase en grados (atributo de precision 50, 8 m). (Pase) |
-| `shot_assist` | `0.55` | 0.0, 1.0 | `scripts/assistance/assist_tuning.gd:32` | `scripts/ui/hud.gd:188`, `scripts/assistance/assist_tuning.gd:58`, `scripts/gameplay/tuning.gd:62`, `scripts/gameplay/tuning.gd:77` (+1) |  (Tiro) |
+| `shot_assist` | `0.55` | 0.0, 1.0 | `scripts/assistance/assist_tuning.gd:32` | `scripts/ui/hud.gd:189`, `scripts/assistance/assist_tuning.gd:58`, `scripts/gameplay/tuning.gd:67`, `scripts/gameplay/tuning.gd:84` (+1) |  (Tiro) |
 | `shot_cone_deg` | `38.0` | float | `scripts/assistance/assist_tuning.gd:33` | **sin uso** |  (Tiro) |
 | `shot_max_correction_deg` | `10.0` | float | `scripts/assistance/assist_tuning.gd:34` | **sin uso** |  (Tiro) |
 | `shot_post_margin` | `0.28` | float | `scripts/assistance/assist_tuning.gd:36` | `scripts/assistance/shot_assist.gd:81`, `scripts/assistance/shot_assist.gd:105` | Margen (m) que se deja respecto a los postes al apuntar. (Tiro) |
 | `shot_error_deg` | `2.2` | float | `scripts/assistance/assist_tuning.gd:37` | `scripts/assistance/shot_assist.gd:132` |  (Tiro) |
-| `press_assist` | `0.7` | 0.0, 1.0 | `scripts/assistance/assist_tuning.gd:40` | `scripts/ui/hud.gd:189`, `scripts/assistance/assist_tuning.gd:59`, `scripts/assistance/press_controller.gd:113`, `scripts/gameplay/tuning.gd:63` (+1) |  (Presion defensiva) |
+| `press_assist` | `0.7` | 0.0, 1.0 | `scripts/assistance/assist_tuning.gd:40` | `scripts/ui/hud.gd:190`, `scripts/assistance/assist_tuning.gd:59`, `scripts/assistance/press_controller.gd:113`, `scripts/gameplay/tuning.gd:68` (+1) |  (Presion defensiva) |
 | `press_lookahead` | `0.55` | float | `scripts/assistance/assist_tuning.gd:42` | `scripts/assistance/press_controller.gd:67`, `scripts/assistance/press_controller.gd:68` | Segundos hacia delante para predecir la posicion de intercepcion. (Presion defensiva) |
 | `press_standoff` | `1.4` | float | `scripts/assistance/assist_tuning.gd:44` | `scripts/assistance/press_controller.gd:79`, `scripts/assistance/press_controller.gd:108` | Distancia a la que el defensor se mantiene (m) antes de disputar. (Presion defensiva) |
-| `press_tackle_range` | `0.90` | float | `scripts/assistance/assist_tuning.gd:46` | `scripts/assistance/press_controller.gd:121`, `scripts/assistance/press_controller.gd:122`, `scripts/player/player_actions.gd:225` | Distancia a la que se intenta quitar la pelota (m). (Presion defensiva) |
+| `press_tackle_range` | `0.90` | float | `scripts/assistance/assist_tuning.gd:46` | `scripts/assistance/press_controller.gd:121`, `scripts/assistance/press_controller.gd:122`, `scripts/player/player_actions.gd:233` | Distancia a la que se intenta quitar la pelota (m). (Presion defensiva) |
 | `press_around_offset` | `0.30` | float | `scripts/assistance/assist_tuning.gd:48` | `scripts/assistance/press_controller.gd:87` | Cuanto rodea el defensor al portador para atacar la pelota por el lado libre (m mas alla de la pelota). (Presion defensiva) |
 | `press_speed_factor` | `0.93` | float | `scripts/assistance/assist_tuning.gd:49` | `scripts/assistance/press_controller.gd:61` |  (Presion defensiva) |
 | `press_stick_influence` | `0.55` | float | `scripts/assistance/assist_tuning.gd:51` | `scripts/assistance/press_controller.gd:96` | Cuanto influye el joystick (0..1) en el angulo de aproximacion. (Presion defensiva) |
@@ -167,7 +167,7 @@ Fórmulas tal como están en el código (2026-10-26). `asistencia` = nivel 0–1
 <!-- AUTO:params:AssistTuning -->
 | Parámetro | Defecto | Rango / tipo | Definido en | Dónde se usa (accesos reales) | Descripción |
 |---|---|---|---|---|---|
-| `pass_assist` | `0.65` | 0.0, 1.0 | `scripts/assistance/assist_tuning.gd:16` | `scripts/ui/hud.gd:187`, `scripts/assistance/assist_tuning.gd:57`, `scripts/gameplay/tuning.gd:61`, `scripts/gameplay/tuning.gd:76` (+1) |  (Pase) |
+| `pass_assist` | `0.65` | 0.0, 1.0 | `scripts/assistance/assist_tuning.gd:16` | `scripts/ui/hud.gd:188`, `scripts/assistance/assist_tuning.gd:57`, `scripts/gameplay/tuning.gd:66`, `scripts/gameplay/tuning.gd:83` (+1) |  (Pase) |
 | `pass_cone_deg` | `52.0` | float | `scripts/assistance/assist_tuning.gd:18` | `scripts/assistance/pass_assist.gd:18`, `scripts/assistance/pass_assist.gd:158` | Angulo maximo entre la direccion del joystick y un companero para considerarlo. (Pase) |
 | `pass_max_distance` | `24.0` | float | `scripts/assistance/assist_tuning.gd:20` | `scripts/assistance/pass_assist.gd:25`, `scripts/assistance/pass_assist.gd:162` | Alcance maximo de busqueda (m). (Pase) |
 | `pass_max_correction_deg` | `18.0` | float | `scripts/assistance/assist_tuning.gd:22` | `scripts/assistance/pass_assist.gd:79`, `scripts/assistance/pass_assist.gd:206` | Correccion angular maxima (grados) cuando la asistencia es 1. (Pase) |
@@ -176,15 +176,15 @@ Fórmulas tal como están en el código (2026-10-26). `asistencia` = nivel 0–1
 | `pass_weight_lane` | `0.8` | float | `scripts/assistance/assist_tuning.gd:25` | `scripts/assistance/pass_assist.gd:33` |  (Pase) |
 | `pass_lane_block_radius` | `0.8` | float | `scripts/assistance/assist_tuning.gd:27` | `scripts/assistance/pass_assist.gd:32`, `scripts/assistance/pass_assist.gd:190` | Radio de un rival para bloquear la linea de pase. (Pase) |
 | `pass_error_deg` | `2.6` | float | `scripts/assistance/assist_tuning.gd:29` | `scripts/assistance/pass_assist.gd:110`, `scripts/assistance/pass_assist.gd:249` | Error base de pase en grados (atributo de precision 50, 8 m). (Pase) |
-| `shot_assist` | `0.55` | 0.0, 1.0 | `scripts/assistance/assist_tuning.gd:32` | `scripts/ui/hud.gd:188`, `scripts/assistance/assist_tuning.gd:58`, `scripts/gameplay/tuning.gd:62`, `scripts/gameplay/tuning.gd:77` (+1) |  (Tiro) |
+| `shot_assist` | `0.55` | 0.0, 1.0 | `scripts/assistance/assist_tuning.gd:32` | `scripts/ui/hud.gd:189`, `scripts/assistance/assist_tuning.gd:58`, `scripts/gameplay/tuning.gd:67`, `scripts/gameplay/tuning.gd:84` (+1) |  (Tiro) |
 | `shot_cone_deg` | `38.0` | float | `scripts/assistance/assist_tuning.gd:33` | **sin uso** |  (Tiro) |
 | `shot_max_correction_deg` | `10.0` | float | `scripts/assistance/assist_tuning.gd:34` | **sin uso** |  (Tiro) |
 | `shot_post_margin` | `0.28` | float | `scripts/assistance/assist_tuning.gd:36` | `scripts/assistance/shot_assist.gd:81`, `scripts/assistance/shot_assist.gd:105` | Margen (m) que se deja respecto a los postes al apuntar. (Tiro) |
 | `shot_error_deg` | `2.2` | float | `scripts/assistance/assist_tuning.gd:37` | `scripts/assistance/shot_assist.gd:132` |  (Tiro) |
-| `press_assist` | `0.7` | 0.0, 1.0 | `scripts/assistance/assist_tuning.gd:40` | `scripts/ui/hud.gd:189`, `scripts/assistance/assist_tuning.gd:59`, `scripts/assistance/press_controller.gd:113`, `scripts/gameplay/tuning.gd:63` (+1) |  (Presion defensiva) |
+| `press_assist` | `0.7` | 0.0, 1.0 | `scripts/assistance/assist_tuning.gd:40` | `scripts/ui/hud.gd:190`, `scripts/assistance/assist_tuning.gd:59`, `scripts/assistance/press_controller.gd:113`, `scripts/gameplay/tuning.gd:68` (+1) |  (Presion defensiva) |
 | `press_lookahead` | `0.55` | float | `scripts/assistance/assist_tuning.gd:42` | `scripts/assistance/press_controller.gd:67`, `scripts/assistance/press_controller.gd:68` | Segundos hacia delante para predecir la posicion de intercepcion. (Presion defensiva) |
 | `press_standoff` | `1.4` | float | `scripts/assistance/assist_tuning.gd:44` | `scripts/assistance/press_controller.gd:79`, `scripts/assistance/press_controller.gd:108` | Distancia a la que el defensor se mantiene (m) antes de disputar. (Presion defensiva) |
-| `press_tackle_range` | `0.90` | float | `scripts/assistance/assist_tuning.gd:46` | `scripts/assistance/press_controller.gd:121`, `scripts/assistance/press_controller.gd:122`, `scripts/player/player_actions.gd:225` | Distancia a la que se intenta quitar la pelota (m). (Presion defensiva) |
+| `press_tackle_range` | `0.90` | float | `scripts/assistance/assist_tuning.gd:46` | `scripts/assistance/press_controller.gd:121`, `scripts/assistance/press_controller.gd:122`, `scripts/player/player_actions.gd:233` | Distancia a la que se intenta quitar la pelota (m). (Presion defensiva) |
 | `press_around_offset` | `0.30` | float | `scripts/assistance/assist_tuning.gd:48` | `scripts/assistance/press_controller.gd:87` | Cuanto rodea el defensor al portador para atacar la pelota por el lado libre (m mas alla de la pelota). (Presion defensiva) |
 | `press_speed_factor` | `0.93` | float | `scripts/assistance/assist_tuning.gd:49` | `scripts/assistance/press_controller.gd:61` |  (Presion defensiva) |
 | `press_stick_influence` | `0.55` | float | `scripts/assistance/assist_tuning.gd:51` | `scripts/assistance/press_controller.gd:96` | Cuanto influye el joystick (0..1) en el angulo de aproximacion. (Presion defensiva) |

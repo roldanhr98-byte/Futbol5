@@ -40,10 +40,10 @@
 | `second_penalty_mark_distance` | `10.0` | float | `scripts/pitch/pitch_config.gd:26` | `scripts/pitch/pitch.gd:199` | Segundo punto penal (reglamento futsal, falta acumulada). (Marcas) |
 | `corner_arc_radius` | `0.25` | float | `scripts/pitch/pitch_config.gd:27` | `scripts/pitch/pitch.gd:205` |  (Marcas) |
 | `substitution_zone_length` | `5.0` | float | `scripts/pitch/pitch_config.gd:28` | `scripts/pitch/pitch.gd:203` |  (Marcas) |
-| `boundary_mode` | `BoundaryMode.WALLS` | BoundaryMode | `scripts/pitch/pitch_config.gd:31` | `scripts/gameplay/match_manager.gd:179`, `scripts/gameplay/match_scene.gd:69`, `scripts/player/player_actions.gd:371`, `scripts/pitch/pitch.gd:226` |  (Entorno) |
+| `boundary_mode` | `BoundaryMode.WALLS` | BoundaryMode | `scripts/pitch/pitch_config.gd:31` | `scripts/gameplay/match_manager.gd:179`, `scripts/gameplay/match_scene.gd:69`, `scripts/player/player_actions.gd:379`, `scripts/pitch/pitch.gd:226` |  (Entorno) |
 | `wall_height` | `3.0` | float | `scripts/pitch/pitch_config.gd:33` | `scripts/camera/match_camera.gd:184`, `scripts/pitch/pitch.gd:223` | Altura de las paredes que mantienen la pelota en juego. (Entorno) |
 | `barrier_visible_height` | `1.0` | float | `scripts/pitch/pitch_config.gd:35` | `scripts/pitch/pitch.gd:264` | Altura visible de la valla/baranda (el resto es colision invisible). (Entorno) |
-| `run_off` | `2.5` | float | `scripts/pitch/pitch_config.gd:36` | `scripts/player/player_actions.gd:371`, `scripts/pitch/pitch.gd:73`, `scripts/pitch/pitch.gd:74`, `scripts/pitch/pitch.gd:227` |  (Entorno) |
+| `run_off` | `2.5` | float | `scripts/pitch/pitch_config.gd:36` | `scripts/player/player_actions.gd:379`, `scripts/pitch/pitch.gd:73`, `scripts/pitch/pitch.gd:74`, `scripts/pitch/pitch.gd:227` |  (Entorno) |
 <!-- /AUTO -->
 
 ### Receta: «quiero cambiar el tamaño del arco» (consumidores verificados con búsqueda en el código)

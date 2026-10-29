@@ -253,6 +253,9 @@ func execute(act: StringName, ch: float, lb: bool, dir: Vector3, cu: float = 0.0
 		var mocap: bool = AnimationCatalog.mocap_mode() and PackLibrary.has_clip(MOCAP_THROW_CLIP)
 		clip = MOCAP_THROW_CLIP if mocap else THROW_CLIP
 		contact_t = MOCAP_THROW_RELEASE if mocap else THROW_RELEASE
+		if _json_throw():
+			# Modo 4: el instante y la posicion de las manos al lanzar se midieron en el propio clip (meta release).
+			contact_t = float(PackLibrary.meta(THROW_CLIP)["release"]["time"])
 		# Se empieza tarde en el clip: solo los ultimos THROW_RUNUP m de carrerilla, para lanzar desde la linea.
 		var start_at: float = MOCAP_THROW_START if mocap else _start_for_runup(clip, contact_t, THROW_RUNUP)
 		var root_left: Vector2 = ActionMotion.offset_between(clip, start_at, contact_t)
@@ -317,7 +320,13 @@ func _resolve_without_clip() -> void:
 
 ## Manos al lanzar respecto del jugador, segun el clip de saque.
 func _throw_hands() -> Vector3:
+	if _json_throw():
+		return PackLibrary.meta(THROW_CLIP)["release"]["hands"]
 	return MOCAP_THROW_HANDS if clip == MOCAP_THROW_CLIP else THROW_HANDS
+
+## Modo 4: el saque de banda usa el clip JSON con su suelta medida.
+func _json_throw() -> bool:
+	return PackLibrary.json_mode() and PackLibrary.has_clip(THROW_CLIP) and PackLibrary.meta(THROW_CLIP).has("release")
 
 ## Instante de inicio del clip para que, hasta `until`, la raiz recorra como mucho `max_m` metros.
 func _start_for_runup(id: StringName, until: float, max_m: float) -> float:

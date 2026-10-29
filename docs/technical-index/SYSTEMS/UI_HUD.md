@@ -26,9 +26,9 @@ No hay recursos de parámetros. Constantes y valores fijos reales:
 | Constante / enum / uniform | Valor | Línea | Descripción |
 |---|---|---|---|
 | `Hud.LEVEL_NAMES` | `["Desactivada", "Baja", "Media", "Alta"]` | 15 |  |
-| `Hud.TOUCH_SCALES` | `[0.85, 1.0, 1.2]` | 200 | Tamano de la botonera y sensibilidad del joystick (preferencias tactiles; se guardan con las demas). |
-| `Hud.JOY_SENS` | `[0.8, 1.0, 1.3]` | 201 |  |
-| `Hud.THREE_NAMES` | `["Bajo", "Normal", "Alto"]` | 202 |  |
+| `Hud.TOUCH_SCALES` | `[0.85, 1.0, 1.2]` | 202 | Tamano de la botonera y sensibilidad del joystick (preferencias tactiles; se guardan con las demas). |
+| `Hud.JOY_SENS` | `[0.8, 1.0, 1.3]` | 203 |  |
+| `Hud.THREE_NAMES` | `["Bajo", "Normal", "Alto"]` | 204 |  |
 <!-- /AUTO -->
 
 - Tamaños de fuente: marcador y reloj 30, mensaje central 68 (color `(1, 0.95, 0.4)` con contorno), pista inferior 18 (`set_hint`), título de pausa 38; botones del menú de 56 px de alto mínimo y fuente 22; panel de pausa de 760 px de ancho (2 columnas).
@@ -56,27 +56,28 @@ No hay recursos de parámetros. Constantes y valores fijos reales:
 | `Hud._build_scoreboard(root: Control)` | 85 |  |
 | `Hud._build_message(root: Control)` | 102 |  |
 | `Hud._build_pause_menu(root: Control)` | 125 |  |
-| `Hud._add_menu_button(parent: Container, key: String, text: String, action: Callable)` | 164 |  |
-| `Hud._level_index(v: float)` | 175 |  |
-| `Hud._refresh_menu_labels()` | 185 |  |
-| `Hud._nearest_index(values: Array, v: float)` | 204 |  |
-| `Hud._cycle_touch(kind: StringName)` | 211 |  |
-| `Hud._cycle_camera_zoom()` | 222 | Zoom de la camara (se aplica en el acto, con el suavizado de la camara, y se guarda). |
-| `Hud._cycle_gameplay_mode()` | 230 | Modo de jugabilidad (1 pack actual / 2 mocap de futbol / 3 Tripo): se guarda y el partido se vuelve a montar (cada modo tiene sus modelos y  |
-| `Hud._toggle_sound()` | 238 | Sonido del partido: se apaga o enciende en el acto (publico incluido) y se guarda. |
-| `Hud._cycle_minutes()` | 245 | Duracion del partido: se guarda y se aplica al reiniciar el partido (el reloj del partido en curso no cambia). |
-| `Hud._cycle_graphics()` | 253 |  |
-| `Hud._cycle_assist(kind: String)` | 257 |  |
-| `Hud._toggle_diagnostics()` | 265 |  |
-| `Hud._close_pause()` | 271 |  |
-| `Hud._on_pause_pressed()` | 275 |  |
-| `Hud.show_replay(on: bool)` | 279 |  |
-| `Hud._input(event: InputEvent)` | 287 |  |
-| `Hud._unhandled_input(event: InputEvent)` | 293 |  |
-| `Hud._on_state_changed(s: int)` | 298 |  |
-| `Hud._on_score(home: int, away: int)` | 304 |  |
-| `Hud.show_message(text: String, seconds: float)` | 307 |  |
-| `Hud.set_hint(text: String)` | 316 |  |
+| `Hud._add_menu_button(parent: Container, key: String, text: String, action: Callable)` | 165 |  |
+| `Hud._level_index(v: float)` | 176 |  |
+| `Hud._refresh_menu_labels()` | 186 |  |
+| `Hud._nearest_index(values: Array, v: float)` | 206 |  |
+| `Hud._cycle_touch(kind: StringName)` | 213 |  |
+| `Hud._cycle_camera_zoom()` | 224 | Zoom de la camara (se aplica en el acto, con el suavizado de la camara, y se guarda). |
+| `Hud._cycle_gameplay_mode()` | 232 | Modo de jugabilidad (1 pack actual / 2 mocap de futbol / 3 Tripo): se guarda y el partido se vuelve a montar (cada modo tiene sus modelos y  |
+| `Hud._cycle_json_model()` | 241 | Modelo del modo 4 (Json): Tripo adaptado o humanoide realista. Se guarda; si el modo Json esta activo el partido se vuelve a montar con el m |
+| `Hud._toggle_sound()` | 250 | Sonido del partido: se apaga o enciende en el acto (publico incluido) y se guarda. |
+| `Hud._cycle_minutes()` | 257 | Duracion del partido: se guarda y se aplica al reiniciar el partido (el reloj del partido en curso no cambia). |
+| `Hud._cycle_graphics()` | 265 |  |
+| `Hud._cycle_assist(kind: String)` | 269 |  |
+| `Hud._toggle_diagnostics()` | 277 |  |
+| `Hud._close_pause()` | 283 |  |
+| `Hud._on_pause_pressed()` | 287 |  |
+| `Hud.show_replay(on: bool)` | 291 |  |
+| `Hud._input(event: InputEvent)` | 299 |  |
+| `Hud._unhandled_input(event: InputEvent)` | 305 |  |
+| `Hud._on_state_changed(s: int)` | 310 |  |
+| `Hud._on_score(home: int, away: int)` | 316 |  |
+| `Hud.show_message(text: String, seconds: float)` | 319 |  |
+| `Hud.set_hint(text: String)` | 328 |  |
 <!-- /AUTO -->
 
 <!-- AUTO:signals:scripts/ui/hud.gd -->

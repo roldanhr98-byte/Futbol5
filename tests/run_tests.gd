@@ -3,6 +3,8 @@ extends Node
 ##   godot --headless --fixed-fps 60 --path . res://tests/run_tests.tscn
 ##   godot --headless --fixed-fps 60 --path . res://tests/run_tests.tscn -- --filter ball
 ##   godot --headless --fixed-fps 60 --path . res://tests/run_tests.tscn -- --filter dribble_reference::test_gentle
+## TEST_GAMEPLAY_MODE=4 las ejecuta con el modo de jugabilidad indicado (las pruebas de pelota y pies animados valen para el modo 4:
+## xvfb-run -a godot --rendering-driver opengl3 --fixed-fps 60 --path . res://tests/run_tests.tscn -- --filter live_feet).
 ## (con "::", la parte de la derecha filtra tambien el nombre del metodo).
 ## Sale con codigo 1 si alguna prueba falla (apto para CI).
 ## Una prueba que no ejecuta ninguna comprobacion se considera FALLIDA (suele indicar un error de script).
@@ -48,6 +50,8 @@ func _run() -> void:
 				methods.append(mname)
 		methods.sort()
 		for mname in methods:
+			if OS.get_environment("TEST_GAMEPLAY_MODE") != "":
+				Tuning.gameplay_mode = int(OS.get_environment("TEST_GAMEPLAY_MODE"))
 			var t: TestCase = script.new()
 			t.tree = get_tree()
 			total_tests += 1

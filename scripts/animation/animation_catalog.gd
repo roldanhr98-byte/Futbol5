@@ -95,13 +95,19 @@ static func resolve(situation: StringName, use_pack: bool, pick: int = 0) -> Dic
 		var packs: Array = (entry["pack"] as Array).filter(func(c: StringName) -> bool: return PackLibrary.has_clip(c))
 		if packs.size() > 0:
 			return {"source": &"pack", "clip": packs[absi(pick) % packs.size()]}
+	# Modo 4 (Json): los clips de Tripo no sirven en su esqueleto; lo que no tiene clip JSON simplemente no se anima.
+	if PackLibrary.json_mode():
+		return {}
 	var tripo: Array = entry["tripo"]
 	if tripo.size() > 0:
 		return {"source": &"tripo", "clip": tripo[absi(pick) % tripo.size()]}
 	return {}
 
 ## Clips de patada disponibles (con su version izquierda "_mirror") para una accion: [{clip, foot}].
-static func kick_candidates(kind: StringName) -> Array:
+## charge (0..1): en el modo 4 elige la clase de potencia de los clips (JsonCatalog.kick_candidates).
+static func kick_candidates(kind: StringName, charge: float = 0.5) -> Array:
+	if PackLibrary.json_mode():
+		return JsonCatalog.kick_candidates(kind, charge)
 	var out: Array = []
 	var mocap: bool = mocap_mode() and MOCAP_KICKS.has(kind)
 	for c in (MOCAP_KICKS if mocap else KICKS).get(kind, []):

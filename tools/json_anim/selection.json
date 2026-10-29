@@ -1,0 +1,2273 @@
+{
+ "clips": [
+  {
+   "file": "0520",
+   "id": "jn_idle_0520",
+   "role": "idle",
+   "loop": true
+  },
+  {
+   "file": "1138",
+   "id": "jn_idle_1138",
+   "role": "idle",
+   "loop": true
+  },
+  {
+   "file": "1140",
+   "id": "jn_idle_1140",
+   "role": "idle",
+   "loop": true
+  },
+  {
+   "file": "1142",
+   "id": "jn_idle_1142",
+   "role": "idle",
+   "loop": true
+  },
+  {
+   "file": "0524",
+   "id": "jn_idle_ball_0524",
+   "role": "idle_ball",
+   "loop": true
+  },
+  {
+   "file": "0460",
+   "id": "jn_walk_0460",
+   "role": "walk",
+   "loop": true,
+   "phase": 28
+  },
+  {
+   "file": "1474",
+   "id": "jn_walk_1474",
+   "role": "walk",
+   "loop": true,
+   "phase": 28
+  },
+  {
+   "file": "2024",
+   "id": "jn_walk_2024",
+   "role": "walk",
+   "loop": true,
+   "phase": 26
+  },
+  {
+   "file": "3498",
+   "id": "jn_walk_3498",
+   "role": "walk",
+   "loop": true,
+   "phase": 26
+  },
+  {
+   "file": "1144",
+   "id": "jn_jog_1144",
+   "role": "jog",
+   "loop": true,
+   "phase": 16
+  },
+  {
+   "file": "2390",
+   "id": "jn_jog_2390",
+   "role": "jog",
+   "loop": true,
+   "phase": 16
+  },
+  {
+   "file": "2392",
+   "id": "jn_run_2392",
+   "role": "run",
+   "loop": true,
+   "phase": 12
+  },
+  {
+   "file": "0190",
+   "id": "jn_run_0190",
+   "role": "run",
+   "loop": true,
+   "phase": 13
+  },
+  {
+   "file": "3022",
+   "id": "jn_sprint_3022",
+   "role": "sprint",
+   "loop": true,
+   "phase": 12
+  },
+  {
+   "file": "0072",
+   "id": "jn_sprint_0072",
+   "role": "sprint",
+   "loop": true,
+   "phase": 12
+  },
+  {
+   "file": "0074",
+   "id": "jn_sprint_0074",
+   "role": "sprint",
+   "loop": true,
+   "phase": 12
+  },
+  {
+   "file": "2036",
+   "id": "jn_sprint_2036",
+   "role": "sprint",
+   "loop": true,
+   "phase": 12
+  },
+  {
+   "file": "2034",
+   "id": "jn_sprint_2034",
+   "role": "sprint",
+   "loop": true,
+   "phase": 9
+  },
+  {
+   "file": "0486",
+   "id": "jn_dir_back_0486",
+   "role": "dir_back",
+   "loop": true,
+   "mirror": true,
+   "phase": 30,
+   "phase_mirror": 14
+  },
+  {
+   "file": "0480",
+   "id": "jn_dir_back_diag_0480",
+   "role": "dir_back_diag",
+   "loop": true,
+   "mirror": true,
+   "phase": 35,
+   "phase_mirror": 17
+  },
+  {
+   "file": "0470",
+   "id": "jn_dir_fwd_diag_0470",
+   "role": "dir_fwd_diag",
+   "loop": true,
+   "mirror": true,
+   "phase": 0,
+   "phase_mirror": 34
+  },
+  {
+   "file": "0186",
+   "id": "jn_dir_side_0186",
+   "role": "dir_side",
+   "loop": true,
+   "mirror": true,
+   "phase": 0,
+   "phase_mirror": 0
+  },
+  {
+   "file": "1482",
+   "id": "jn_dir_back_walk_1482",
+   "role": "dir_back_walk",
+   "loop": true,
+   "mirror": true,
+   "phase": 8,
+   "phase_mirror": 43
+  },
+  {
+   "file": "1476",
+   "id": "jn_dir_fwd_diag_walk_1476",
+   "role": "dir_fwd_diag_walk",
+   "loop": true,
+   "mirror": true,
+   "phase": 28,
+   "phase_mirror": 60
+  },
+  {
+   "file": "0234",
+   "id": "jn_dribble_walk_0234",
+   "role": "dribble_walk",
+   "cycle": [
+    13,
+    76
+   ],
+   "dribble": true,
+   "hi": true,
+   "only_mirror": true
+  },
+  {
+   "file": "1574",
+   "id": "jn_dribble_jog_1574",
+   "role": "dribble_jog",
+   "cycle": [
+    6,
+    46
+   ],
+   "dribble": true,
+   "hi": true
+  },
+  {
+   "file": "2106",
+   "id": "jn_dribble_jog_2106",
+   "role": "dribble_jog",
+   "cycle": [
+    3,
+    42
+   ],
+   "dribble": true,
+   "hi": true,
+   "only_mirror": true
+  },
+  {
+   "file": "1288",
+   "id": "jn_dribble_run_1288",
+   "role": "dribble_run",
+   "cycle": [
+    3,
+    42
+   ],
+   "dribble": true,
+   "hi": true,
+   "only_mirror": true
+  },
+  {
+   "file": "3186",
+   "id": "jn_dribble_run_3186",
+   "role": "dribble_run",
+   "cycle": [
+    6,
+    38
+   ],
+   "dribble": true,
+   "hi": true,
+   "only_mirror": true
+  },
+  {
+   "file": "3184",
+   "id": "jn_dribble_run_3184",
+   "role": "dribble_run",
+   "cycle": [
+    7,
+    42
+   ],
+   "dribble": true,
+   "hi": true,
+   "only_mirror": true
+  },
+  {
+   "file": "0194",
+   "id": "jn_dribble_fast_0194",
+   "role": "dribble_fast",
+   "cycle": [
+    9,
+    39
+   ],
+   "dribble": true,
+   "hi": true,
+   "only_mirror": true
+  },
+  {
+   "file": "2092",
+   "id": "jn_dribble_fast_2092",
+   "role": "dribble_fast",
+   "cycle": [
+    6,
+    41
+   ],
+   "dribble": true,
+   "hi": true,
+   "only_mirror": true
+  },
+  {
+   "file": "0548",
+   "id": "jn_dribble_fast_0548",
+   "role": "dribble_fast",
+   "cycle": [
+    6,
+    38
+   ],
+   "dribble": true,
+   "hi": true,
+   "only_mirror": true
+  },
+  {
+   "file": "1582",
+   "id": "jn_dribble_sprint_1582",
+   "role": "dribble_sprint",
+   "cycle": [
+    6,
+    38
+   ],
+   "dribble": true,
+   "hi": true
+  },
+  {
+   "file": "3190",
+   "id": "jn_dribble_sprint_3190",
+   "role": "dribble_sprint",
+   "cycle": [
+    6,
+    41
+   ],
+   "dribble": true,
+   "hi": true,
+   "only_mirror": true
+  },
+  {
+   "file": "1584",
+   "id": "jn_dribble_sprint_1584",
+   "role": "dribble_sprint",
+   "cycle": [
+    6,
+    40
+   ],
+   "dribble": true,
+   "hi": true
+  },
+  {
+   "file": "0626",
+   "id": "jn_kick_pass_soft_0626",
+   "role": "kick_pass_soft",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "1608",
+   "id": "jn_kick_pass_soft_1608",
+   "role": "kick_pass_soft",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "1616",
+   "id": "jn_kick_pass_soft_1616",
+   "role": "kick_pass_soft",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "2462",
+   "id": "jn_kick_pass_soft_2462",
+   "role": "kick_pass_soft",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "3052",
+   "id": "jn_kick_pass_soft_3052",
+   "role": "kick_pass_soft",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "1600",
+   "id": "jn_kick_pass_soft_1600",
+   "role": "kick_pass_soft",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "2458",
+   "id": "jn_kick_pass_soft_2458",
+   "role": "kick_pass_soft",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "0636",
+   "id": "jn_kick_pass_0636",
+   "role": "kick_pass",
+   "kick": true,
+   "hi": true,
+   "mirror": true,
+   "alias": [
+    "Soccer_Pass"
+   ]
+  },
+  {
+   "file": "3056",
+   "id": "jn_kick_pass_3056",
+   "role": "kick_pass",
+   "kick": true,
+   "hi": true,
+   "mirror": true,
+   "alias": []
+  },
+  {
+   "file": "3086",
+   "id": "jn_kick_pass_3086",
+   "role": "kick_pass",
+   "kick": true,
+   "hi": true,
+   "mirror": true,
+   "alias": []
+  },
+  {
+   "file": "2194",
+   "id": "jn_kick_pass_2194",
+   "role": "kick_pass",
+   "kick": true,
+   "hi": true,
+   "mirror": true,
+   "alias": []
+  },
+  {
+   "file": "3652",
+   "id": "jn_kick_pass_3652",
+   "role": "kick_pass",
+   "kick": true,
+   "hi": true,
+   "mirror": true,
+   "alias": []
+  },
+  {
+   "file": "3654",
+   "id": "jn_kick_pass_3654",
+   "role": "kick_pass",
+   "kick": true,
+   "hi": true,
+   "mirror": true,
+   "alias": []
+  },
+  {
+   "file": "3660",
+   "id": "jn_kick_pass_3660",
+   "role": "kick_pass",
+   "kick": true,
+   "hi": true,
+   "mirror": true,
+   "alias": []
+  },
+  {
+   "file": "1204",
+   "id": "jn_kick_pass_1204",
+   "role": "kick_pass",
+   "kick": true,
+   "hi": true,
+   "mirror": true,
+   "alias": []
+  },
+  {
+   "file": "1208",
+   "id": "jn_kick_pass_1208",
+   "role": "kick_pass",
+   "kick": true,
+   "hi": true,
+   "mirror": true,
+   "alias": []
+  },
+  {
+   "file": "0672",
+   "id": "jn_kick_pass_0672",
+   "role": "kick_pass",
+   "kick": true,
+   "hi": true,
+   "mirror": true,
+   "alias": []
+  },
+  {
+   "file": "0668",
+   "id": "jn_kick_pass_0668",
+   "role": "kick_pass",
+   "kick": true,
+   "hi": true,
+   "mirror": true,
+   "alias": []
+  },
+  {
+   "file": "3238",
+   "id": "jn_kick_pass_3238",
+   "role": "kick_pass",
+   "kick": true,
+   "hi": true,
+   "mirror": true,
+   "alias": []
+  },
+  {
+   "file": "0656",
+   "id": "jn_kick_shot_0656",
+   "role": "kick_shot",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "2520",
+   "id": "jn_kick_shot_2520",
+   "role": "kick_shot",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "2524",
+   "id": "jn_kick_shot_2524",
+   "role": "kick_shot",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "2988",
+   "id": "jn_kick_shot_2988",
+   "role": "kick_shot",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "3246",
+   "id": "jn_kick_shot_3246",
+   "role": "kick_shot",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "3598",
+   "id": "jn_kick_shot_3598",
+   "role": "kick_shot",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "3588",
+   "id": "jn_kick_shot_3588",
+   "role": "kick_shot",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "3580",
+   "id": "jn_kick_shot_3580",
+   "role": "kick_shot",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "3666",
+   "id": "jn_kick_shot_3666",
+   "role": "kick_shot",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "2202",
+   "id": "jn_kick_shot_2202",
+   "role": "kick_shot",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "2200",
+   "id": "jn_kick_shot_2200",
+   "role": "kick_shot",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "2204",
+   "id": "jn_kick_shot_2204",
+   "role": "kick_shot",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "0694",
+   "id": "jn_kick_shot_0694",
+   "role": "kick_shot",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "0748",
+   "id": "jn_kick_shot_0748",
+   "role": "kick_shot",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "1752",
+   "id": "jn_kick_shot_1752",
+   "role": "kick_shot",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "1754",
+   "id": "jn_kick_shot_1754",
+   "role": "kick_shot",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "1756",
+   "id": "jn_kick_shot_1756",
+   "role": "kick_shot",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "1758",
+   "id": "jn_kick_shot_1758",
+   "role": "kick_shot",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "2528",
+   "id": "jn_kick_shot_2528",
+   "role": "kick_shot",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "2522",
+   "id": "jn_kick_shot_2522",
+   "role": "kick_shot",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "3584",
+   "id": "jn_kick_shot_3584",
+   "role": "kick_shot",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "2548",
+   "id": "jn_kick_shot_hard_2548",
+   "role": "kick_shot_hard",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "2550",
+   "id": "jn_kick_shot_hard_2550",
+   "role": "kick_shot_hard",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "2544",
+   "id": "jn_kick_shot_hard_2544",
+   "role": "kick_shot_hard",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "3254",
+   "id": "jn_kick_shot_hard_3254",
+   "role": "kick_shot_hard",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "3256",
+   "id": "jn_kick_shot_hard_3256",
+   "role": "kick_shot_hard",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "3260",
+   "id": "jn_kick_shot_hard_3260",
+   "role": "kick_shot_hard",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "3264",
+   "id": "jn_kick_shot_hard_3264",
+   "role": "kick_shot_hard",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "3780",
+   "id": "jn_kick_shot_hard_3780",
+   "role": "kick_shot_hard",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "3610",
+   "id": "jn_kick_shot_hard_3610",
+   "role": "kick_shot_hard",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "3618",
+   "id": "jn_kick_shot_hard_3618",
+   "role": "kick_shot_hard",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "0646",
+   "id": "jn_kick_lob_0646",
+   "role": "kick_lob",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "0666",
+   "id": "jn_kick_lob_0666",
+   "role": "kick_lob",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "0654",
+   "id": "jn_kick_lob_0654",
+   "role": "kick_lob",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "0652",
+   "id": "jn_kick_lob_0652",
+   "role": "kick_lob",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "1844",
+   "id": "jn_header_1844",
+   "role": "header",
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "1846",
+   "id": "jn_header_1846",
+   "role": "header",
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "2232",
+   "id": "jn_header_2232",
+   "role": "header",
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "0832",
+   "id": "jn_header_0832",
+   "role": "header",
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "1858",
+   "id": "jn_header_1858",
+   "role": "header",
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "2628",
+   "id": "jn_header_2628",
+   "role": "header",
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "2652",
+   "id": "jn_header_2652",
+   "role": "header",
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "1848",
+   "id": "jn_header_1848",
+   "role": "header",
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "0732",
+   "id": "jn_volley_0732",
+   "role": "volley",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "0734",
+   "id": "jn_volley_0734",
+   "role": "volley",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "2562",
+   "id": "jn_volley_2562",
+   "role": "volley",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "2570",
+   "id": "jn_volley_2570",
+   "role": "volley",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "2572",
+   "id": "jn_volley_2572",
+   "role": "volley",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "3284",
+   "id": "jn_volley_3284",
+   "role": "volley",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "3294",
+   "id": "jn_volley_3294",
+   "role": "volley",
+   "kick": true,
+   "hi": true,
+   "mirror": true
+  },
+  {
+   "file": "0582",
+   "id": "jn_receive_chest_0582",
+   "role": "receive_chest",
+   "alias": [
+    "Receive"
+   ]
+  },
+  {
+   "file": "0564",
+   "id": "jn_receive_foot_0564",
+   "role": "receive_foot",
+   "alias": [
+    "receive_soccerball"
+   ],
+   "mirror": true
+  },
+  {
+   "file": "0576",
+   "id": "jn_receive_foot_0576",
+   "role": "receive_foot",
+   "mirror": true
+  },
+  {
+   "file": "0578",
+   "id": "jn_receive_foot_0578",
+   "role": "receive_foot"
+  },
+  {
+   "file": "0220",
+   "id": "jn_slide_0220",
+   "role": "slide",
+   "root_driven": true,
+   "mirror": true,
+   "hi": true,
+   "alias": [
+    "soccer_tackle"
+   ]
+  },
+  {
+   "file": "0086",
+   "id": "jn_slide_0086",
+   "role": "slide",
+   "root_driven": true,
+   "mirror": true,
+   "hi": true,
+   "alias": [
+    "soccer_tackle_2"
+   ]
+  },
+  {
+   "file": "3542",
+   "id": "jn_slide_3542",
+   "role": "slide",
+   "root_driven": true,
+   "mirror": true,
+   "hi": true,
+   "alias": [
+    "soccer_tackle_3"
+   ]
+  },
+  {
+   "file": "2746",
+   "id": "jn_slide_2746",
+   "role": "slide",
+   "root_driven": true,
+   "mirror": true,
+   "hi": true
+  },
+  {
+   "file": "0860",
+   "id": "jn_trip_0860",
+   "role": "trip",
+   "root_driven": true,
+   "mirror": true,
+   "alias": [
+    "soccer_trip"
+   ]
+  },
+  {
+   "file": "2352",
+   "id": "jn_fall_hit_2352",
+   "role": "fall_hit",
+   "root_driven": true,
+   "mirror": true,
+   "alias": [
+    "Shoulder_Hit_And_Fall",
+    "Sprint_To_Backslide"
+   ]
+  },
+  {
+   "file": "3514",
+   "id": "jn_fall_3514",
+   "role": "fall",
+   "root_driven": true,
+   "mirror": true,
+   "alias": [
+    "Falling_Down"
+   ]
+  },
+  {
+   "file": "3512",
+   "id": "jn_fall_3512",
+   "role": "fall",
+   "root_driven": true,
+   "mirror": true,
+   "alias": [
+    "Sweep_Fall"
+   ]
+  },
+  {
+   "file": "0980",
+   "id": "jn_fall_0980",
+   "role": "fall",
+   "root_driven": true,
+   "mirror": true
+  },
+  {
+   "file": "0856",
+   "id": "jn_lie_0856",
+   "role": "lie",
+   "loop": true,
+   "root_driven": true,
+   "alias": [
+    "fallen_idle"
+   ]
+  },
+  {
+   "file": "0810",
+   "id": "jn_getup_0810",
+   "role": "getup",
+   "root_driven": true,
+   "alias": [
+    "standing_up"
+   ]
+  },
+  {
+   "file": "0806",
+   "id": "jn_getup_0806",
+   "role": "getup",
+   "root_driven": true,
+   "alias": [
+    "Getting_Up_3"
+   ]
+  },
+  {
+   "file": "0808",
+   "id": "jn_getup_0808",
+   "role": "getup",
+   "root_driven": true
+  },
+  {
+   "file": "2238",
+   "id": "jn_getup_2238",
+   "role": "getup",
+   "root_driven": true
+  },
+  {
+   "file": "2418",
+   "id": "jn_shove_2418",
+   "role": "shove",
+   "root_driven": true,
+   "alias": [
+    "Shove_Reaction"
+   ]
+  },
+  {
+   "file": "2420",
+   "id": "jn_shove_2420",
+   "role": "shove",
+   "root_driven": true,
+   "alias": [
+    "Shove_Reaction_2"
+   ]
+  },
+  {
+   "file": "1440",
+   "id": "jn_stumble_1440",
+   "role": "stumble",
+   "root_driven": true,
+   "mirror": true,
+   "alias": [
+    "Jogging_Stumble"
+   ]
+  },
+  {
+   "file": "1260",
+   "id": "jn_stumble_light_1260",
+   "role": "stumble_light",
+   "alias": [
+    "Jogging_Stumble_inplace"
+   ]
+  },
+  {
+   "file": "0336",
+   "id": "jn_jump_0336",
+   "role": "jump",
+   "alias": [
+    "Jumping_Up",
+    "Jump_4",
+    "Jump_2"
+   ]
+  },
+  {
+   "file": "0090",
+   "id": "jn_celebrate_0090",
+   "role": "celebrate",
+   "alias": [
+    "Fist_Pump_3"
+   ]
+  },
+  {
+   "file": "0092",
+   "id": "jn_celebrate_0092",
+   "role": "celebrate",
+   "alias": [
+    "Cheering_2"
+   ]
+  },
+  {
+   "file": "0338",
+   "id": "jn_celebrate_0338",
+   "role": "celebrate",
+   "alias": [
+    "Fist_Pump"
+   ]
+  },
+  {
+   "file": "1954",
+   "id": "jn_celebrate_1954",
+   "role": "celebrate",
+   "alias": [
+    "Standing_Fist_Pump"
+   ]
+  },
+  {
+   "file": "0874",
+   "id": "jn_celebrate_scorer_0874",
+   "role": "celebrate_scorer",
+   "alias": [
+    "Excited"
+   ]
+  },
+  {
+   "file": "0942",
+   "id": "jn_celebrate_scorer_0942",
+   "role": "celebrate_scorer",
+   "alias": [
+    "Victory"
+   ]
+  },
+  {
+   "file": "1950",
+   "id": "jn_celebrate_scorer_1950",
+   "role": "celebrate_scorer",
+   "alias": [
+    "Taunt"
+   ]
+  },
+  {
+   "file": "1952",
+   "id": "jn_celebrate_scorer_1952",
+   "role": "celebrate_scorer",
+   "alias": [
+    "Cheering"
+   ]
+  },
+  {
+   "file": "0298",
+   "id": "jn_celebrate_team_0298",
+   "role": "celebrate_team",
+   "alias": [
+    "Clapping"
+   ]
+  },
+  {
+   "file": "2014",
+   "id": "jn_celebrate_team_2014",
+   "role": "celebrate_team",
+   "alias": [
+    "Waving_3",
+    "Waving"
+   ]
+  },
+  {
+   "file": "2020",
+   "id": "jn_celebrate_team_2020",
+   "role": "celebrate_team",
+   "alias": [
+    "Pointing_2"
+   ]
+  },
+  {
+   "file": "1462",
+   "id": "jn_thumbs_up_1462",
+   "role": "thumbs_up",
+   "alias": [
+    "Standing_Thumbs_Up"
+   ]
+  },
+  {
+   "file": "1968",
+   "id": "jn_dejected_1968",
+   "role": "dejected",
+   "alias": [
+    "Defeat_Idle_2"
+   ]
+  },
+  {
+   "file": "1974",
+   "id": "jn_dejected_1974",
+   "role": "dejected",
+   "alias": [
+    "Disappointed"
+   ]
+  },
+  {
+   "file": "0102",
+   "id": "jn_dejected_0102",
+   "role": "dejected",
+   "alias": [
+    "Sad_Idle_3"
+   ]
+  },
+  {
+   "file": "0104",
+   "id": "jn_dejected_0104",
+   "role": "dejected",
+   "alias": [
+    "Crying"
+   ]
+  },
+  {
+   "file": "0112",
+   "id": "jn_dejected_0112",
+   "role": "dejected",
+   "alias": [
+    "Defeated"
+   ]
+  },
+  {
+   "file": "1418",
+   "id": "jn_dejected_1418",
+   "role": "dejected",
+   "alias": [
+    "Loser"
+   ]
+  },
+  {
+   "file": "0956",
+   "id": "jn_defeat_end_0956",
+   "role": "defeat_end",
+   "alias": [
+    "Defeat"
+   ]
+  },
+  {
+   "file": "0356",
+   "id": "jn_angry_0356",
+   "role": "angry",
+   "alias": [
+    "Angry_Gesture_2",
+    "Angry"
+   ]
+  },
+  {
+   "file": "0366",
+   "id": "jn_angry_0366",
+   "role": "angry",
+   "alias": [
+    "Standing_Yell_2"
+   ]
+  },
+  {
+   "file": "0368",
+   "id": "jn_angry_0368",
+   "role": "angry",
+   "alias": [
+    "Yelling_While_Standing"
+   ]
+  },
+  {
+   "file": "0320",
+   "id": "jn_warmup_0320",
+   "role": "warmup",
+   "alias": [
+    "Arm_Stretching"
+   ]
+  },
+  {
+   "file": "0322",
+   "id": "jn_warmup_0322",
+   "role": "warmup",
+   "alias": [
+    "Neck_Stretching"
+   ]
+  },
+  {
+   "file": "0360",
+   "id": "jn_referee_0360",
+   "role": "referee",
+   "alias": [
+    "Counting"
+   ]
+  },
+  {
+   "file": "0362",
+   "id": "jn_referee_0362",
+   "role": "referee",
+   "alias": [
+    "Pointing_Forward"
+   ]
+  },
+  {
+   "file": "0364",
+   "id": "jn_referee_0364",
+   "role": "referee"
+  },
+  {
+   "file": "2508",
+   "id": "jn_throw_in_2508",
+   "role": "throw_in",
+   "throw": true,
+   "root_driven": true,
+   "alias": [
+    "throw_in"
+   ]
+  },
+  {
+   "file": "2506",
+   "id": "jn_throw_in_2506",
+   "role": "throw_in",
+   "throw": true,
+   "root_driven": true
+  },
+  {
+   "file": "3446",
+   "id": "jn_throw_in_3446",
+   "role": "throw_in",
+   "throw": true,
+   "root_driven": true
+  },
+  {
+   "file": "3744",
+   "id": "jn_setpiece_pass_3744",
+   "role": "setpiece_pass",
+   "kick": true,
+   "root_driven": true,
+   "hi": true,
+   "mirror": true,
+   "alias": [
+    "strike_foward_jog"
+   ]
+  },
+  {
+   "file": "3738",
+   "id": "jn_setpiece_pass_3738",
+   "role": "setpiece_pass",
+   "kick": true,
+   "root_driven": true,
+   "hi": true,
+   "mirror": true,
+   "alias": []
+  },
+  {
+   "file": "3732",
+   "id": "jn_setpiece_pass_3732",
+   "role": "setpiece_pass",
+   "kick": true,
+   "root_driven": true,
+   "hi": true,
+   "mirror": true,
+   "alias": []
+  },
+  {
+   "file": "3856",
+   "id": "jn_setpiece_shot_3856",
+   "role": "setpiece_shot",
+   "kick": true,
+   "root_driven": true,
+   "hi": true,
+   "mirror": true,
+   "alias": [
+    "soccer_penalty_kick"
+   ]
+  },
+  {
+   "file": "3850",
+   "id": "jn_setpiece_shot_3850",
+   "role": "setpiece_shot",
+   "kick": true,
+   "root_driven": true,
+   "hi": true,
+   "mirror": true,
+   "alias": []
+  },
+  {
+   "file": "3846",
+   "id": "jn_setpiece_shot_3846",
+   "role": "setpiece_shot",
+   "kick": true,
+   "root_driven": true,
+   "hi": true,
+   "mirror": true,
+   "alias": []
+  },
+  {
+   "file": "3840",
+   "id": "jn_setpiece_shot_3840",
+   "role": "setpiece_shot",
+   "kick": true,
+   "root_driven": true,
+   "hi": true,
+   "mirror": true,
+   "alias": []
+  },
+  {
+   "file": "3742",
+   "id": "jn_setpiece_lob_3742",
+   "role": "setpiece_lob",
+   "kick": true,
+   "root_driven": true,
+   "hi": true,
+   "mirror": true,
+   "alias": [
+    "Chip"
+   ]
+  },
+  {
+   "file": "3746",
+   "id": "jn_setpiece_lob_3746",
+   "role": "setpiece_lob",
+   "kick": true,
+   "root_driven": true,
+   "hi": true,
+   "mirror": true,
+   "alias": []
+  },
+  {
+   "file": "0884",
+   "id": "jn_gk_idle_0884",
+   "role": "gk_idle",
+   "loop": true,
+   "alias": [
+    "goalkeeper_idle"
+   ],
+   "library": "keeper"
+  },
+  {
+   "file": "3548",
+   "id": "jn_gk_idle_3548",
+   "role": "gk_idle",
+   "loop": true,
+   "library": "keeper"
+  },
+  {
+   "file": "3552",
+   "id": "jn_gk_idle_3552",
+   "role": "gk_idle",
+   "loop": true,
+   "library": "keeper"
+  },
+  {
+   "file": "0496",
+   "id": "jn_gk_idle_ball_0496",
+   "role": "gk_idle_ball",
+   "loop": true,
+   "alias": [
+    "goalkeeper_idle_2"
+   ],
+   "library": "keeper"
+  },
+  {
+   "file": "0000",
+   "id": "jn_gk_dive_0000",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [
+    "goalkeeper_diving_save"
+   ],
+   "library": "keeper"
+  },
+  {
+   "file": "0002",
+   "id": "jn_gk_dive_0002",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0010",
+   "id": "jn_gk_dive_0010",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [
+    "goalkeeper_diving_save_2"
+   ],
+   "library": "keeper"
+  },
+  {
+   "file": "0012",
+   "id": "jn_gk_dive_0012",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0014",
+   "id": "jn_gk_dive_0014",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0006",
+   "id": "jn_gk_dive_0006",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0008",
+   "id": "jn_gk_dive_0008",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0028",
+   "id": "jn_gk_dive_0028",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0030",
+   "id": "jn_gk_dive_0030",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0034",
+   "id": "jn_gk_dive_0034",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0038",
+   "id": "jn_gk_dive_0038",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0020",
+   "id": "jn_gk_dive_0020",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0024",
+   "id": "jn_gk_dive_0024",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "3796",
+   "id": "jn_gk_dive_3796",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "3798",
+   "id": "jn_gk_dive_3798",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "3804",
+   "id": "jn_gk_dive_3804",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "2632",
+   "id": "jn_gk_dive_2632",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "2634",
+   "id": "jn_gk_dive_2634",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "3928",
+   "id": "jn_gk_dive_3928",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "3930",
+   "id": "jn_gk_dive_3930",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "1688",
+   "id": "jn_gk_dive_1688",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "1690",
+   "id": "jn_gk_dive_1690",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "1694",
+   "id": "jn_gk_dive_1694",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "1698",
+   "id": "jn_gk_dive_1698",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0910",
+   "id": "jn_gk_dive_0910",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0912",
+   "id": "jn_gk_dive_0912",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0914",
+   "id": "jn_gk_dive_0914",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0920",
+   "id": "jn_gk_dive_0920",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0924",
+   "id": "jn_gk_dive_0924",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0926",
+   "id": "jn_gk_dive_0926",
+   "role": "gk_dive",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0888",
+   "id": "jn_gk_catch_0888",
+   "role": "gk_catch",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [
+    "goalkeeper_catch_2"
+   ],
+   "library": "keeper"
+  },
+  {
+   "file": "0892",
+   "id": "jn_gk_catch_0892",
+   "role": "gk_catch",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0894",
+   "id": "jn_gk_catch_0894",
+   "role": "gk_catch",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0900",
+   "id": "jn_gk_catch_0900",
+   "role": "gk_catch",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0896",
+   "id": "jn_gk_catch_0896",
+   "role": "gk_catch",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [
+    "goalkeeper_catch_4"
+   ],
+   "library": "keeper"
+  },
+  {
+   "file": "1742",
+   "id": "jn_gk_catch_1742",
+   "role": "gk_catch",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [
+    "goalkeeper_catch_3"
+   ],
+   "library": "keeper"
+  },
+  {
+   "file": "1746",
+   "id": "jn_gk_catch_1746",
+   "role": "gk_catch",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "1748",
+   "id": "jn_gk_catch_1748",
+   "role": "gk_catch",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "1750",
+   "id": "jn_gk_catch_1750",
+   "role": "gk_catch",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "2678",
+   "id": "jn_gk_catch_2678",
+   "role": "gk_catch",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "2680",
+   "id": "jn_gk_catch_2680",
+   "role": "gk_catch",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "2682",
+   "id": "jn_gk_catch_2682",
+   "role": "gk_catch",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "2684",
+   "id": "jn_gk_catch_2684",
+   "role": "gk_catch",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "2686",
+   "id": "jn_gk_catch_2686",
+   "role": "gk_catch",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "2690",
+   "id": "jn_gk_catch_2690",
+   "role": "gk_catch",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "2692",
+   "id": "jn_gk_catch_2692",
+   "role": "gk_catch",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "2698",
+   "id": "jn_gk_catch_2698",
+   "role": "gk_catch",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "2704",
+   "id": "jn_gk_catch_2704",
+   "role": "gk_catch",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0930",
+   "id": "jn_gk_catch_0930",
+   "role": "gk_catch",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0932",
+   "id": "jn_gk_catch_0932",
+   "role": "gk_catch",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0898",
+   "id": "jn_gk_scoop_0898",
+   "role": "gk_scoop",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [
+    "goalkeeper_scoop"
+   ],
+   "library": "keeper"
+  },
+  {
+   "file": "1722",
+   "id": "jn_gk_scoop_1722",
+   "role": "gk_scoop",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "1726",
+   "id": "jn_gk_scoop_1726",
+   "role": "gk_scoop",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "1728",
+   "id": "jn_gk_scoop_1728",
+   "role": "gk_scoop",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "1732",
+   "id": "jn_gk_scoop_1732",
+   "role": "gk_scoop",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "1736",
+   "id": "jn_gk_scoop_1736",
+   "role": "gk_scoop",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "1740",
+   "id": "jn_gk_scoop_1740",
+   "role": "gk_scoop",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [
+    "goalkeeper_catch"
+   ],
+   "library": "keeper"
+  },
+  {
+   "file": "2658",
+   "id": "jn_gk_scoop_2658",
+   "role": "gk_scoop",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "2660",
+   "id": "jn_gk_scoop_2660",
+   "role": "gk_scoop",
+   "mirror": true,
+   "root_driven": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0184",
+   "id": "jn_gk_sidestep_0184",
+   "role": "gk_sidestep",
+   "mirror": true,
+   "loop": true,
+   "root_driven": true,
+   "alias": [
+    "goalkeeper_sidestep",
+    "goalkeeper_sidestep_2"
+   ],
+   "library": "keeper"
+  },
+  {
+   "file": "0054",
+   "id": "jn_gk_block_0054",
+   "role": "gk_block",
+   "mirror": true,
+   "root_driven": true,
+   "alias": [
+    "goalkeeper_body_block"
+   ],
+   "library": "keeper"
+  },
+  {
+   "file": "0928",
+   "id": "jn_gk_block_0928",
+   "role": "gk_block",
+   "mirror": true,
+   "root_driven": true,
+   "alias": [
+    "goalkeeper_body_block_2"
+   ],
+   "library": "keeper"
+  },
+  {
+   "file": "0044",
+   "id": "jn_gk_block_0044",
+   "role": "gk_block",
+   "mirror": true,
+   "root_driven": true,
+   "alias": [
+    "goalkeeper_body_block_3"
+   ],
+   "library": "keeper"
+  },
+  {
+   "file": "0052",
+   "id": "jn_gk_block_0052",
+   "role": "gk_block",
+   "mirror": true,
+   "root_driven": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0046",
+   "id": "jn_gk_miss_0046",
+   "role": "gk_miss",
+   "mirror": true,
+   "root_driven": true,
+   "alias": [
+    "goalkeeper_miss"
+   ],
+   "library": "keeper"
+  },
+  {
+   "file": "0068",
+   "id": "jn_gk_throw_0068",
+   "role": "gk_throw",
+   "throw": true,
+   "root_driven": true,
+   "alias": [
+    "goalkeeper_overhand_throw",
+    "Goalie_Throw"
+   ],
+   "library": "keeper"
+  },
+  {
+   "file": "1874",
+   "id": "jn_gk_throw_1874",
+   "role": "gk_throw",
+   "throw": true,
+   "root_driven": true,
+   "library": "keeper"
+  },
+  {
+   "file": "1878",
+   "id": "jn_gk_throw_1878",
+   "role": "gk_throw",
+   "throw": true,
+   "root_driven": true,
+   "library": "keeper"
+  },
+  {
+   "file": "0066",
+   "id": "jn_gk_roll_0066",
+   "role": "gk_roll",
+   "throw": true,
+   "root_driven": true,
+   "alias": [
+    "goalkeeper_pass"
+   ],
+   "library": "keeper"
+  },
+  {
+   "file": "1876",
+   "id": "jn_gk_roll_1876",
+   "role": "gk_roll",
+   "throw": true,
+   "root_driven": true,
+   "library": "keeper"
+  },
+  {
+   "file": "1884",
+   "id": "jn_gk_kick_1884",
+   "role": "gk_kick",
+   "kick": true,
+   "root_driven": true,
+   "mirror": true,
+   "hi": true,
+   "alias": [
+    "goalkeeper_drop_kick"
+   ],
+   "library": "keeper"
+  },
+  {
+   "file": "2706",
+   "id": "jn_gk_kick_2706",
+   "role": "gk_kick",
+   "kick": true,
+   "root_driven": true,
+   "mirror": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "2708",
+   "id": "jn_gk_kick_2708",
+   "role": "gk_kick",
+   "kick": true,
+   "root_driven": true,
+   "mirror": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "2710",
+   "id": "jn_gk_kick_2710",
+   "role": "gk_kick",
+   "kick": true,
+   "root_driven": true,
+   "mirror": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "3412",
+   "id": "jn_gk_kick_3412",
+   "role": "gk_kick",
+   "kick": true,
+   "root_driven": true,
+   "mirror": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "3410",
+   "id": "jn_gk_kick_3410",
+   "role": "gk_kick",
+   "kick": true,
+   "root_driven": true,
+   "mirror": true,
+   "hi": true,
+   "alias": [],
+   "library": "keeper"
+  },
+  {
+   "file": "0178",
+   "id": "jn_gk_place_0178",
+   "role": "gk_place",
+   "root_driven": true,
+   "alias": [
+    "goalkeeper_placing_ball"
+   ],
+   "library": "keeper"
+  },
+  {
+   "file": "0312",
+   "id": "jn_gk_place_0312",
+   "role": "gk_place",
+   "root_driven": true,
+   "alias": [
+    "goalkeeper_placing_ball_2"
+   ],
+   "library": "keeper"
+  },
+  {
+   "file": "0362",
+   "id": "jn_gk_direct_0362",
+   "role": "gk_direct",
+   "alias": [
+    "goalkeeper_directing"
+   ],
+   "library": "keeper"
+  },
+  {
+   "file": "0364",
+   "id": "jn_gk_direct_0364",
+   "role": "gk_direct",
+   "alias": [
+    "goalkeeper_directing_2"
+   ],
+   "library": "keeper"
+  }
+ ]
+}

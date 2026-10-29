@@ -80,6 +80,10 @@ las otras 20.
   `mc_penalty_kick`. Pendiente: en el pase de primera con el pase de interior el pie de apoyo patina 1.69 m/s (límite de
   la prueba 1.6; en el modo 1, 1.2).
 
+- **Modo 4 · Json** (2026-10-29): las animaciones de `animaciones_futbol5_JSON` sobre un esqueleto canónico propio y dos modelos
+  elegibles; `PackLibrary` en el modo 4 carga `json_clips.res` / `json_keeper.res` y traduce los nombres del pack de Mixamo a clips
+  JSON por alias. Ficha completa: [JSON_MODE](JSON_MODE.md).
+
 ## Cómo funciona (un solo sistema)
 
 1. **Offline:** `tools/animation_pack/build_pack_library.tscn` convierte los clips de `selection.json` con `PackRetarget` (retarget respecto al reposo, no copia de rotaciones locales) a `assets/animations/pack_clips.res` (campo) y `pack_keeper.res` (arquero). Mide por clip: velocidad natural, raíz acumulada (**separada** de la cadera, que queda centrada), altura del tobillo, y en patadas el **contacto** (instante, pie, posición) y la **trayectoria de la punta del pie** en la ventana del golpeo.

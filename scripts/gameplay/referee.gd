@@ -90,8 +90,37 @@ func _physics_process(delta: float) -> void:
 		return
 	_follow_play(delta)
 
+## Modo 4 (Json): no hay gemelos con raiz; el arbitro corre de frente por la banda con la marcha JSON (la cadencia sigue a la
+## velocidad real, asi que los pies no patinan) y se para mirando la cancha.
+var _json_speed: float = 0.0
+
+func _follow_play_json(delta: float) -> void:
+	var half_l: float = ctx.pitch.config.half_length() - 3.0
+	var target_x: float = clampf(ctx.ball.global_position.x * 0.85, -half_l, half_l)
+	var near_side: bool = ctx.ball.global_position.z * signf(_line_z) > 4.0
+	var target_z: float = _line_z - signf(_line_z) * (0.2 if near_side else -0.4)
+	var to := Vector2(target_x - position.x, target_z - position.z)
+	var want: float = clampf((to.length() - 0.6) * 0.9, 0.0, 5.0) if to.length() > DEAD_ZONE else 0.0
+	_json_speed = move_toward(_json_speed, want, 3.5 * delta)
+	if _json_speed > 0.3:
+		_turn_towards(Locomotion.yaw_from_dir(Vector3(to.x, 0.0, to.y).normalized()), delta)
+		var f: Vector3 = Locomotion.dir_from_yaw(_yaw)
+		var step: Vector3 = f * _json_speed * delta
+		position += step
+		travelled += step.length()
+		var hl: float = ctx.pitch.config.half_length() + 1.0
+		position.x = clampf(position.x, -hl, hl)
+	else:
+		_turn_towards(0.0, delta)
+	visual.directional = false
+	visual.dir_scale_override = -1.0
+	visual.drive_motion(_json_speed, 0.0, delta)
+
 ## Sigue la pelota por la banda: de lado si la distancia es corta (mirando la cancha), de frente si es larga.
 func _follow_play(delta: float) -> void:
+	if visual.json_mode:
+		_follow_play_json(delta)
+		return
 	var half_l: float = ctx.pitch.config.half_length() - 3.0
 	var target_x: float = clampf(ctx.ball.global_position.x * 0.85, -half_l, half_l)
 	var dx: float = target_x - position.x

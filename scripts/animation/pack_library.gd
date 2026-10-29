@@ -3,6 +3,12 @@ extends RefCounted
 ## Acceso a las librerias de animacion derivadas del pack de Mixamo (ver tools/animation_pack/build_pack_library.gd).
 ## Se generan con el conversor y SE VERSIONAN junto con el pack (uso personal dentro del juego); el juego funciona sin ellas
 ## (usa los clips de Tripo y la patada procedural). Cada Animation lleva set_meta("pack", {...}) medido al convertir.
+##
+## Modo 4 (Json, Tuning.gameplay_mode): las librerias son las de las animaciones JSON (json_clips.res y json_keeper.res,
+## tools/json_anim/build_json_library.gd) sobre el esqueleto JsonRig. El resto del juego sigue pidiendo clips por los nombres
+## del pack de Mixamo («Soccer_Pass», «goalkeeper_catch»...): cada clip JSON declara en su meta `alias` los nombres que
+## sustituye, y has_clip / clip / meta / anim_path los resuelven (también las versiones «_mirror»). Los clips que no
+## tienen sustituto simplemente no existen en este modo y el juego los omite (todo uso va tras has_clip).
 
 const FIELD_PATH := "res://assets/animations/pack_clips.res"
 const KEEPER_PATH := "res://assets/animations/pack_keeper.res"
@@ -11,15 +17,58 @@ const TOUCH_PATH := "res://assets/animations/touch_clips.res"
 ## Mocap Pack 05 Soccer (tools/animation_pack/build_mocap_library.tscn, ids "mc_*"): el modo 2 de jugabilidad. Tambien
 ## se suma a la libreria de campo.
 const MOCAP_PATH := "res://assets/animations/mocap_clips.res"
+## Modo 4 (Json).
+const JSON_FIELD_PATH := "res://assets/animations/json_clips.res"
+const JSON_KEEPER_PATH := "res://assets/animations/json_keeper.res"
 
 static var _field: AnimationLibrary = null
 static var _keeper: AnimationLibrary = null
 static var _loaded: bool = false
+static var _loaded_json: bool = false
+## Modo 4: nombre del pack de Mixamo -> id del clip JSON; rol -> ids.
+static var _alias: Dictionary = {}
+static var _roles: Dictionary = {}
+
+static var _json_exists: int = -1
+
+## true si el juego usa el modo 4 y sus librerias existen (se pregunta mucho: el resultado de exists() se guarda).
+static func json_mode() -> bool:
+	if Tuning.gameplay_mode != 4:
+		return false
+	if _json_exists < 0:
+		_json_exists = 1 if ResourceLoader.exists(JSON_FIELD_PATH) else 0
+	return _json_exists == 1
 
 static func _ensure() -> void:
-	if _loaded:
+	var want_json: bool = json_mode()
+	if _loaded and _loaded_json == want_json:
 		return
 	_loaded = true
+	_loaded_json = want_json
+	_field = null
+	_keeper = null
+	_alias = {}
+	_roles = {}
+	_reset_caches()
+	if want_json:
+		_field = load(JSON_FIELD_PATH) as AnimationLibrary
+		if ResourceLoader.exists(JSON_KEEPER_PATH):
+			_keeper = load(JSON_KEEPER_PATH) as AnimationLibrary
+		for lib in [_field, _keeper]:
+			if lib == null:
+				continue
+			for id in lib.get_animation_list():
+				var m: Dictionary = lib.get_animation(id).get_meta("pack", {})
+				var role: StringName = StringName(String(m.get("role", "")))
+				if not _roles.has(role):
+					_roles[role] = []
+				(_roles[role] as Array).append(id)
+				# Los alias valen para el clip normal; su espejo se resuelve anadiendo «_mirror» (ver resolve).
+				if not String(id).ends_with("_mirror"):
+					for a in m.get("alias", []):
+						if not _alias.has(StringName(a)):
+							_alias[StringName(a)] = id
+		return
 	if ResourceLoader.exists(FIELD_PATH):
 		_field = load(FIELD_PATH) as AnimationLibrary
 		for extra in [TOUCH_PATH, MOCAP_PATH]:
@@ -32,6 +81,32 @@ static func _ensure() -> void:
 						_field.add_animation(id, lib.get_animation(id))
 	if ResourceLoader.exists(KEEPER_PATH):
 		_keeper = load(KEEPER_PATH) as AnimationLibrary
+
+## Los caches de otras clases que dependen de los clips cargados (cambian al cambiar de modo).
+static func _reset_caches() -> void:
+	FootballerVisual.reset_caches()
+	BallHandler.reset_caches()
+	KeeperPlanner.reset_caches()
+
+## Id real de un clip pedido por su nombre del pack de Mixamo (modo 4); fuera de ese modo, el mismo id.
+static func resolve(id: StringName) -> StringName:
+	_ensure()
+	if not _loaded_json:
+		return id
+	if (_field != null and _field.has_animation(id)) or (_keeper != null and _keeper.has_animation(id)):
+		return id
+	var s: String = String(id)
+	var mirrored: bool = s.ends_with("_mirror")
+	var base: StringName = StringName(s.trim_suffix("_mirror")) if mirrored else id
+	if (_field != null and _field.has_animation(base)) or (_keeper != null and _keeper.has_animation(base)):
+		return &""   # clip real sin version espejo
+	var target: StringName = _alias.get(base, &"")
+	if target == &"":
+		return &""
+	if mirrored:
+		var m: StringName = StringName(String(target) + "_mirror")
+		return m if ((_field != null and _field.has_animation(m)) or (_keeper != null and _keeper.has_animation(m))) else &""
+	return target
 
 ## Libreria de clips de campo, o null si no se ha generado.
 static func field() -> AnimationLibrary:
@@ -47,6 +122,9 @@ static func available() -> bool:
 	return field() != null
 
 static func has_clip(id: StringName) -> bool:
+	id = resolve(id)
+	if id == &"":
+		return false
 	var lib: AnimationLibrary = field()
 	if lib != null and lib.has_animation(id):
 		return true
@@ -55,6 +133,9 @@ static func has_clip(id: StringName) -> bool:
 
 ## Clip de campo o del arquero por su id (los ids no se repiten entre librerias).
 static func clip(id: StringName) -> Animation:
+	id = resolve(id)
+	if id == &"":
+		return null
 	var lib: AnimationLibrary = field()
 	if lib != null and lib.has_animation(id):
 		return lib.get_animation(id)
@@ -63,6 +144,9 @@ static func clip(id: StringName) -> Animation:
 
 ## true si el clip es de la libreria del arquero (se reproduce desde "keeper/<id>").
 static func is_keeper_clip(id: StringName) -> bool:
+	id = resolve(id)
+	if id == &"":
+		return false
 	var lib: AnimationLibrary = field()
 	if lib != null and lib.has_animation(id):
 		return false
@@ -71,6 +155,7 @@ static func is_keeper_clip(id: StringName) -> bool:
 
 ## Nombre con el que el AnimationPlayer del visual conoce el clip ("pack/<id>" o "keeper/<id>").
 static func anim_path(id: StringName) -> StringName:
+	id = resolve(id)
 	return StringName(("keeper/" if is_keeper_clip(id) else "pack/") + String(id))
 
 ## Metadatos medidos del clip (diccionario vacio si no existe).
@@ -78,8 +163,19 @@ static func meta(id: StringName) -> Dictionary:
 	var a: Animation = clip(id)
 	return a.get_meta("pack", {}) if a != null else {}
 
+## Modo 4: ids de los clips con ese rol (incluye las versiones espejo), en el orden de la libreria.
+static func by_role(role: StringName) -> Array[StringName]:
+	_ensure()
+	var out: Array[StringName] = []
+	if _roles.has(role):
+		out.assign(_roles[role])
+	return out
+
 ## Fuerza una nueva lectura de disco (pruebas).
 static func reload() -> void:
 	_loaded = false
 	_field = null
 	_keeper = null
+	_alias = {}
+	_roles = {}
+	_reset_caches()

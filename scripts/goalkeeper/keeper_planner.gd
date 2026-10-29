@@ -16,8 +16,18 @@ const PICKUP_CLIPS := [&"goalkeeper_scoop", &"goalkeeper_catch", &"goalkeeper_ca
 ## Altura maxima (m) de las manos en el contacto de una recogida.
 const PICKUP_MAX_HANDS_Y := 0.7
 
+## Modo 4: roles de los clips de atajada y su radio de contacto de las manos (m).
+const JSON_ROLE_RADIUS := {&"gk_catch": 0.42, &"gk_dive": 0.50, &"gk_scoop": 0.40, &"gk_sidestep": 0.45, &"gk_block": 0.60}
+
+static func _role(id: StringName) -> StringName:
+	return StringName(String(PackLibrary.meta(id).get("role", "")))
+
 static func candidates() -> Array[StringName]:
 	var out: Array[StringName] = []
+	if PackLibrary.json_mode():
+		for r in JSON_ROLE_RADIUS:
+			out.append_array(PackLibrary.by_role(r))
+		return out
 	for id in SAVE_CLIPS:
 		if PackLibrary.has_clip(id):
 			out.append(id)
@@ -27,6 +37,8 @@ static func candidates() -> Array[StringName]:
 	return out
 
 static func radius_of(id: StringName) -> float:
+	if PackLibrary.json_mode():
+		return float(JSON_ROLE_RADIUS.get(_role(id), 0.45))
 	var base := StringName(String(id).trim_suffix("_mirror"))
 	return float(SAVE_CLIPS.get(base, 0.45))
 
@@ -82,6 +94,15 @@ static func hands_world(id: StringName, k: int, origin: Vector3, yaw: float) -> 
 ## Preferencia de estilo entre los clips que SI llegan (suma al puntaje; menor = mas natural): atrapar antes que
 ## estirarse, estirarse antes que dar un paso lateral, y bloquear con el cuerpo solo si no queda otra.
 static func style_penalty(id: StringName) -> float:
+	if PackLibrary.json_mode():
+		match _role(id):
+			&"gk_catch", &"gk_scoop":
+				return 0.0
+			&"gk_dive":
+				return 0.12
+			&"gk_sidestep":
+				return 0.18
+		return 0.30
 	var n: String = String(id)
 	if n.contains("scoop") or n.contains("catch"):
 		return 0.0
@@ -92,6 +113,10 @@ static func style_penalty(id: StringName) -> float:
 	return 0.30
 
 static var _bbox_cache: Dictionary = {}
+
+## Vacia los datos calculados con la libreria de clips (cambian al cambiar de modo).
+static func reset_caches() -> void:
+	_bbox_cache = {}
 
 ## Caja (min, max) de la trayectoria de manos de un clip en el marco del cuerpo (adelante, arriba, derecha).
 static func _bbox(id: StringName, hp: PackedVector3Array) -> Array:

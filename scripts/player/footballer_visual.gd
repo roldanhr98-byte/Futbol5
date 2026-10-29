@@ -143,6 +143,10 @@ const CARRY_CROUCH := 0.13
 var turn_crouch: float = 0.0
 ## Modelo propio del modo 2 (MocapRig) o null.
 var mocap_rig: MocapRig = null
+## Modo 4 (Json): modelo sobre el esqueleto JsonRig con la libreria de clips JSON (ver JsonCatalog). json_human: el humanoide
+## propio (colores de equipo por zonas en COLOR.r); si no, el Tripo adaptado (misma textura y mascaras que el original).
+var json_mode: bool = false
+var json_human: bool = false
 var _kit: Dictionary = {}
 var _phase: float = 0.0
 var _legs: Array[MeshInstance3D] = []
@@ -170,12 +174,15 @@ func build(kit: Dictionary) -> bool:
 		c.queue_free()
 	_legs.clear()
 	mesh_instances.clear()
-	var scene: PackedScene = load(MODEL_PATH) as PackedScene
-	var clips: AnimationLibrary = load(CLIPS_PATH) as AnimationLibrary
-	if scene == null or clips == null:
-		push_warning("FootballerVisual: faltan recursos (%s / %s); se usa un maniqui." % [MODEL_PATH, CLIPS_PATH])
+	json_mode = Tuning.gameplay_mode == 4 and JsonCatalog.active() and JsonCatalog.model_path() != ""
+	var model_path: String = JsonCatalog.model_path() if json_mode else MODEL_PATH
+	var scene: PackedScene = load(model_path) as PackedScene
+	var clips: AnimationLibrary = null if json_mode else (load(CLIPS_PATH) as AnimationLibrary)
+	if scene == null or (clips == null and not json_mode):
+		push_warning("FootballerVisual: faltan recursos (%s / %s); se usa un maniqui." % [model_path, CLIPS_PATH])
 		_build_placeholder(kit.get("jersey", Color.RED))
 		return false
+	json_human = json_mode and JsonCatalog.is_human_model(model_path)
 	is_placeholder = false
 	rig = Node3D.new()
 	rig.name = "Rig"
@@ -190,8 +197,9 @@ func build(kit: Dictionary) -> bool:
 	anim_player = AnimationPlayer.new()
 	anim_player.name = "AnimationPlayer"
 	model_root.add_child(anim_player)
-	anim_player.add_animation_library("", clips)
-	# Modo 3 de jugabilidad: solo Tripo (sus clips prefijados y la patada procedural), sin el pack.
+	if clips != null:
+		anim_player.add_animation_library("", clips)
+	# Modo 3 de jugabilidad: solo Tripo (sus clips prefijados y la patada procedural), sin el pack. Modo 4: la libreria JSON.
 	uses_pack = prefer_pack and PackLibrary.available() and Tuning.gameplay_mode != 3
 	if uses_pack:
 		anim_player.add_animation_library(PACK_LIB, PackLibrary.field())
@@ -225,10 +233,13 @@ func build(kit: Dictionary) -> bool:
 
 func _apply_kit(kit: Dictionary) -> void:
 	kit_material = ShaderMaterial.new()
-	kit_material.shader = KIT_SHADER
-	kit_material.set_shader_parameter("albedo_tex", load(ALBEDO_PATH))
-	kit_material.set_shader_parameter("mask_a", load(MASK_A_PATH))
-	kit_material.set_shader_parameter("mask_b", load(MASK_B_PATH))
+	if json_human:
+		kit_material.shader = load(JsonCatalog.KIT_SHADER_PATH) as Shader
+	else:
+		kit_material.shader = KIT_SHADER
+		kit_material.set_shader_parameter("albedo_tex", load(ALBEDO_PATH))
+		kit_material.set_shader_parameter("mask_a", load(MASK_A_PATH))
+		kit_material.set_shader_parameter("mask_b", load(MASK_B_PATH))
 	set_kit(kit)
 	for mi in mesh_instances:
 		mi.material_override = kit_material
@@ -243,18 +254,43 @@ func set_kit(kit: Dictionary) -> void:
 	for key in ["jersey", "shorts", "socks", "boots", "skin", "hair"]:
 		if kit.has(key):
 			kit_material.set_shader_parameter("%s_color" % key, kit[key])
+	# El ribete (cuello, mangas, borde de las medias) del humanoide lleva el color del short.
+	if json_human and kit.has("shorts"):
+		kit_material.set_shader_parameter("trim_color", kit["shorts"])
 
 func _anim_node(clip: StringName) -> AnimationNodeAnimation:
 	var n := AnimationNodeAnimation.new()
 	n.animation = clip
 	return n
 
+## Modo 4: ciclo de marcha con una linea de tiempo comun de UN ciclo (todos empiezan en un apoyo del pie izquierdo), asi las
+## fases de los clips que se mezclan coinciden; la cadencia la da el TimeScale (ciclos por segundo, ver JsonCatalog).
+func _json_cycle_node(id: StringName) -> AnimationNodeAnimation:
+	var n := AnimationNodeAnimation.new()
+	n.animation = PackLibrary.anim_path(id)
+	n.use_custom_timeline = true
+	n.timeline_length = 1.0
+	n.stretch_time_scale = true
+	n.loop_mode = Animation.LOOP_LINEAR
+	return n
+
+## Vacia los datos calculados con la libreria de clips (cambian al cambiar de modo).
+static func reset_caches() -> void:
+	_gait_cache = []
+	_carry_cache = []
+
 func _setup_animation_tree() -> void:
 	var space := AnimationNodeBlendSpace1D.new()
 	space.min_space = 0.0
 	space.max_space = 7.5
 	space.sync = true
-	if uses_pack:
+	if json_mode:
+		var jidx := 0
+		for pt in JsonCatalog.gait_points(false):
+			space.add_blend_point(_json_cycle_node(pt[0]), float(pt[1]), -1, StringName("g%d" % jidx))
+			jidx += 1
+			_gait_max_natural = maxf(_gait_max_natural, float(pt[1]))
+	elif uses_pack:
 		var idx := 0
 		for pt in (TWIN_GAIT_POINTS if twin_rig else PACK_GAIT_POINTS):
 			var clip: StringName = pt[0]
@@ -332,7 +368,7 @@ func _setup_animation_tree() -> void:
 				previous = StringName("TouchShot%d" % f)
 				_touch_nodes[f] = tnode
 	var x: float = 520.0
-	for clip in ACTION_CLIPS:
+	for clip in ([] if json_mode else ACTION_CLIPS):
 		var shot_name := StringName("Shot_%s" % clip)
 		var scale_name := StringName("Scale_%s" % clip)
 		var one := AnimationNodeOneShot.new()
@@ -387,6 +423,8 @@ func carry_phase(clip: StringName) -> float:
 
 ## Clip de la marcha con pelota que domina a una velocidad (el punto de la mezcla mas cercano, sin el reposo).
 static func carry_clip_for(speed: float) -> StringName:
+	if PackLibrary.json_mode():
+		return &""   # la conduccion del modo 4 no usa clips de toque sueltos (ver JsonDribble)
 	var best: StringName = &""
 	var best_d: float = INF
 	for i in range(1, CARRY_GAIT_POINTS.size()):
@@ -436,6 +474,8 @@ static func gait_table() -> Array[Vector3]:
 
 ## Escala de tiempo de la marcha del pack a una velocidad: velocidad / velocidad natural de lo que se esta mezclando.
 static func gait_scale_for(speed: float) -> float:
+	if PackLibrary.json_mode():
+		return JsonCatalog.cycles_per_second(speed, false)
 	var table: Array[Vector3] = gait_table()
 	if table.size() < 2 or speed <= 0.15:
 		return 1.0
@@ -467,6 +507,8 @@ static func carry_gait_table() -> Array[Vector3]:
 	return _carry_cache
 
 static func carry_scale_for(speed: float) -> float:
+	if PackLibrary.json_mode():
+		return JsonCatalog.cycles_per_second(speed, true)
 	var table: Array[Vector3] = carry_gait_table()
 	if table.size() < 2 or speed <= 0.15:
 		return 1.0
@@ -482,7 +524,12 @@ static func carry_scale_for(speed: float) -> float:
 
 ## Segundos entre apoyos consecutivos (un pie tras otro) de la marcha del pack a una velocidad, ya con la escala de
 ## tiempo con la que se reproduce. -1 si no hay libreria del pack o el jugador esta parado.
-static func step_interval_for(speed: float) -> float:
+static func step_interval_for(speed: float, carry: bool = false) -> float:
+	if PackLibrary.json_mode():
+		if speed < 0.3 or not PackLibrary.available():
+			return -1.0
+		# Un ciclo son dos apoyos (un pie y el otro).
+		return 0.5 / JsonCatalog.cycles_per_second(speed, carry)
 	var table: Array[Vector3] = gait_table()
 	if table.size() < 3 or speed < 0.3:
 		return -1.0
@@ -630,9 +677,11 @@ func drive_motion(speed: float, turn_rate: float, delta: float) -> void:
 	# El cuerpo entero (rig) se inclina poco, como antes, para no mover los pies que tocan la pelota; la inclinacion
 	# grande la lleva el tronco (ProceduralPose: columna, sin tocar caderas ni piernas).
 	var target_pitch: float = clampf(speed / 7.0, 0.0, 1.0) * 0.12
+	if json_mode:
+		target_pitch *= 0.2   # los clips JSON ya traen la inclinacion de la carrera
 	var target_roll: float = clampf(turn_rate * speed * 0.0042, -0.28, 0.28)
 	var trunk_pitch: float = clampf(_lean_accel / 9.81, -LEAN_BRAKE_MAX, LEAN_ACCEL_MAX)
-	if _has_carry and _carry_weight > 0.0:
+	if _has_carry and _carry_weight > 0.0 and not json_mode:
 		trunk_pitch += CARRY_CROUCH * _carry_weight * smoothstep(0.3, 1.4, speed) * (1.0 - smoothstep(3.2, 5.0, speed))
 	trunk_pitch += turn_crouch
 	var trunk_roll: float = clampf(atan(turn_rate * speed / 9.81) * LEAN_TURN_GAIN, -LEAN_ROLL_MAX, LEAN_ROLL_MAX)

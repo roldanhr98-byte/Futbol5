@@ -46,7 +46,7 @@ python3 tools/docs_index.py sync && python3 tools/docs_index.py check   # 5. doc
 | Sonido | `scripts/audio/sfx.gd` (autoload `Sfx`) |
 | HUD, menú de pausa, botones táctiles | `scripts/ui/hud.gd`, `touch_controls.gd`, `ui_theme.gd` |
 | Ajustes del usuario (zoom, sonido, modo de juego) | `scripts/gameplay/tuning.gd` (autoload `Tuning`) |
-| Qué clip suena en cada situación | `scripts/animation/animation_catalog.gd` (**único** que elige clips) |
+| Qué clip suena en cada situación | `scripts/animation/animation_catalog.gd` (**único** que elige clips; en el modo 4 `json_catalog.gd` + alias de `pack_library.gd`) |
 | Cargar librerías de clips | `scripts/animation/pack_library.gd` |
 | Modelo del jugador, AnimationTree, kit de colores | `scripts/player/footballer_visual.gd` |
 | IK del pie en toques/pisadas | `scripts/animation/touch_foot_ik.gd` |
@@ -57,14 +57,16 @@ python3 tools/docs_index.py sync && python3 tools/docs_index.py check   # 5. doc
 | Perfiles gráficos, FPS | `scripts/diagnostics/graphics_settings.gd`, `diagnostics_overlay.gd` |
 | APK / CI / firma | `.github/workflows/android.yml`, `export_presets.cfg`, `tools/android/` |
 
-## 3. Los 3 modos de jugabilidad (`Tuning.gameplay_mode`, menú Pausa → «Modo de juego»; cambiar recarga el partido)
+## 3. Los 4 modos de jugabilidad (`Tuning.gameplay_mode`, menú Pausa → «Modo de juego»; cambiar recarga el partido)
 
 | Modo | Qué es | Dónde |
 |---|---|---|
 | **1 · Pack actual** | Modelo de Tripo + 133 clips Mixamo (`pack_clips.res`, `pack_keeper.res`) + toques/IK | `AnimationCatalog.FIELD/KICKS` |
 | **2 · Mocap fútbol** | Clips del «Mocap Pack 05 Soccer» (`mocap_clips.res`, 24 clips `mc_*`: pase, tiro, penal, saque de banda, tarjeta, festejos) + **modelo propio Newton** (`MocapRig`) que copia la pose del esqueleto del futbolista (que sigue haciendo todo pero no se dibuja) | `AnimationCatalog.MOCAP_*`, `scripts/animation/mocap_rig.gd`, `assets/characters/mocap/` |
 | **3 · Tripo** | Solo modelo y presets de Tripo + patada procedural (`FootballerVisual.uses_pack = false`) | `footballer_visual.gd` |
+| **4 · Json** | Las animaciones de `animaciones_futbol5_JSON` (posiciones de 19 articulaciones → rotaciones sobre el esqueleto canónico `JsonRig`) con **dos modelos** a elegir en Pausa → «Modelo Json»: GLB de Tripo adaptado o humanoide realista propio (`Tuning.json_model`). Los clips sustituyen por alias a los nombres del pack de Mixamo | `scripts/animation/json_*.gd`, `tools/json_anim/`, `SYSTEMS/JSON_MODE.md` |
 
+- Modo 4: ficha [`SYSTEMS/JSON_MODE.md`](technical-index/SYSTEMS/JSON_MODE.md); regenerar clips/modelos y revisar a ojo: [`tools/json_anim/README.md`](../tools/json_anim/README.md). Pruebas: `tools/run_tests.sh json_mode`; con render `TEST_GAMEPLAY_MODE=4 xvfb-run -a godot --rendering-driver opengl3 --fixed-fps 60 --path . res://tests/run_tests.tscn -- --filter live_feet` (y `live_kicks`).
 - Tripo **no crea animaciones a medida** (solo rigging y presets de biblioteca fija).
 - Conducción, malabares, atajadas, defensa y tarjeta roja de mocap están en la galería pero **sin disparador** en partido (motivos en `SYSTEMS/ANIMATION_PACK.md`).
 - Pendiente conocido: pase de primera en modo 2, el pie de apoyo patina 1.67 m/s (límite de prueba 1.6).
@@ -91,7 +93,7 @@ python3 tools/docs_index.py sync && python3 tools/docs_index.py check   # 5. doc
 - `assets/animations/`: `pack_clips.res`, `pack_keeper.res` (Mixamo), `mocap_clips.res` (mocap), `footballer_clips.res` (Tripo), `touch_clips.res`. **Se regeneran offline**, no a mano:
   `tools/animation_pack/build_pack_library.tscn`, `build_mocap_library.tscn` (clips), `build_mocap_character.tscn` (modelo Newton). Uso: `godot --headless --path . res://tools/animation_pack/<x>.tscn`.
 - `pack/` (FBX originales del mocap) **no está en el repo** (`.gitignore`); solo se necesita para regenerar.
-- `assets/characters/player/` modelo de Tripo; `assets/characters/mocap/` modelo Newton + `mocap_kit.gdshader`.
+- `assets/characters/player/` modelo de Tripo; `assets/characters/mocap/` modelo Newton + `mocap_kit.gdshader`; `assets/characters/json/` modelos del modo 4 (`json_tripo.scn`, `json_human.scn`, `json_kit.gdshader`) y `assets/animations/json_clips.res` / `json_keeper.res`.
 - `tools/docs_index.py` (índice), `tools/measure_*.gd`, `render_clip_sheet.gd`, `glb_inspect.py` (medición/inspección).
 
 ## 7. Mapa de la documentación (leer solo lo que toque)
