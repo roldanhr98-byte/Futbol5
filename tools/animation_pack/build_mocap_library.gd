@@ -75,11 +75,13 @@ func _ready() -> void:
 		if not FileAccess.file_exists(SRC_DIR + String(entry["source"])) and not ResourceLoader.exists(SRC_DIR + String(entry["source"])):
 			print("MOCAP falta %s: se omite" % entry["source"])
 			continue
-		if entry.get("kick", false):
-			var raw: Animation = _load_raw(entry["source"])
-			var prepared: Animation = _prepare_kick(raw, entry, root_rest)
-			_prepared["prep:" + String(entry["id"])] = prepared
-			entry["source"] = "prep:" + String(entry["id"])
+		var raw: Animation = _load_raw(entry["source"])
+		# La primera imagen de cada toma es la pose de referencia de la captura (de pie, distinta del movimiento): se
+		# descarta (medido: todos los clips saltaban 80-177 grados entre la imagen 0 y la 1).
+		raw = _trim(raw, _first_motion_time(raw), raw.length)
+		var prepared: Animation = _prepare_kick(raw, entry, root_rest) if entry.get("kick", false) else raw
+		_prepared["prep:" + String(entry["id"])] = prepared
+		entry["source"] = "prep:" + String(entry["id"])
 		clips.append(entry)
 	_rt.hips_lift = _calibrate_lift(clips)
 	print("MOCAP hips_lift=%.4f (%.1f cm en juego)" % [_rt.hips_lift, _rt.hips_lift * GAME_SCALE * 100.0])
@@ -140,6 +142,13 @@ func _prepare_kick(raw: Animation, entry: Dictionary, root_rest: Basis) -> Anima
 	var out: Animation = _trim(turned, maxf(t_c - float(win[0]), 0.0), minf(t_c + float(win[1]), raw.length))
 	print("MOCAP %s: contacto en la toma a %.2f s (pie %s), giro %.0f grados, ventana %.2f s" % [entry["id"], t_c, "D" if int(c["foot"]) > 0 else "I", rad_to_deg(yaw), out.length])
 	return out
+
+## Instante de la segunda clave de la toma (la primera es la pose de referencia de la captura).
+static func _first_motion_time(a: Animation) -> float:
+	for t in a.get_track_count():
+		if a.track_get_type(t) == Animation.TYPE_ROTATION_3D and a.track_get_key_count(t) > 1:
+			return a.track_get_key_time(t, 1)
+	return 0.0
 
 ## Direccion (adelante, derecha) de la punta del pie que golpea en el contacto, en el esqueleto del futbolista.
 func _swing_dir(b: Dictionary, t: float, foot: int) -> Vector2:

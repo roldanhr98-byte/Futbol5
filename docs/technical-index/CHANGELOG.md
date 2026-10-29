@@ -30,9 +30,15 @@ Detalle: [ANIMATION_PACK](SYSTEMS/ANIMATION_PACK.md#modo-2-de-jugabilidad-mocap-
   `MOCAP_FIELD`), `pack_library.gd` (`MOCAP_PATH`), `scripts/player/ball_handler.gd` (`MOCAP_EXTRA_LATENCY`),
   `scripts/gameplay/set_piece.gd`, `tuning.gd`, `practice_scene.gd`, `scripts/ui/hud.gd`; prueba nueva
   `tests/test_mocap_mode.gd`; `tests/test_live_kicks.gd` admite `LIVE_KICKS_MODE=2`.
-- Verificación: `test_mocap_mode` 4/58/0 (12 de 12 pases y tiros con el clip de la captura, pie a 0.008–0.057 m); con
-  render y `LIVE_KICKS_MODE=2`, `test_live_kicks` 3 de 4 pruebas: 48 de 50 golpeos con contacto; **falla** el pase de
-  primera por el pie de apoyo (patina 1.69 m/s, límite 1.6): pendiente.
+- La primera imagen de cada toma de Rokoko es la pose de referencia de la captura: se descarta al convertir (los clips
+  saltaban 80–177° entre la imagen 0 y la 1; `test_pack_retarget` lo detectó en `mc_celebration_1`).
+- Verificación: suite headless 202 pruebas / 1129 comprobaciones: 2 fallos, ambos revisados (el salto de la imagen de
+  referencia, corregido: `test_pack_retarget` 6/100/0; y `test_full_match` con 1 tiro en el partido de 3 min, que al
+  repetirlo tuvo 12 — en las cuatro últimas ejecuciones 9, 5, 1 y 12 tiros: el partido simulado no es determinista y el
+  umbral de 2 tiros puede fallar por azar). `test_mocap_mode` 4/58/0 (12 de 12 pases y tiros con el clip de la captura,
+  pie a 0.008–0.057 m). Con render, modo 1: `test_live_kicks` 4/46/0, `test_pack_kick` 8/107/0, `test_practice` 4/39/0;
+  modo 2 (`LIVE_KICKS_MODE=2`): `test_live_kicks` 3 de 4, 48 de 50 golpeos con contacto; **falla** el pase de primera
+  por el pie de apoyo (patina 1.69 m/s, límite 1.6): pendiente.
 
 
 ## 2026-10-29 — Giro con toques, tiro con potencia, sonido, zoom de cámara y pelota suelta (respuesta a prueba03)
