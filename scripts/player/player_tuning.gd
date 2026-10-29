@@ -86,6 +86,11 @@ extends Resource
 @export var kick_start_residual: float = 0.18
 ## Latencia objetivo (s) entre soltar el boton y el golpeo; el clip se acelera/recorta para llegar a ella.
 @export var kick_latency: float = 0.20
+## Preparacion extra (s) del TIRO sobre kick_latency (+ shot_windup_charge con la carga al maximo): el clip arranca antes y
+## a velocidad casi natural, asi se ve el balanceo de la pierna hacia atras (prueba03: el tiro duraba 0.17 s en pantalla y
+## no se notaba). Los pases conservan la latencia corta.
+@export var shot_windup: float = 0.12
+@export var shot_windup_charge: float = 0.06
 ## Aceleracion maxima del clip de patada (1 = velocidad original del clip).
 @export var kick_clip_speed_max: float = 1.6
 ## Fraccion de la velocidad de giro que se conserva mientras el pie se prepara (el pie de apoyo fija la direccion).

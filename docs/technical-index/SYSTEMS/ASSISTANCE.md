@@ -9,7 +9,7 @@
   - **Modelo de error** (`KickModel`): ruido gaussiano acotado que depende de distancia, potencia, equilibrio, orientación, velocidad, pierna de golpeo y atributos.
 - **Estado:** implementado y probado (sin compañeros reales en la escena de juego: las pruebas los crean).
 - **Última verificación:** <!-- AUTO:verified -->
-2026-10-28
+2026-10-29
 <!-- /AUTO -->
 
 ## Archivos responsables
@@ -29,7 +29,7 @@
 <!-- AUTO:params:AssistTuning -->
 | Parámetro | Defecto | Rango / tipo | Definido en | Dónde se usa (accesos reales) | Descripción |
 |---|---|---|---|---|---|
-| `pass_assist` | `0.65` | 0.0, 1.0 | `scripts/assistance/assist_tuning.gd:16` | `scripts/ui/hud.gd:182`, `scripts/assistance/assist_tuning.gd:57`, `scripts/gameplay/tuning.gd:47`, `scripts/gameplay/tuning.gd:58` (+1) |  (Pase) |
+| `pass_assist` | `0.65` | 0.0, 1.0 | `scripts/assistance/assist_tuning.gd:16` | `scripts/ui/hud.gd:184`, `scripts/assistance/assist_tuning.gd:57`, `scripts/gameplay/tuning.gd:55`, `scripts/gameplay/tuning.gd:68` (+1) |  (Pase) |
 | `pass_cone_deg` | `52.0` | float | `scripts/assistance/assist_tuning.gd:18` | `scripts/assistance/pass_assist.gd:18`, `scripts/assistance/pass_assist.gd:158` | Angulo maximo entre la direccion del joystick y un companero para considerarlo. (Pase) |
 | `pass_max_distance` | `24.0` | float | `scripts/assistance/assist_tuning.gd:20` | `scripts/assistance/pass_assist.gd:25`, `scripts/assistance/pass_assist.gd:162` | Alcance maximo de busqueda (m). (Pase) |
 | `pass_max_correction_deg` | `18.0` | float | `scripts/assistance/assist_tuning.gd:22` | `scripts/assistance/pass_assist.gd:79`, `scripts/assistance/pass_assist.gd:206` | Correccion angular maxima (grados) cuando la asistencia es 1. (Pase) |
@@ -38,12 +38,12 @@
 | `pass_weight_lane` | `0.8` | float | `scripts/assistance/assist_tuning.gd:25` | `scripts/assistance/pass_assist.gd:33` |  (Pase) |
 | `pass_lane_block_radius` | `0.8` | float | `scripts/assistance/assist_tuning.gd:27` | `scripts/assistance/pass_assist.gd:32`, `scripts/assistance/pass_assist.gd:190` | Radio de un rival para bloquear la linea de pase. (Pase) |
 | `pass_error_deg` | `2.6` | float | `scripts/assistance/assist_tuning.gd:29` | `scripts/assistance/pass_assist.gd:110`, `scripts/assistance/pass_assist.gd:249` | Error base de pase en grados (atributo de precision 50, 8 m). (Pase) |
-| `shot_assist` | `0.55` | 0.0, 1.0 | `scripts/assistance/assist_tuning.gd:32` | `scripts/ui/hud.gd:183`, `scripts/assistance/assist_tuning.gd:58`, `scripts/gameplay/tuning.gd:48`, `scripts/gameplay/tuning.gd:59` (+1) |  (Tiro) |
+| `shot_assist` | `0.55` | 0.0, 1.0 | `scripts/assistance/assist_tuning.gd:32` | `scripts/ui/hud.gd:185`, `scripts/assistance/assist_tuning.gd:58`, `scripts/gameplay/tuning.gd:56`, `scripts/gameplay/tuning.gd:69` (+1) |  (Tiro) |
 | `shot_cone_deg` | `38.0` | float | `scripts/assistance/assist_tuning.gd:33` | **sin uso** |  (Tiro) |
 | `shot_max_correction_deg` | `10.0` | float | `scripts/assistance/assist_tuning.gd:34` | **sin uso** |  (Tiro) |
-| `shot_post_margin` | `0.28` | float | `scripts/assistance/assist_tuning.gd:36` | `scripts/assistance/shot_assist.gd:74`, `scripts/assistance/shot_assist.gd:98` | Margen (m) que se deja respecto a los postes al apuntar. (Tiro) |
-| `shot_error_deg` | `2.2` | float | `scripts/assistance/assist_tuning.gd:37` | `scripts/assistance/shot_assist.gd:124` |  (Tiro) |
-| `press_assist` | `0.7` | 0.0, 1.0 | `scripts/assistance/assist_tuning.gd:40` | `scripts/ui/hud.gd:184`, `scripts/assistance/assist_tuning.gd:59`, `scripts/assistance/press_controller.gd:113`, `scripts/gameplay/tuning.gd:49` (+1) |  (Presion defensiva) |
+| `shot_post_margin` | `0.28` | float | `scripts/assistance/assist_tuning.gd:36` | `scripts/assistance/shot_assist.gd:81`, `scripts/assistance/shot_assist.gd:105` | Margen (m) que se deja respecto a los postes al apuntar. (Tiro) |
+| `shot_error_deg` | `2.2` | float | `scripts/assistance/assist_tuning.gd:37` | `scripts/assistance/shot_assist.gd:132` |  (Tiro) |
+| `press_assist` | `0.7` | 0.0, 1.0 | `scripts/assistance/assist_tuning.gd:40` | `scripts/ui/hud.gd:186`, `scripts/assistance/assist_tuning.gd:59`, `scripts/assistance/press_controller.gd:113`, `scripts/gameplay/tuning.gd:57` (+1) |  (Presion defensiva) |
 | `press_lookahead` | `0.55` | float | `scripts/assistance/assist_tuning.gd:42` | `scripts/assistance/press_controller.gd:67`, `scripts/assistance/press_controller.gd:68` | Segundos hacia delante para predecir la posicion de intercepcion. (Presion defensiva) |
 | `press_standoff` | `1.4` | float | `scripts/assistance/assist_tuning.gd:44` | `scripts/assistance/press_controller.gd:79`, `scripts/assistance/press_controller.gd:108` | Distancia a la que el defensor se mantiene (m) antes de disputar. (Presion defensiva) |
 | `press_tackle_range` | `0.90` | float | `scripts/assistance/assist_tuning.gd:46` | `scripts/assistance/press_controller.gd:121`, `scripts/assistance/press_controller.gd:122`, `scripts/player/player_actions.gd:225` | Distancia a la que se intenta quitar la pelota (m). (Presion defensiva) |
@@ -86,9 +86,9 @@ Niveles de la interfaz (`Hud._cycle_assist`): `AssistTuning.LEVEL_VALUES` = Desa
 <!-- AUTO:funcs:scripts/assistance/shot_assist.gd -->
 | Función | Línea | Qué hace |
 |---|---|---|
-| `ShotAssist.compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, charge: float, lob: bool, rng: RandomNumberGenerator, assist_level: float, curl: float = 0.0)` | 47 |  |
-| `ShotAssist.aim_edge(kicker: Footballer)` | 225 | Fraccion del ancho util a la que apunta el joystick hacia un palo para este tirador (ver AIM_EDGE). |
-| `ShotAssist._stick_lateral(intent: Vector3, origin: Vector3, goal: Goal, usable: float)` | 231 | Punto lateral del arco (-1..1 del ancho util) que elige el joystick: donde su direccion cruza la linea de gol; si no la cruza dentro del arc |
+| `ShotAssist.compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, charge: float, lob: bool, rng: RandomNumberGenerator, assist_level: float, curl: float = 0.0)` | 54 |  |
+| `ShotAssist.aim_edge(kicker: Footballer)` | 233 | Fraccion del ancho util a la que apunta el joystick hacia un palo para este tirador (ver AIM_EDGE). |
+| `ShotAssist._stick_lateral(intent: Vector3, origin: Vector3, goal: Goal, usable: float)` | 239 | Punto lateral del arco (-1..1 del ancho util) que elige el joystick: donde su direccion cruza la linea de gol; si no la cruza dentro del arc |
 <!-- /AUTO -->
 
 <!-- AUTO:funcs:scripts/assistance/press_controller.gd -->
@@ -138,7 +138,7 @@ Fórmulas tal como están en el código (2026-10-26). `asistencia` = nivel 0–1
 1. Tipo por la carga: **colocado** (carga < 0.3 a menos de 14 m), **potente** (carga > 0.8), **vaselina** (`lob`), **chanfle** (con `curl` ≠ 0, gesto del joystick) o normal.
 2. Punto de mira **siempre dentro del arco**: el joystick elige el punto lateral (`ShotAssist._stick_lateral`: donde su dirección cruza la línea de gol; apuntando fuera, de lado o hacia atrás, el palo de ese lado) escalado por `ShotAssist.aim_edge` = `lerp(AIM_EDGE 0.85, 1.0, (precisión + definición)/2)` del ancho útil (`mitad_arco − shot_post_margin`): el buen tirador apunta más cerca del palo. Sin lado pedido: el colocado va al palo lejano (0.8), el resto al lado contrario al arquero (0.62). Altura: `0.88` en vaselina, si no `lerp(0.08, 0.5, carga·0.75)` (máx. 0.3 a menos de 4 m).
 3. Dirección: la del joystick girada hacia el punto de mira por `peso = clamp(asistencia/ASSIST_FULL 0.4, 0, 1)` (asistencia 0 = manual, exactamente el joystick).
-4. Potencia: `lerp(shot_speed_min, shot_speed_max, carga) × factor("shot_power", 0.14)` (colocado: al menos la de carga 0.25; × pierna débil), tope `shot_speed_max·1.2`.
+4. Potencia: `lerp(shot_speed_min, shot_speed_max, carga^SHOT_POWER_CURVE 1.5) × factor("shot_power", 0.14)` (colocado: al menos la de carga 0.25; × pierna débil; × `1 − SHOT_PRESSURE_POWER 0.12·presión`: con un rival encima no se arma bien el tiro), tope `shot_speed_max·1.2`. Desde el 2026-10-29 el tiro flojo sale a 12 m/s y el de carga completa a 30 (antes 9 y 27, lineal); el de media carga queda casi igual (~20 m/s a 0.6) para que el arquero siga atajando lo que va a su cuerpo.
 5. Error horizontal: `σ = shot_error_deg·(1.5 − 0.9·precisión)·(1 + 0.9·carga²)·(1 + 0.8·(1 − equilibrio))·(1 + 0.7·desalineación)·(1 + 0.5·(v/vmax)²)·[dist < 10 m: lerp(1.15, 0.85, definición)]·lerp(1.1, 0.88, compostura)·(1 + SHOT_PRESSURE_ERROR 0.8·presión)·(colocado 0.72)·(pierna débil)`; vertical `σ·0.6`. Apuntar no es acertar: decide la ejecución.
 6. Trayectoria: velocidad vertical = `lerp(por defecto, la necesaria para el punto de mira, asistencia·peso·0.9)`, limitada a `speed·sin(40°)`, más el error vertical (chanfle: al menos 3.4 m/s).
 7. **Giro** (la física de la pelota hace la curva con su Magnus; ver «Efecto natural del golpeo» más abajo): vaselina con contragiro `LOB_BACKSPIN` 20; chanfle pedido `curl_spin` 38–58 rad/s con la salida abierta (`curl_preaim_deg`); potente sin giro (3 rad/s) con **flotado** (`KickResult.knuckle_*` → `Ball.set_knuckle`); el resto con **rosca natural hacia el lado del pie que golpea** (`KickModel.kicks_with_right`): empeine `NATURAL_CURL_MIN..MAX` 8–16 rad/s según cuánto cruza el tiro por delante del cuerpo, colocado `PLACED_CURL_SPIN` 26; por el aire (`vy ≥ CURL_AIR_VY` 2 m/s) la salida se abre lo justo para que la curva cierre en el punto de mira. A todo se suma el giro del golpe imperfecto (`−error·shot_spin_factor·0.25` sobre el eje vertical). `KickResult.on_target` es una predicción **sin arrastre** sobre la línea antes de abrir la salida.
@@ -147,7 +147,7 @@ Fórmulas tal como están en el código (2026-10-26). `asistencia` = nivel 0–1
   - **Modelo de error** (`KickModel`): ruido gaussiano acotado que depende de distancia, potencia, equilibrio, orientación, velocidad, pierna de golpeo y atributos.
 - **Estado:** implementado y probado (sin compañeros reales en la escena de juego: las pruebas los crean).
 - **Última verificación:** <!-- AUTO:verified -->
-2026-10-28
+2026-10-29
 <!-- /AUTO -->
 
 ## Archivos responsables
@@ -167,7 +167,7 @@ Fórmulas tal como están en el código (2026-10-26). `asistencia` = nivel 0–1
 <!-- AUTO:params:AssistTuning -->
 | Parámetro | Defecto | Rango / tipo | Definido en | Dónde se usa (accesos reales) | Descripción |
 |---|---|---|---|---|---|
-| `pass_assist` | `0.65` | 0.0, 1.0 | `scripts/assistance/assist_tuning.gd:16` | `scripts/ui/hud.gd:182`, `scripts/assistance/assist_tuning.gd:57`, `scripts/gameplay/tuning.gd:47`, `scripts/gameplay/tuning.gd:58` (+1) |  (Pase) |
+| `pass_assist` | `0.65` | 0.0, 1.0 | `scripts/assistance/assist_tuning.gd:16` | `scripts/ui/hud.gd:184`, `scripts/assistance/assist_tuning.gd:57`, `scripts/gameplay/tuning.gd:55`, `scripts/gameplay/tuning.gd:68` (+1) |  (Pase) |
 | `pass_cone_deg` | `52.0` | float | `scripts/assistance/assist_tuning.gd:18` | `scripts/assistance/pass_assist.gd:18`, `scripts/assistance/pass_assist.gd:158` | Angulo maximo entre la direccion del joystick y un companero para considerarlo. (Pase) |
 | `pass_max_distance` | `24.0` | float | `scripts/assistance/assist_tuning.gd:20` | `scripts/assistance/pass_assist.gd:25`, `scripts/assistance/pass_assist.gd:162` | Alcance maximo de busqueda (m). (Pase) |
 | `pass_max_correction_deg` | `18.0` | float | `scripts/assistance/assist_tuning.gd:22` | `scripts/assistance/pass_assist.gd:79`, `scripts/assistance/pass_assist.gd:206` | Correccion angular maxima (grados) cuando la asistencia es 1. (Pase) |
@@ -176,12 +176,12 @@ Fórmulas tal como están en el código (2026-10-26). `asistencia` = nivel 0–1
 | `pass_weight_lane` | `0.8` | float | `scripts/assistance/assist_tuning.gd:25` | `scripts/assistance/pass_assist.gd:33` |  (Pase) |
 | `pass_lane_block_radius` | `0.8` | float | `scripts/assistance/assist_tuning.gd:27` | `scripts/assistance/pass_assist.gd:32`, `scripts/assistance/pass_assist.gd:190` | Radio de un rival para bloquear la linea de pase. (Pase) |
 | `pass_error_deg` | `2.6` | float | `scripts/assistance/assist_tuning.gd:29` | `scripts/assistance/pass_assist.gd:110`, `scripts/assistance/pass_assist.gd:249` | Error base de pase en grados (atributo de precision 50, 8 m). (Pase) |
-| `shot_assist` | `0.55` | 0.0, 1.0 | `scripts/assistance/assist_tuning.gd:32` | `scripts/ui/hud.gd:183`, `scripts/assistance/assist_tuning.gd:58`, `scripts/gameplay/tuning.gd:48`, `scripts/gameplay/tuning.gd:59` (+1) |  (Tiro) |
+| `shot_assist` | `0.55` | 0.0, 1.0 | `scripts/assistance/assist_tuning.gd:32` | `scripts/ui/hud.gd:185`, `scripts/assistance/assist_tuning.gd:58`, `scripts/gameplay/tuning.gd:56`, `scripts/gameplay/tuning.gd:69` (+1) |  (Tiro) |
 | `shot_cone_deg` | `38.0` | float | `scripts/assistance/assist_tuning.gd:33` | **sin uso** |  (Tiro) |
 | `shot_max_correction_deg` | `10.0` | float | `scripts/assistance/assist_tuning.gd:34` | **sin uso** |  (Tiro) |
-| `shot_post_margin` | `0.28` | float | `scripts/assistance/assist_tuning.gd:36` | `scripts/assistance/shot_assist.gd:74`, `scripts/assistance/shot_assist.gd:98` | Margen (m) que se deja respecto a los postes al apuntar. (Tiro) |
-| `shot_error_deg` | `2.2` | float | `scripts/assistance/assist_tuning.gd:37` | `scripts/assistance/shot_assist.gd:124` |  (Tiro) |
-| `press_assist` | `0.7` | 0.0, 1.0 | `scripts/assistance/assist_tuning.gd:40` | `scripts/ui/hud.gd:184`, `scripts/assistance/assist_tuning.gd:59`, `scripts/assistance/press_controller.gd:113`, `scripts/gameplay/tuning.gd:49` (+1) |  (Presion defensiva) |
+| `shot_post_margin` | `0.28` | float | `scripts/assistance/assist_tuning.gd:36` | `scripts/assistance/shot_assist.gd:81`, `scripts/assistance/shot_assist.gd:105` | Margen (m) que se deja respecto a los postes al apuntar. (Tiro) |
+| `shot_error_deg` | `2.2` | float | `scripts/assistance/assist_tuning.gd:37` | `scripts/assistance/shot_assist.gd:132` |  (Tiro) |
+| `press_assist` | `0.7` | 0.0, 1.0 | `scripts/assistance/assist_tuning.gd:40` | `scripts/ui/hud.gd:186`, `scripts/assistance/assist_tuning.gd:59`, `scripts/assistance/press_controller.gd:113`, `scripts/gameplay/tuning.gd:57` (+1) |  (Presion defensiva) |
 | `press_lookahead` | `0.55` | float | `scripts/assistance/assist_tuning.gd:42` | `scripts/assistance/press_controller.gd:67`, `scripts/assistance/press_controller.gd:68` | Segundos hacia delante para predecir la posicion de intercepcion. (Presion defensiva) |
 | `press_standoff` | `1.4` | float | `scripts/assistance/assist_tuning.gd:44` | `scripts/assistance/press_controller.gd:79`, `scripts/assistance/press_controller.gd:108` | Distancia a la que el defensor se mantiene (m) antes de disputar. (Presion defensiva) |
 | `press_tackle_range` | `0.90` | float | `scripts/assistance/assist_tuning.gd:46` | `scripts/assistance/press_controller.gd:121`, `scripts/assistance/press_controller.gd:122`, `scripts/player/player_actions.gd:225` | Distancia a la que se intenta quitar la pelota (m). (Presion defensiva) |
@@ -224,9 +224,9 @@ Niveles de la interfaz (`Hud._cycle_assist`): `AssistTuning.LEVEL_VALUES` = Desa
 <!-- AUTO:funcs:scripts/assistance/shot_assist.gd -->
 | Función | Línea | Qué hace |
 |---|---|---|
-| `ShotAssist.compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, charge: float, lob: bool, rng: RandomNumberGenerator, assist_level: float, curl: float = 0.0)` | 47 |  |
-| `ShotAssist.aim_edge(kicker: Footballer)` | 225 | Fraccion del ancho util a la que apunta el joystick hacia un palo para este tirador (ver AIM_EDGE). |
-| `ShotAssist._stick_lateral(intent: Vector3, origin: Vector3, goal: Goal, usable: float)` | 231 | Punto lateral del arco (-1..1 del ancho util) que elige el joystick: donde su direccion cruza la linea de gol; si no la cruza dentro del arc |
+| `ShotAssist.compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, charge: float, lob: bool, rng: RandomNumberGenerator, assist_level: float, curl: float = 0.0)` | 54 |  |
+| `ShotAssist.aim_edge(kicker: Footballer)` | 233 | Fraccion del ancho util a la que apunta el joystick hacia un palo para este tirador (ver AIM_EDGE). |
+| `ShotAssist._stick_lateral(intent: Vector3, origin: Vector3, goal: Goal, usable: float)` | 239 | Punto lateral del arco (-1..1 del ancho util) que elige el joystick: donde su direccion cruza la linea de gol; si no la cruza dentro del arc |
 <!-- /AUTO -->
 
 <!-- AUTO:funcs:scripts/assistance/press_controller.gd -->
@@ -276,7 +276,7 @@ Fórmulas tal como están en el código (2026-10-26). `asistencia` = nivel 0–1
 1. Intención hacia el arco rival (`ctx.attacking_goal`). Se proyecta la intención sobre la línea de gol (`z_hit`); `peso = clamp(1 − exceso/max(extra, 0.2), 0, 1)` con `exceso = max(|z_hit| − (mitad_arco − shot_post_margin), 0)` y `extra = dist·tan(shot_cone_deg/2)·0.55`. Apuntar fuera del arco y de ese margen deja el peso en 0 (sin ayuda).
 2. Punto de mira: `Goal.aim_point(lateral, altura, shot_post_margin)`. Con intención centrada (`|lateral| < 0.22`), `peso > 0` y asistencia ≥ 0.4, se sugiere el lado contrario al arquero (`lateral = ±0.62`); **hoy no hay arquero, así que el lado es aleatorio** (`rng`). Altura: `0.88` si es elevado, si no `lerp(0.08, 0.5, carga·0.75)` (máx. 0.3 a menos de 4 m).
 3. Corrección: `clamp(diff·asistencia·peso, ±shot_max_correction_deg·asistencia)`.
-4. Potencia: `lerp(shot_speed_min, shot_speed_max, carga) × factor("shot_power", 0.14)` (× pierna débil), tope `shot_speed_max·1.2`.
+4. Potencia: `lerp(shot_speed_min, shot_speed_max, carga) × factor("shot_power", 0.14)` (× pierna débil), tope `shot_speed_max·1.2` (versión antigua; la vigente, con `carga^1.5` y la presión, está en la sección de arriba).
 5. Error horizontal: `σ = shot_error_deg·(1.5 − 0.9·precisión)·(1 + 0.9·carga²)·(1 + 0.8·(1 − equilibrio))·(1 + 0.7·desalineación)·(1 + 0.5·(v/vmax)²)·[si dist < 10 m: lerp(1.15, 0.85, finalización)]·lerp(1.1, 0.88, compostura)·(pierna débil)`; el error vertical usa `σ·0.6`.
 6. Trayectoria: velocidad vertical = `lerp(por defecto, la necesaria para llegar al punto de mira, asistencia·peso·0.9)`, limitada a `speed·sin(40°)`, más el error vertical; `KickResult.on_target` es una predicción **sin arrastre**.
 
@@ -367,7 +367,7 @@ penalización de pierna débil). Medido (`test_ball_curl`): 6/6 tiros de empeine
 pierna (curva media 0.09–0.11 m en 11 m, a 0.15–0.23 m del punto de mira); colocado: 0.49 m de curva, llega a 0.11 m del
 punto; potente de 18 m: 3 rad/s y el flotado lo mueve 0.15 m.
 
-**Arquero** (`test_shot_keeper`, 40 tiros físicos por caso con su golpe, vuelo y clips; arquero y tirador de 60, las
+**Arquero** (`test_shot_keeper`, 40 tiros físicos por caso —80 desde el 2026-10-29, ver el final de la sección— con su golpe, vuelo y clips; arquero y tirador de 60, las
 paradas con el cuerpo cuentan como atajadas):
 
 | Caso | Al arco | Goles | Ataja |
@@ -383,3 +383,20 @@ paradas con el cuerpo cuentan como atajadas):
 Antes del efecto natural (giro del tiro anterior, mismo arquero): al palo 58 % de atajadas en los dos palos casi por
 igual y el potente de 18 m siempre despejado. El arquero no lee el efecto (su predicción `BallPredictor` no tiene
 Magnus) y replanifica cada 0.08 s: la curva que se aleja de él es la que le gana, como en el fútbol real.
+
+Con el tiro más fuerte del 2026-10-29 (12–30 m/s con `carga^1.5`, presión que resta potencia) y **80 tiros por caso**
+(con 40 la diferencia entre dos casos parecidos quedaba dentro del ruido):
+
+| Caso | Al arco | Goles | Ataja |
+|---|---|---|---|
+| 11 m, al palo derecho | 79 % | 12 | 80 % |
+| 11 m, al palo izquierdo | 90 % | 33 | 54 % |
+| 11 m, al arquero | 98 % | 16 | 79 % |
+| 11 m, rival encima | 70 % | 4 | 92 % |
+| 18 m, potente (flotado) | 66 % | 4 | 92 % |
+| 8 m, ángulo cerrado | 79 % | 8 | 87 % |
+| 11 m, tirador de 85 al palo derecho | 78 % | 20 | 67 % |
+| 11 m, tirador de 85 al palo izquierdo | 91 % | 45 | 38 % |
+
+Con la potencia lineal 12–30 (probada antes de dejar la curva) el arquero atajaba solo el 63 % de los tiros a su cuerpo
+desde 11 m y con un rival encima entraban más goles que sin él (16 frente a 12): por eso la curva y la presión.

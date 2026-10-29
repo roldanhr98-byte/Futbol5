@@ -2,7 +2,7 @@
 
 Visión transversal del proyecto Godot 4.7.2 (GDScript, renderer GL Compatibility, física Jolt a 60 Hz).
 Para localizar algo concreto, usar primero [INDEX.md](INDEX.md). Última sincronización: <!-- AUTO:verified -->
-2026-10-28
+2026-10-29
 <!-- /AUTO -->
 
 ## 1. Capas y responsabilidades
@@ -50,6 +50,7 @@ Goal._physics_process → Pitch.goal_scored → MatchManager._on_goal → score_
 |---|---|---|
 | `Tuning` | `scripts/gameplay/tuning.gd` | línea 17 |
 | `GraphicsSettings` | `scripts/diagnostics/graphics_settings.gd` | línea 18 |
+| `Sfx` | `scripts/audio/sfx.gd` | línea 19 |
 <!-- /AUTO -->
 
 Escena principal: `scenes/main/match.tscn` (`project.godot`, `run/main_scene`).

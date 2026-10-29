@@ -35,6 +35,8 @@ var assist_override_shot: float = -1.0
 var is_human_controlled: bool = false
 ## Probabilidad de que la IA entre cuando puede disputar una pelota protegida por el portador (ver _ai_commits_tackle).
 const AI_TACKLE_COMMIT := 0.3
+## Angulo (grados) entre el joystick y la pelota suelta por debajo del cual el rumbo se ajusta al punto donde se alcanza.
+const LOOSE_SNAP_DEG := 40.0
 ## Velocidad extra (m/s) de un ajuste de zancada para llegar a la pelota al patear. Mueve el cuerpo pero NO entra en
 ## Locomotion (no cambia la velocidad ni la inercia del jugador).
 var nudge_velocity: Vector3 = Vector3.ZERO
@@ -208,7 +210,10 @@ func _physics_process(delta: float) -> void:
 		if visual != null:
 			visual.update_motion(self, delta)
 		return
-	if frame.skill_pressed:
+	# REGATE con el joystick hacia atras y la pelota al pie: vuelta pisando la pelota (DragBack); si no, la ruleta.
+	if frame.skill_pressed and _skill_is_drag_back(frame):
+		ball_handler.drag_back.request()
+	elif frame.skill_pressed:
 		actions.try_skill()
 		if actions.tick(0.0):
 			if visual != null:
@@ -236,6 +241,17 @@ func _physics_process(delta: float) -> void:
 			desired_dir = to_meet.normalized()
 			desired_mag = clampf(to_meet.length() / 2.5, 0.4, 1.0)
 			want_sprint = to_meet.length() > 4.0
+	# Pelota suelta cerca: el jugador de la persona va a buscarla (prueba03: «el jugador siempre va al balon, el que esta
+	# siendo controlado»). Con el joystick suelto corre solo al punto donde la alcanza; con el joystick apuntando mas o
+	# menos hacia ella, el rumbo se ajusta a ese punto (no se pasa ni se queda corto). Apuntando a otro lado manda el joystick.
+	elif is_human_controlled and not ball_handler.has_possession() and not frame.press_held:
+		var chase: Vector3 = ball_handler.loose_ball_chase()
+		if chase != Vector3.INF:
+			var to_ball: Vector3 = KickModel.flat(chase - global_position)
+			if to_ball.length() > 0.3 and (stick_mag < 0.2 or KickModel.angle_between_deg(desired_dir, to_ball) < LOOSE_SNAP_DEG):
+				desired_dir = to_ball.normalized()
+				desired_mag = maxf(stick_mag, clampf(to_ball.length() / 2.0, 0.5, 1.0))
+				want_sprint = want_sprint or to_ball.length() > 4.0
 
 	# Presion defensiva: el boton fija la INTENCION de disputar; el joystick solo ajusta el angulo.
 	is_pressing = false
@@ -326,8 +342,10 @@ func _physics_process(delta: float) -> void:
 	if ball_handler.is_dribbling() and ball_handler.ball_distance() <= ball_handler.possession_radius() and approach.is_empty():
 		cap = ball_handler.dribble_speed_cap()
 	var speed_before: float = locomotion.speed
-	# Vuelta atras pisando la pelota en curso: el cuerpo lo mueve la accion (llegar, plantarse, pivotar y salir).
+	# Vuelta atras pisando la pelota o giro con toques en curso: el cuerpo lo mueve la accion (llegar, frenar, girar, salir).
 	var scripted: Dictionary = ball_handler.drag_back.body_control()
+	if scripted.is_empty():
+		scripted = ball_handler.ball_turn.body_control()
 	if not scripted.is_empty():
 		locomotion.face_override = Vector3.ZERO
 		locomotion.step_scripted(scripted["face"], scripted["rate"], scripted["sign"], scripted["vel"], scripted["accel"], delta)
@@ -393,6 +411,14 @@ func _ai_commits_tackle(carrier: Footballer) -> bool:
 	if carrier.ball_handler.ball_distance() > 0.75:
 		return true
 	return actions.rng.randf() < AI_TACKLE_COMMIT
+
+## El boton REGATE pide la vuelta pisando la pelota cuando el joystick apunta hacia atras (>= DragBack.MIN_ANGLE grados
+## del frente) con la pelota al pie.
+func _skill_is_drag_back(frame: InputFrame) -> bool:
+	if frame.move_length() < DragBack.MIN_STICK or not ball_handler.has_possession():
+		return false
+	var w: Vector3 = frame.move_world if frame.use_world else ctx.screen_to_world(frame.move)
+	return KickModel.angle_between_deg(locomotion.forward(), KickModel.flat(w).normalized()) >= DragBack.MIN_ANGLE - 15.0
 
 func _gait_overlays(desired_dir: Vector3, want_sprint: bool, stick_mag: float, speed_before: float, delta: float) -> void:
 	_overlay_cd = maxf(_overlay_cd - delta, 0.0)

@@ -89,6 +89,10 @@ var _resting_time: float = 0.0
 ## Segundos que la pelota de una media vuelta aun puede atravesar el cuerpo (ver toque redirect).
 var _pass_ghost: float = 0.0
 const REVERSAL_GHOST_SECONDS := 0.3
+## Segundos que la pelota recien golpeada (pase, tiro, centro) atraviesa el cuerpo de quien la golpeo. Con el ajuste de
+## zancada el cuerpo queda a veces encima de la pelota en el contacto: al volver a chocar con ella en el paso siguiente la
+## frenaba y desviaba (medido: tiro cruzado de 18.5 m/s que salia a 4.5 m/s, 75 grados a un lado).
+const KICK_GHOST_SECONDS := 0.15
 ## Distancia (m) hasta la que la pelota que se conduce atraviesa el cuerpo de quien la conduce.
 const DRIBBLE_GHOST_RANGE := 1.2
 var kick_desired_dir: Vector3 = Vector3.ZERO
@@ -146,13 +150,16 @@ var shot_charge: float = 0.0
 var through_charge: float = 0.0
 var cross_charge: float = 0.0
 
-## Vuelta atras pisando la pelota (DragBack): con la pelota delante y el joystick hacia atras.
+## Vuelta atras pisando la pelota (DragBack): regate con el boton REGATE y el joystick hacia atras.
 var drag_back: DragBack = null
+## Giro con toques (joystick hacia atras conduciendo, estilo Dream League Soccer); ver BallTurn.
+var ball_turn: BallTurn = null
 
 func _init(o: Footballer) -> void:
 	owner = o
 	rng.randomize()
 	drag_back = DragBack.new(self)
+	ball_turn = BallTurn.new(self)
 
 func ball() -> Ball:
 	return owner.ctx.ball if owner.ctx != null else null
@@ -241,6 +248,37 @@ func incoming_ball_point() -> Vector3:
 	var p: Vector3 = b.global_position + ball_travel(b, eta)
 	return Vector3(p.x, 0.0, p.z)
 
+## Pelota suelta que el jugador de la persona va a buscar solo (ver Footballer): distancia maxima (m) al punto donde la
+## alcanza, velocidad maxima (m/s) de la pelota (un tiro o un pase fuerte no se persigue) y altura maxima (m).
+const LOOSE_CHASE_RANGE := 9.0
+const LOOSE_CHASE_MAX_BALL_SPEED := 9.0
+const LOOSE_CHASE_MAX_Y := 1.6
+
+## Punto (en el suelo) donde el jugador alcanza una pelota suelta: el primero de su recorrido (rodadura de Ball) al que
+## llega corriendo. Vector3.INF si no hay pelota suelta que buscar: alguien la lleva, es un pase a un companero, va muy
+## fuerte o alta, es balon parado, o es su propia conduccion (la sigue la conduccion).
+func loose_ball_chase() -> Vector3:
+	var b: Ball = ball()
+	if b == null or b.is_held() or owner.ctx == null or owner.ctx.dead_ball or owner.ctx.ball_locked_for(owner):
+		return Vector3.INF
+	if b.global_position.y > LOOSE_CHASE_MAX_Y or KickModel.flat(b.linear_velocity).length() > LOOSE_CHASE_MAX_BALL_SPEED:
+		return Vector3.INF
+	if not owner.ctx.ball_is_loose() or (b.last_toucher == owner and is_dribbling()) or owner.has_incoming_pass():
+		return Vector3.INF
+	for m in owner.ctx.teammates_of(owner):
+		if m != owner and m.has_incoming_pass():
+			return Vector3.INF
+	var run: float = owner.locomotion.max_sprint_speed()
+	var me := Vector3(owner.global_position.x, 0.0, owner.global_position.z)
+	var p := Vector3.ZERO
+	for i in 51:
+		var t: float = 0.05 * float(i)
+		var bp: Vector3 = b.global_position + ball_travel(b, t)
+		p = Vector3(bp.x, 0.0, bp.z)
+		if me.distance_to(p) <= run * maxf(t - 0.2, 0.0) + 0.4:
+			break
+	return p if me.distance_to(p) <= LOOSE_CHASE_RANGE else Vector3.INF
+
 ## Hay una orden de pase/tiro esperando una pelota que llega (golpeo de primera, sin control previo).
 func is_waiting_first_time() -> bool:
 	return _pending_action != &"" and _pending_age <= PENDING_FIRST_TIME_MAX and incoming_ball_eta() < PENDING_FIRST_TIME_MAX
@@ -308,6 +346,7 @@ func update(frame: InputFrame, stick_world: Vector3, stick_mag: float, desired_d
 	_update_buttons(frame, stick_world, dt)
 	if _kick_action != &"":
 		drag_back.cancel("golpeo")
+		ball_turn.cancel("golpeo")
 		_kick_timer -= dt
 		if _kick_timer <= 0.0:
 			_finish_kick()
@@ -336,8 +375,11 @@ func update(frame: InputFrame, stick_world: Vector3, stick_mag: float, desired_d
 		return
 	if lockout > 0.0 or owner.ctx.ball_locked_for(owner) or ball_owned_by_other():
 		drag_back.cancel("bloqueo")
+		ball_turn.cancel("bloqueo")
 		return
 	if drag_back.update(desired_dir, stick_mag, dt):
+		return
+	if ball_turn.update(desired_dir, stick_mag, dt):
 		return
 	if _try_first_touch(desired_dir):
 		return
@@ -489,9 +531,11 @@ static func foot_contact_world(contact: Dictionary, pos: Vector3, yaw: float) ->
 static func clip_timing(contact_time: float, action: StringName, charge: float) -> Dictionary:
 	var t: PlayerTuning = Tuning.player
 	var dt: float = 1.0 / float(Engine.physics_ticks_per_second)
-	var want: float = t.kick_latency + (0.04 * charge if action == &"shot" else 0.0)
+	var shot: bool = action == &"shot"
+	var want: float = t.kick_latency + (t.shot_windup + t.shot_windup_charge * charge if shot else 0.0)
 	var steps: int = maxi(int(round(want / dt)), 2)
-	var speed: float = clampf(contact_time / 0.30, 1.0, t.kick_clip_speed_max)
+	# El tiro se reproduce casi a velocidad natural desde antes del balanceo (se ve la pierna atras); el pase, acelerado.
+	var speed: float = clampf(contact_time / (want + 0.08 if shot else 0.30), 1.0, t.kick_clip_speed_max)
 	var offset: float = contact_time - speed * dt * float(steps)
 	if offset < 0.0:
 		offset = 0.0
@@ -757,7 +801,8 @@ func _finish_clip_kick() -> void:
 	lockout = 0.0
 	owner.locomotion.turn_scale = 1.0
 	owner.nudge_velocity = Vector3.ZERO
-	owner.set_ball_ghost(false)
+	# El cuerpo sigue sin chocar con la pelota un instante (KICK_GHOST_SECONDS): la que sale golpeada no rebota en el.
+	_pass_ghost = maxf(_pass_ghost, KICK_GHOST_SECONDS)
 	# Tras el golpe el cuerpo sigue con la velocidad que traia (la del pie plantado era solo del balanceo).
 	owner.locomotion.velocity = _kick_v0
 	owner.locomotion.speed = _kick_v0.length()
@@ -2044,17 +2089,21 @@ func settle_steer() -> Array:
 	var mag: float = clampf(need / maxf(owner.locomotion.max_run_speed(), 0.1), 0.25, 1.0)
 	return [to_t / d, mag]
 
-## Golpeo pedido (cargando o en espera) con la pelota PROPIA por delante, fuera del alcance del pie y a menos de
-## APPROACH_MAX_DIST: el jugador ajusta la carrera y va a por ella para poder golpearla con el pie (en el video del
-## usuario, 58.4 s, el tiro cargado a media velocidad con la pelota 1.3-1.5 m por delante nunca llegaba y se perdia).
-## Devuelve [direccion, magnitud, sprint] o [] si no hace falta. Lo usan igual la persona y la IA (Footballer).
+## Golpeo pedido (cargando o en espera) con la pelota PROPIA por delante (o suelta, para el jugador de la persona), fuera
+## del alcance del pie y a menos de APPROACH_MAX_DIST: el jugador ajusta la carrera y va a por ella para poder golpearla
+## con el pie (en el video del usuario, 58.4 s, el tiro cargado a media velocidad con la pelota 1.3-1.5 m por delante
+## nunca llegaba y se perdia). Devuelve [direccion, magnitud, sprint] o [] si no hace falta. Lo usan la persona y la IA.
 func kick_approach_steer() -> Array:
 	if _kick_action != &"":
 		return []
 	if _pending_action == &"" and not (_pass_active or _shoot_active or _through_active or _cross_active):
 		return []
 	var b: Ball = ball()
-	if b == null or b.is_held() or b.global_position.y > 0.6 or b.last_toucher != owner:
+	if b == null or b.is_held() or b.global_position.y > 0.6:
+		return []
+	# Tambien la pelota suelta que el jugador de la persona va a buscar (rebote, despeje): el pase pedido no se pierde
+	# por llegar un poco tarde. No la que viene hacia el (eso es un golpeo de primera, que espera en la trayectoria).
+	if b.last_toucher != owner and not (owner.is_human_controlled and incoming_ball_eta() == INF and loose_ball_chase() != Vector3.INF):
 		return []
 	var off: Vector3 = ball_offset()
 	var dist: float = off.length()

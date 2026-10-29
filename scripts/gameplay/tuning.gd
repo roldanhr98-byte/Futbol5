@@ -23,6 +23,14 @@ var joystick_sensitivity: float = 1.0
 ## Duracion del partido elegida (minutos): 3, 5, 7 o 10.
 const MATCH_MINUTES := [3, 5, 7, 10]
 var match_minutes: int = 5
+## Zoom de la camara del partido: factor sobre la distancia de MatchCamera (menor = mas cerca). Niveles del menu:
+## muy cerca, cerca (por defecto: la camara a 0.7 de la distancia de la transmision lejana), media y lejos (la
+## transmision de antes).
+const CAMERA_ZOOMS := [0.55, 0.7, 0.85, 1.0]
+const CAMERA_ZOOM_NAMES := ["Muy cerca", "Cerca", "Media", "Lejos"]
+var camera_zoom: float = 0.7
+## Sonido del partido (Sfx) encendido.
+var sound_on: bool = true
 
 func _init() -> void:
 	reload()
@@ -52,6 +60,8 @@ func load_user_settings() -> void:
 	joystick_sensitivity = clampf(float(cfg.get_value("ui", "joystick_sensitivity", 1.0)), 0.6, 1.6)
 	var mm: int = int(cfg.get_value("match", "minutes", 5))
 	match_minutes = mm if MATCH_MINUTES.has(mm) else 5
+	camera_zoom = clampf(float(cfg.get_value("ui", "camera_zoom", 0.7)), 0.4, 1.2)
+	sound_on = bool(cfg.get_value("ui", "sound_on", true))
 
 func save_user_settings() -> void:
 	var cfg := ConfigFile.new()
@@ -62,6 +72,8 @@ func save_user_settings() -> void:
 	cfg.set_value("ui", "touch_scale", touch_scale)
 	cfg.set_value("ui", "joystick_sensitivity", joystick_sensitivity)
 	cfg.set_value("match", "minutes", match_minutes)
+	cfg.set_value("ui", "camera_zoom", camera_zoom)
+	cfg.set_value("ui", "sound_on", sound_on)
 	var err: int = cfg.save(USER_SETTINGS_PATH)
 	if err != OK:
 		push_warning("No se pudieron guardar las preferencias (error %d)" % err)

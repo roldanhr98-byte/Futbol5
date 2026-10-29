@@ -62,8 +62,9 @@ extends Resource
 @export var driven_pass_extra: float = 1.25
 
 @export_group("Tiro")
-@export var shot_speed_min: float = 9.0
-@export var shot_speed_max: float = 27.0
+## Tiro flojo / a carga maxima (m/s). prueba03: «shootar se siente horrible, necesita mas potencia» (antes 9 y 27).
+@export var shot_speed_min: float = 12.0
+@export var shot_speed_max: float = 30.0
 ## Segundos para cargar el tiro al maximo.
 @export var shot_charge_time: float = 0.9
 @export var shot_loft_low_deg: float = 4.0

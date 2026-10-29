@@ -7,9 +7,10 @@ extends RefCounted
 ##     velocidad de la suela: es un contacto, no un teletransporte);
 ##  3. arrastra: la suela tira la pelota hacia atras (impulso hacia el rumbo nuevo, un poco del lado del pie) y la acompana;
 ##  4. gira: el cuerpo pivota 180 grados hacia el lado del pie que arrastro y sale detras de la pelota.
-## Despues sigue la conduccion normal (la pelota queda delante, en el rumbo nuevo). Lo usan la persona y la IA (misma
-## mecanica: lo dispara el rumbo pedido, no un boton). Como en First Touch Soccer (CPlayer::Turn), el giro cerrado es
-## una accion del cuerpo con su propio punto de contacto con la pelota, no un toque de carrera mas.
+## Despues sigue la conduccion normal (la pelota queda delante, en el rumbo nuevo). Es un regate: lo pide el boton
+## REGATE con el joystick hacia atras (request); el joystick hacia atras solo hace el giro con toques (BallTurn). Lo usan
+## la persona y la IA con la misma mecanica. Como en First Touch Soccer (CPlayer::Turn), el giro cerrado es una accion
+## del cuerpo con su propio punto de contacto con la pelota, no un toque de carrera mas.
 
 ## Angulo (grados) minimo entre el frente del cuerpo y el joystick para hacer la vuelta.
 const MIN_ANGLE := 135.0
@@ -56,8 +57,9 @@ const LOST_MARGIN := 0.12
 ## pasar la velocidad de carrera).
 const CATCH_REL := 1.2
 ## La vuelta solo empieza en los primeros REQUEST_WINDOW s de pedirla: despues ya manda la media vuelta por el costado
-## (no se mezclan las dos).
+## (no se mezclan las dos). El boton REGATE la deja pedida REQUEST_HOLD s (para girar el joystick justo despues).
 const REQUEST_WINDOW := 0.12
+const REQUEST_HOLD := 0.3
 
 enum Phase { NONE, REACH, HOLD, PULL }
 
@@ -80,6 +82,8 @@ var _start_toucher: Node = null
 ## hace aunque el cuerpo ya haya frenado (manda la media vuelta por el costado).
 var _req_speed: float = -1.0
 var _req_t: float = 0.0
+## Segundos que quedan del pedido con el boton REGATE (0 = sin pedir: el joystick atras solo no pisa la pelota).
+var _requested: float = 0.0
 ## Distancia de la suela para esta vuelta (segun la velocidad al empezar).
 var _sole: float = SOLE_AHEAD
 ## Diagnostico: vueltas completas, abortadas, y medidas de la ultima (lo leen las pruebas).
@@ -91,6 +95,11 @@ func _init(h: BallHandler) -> void:
 
 func active() -> bool:
 	return phase != Phase.NONE
+
+## Boton REGATE con el joystick hacia atras: la vuelta pisando la pelota queda pedida REQUEST_HOLD s.
+func request() -> void:
+	_requested = REQUEST_HOLD
+	_req_speed = -1.0
 
 func cancel(reason: String = "") -> void:
 	if phase == Phase.NONE:
@@ -106,11 +115,12 @@ func cancel(reason: String = "") -> void:
 ## otros toques de conduccion).
 func update(desired_dir: Vector3, stick_mag: float, dt: float) -> bool:
 	_cooldown = maxf(_cooldown - dt, 0.0)
+	_requested = maxf(_requested - dt, 0.0)
 	var loco0: Locomotion = handler.owner.locomotion
 	var reversed: bool = stick_mag >= MIN_STICK and desired_dir.length_squared() > 0.01 \
 		and KickModel.angle_between_deg(loco0.forward(), KickModel.flat(desired_dir).normalized()) >= MIN_ANGLE
 	if phase == Phase.NONE:
-		if not reversed:
+		if not reversed or _requested <= 0.0:
 			_req_speed = -1.0
 			return false
 		if _req_speed < 0.0:
@@ -218,6 +228,9 @@ func _try_start(desired_dir: Vector3, stick_mag: float) -> bool:
 	var b: Ball = handler.ball()
 	if b == null or b.is_held() or b.global_position.y > 0.3:
 		return false
+	# Pedida con el boton, la pisada manda sobre un giro con toques que aun no toco la pelota; despues ya no se mezclan.
+	if handler.ball_turn.active() and handler.ball_turn.touches > 0:
+		return false
 	var off: Vector3 = handler.ball_offset()
 	var ahead: float = off.dot(fwd)
 	var side: float = off.dot(loco.right())
@@ -230,7 +243,7 @@ func _try_start(desired_dir: Vector3, stick_mag: float) -> bool:
 	# rodando). Si se escapa (el ultimo toque la lanzo) no hay vuelta: manda la media vuelta por el costado, que no espera
 	# (a la carrera, ir tras la pelota recien lanzada para pisarla costaba ~0.9 s y ~4 m de mas).
 	_sole = clampf(SOLE_AHEAD + SOLE_AHEAD_PER_MS * loco.speed, SOLE_AHEAD, SOLE_AHEAD_MAX)
-	if not _reachable(ahead, KickModel.flat(b.linear_velocity).dot(fwd), loco.velocity.dot(fwd), loco.max_run_speed(), _sole, REACH_MAX):
+	if not reachable(ahead, KickModel.flat(b.linear_velocity).dot(fwd), loco.velocity.dot(fwd), loco.max_run_speed(), _sole, REACH_MAX):
 		return false
 	# Lado del giro: hacia donde apunta el joystick (el camino corto); de frente hacia atras, hacia el lado del pie que
 	# esta junto a la pelota (o el bueno). Pisa el pie de ese lado: girando a la derecha arrastra la derecha.
@@ -244,6 +257,7 @@ func _try_start(desired_dir: Vector3, stick_mag: float) -> bool:
 	foot = 1 if turn_sign < 0.0 else 0
 	old_dir = fwd
 	new_dir = dir
+	handler.ball_turn.cancel("regate")
 	phase = Phase.REACH
 	t = 0.0
 	_phase_t = 0.0
@@ -252,11 +266,12 @@ func _try_start(desired_dir: Vector3, stick_mag: float) -> bool:
 	_start_toucher = b.last_toucher
 	stats["started"] += 1
 	last = {"start_speed": loco.speed, "start_ahead": ahead, "foot": foot}
+	_requested = 0.0
 	return true
 
 ## Simula la llegada paso a paso (el cuerpo acelera como en REACH, hasta 0.8 m/s mas sin pasar run_max): true si la
 ## pelota queda a `sole` m del cuerpo antes de `horizon` s.
-static func _reachable(ahead: float, ball_v: float, body_v: float, run_max: float, sole: float, horizon: float) -> bool:
+static func reachable(ahead: float, ball_v: float, body_v: float, run_max: float, sole: float, horizon: float) -> bool:
 	var dt: float = 1.0 / float(Engine.physics_ticks_per_second)
 	var x: float = ahead
 	var vb: float = ball_v

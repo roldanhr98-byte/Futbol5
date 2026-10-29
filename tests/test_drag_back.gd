@@ -1,7 +1,8 @@
 extends TestCase
-## Vuelta atras pisando la pelota (DragBack): con la pelota delante y el joystick hacia atras el jugador la pisa con la
-## suela, la frena con el cuerpo, la arrastra hacia el rumbo nuevo y pivota detras de ella, sin perderla. La fisica se
-## mide en headless; con render (xvfb-run --rendering-driver opengl3) tambien que la suela este de verdad sobre la pelota.
+## Vuelta atras pisando la pelota (DragBack): con la pelota delante, el joystick hacia atras y el boton REGATE el jugador
+## la pisa con la suela, la frena con el cuerpo, la arrastra hacia el rumbo nuevo y pivota detras de ella, sin perderla
+## (sin el boton, el joystick atras hace el giro con toques: test_ball_turn). La fisica se mide en headless; con render
+## (xvfb-run --rendering-driver opengl3) tambien que la suela este de verdad sobre la pelota.
 
 func _skip_if_missing() -> bool:
 	PackLibrary.reload()
@@ -24,6 +25,7 @@ func _reverse(stick: float, sprint: bool, run_s: float = 1.6, angle_deg: float =
 	var a: float = deg_to_rad(angle_deg)
 	var want := Vector3(cos(a), 0.0, sin(a))
 	src.move = Vector2(want.x, want.z) * maxf(stick, 0.7)
+	src.skill()
 	var p0: Vector3 = p.global_position
 	var dbk: DragBack = p.ball_handler.drag_back
 	var started0: int = int(dbk.stats["started"])
@@ -43,7 +45,7 @@ func _reverse(stick: float, sprint: bool, run_s: float = 1.6, angle_deg: float =
 		back = minf(back, (p.global_position - p0).dot(want))
 		if trace and i < 70:
 			var o: Vector3 = KickModel.flat(ctx.ball.global_position - p.global_position)
-			print("DB f%d fase %d v %.2f mira %.0f pelota %.2f,%.2f vb %.2f toque %s" % [i, dbk.phase, p.locomotion.speed, KickModel.angle_between_deg(p.locomotion.forward(), want), o.dot(want), o.dot(Vector3(-want.z, 0, want.x)), KickModel.flat(ctx.ball.linear_velocity).dot(want), p.ball_handler.last_touch_mode])
+			print("DB f%d giro %d fase %d v %.2f mira %.0f pelota %.2f,%.2f vb %.2f toque %s" % [i, p.ball_handler.ball_turn.phase, dbk.phase, p.locomotion.speed, KickModel.angle_between_deg(p.locomotion.forward(), want), o.dot(want), o.dot(Vector3(-want.z, 0, want.x)), KickModel.flat(ctx.ball.linear_velocity).dot(want), p.ball_handler.last_touch_mode])
 		if turned_at < 0.0 and KickModel.angle_between_deg(p.locomotion.forward(), want) < 25.0:
 			turned_at = float(i + 1) / 60.0
 		if dbk.phase == DragBack.Phase.HOLD and p.ball_handler.feet_live:
@@ -78,11 +80,12 @@ func _describe(name: String, r: Dictionary) -> String:
 		name, r["speed0"], r["started"], float(l.get("contact_ahead", -1.0)), float(l.get("contact_t", -1.0)), float(l.get("hold_time", -1.0)),
 		float(l.get("pull_speed", -1.0)), r["turned_at"], r["overrun"], r["prog"], r["ball_ahead"], r["max_sep"], r["sole_gap"], r["sole_y"]]
 
-func _check_drag(name: String, r: Dictionary) -> void:
+## turn_max: segundos hasta mirar al rumbo nuevo (a la carrera la suela llega mas tarde a la pelota adelantada).
+func _check_drag(name: String, r: Dictionary, turn_max: float = 0.8) -> void:
 	var l: Dictionary = r["last"]
 	check(r["started"] == 1, "%s: hace la vuelta pisando la pelota (%d)" % [name, r["started"]])
 	check(l.has("pull_speed"), "%s: la suela arrastra la pelota (%s)" % [name, str(l)])
-	check(r["turned_at"] > 0.0 and r["turned_at"] < 0.8, "%s: mira al rumbo nuevo en menos de 0.8 s (%.2f)" % [name, r["turned_at"]])
+	check(r["turned_at"] > 0.0 and r["turned_at"] < turn_max, "%s: mira al rumbo nuevo en menos de %.1f s (%.2f)" % [name, turn_max, r["turned_at"]])
 	check(r["max_sep"] < 1.4, "%s: no pierde la pelota (separacion maxima %.2f m)" % [name, r["max_sep"]])
 	check(r["possession"] and r["ball_ahead"] > 0.0, "%s: termina con la pelota delante en el rumbo nuevo (%.2f m)" % [name, r["ball_ahead"]])
 	check(r["prog"] > 1.5, "%s: sale hacia el rumbo nuevo (%.2f m tras girar)" % [name, r["prog"]])
@@ -101,7 +104,7 @@ func test_drag_back_at_a_run_depends_on_where_the_ball_is() -> void:
 	if _skip_if_missing():
 		return
 	# A la carrera la pelota va y vuelve del pie (toque y alcance): con la pelota al pie hay pisada; recien lanzada por
-	# delante, la media vuelta por el costado (no espera a alcanzarla). En los dos casos se conserva la pelota.
+	# delante, el giro con toques (BallTurn, no espera a pisarla). En los dos casos se conserva la pelota.
 	var drags: int = 0
 	for run_s in [1.6, 1.7, 1.8, 1.9, 2.0, 2.1]:
 		var r: Dictionary = await _reverse(1.0, false, run_s)
@@ -109,7 +112,7 @@ func test_drag_back_at_a_run_depends_on_where_the_ball_is() -> void:
 		note(_describe(name, r))
 		if r["started"] == 1:
 			drags += 1
-			_check_drag(name, r)
+			_check_drag(name, r, 0.9)
 		else:
 			check(r["max_sep"] < 1.6, "%s: la media vuelta conserva la pelota (%.2f m)" % [name, r["max_sep"]])
 			check(r["prog"] > 1.5, "%s: sale hacia el rumbo nuevo (%.2f m tras girar)" % [name, r["prog"]])
@@ -129,8 +132,8 @@ func test_sprint_reversal_keeps_the_side_half_turn() -> void:
 func test_ai_carrier_uses_the_same_drag_back() -> void:
 	if _skip_if_missing():
 		return
-	# La IA no tiene atajos: la misma vuelta la dispara su rumbo pedido. Con una persona de entrada scripteada en un
-	# jugador NO humano (como la IA) la mecanica es la misma.
+	# La IA no tiene atajos: la misma vuelta la piden su rumbo y el boton REGATE. Con una persona de entrada scripteada
+	# en un jugador NO humano (como la IA) la mecanica es la misma.
 	var ctx: MatchContext = await make_match(Vector3(-9.4, 0.11, 0.0))
 	var src := ScriptedInput.new()
 	var p: Footballer = add_player(ctx, 0, Vector3(-10.0, 0.0, 0.0), 60, src, true)
@@ -139,6 +142,7 @@ func test_ai_carrier_uses_the_same_drag_back() -> void:
 	src.move = Vector2(0.7, 0.0)
 	await wait_seconds(1.6)
 	src.move = Vector2(-0.8, 0.0)
+	src.skill()
 	await wait_seconds(1.2)
 	note("IA: vueltas %s, ultima %s" % [str(p.ball_handler.drag_back.stats), str(p.ball_handler.drag_back.last)])
 	check(int(p.ball_handler.drag_back.stats["done"]) >= 1, "la IA hace la misma vuelta (%s)" % str(p.ball_handler.drag_back.stats))

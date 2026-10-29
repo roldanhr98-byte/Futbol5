@@ -17,6 +17,13 @@ const ASSIST_FULL := 0.4
 const AIM_EDGE := 0.85
 ## Aumento del error del tiro con un rival encima (presion 1 = a menos de 0.8 m): x1.8.
 const SHOT_PRESSURE_ERROR := 0.8
+## Potencia que pierde un tiro con un rival encima (presion 1): no se puede armar ni plantar bien el pie. Con el tiro mas
+## fuerte (2026-10-29: 12-30 m/s) el apurado salia igual de fuerte y, mas abierto por el error, entraba mas que sin rival.
+const SHOT_PRESSURE_POWER := 0.12
+## La potencia crece con la carga elevada a este exponente: el tiro flojo y el de carga completa son mas fuertes que antes
+## (12 y 30 m/s, antes 9 y 27) y el de media carga queda casi igual (~20 m/s a 0.6), asi el arquero sigue atajando lo que
+## va a su cuerpo (medido: con la potencia lineal 12-30 atajaba el 63 % de los tiros al arquero desde 11 m; antes el 89 %).
+const SHOT_POWER_CURVE := 1.5
 
 ## Giro maximo (rad/s) de un tiro con efecto (chanfle / comba): con el Magnus de la pelota curva 1.5-3 m en 15-20 m.
 const CURL_SPIN_MIN := 38.0
@@ -107,12 +114,13 @@ static func compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, c
 
 	# --- Potencia ---
 	var power_mult: float = kicker.attributes.factor("shot_power", 0.14)
-	var speed: float = lerpf(bt.shot_speed_min, bt.shot_speed_max, clampf(charge, 0.0, 1.0)) * power_mult
+	var speed: float = lerpf(bt.shot_speed_min, bt.shot_speed_max, pow(clampf(charge, 0.0, 1.0), SHOT_POWER_CURVE)) * power_mult
 	if placed:
 		speed = maxf(speed, lerpf(bt.shot_speed_min, bt.shot_speed_max, 0.25) * power_mult)
 	res.weak_foot = KickModel.is_weak_foot(kicker, origin)
 	if res.weak_foot:
 		speed *= KickModel.weak_foot_power_mult(kicker)
+	speed *= 1.0 - SHOT_PRESSURE_POWER * PassAssist.pressure(kicker)
 	speed = minf(speed, bt.shot_speed_max * 1.2)
 
 	# --- Error ---

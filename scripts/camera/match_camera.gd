@@ -28,6 +28,13 @@ extends Camera3D
 @export var ball_lead_time: float = 0.28
 @export var focus_weight_with_ball: float = 0.4
 @export var focus_weight_without_ball: float = 0.72
+## Factor extra de distancia (lo usan las pruebas y herramientas; el de la persona es Tuning.camera_zoom).
+@export var zoom_scale: float = 1.0
+## Golpe de camara en los tiros fuertes (punch): grados que se cierra la lente y metros de sacudida con punch = 1, y su
+## semivida (s). Da peso al disparo en una pantalla de movil (prueba03: el tiro no se notaba).
+@export var punch_fov_deg: float = 2.2
+@export var punch_shake_m: float = 0.10
+@export var punch_halflife: float = 0.09
 
 var ball: Node3D = null
 var focus_actor: Node3D = null
@@ -38,6 +45,7 @@ var ctx: MatchContext = null
 var _focus: Vector3 = Vector3.ZERO
 var _distance: float = 20.0
 var _initialized: bool = false
+var _punch: float = 0.0
 
 func _ready() -> void:
 	fov = view_fov
@@ -76,6 +84,30 @@ func _process(delta: float) -> void:
 	_focus = _damp_vec3(_focus, target, follow_halflife, delta)
 	_distance = _damp_float(_distance, _target_distance(), zoom_halflife, delta)
 	_apply_transform()
+	_apply_punch(delta)
+
+## Golpe de camara (0..1): una sacudida breve y un cierre de lente que se desvanecen solos. Lo dispara un tiro fuerte.
+func punch(strength: float) -> void:
+	_punch = maxf(_punch, clampf(strength, 0.0, 1.0))
+
+## Conecta el golpe de camara a los golpes de la pelota: solo los disparos de un jugador (no los rebotes ni el arquero).
+func watch_shots(b: Ball) -> void:
+	if b != null and not b.impulse.is_connected(_on_ball_impulse):
+		b.impulse.connect(_on_ball_impulse)
+
+func _on_ball_impulse(actor: Node, _dv: float, speed: float) -> void:
+	if actor is Footballer and speed > 16.0:
+		punch(clampf((speed - 16.0) / 14.0, 0.3, 1.0))
+
+func _apply_punch(delta: float) -> void:
+	if _punch <= 0.002:
+		_punch = 0.0
+		fov = view_fov
+		return
+	fov = view_fov - _punch * punch_fov_deg
+	var s: float = _punch * punch_shake_m
+	global_position += global_transform.basis.x * randf_range(-s, s) + global_transform.basis.y * randf_range(-s, s) * 0.6
+	_punch *= pow(0.5, delta / maxf(punch_halflife, 0.001))
 
 func _target_focus() -> Vector3:
 	var ball_pos: Vector3 = Vector3.ZERO
@@ -140,7 +172,9 @@ func _target_distance() -> float:
 		var dx: float = absf(p.x - f.x) - button_bias
 		var dz: float = absf(p.z - f.z)
 		need = maxf(need, maxf(dx, dz * 1.8))
-	return clampf(base_distance + maxf(need - 6.0, 0.0) * 0.9, base_distance, max_distance)
+	# Zoom elegido por la persona (Tuning.camera_zoom, menu de pausa): escala la distancia de todo el encuadre.
+	var z: float = Tuning.camera_zoom * zoom_scale
+	return clampf(base_distance + maxf(need - 6.0, 0.0) * 0.9, base_distance, max_distance) * z
 
 func _apply_transform() -> void:
 	var p: float = deg_to_rad(pitch_deg)

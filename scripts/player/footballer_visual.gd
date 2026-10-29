@@ -139,6 +139,8 @@ const LEAN_BRAKE_MAX := 0.1
 ## Control cerrado: llevando la pelota despacio el tronco se encorva sobre ella (como en First Touch Soccer), hasta
 ## CARRY_CROUCH rad entre caminar y trotar; parado o a la carrera, nada.
 const CARRY_CROUCH := 0.13
+## Encorvado extra (rad) que pide una accion con la pelota (BallTurn: rodeando la pelota con toques).
+var turn_crouch: float = 0.0
 var _phase: float = 0.0
 var _legs: Array[MeshInstance3D] = []
 var _action_timer: float = 0.0
@@ -612,6 +614,7 @@ func drive_motion(speed: float, turn_rate: float, delta: float) -> void:
 	var trunk_pitch: float = clampf(_lean_accel / 9.81, -LEAN_BRAKE_MAX, LEAN_ACCEL_MAX)
 	if _has_carry and _carry_weight > 0.0:
 		trunk_pitch += CARRY_CROUCH * _carry_weight * smoothstep(0.3, 1.4, speed) * (1.0 - smoothstep(3.2, 5.0, speed))
+	trunk_pitch += turn_crouch
 	var trunk_roll: float = clampf(atan(turn_rate * speed / 9.81) * LEAN_TURN_GAIN, -LEAN_ROLL_MAX, LEAN_ROLL_MAX)
 	var k: float = 1.0 - exp(-10.0 * delta)
 	_lean_pitch = lerpf(_lean_pitch, target_pitch, k)

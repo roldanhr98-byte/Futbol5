@@ -5,7 +5,7 @@
 - **Responsabilidad exacta:** verificar la simulación (física de la pelota, locomoción, conducción, pases, tiros, presión, patada sincronizada, reglas de partido, controles táctiles, modelo) **sin pantalla ni dependencias externas**, con un marco propio de ~150 líneas. Cada método `test_*` de una subclase de `TestCase` es una prueba.
 - **Estado:** operativo. **Última ejecución completa (2026-10-26):** headless con las librerías del pack: **121 pruebas, 0 fallidas, 2 omitidas (necesitan render), 686 comprobaciones, 0 `SCRIPT ERROR`, ~92 s**. Con render (`xvfb-run`, por filtro): `gameplay_feel` 10/33, `control_and_keeper` 7/26, `goalkeeper` 5/25, `pack_motion` 2/24, `player_actions` 4/13, `practice` 4/37, todas 0 fallidas y 0 omitidas. La suite completa con render **no se terminó**: `test_ai_match` simula partidos de 120 s con 10 personajes animados y con `llvmpipe` tarda decenas de minutos. **Sin** las librerías del pack: las pruebas del pack, arquero, práctica, sensación de juego e IA se omiten.
 - **Última verificación:** <!-- AUTO:verified -->
-2026-10-28
+2026-10-29
 <!-- /AUTO -->
 
 ## Archivos responsables
@@ -60,7 +60,10 @@
 | `tests/test_kick_reach.gd` | 2 | 17 (render) / 10 | Golpeo pedido con la pelota propia fuera del alcance: el jugador ajusta la carrera y golpea con contacto o cancela con aviso | [PLAYER](PLAYER.md) |
 | `tests/test_shared_ball_mechanics.gd` | 2 | 8 | La IA usa la misma mecánica de pelota que la persona (sin atajos) | [PLAYER](PLAYER.md) |
 | `tests/test_dribble_reference.gd` | 1 (render) | 6 (render) | Conducción recta medida contra el video de referencia (intervalo, pie, alternancia, distancia, deriva) | [PLAYER](PLAYER.md) |
-| `tests/test_drag_back.gd` | 4 | 54 (headless) / 52 (render) | Vuelta atrás pisando la pelota: caminando, al trote y a la carrera en 6 momentos del ciclo (pisada o media vuelta), sprint sin pisada, la IA con la misma mecánica; con render, la suela sobre la pelota | [PLAYER](PLAYER.md) |
+| `tests/test_drag_back.gd` | 4 | 34 (headless) | Vuelta atrás pisando la pelota con REGATE + joystick atrás: caminando, al trote y a la carrera en 6 momentos del ciclo (pisada o, con la pelota escapada, giro con toques), sprint sin pisada, la IA con el mismo botón; con render, la suela sobre la pelota | [PLAYER](PLAYER.md) |
+| `tests/test_ball_turn.gd` | 4 | 49 (headless) / 53 (render) | Giro con toques (joystick atrás sin botón): caminando, trote, carrera en 6 momentos del ciclo, 135°, sprint, la IA; toques, tiempo de giro, separación, pelota delante al salir; con render, el pie en la pelota en cada toque | [PLAYER](PLAYER.md) |
+| `tests/test_loose_ball_chase.gd` | 4 | 6 | El jugador de la persona va a la pelota suelta (joystick suelto o hacia ella), el joystick hacia otro lado manda, la IA no; pase pedido antes de llegar a una pelota suelta no se pierde | [PLAYER](PLAYER.md) |
+| `tests/test_audio.gd` | 3 | 26 | Sonido: los efectos existen y se cargan, público en bucle, sonido de cada golpe por el impulso real, `Ball.impulse` | [AUDIO](AUDIO.md) |
 | `tests/test_practice.gd` | 4 | 37 | Galería (133 clips, roles), reproducción de todos los clips, raíz y espejo, malabares por impulsos | [ANIMATIONS](ANIMATIONS.md) |
 | **Total (headless)** | **121 + 2 omitidas** | **686** | | |
 

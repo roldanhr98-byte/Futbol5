@@ -153,6 +153,8 @@ func _build_pause_menu(root: Control) -> void:
 	_add_menu_button(grid, "minutes", "", func() -> void: _cycle_minutes())
 	_add_menu_button(grid, "touch_scale", "", func() -> void: _cycle_touch(&"scale"))
 	_add_menu_button(grid, "joy_sens", "", func() -> void: _cycle_touch(&"sens"))
+	_add_menu_button(grid, "camera_zoom", "", func() -> void: _cycle_camera_zoom())
+	_add_menu_button(grid, "sound", "", func() -> void: _toggle_sound())
 	_add_menu_button(grid, "quit", "Salir", func() -> void: _close_pause(); quit_requested.emit())
 	_refresh_menu_labels()
 
@@ -185,6 +187,8 @@ func _refresh_menu_labels() -> void:
 	(_pause_buttons["minutes"] as Button).text = "Duración del partido: %d min" % Tuning.match_minutes
 	(_pause_buttons["touch_scale"] as Button).text = "Tamaño de botones: %s" % ["Pequeño", "Normal", "Grande"][_nearest_index(TOUCH_SCALES, Tuning.touch_scale)]
 	(_pause_buttons["joy_sens"] as Button).text = "Sensibilidad del joystick: %s" % THREE_NAMES[_nearest_index(JOY_SENS, Tuning.joystick_sensitivity)]
+	(_pause_buttons["camera_zoom"] as Button).text = "Zoom de cámara: %s" % Tuning.CAMERA_ZOOM_NAMES[_nearest_index(Tuning.CAMERA_ZOOMS, Tuning.camera_zoom)]
+	(_pause_buttons["sound"] as Button).text = "Sonido: %s" % ("Sí" if Tuning.sound_on else "No")
 	(_pause_buttons["training"] as Button).text = "Volver al partido" if MatchScene.training_mode else "Entrenamiento sin rivales"
 	(_pause_buttons["diagnostics"] as Button).text = "Diagnóstico: %s" % ("ACTIVADO" if Tuning.show_diagnostics else "desactivado")
 
@@ -208,6 +212,20 @@ func _cycle_touch(kind: StringName) -> void:
 	Tuning.save_user_settings()
 	if touch != null:
 		touch.queue_redraw()
+	_refresh_menu_labels()
+
+## Zoom de la camara (se aplica en el acto, con el suavizado de la camara, y se guarda).
+func _cycle_camera_zoom() -> void:
+	var opts: Array = Tuning.CAMERA_ZOOMS
+	Tuning.camera_zoom = opts[(_nearest_index(opts, Tuning.camera_zoom) + 1) % opts.size()]
+	Tuning.save_user_settings()
+	_refresh_menu_labels()
+
+## Sonido del partido: se apaga o enciende en el acto (publico incluido) y se guarda.
+func _toggle_sound() -> void:
+	Tuning.sound_on = not Tuning.sound_on
+	Tuning.save_user_settings()
+	Sfx.set_enabled(Tuning.sound_on)
 	_refresh_menu_labels()
 
 ## Duracion del partido: se guarda y se aplica al reiniciar el partido (el reloj del partido en curso no cambia).

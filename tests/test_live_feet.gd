@@ -268,13 +268,16 @@ func test_direction_changes_make_progress_with_the_ball() -> void:
 		var p0: Vector3 = p.global_position
 		var back: float = 0.0
 		var max_sep: float = 0.0
-		for i in 90:
+		# Desde 135 grados manda el giro con toques (BallTurn): frena, rodea la pelota ~0.9 s con toques y sale. Se mide
+		# en 2 s (en 1.5 s, a la carrera, apenas termina el giro).
+		var secs: float = 2.0 if float(cfg[3]) >= 135.0 else 1.5
+		for i in int(secs * 60.0):
 			await tree.physics_frame
 			back = minf(back, (p.global_position - p0).dot(want))
 			max_sep = maxf(max_sep, p.ball_handler.ball_distance())
 		var prog: float = (p.global_position - p0).dot(want)
 		var ball_prog: float = (KickModel.flat(ctx.ball.global_position) - KickModel.flat(p0)).dot(want)
-		note("%s grados: en 1.5 s avanza %.2f m hacia el rumbo nuevo (retrocede como mucho %.2f m), pelota a %.2f m de su inicio en ese rumbo, separacion maxima %.2f m" % [cfg[0], prog, -back, ball_prog, max_sep])
+		note("%s grados: en %.1f s avanza %.2f m hacia el rumbo nuevo (retrocede como mucho %.2f m), pelota a %.2f m de su inicio en ese rumbo, separacion maxima %.2f m, giros con toques %d" % [cfg[0], secs, prog, -back, ball_prog, max_sep, int(p.ball_handler.ball_turn.stats["done"])])
 		# Despacio se recorre menos; la media vuelta a sprint primero frena desde 6.4 m/s (~0.5 s y ~0.5 m hacia atras).
 		var min_prog: float = 1.0 if float(cfg[1]) < 0.5 else (1.5 if (cfg[2] and float(cfg[3]) >= 180.0) else 2.0)
 		check(prog > min_prog, "%s: avanza hacia el rumbo nuevo (%.2f m)" % [cfg[0], prog])

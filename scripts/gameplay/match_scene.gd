@@ -119,6 +119,11 @@ func _ready() -> void:
 	camera.setup(ball, controlled, Tuning.pitch)
 	_setup_replay()
 	ctx.event_emitted.connect(_on_match_event)
+	# Sonido: golpes, botes, poste y red de la pelota; silbatos y publico del partido (Sfx).
+	Sfx.watch_ball(ball)
+	ctx.event_emitted.connect(Sfx.on_event)
+	Sfx.crowd(true)
+	camera.watch_shots(ball)
 	GraphicsSettings.apply()
 	manager.start_match()
 
@@ -170,6 +175,9 @@ func _make_footballer(team: int, id: int, source: InputSource) -> Footballer:
 	attrs.reset_to(55)
 	f.setup(ctx, team, id, attrs, source)
 	return f
+
+func _exit_tree() -> void:
+	Sfx.crowd(false)
 
 ## Con el partido como escena actual, «Salir» cierra el juego; si lo aloja otro nodo (pruebas) solo avisa.
 func _on_quit_requested() -> void:

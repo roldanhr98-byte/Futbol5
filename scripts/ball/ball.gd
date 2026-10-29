@@ -12,6 +12,11 @@ signal touched(actor: Node)
 signal hit_goal_frame(position: Vector3, speed: float)
 signal floor_bounce(position: Vector3, speed: float)
 signal released(by: Node)
+## Cada golpe (Ball.kick): quien la toco (o null), cuanto cambio la velocidad (m/s) y la velocidad con la que sale. Lo
+## usan los sonidos (Sfx) y la camara (sacudida del tiro).
+signal impulse(actor: Node, dv: float, speed: float)
+## La pelota entra en contacto con la red de tela (con su velocidad en ese momento).
+signal net_hit(speed: float)
 
 const LAYER_WORLD := 1
 const LAYER_BALL := 2
@@ -39,6 +44,7 @@ var _hold_anchor: Node3D = null
 ## que corre antes del paso) y si esta metida en la tela (frena tambien el giro).
 var net_accel: Vector3 = Vector3.ZERO
 var net_contact: bool = false
+var _net_was: bool = false
 
 var _grounded: bool = false
 var _pending_teleport: bool = false
@@ -149,6 +155,7 @@ func kick(target_velocity: Vector3, spin: Vector3 = Vector3.ZERO, kicker: Node =
 		release(kicker)
 	var dv: Vector3 = target_velocity - linear_velocity
 	apply_central_impulse(dv * mass)
+	impulse.emit(kicker, dv.length(), target_velocity.length())
 	var inertia: float = (2.0 / 3.0) * mass * radius * radius
 	apply_torque_impulse((spin - angular_velocity) * inertia)
 	knuckle_accel = 0.0
@@ -312,14 +319,16 @@ func _update_trail(delta: float) -> void:
 		return
 	_trail_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLE_STRIP)
 	var n: int = _trail_pts.size()
+	# Mas ancha cuanto mas fuerte va: un tiro a 30 m/s se lee en la pantalla del movil (antes 0.9 radios siempre).
+	var width: float = 0.9 + 0.9 * clampf((linear_velocity.length() - TRAIL_MIN_SPEED) / 14.0, 0.0, 1.0)
 	for i in n:
 		var p: Vector3 = _trail_pts[i]
 		var nxt: Vector3 = _trail_pts[mini(i + 1, n - 1)]
 		var prv: Vector3 = _trail_pts[maxi(i - 1, 0)]
 		var dir: Vector3 = (nxt - prv)
 		dir.y = 0.0
-		var side: Vector3 = Vector3(-dir.z, 0.0, dir.x).normalized() * radius * 0.9 * float(i) / float(n)
-		var a: float = _trail_alpha * 0.55 * float(i) / float(n)
+		var side: Vector3 = Vector3(-dir.z, 0.0, dir.x).normalized() * radius * width * float(i) / float(n)
+		var a: float = _trail_alpha * 0.65 * float(i) / float(n)
 		var c := Color(1.0, 0.95, 0.75, a)
 		_trail_mesh.surface_set_color(c)
 		_trail_mesh.surface_add_vertex(p + side)
@@ -396,6 +405,9 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	if net_accel != Vector3.ZERO:
 		v += net_accel * dt
 		net_accel = Vector3.ZERO
+	if net_contact and not _net_was:
+		net_hit.emit(v.length())
+	_net_was = net_contact
 	if net_contact:
 		w *= exp(-tuning.net_grip * dt)
 		net_contact = false

@@ -11,6 +11,47 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-10-29 — Giro con toques, tiro con potencia, sonido, zoom de cámara y pelota suelta (respuesta a prueba03)
+
+Detalle: [PLAYER](SYSTEMS/PLAYER.md#giro-con-toques-ballturn-2026-10-29) ·
+[ASSISTANCE](SYSTEMS/ASSISTANCE.md) (potencia del tiro) · [CAMERA](SYSTEMS/CAMERA.md#zoom-de-la-persona-y-golpe-de-cámara-2026-10-29) ·
+[AUDIO](SYSTEMS/AUDIO.md) (nuevo) · [BALL](SYSTEMS/BALL.md#tiro-con-más-potencia-estela-más-ancha-y-señales-de-golpe-2026-10-29).
+
+- **Giro con toques** (`BallTurn`, nuevo; prueba03: «volver hacia atrás no me gusta… en Dream League gira mientras da
+  toques al balón»): con el joystick atrás conduciendo, el jugador frena, se encorva y rodea la pelota con toques cortos
+  del interior del pie de fuera (cada toque la manda adonde estará el pie en el siguiente, con el cuerpo predicho por el
+  mismo mando) y sale con un toque hacia el rumbo nuevo. 180° en 0.87–0.90 s con 4 toques, de caminando a sprint, sin
+  perder la pelota; con render el pie queda a 0.05–0.14 m de la superficie de la pelota en cada toque. Persona e IA.
+- **La pisada (`DragBack`) pasa a ser regate**: REGATE + joystick atrás (`DragBack.request`); REGATE solo sigue siendo la
+  ruleta. `DragBack.reachable` (antes privada) la usa también `BallTurn`.
+- **Tiro**: preparación visible (`shot_windup` 0.12 s + 0.06 s × carga, clip casi a velocidad natural: se ve la pierna
+  atrás; antes ~0.17 s en pantalla); potencia 12–30 m/s con `carga^1.5` (antes 9–27 lineal); con un rival encima pierde
+  potencia (`SHOT_PRESSURE_POWER`); golpe de cámara (`MatchCamera.punch`) y estela más ancha en los tiros fuertes.
+- **Golpe que rebotaba en el propio jugador**: tras un golpeo con clip el cuerpo volvía a chocar con la pelota en el paso
+  siguiente (con el ajuste de zancada quedaba encima): un tiro de 18.5 m/s salía a 4.5 m/s desviado 75°. Ahora la pelota
+  golpeada atraviesa al que la golpeó `KICK_GHOST_SECONDS` 0.15 s (pases, tiros, centros, voleas y cabezazos).
+- **Pelota suelta**: el jugador de la persona va a buscarla solo con el joystick suelto, o ajusta el rumbo si apunta más
+  o menos hacia ella (`BallHandler.loose_ball_chase`); un pase pedido antes de llegar a una pelota suelta ya no se pierde
+  (`kick_approach_steer` también para ella).
+- **Sonido** (nuevo, no había ninguno): autoload `Sfx` con efectos sintetizados por `tools/audio/make_sfx.py` (golpes por
+  el impulso real, botes, poste, red, silbatos, festejo, «ooh», público en bucle); señales `Ball.impulse` y
+  `Ball.net_hit`; interruptor «Sonido» en el menú de pausa (`Tuning.sound_on`).
+- **Zoom de cámara** en el menú de pausa (`Tuning.camera_zoom`: Muy cerca / Cerca —por defecto, 0.7— / Media / Lejos).
+- Archivos: `scripts/player/ball_turn.gd` (nuevo), `drag_back.gd`, `ball_handler.gd`, `footballer.gd`,
+  `footballer_visual.gd`, `player_tuning.gd`, `scripts/assistance/shot_assist.gd`, `scripts/ball/ball.gd`,
+  `ball_tuning.gd`, `scripts/camera/match_camera.gd`, `scripts/audio/sfx.gd` (nuevo), `scripts/gameplay/tuning.gd`,
+  `match_scene.gd`, `scripts/ui/hud.gd`, `project.godot` (autoload `Sfx`), `assets/audio/*.wav` (nuevos),
+  `tools/audio/make_sfx.py` (nuevo), `tools/drag_back_view.gd` (acciones `shot`, `pass`, `skill`); pruebas nuevas
+  `tests/test_ball_turn.gd`, `test_loose_ball_chase.gd`, `test_audio.gd`; ajustadas `test_drag_back` (con REGATE; a la
+  carrera mira al rumbo nuevo en < 0.9 s), `test_live_feet` (giros de 135°/180° medidos en 2 s: el giro con toques dura
+  ~0.9 s), `test_shot_keeper` (80 tiros por caso; al palo hacia el que el empeine la cierra, colocarla no le gana al
+  arquero).
+- Verificación: ver el final de esta entrada.
+- Tripo3D: **sin gasto**. Solo ofrece animaciones prefijadas por retarget (10 créditos cada una, consultado en el historial
+  de la cuenta: tareas de 3 y 5 animaciones a 30 y 50 créditos); no crea una animación nueva ni combinada de 19 s.
+- Pendiente: probar en el teléfono (sonido, zoom y golpe de cámara solo se vieron en PC); centros y cabezazos no se
+  rehicieron (solo les alcanza el arreglo del rebote).
+
 ## 2026-10-28 — Rodadura de First Touch Soccer, vuelta atrás pisando la pelota y giros con la pelota que se escapa
 
 Detalle: [DRIBBLE_DIAGNOSIS](DRIBBLE_DIAGNOSIS.md#octava-ronda-2026-10-28-first-touch-soccer-27-apk-y-videos-diferenciasfutbol) ·

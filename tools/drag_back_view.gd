@@ -1,8 +1,10 @@
 extends Node
-## Imagenes consecutivas de la vuelta atras pisando la pelota (DragBack) con el jugador del pack, camara fija de costado,
-## para revisar a ojo la suela sobre la pelota, el arrastre y el pivote. Uso:
+## Imagenes consecutivas de una accion con la pelota del jugador del pack, camara de costado que lo sigue, para revisar a
+## ojo la suela sobre la pelota, el arrastre, el pivote, los toques del giro o el balanceo del tiro. Uso:
 ## DRAG_OUT=/tmp/vuelta DRAG_STICK=0.7 xvfb-run -a godot --rendering-driver opengl3 --fixed-fps 60 --resolution 640x400 \
 ##   --path . res://tools/drag_back_view.tscn
+## DRAG_ACTION: reverse (joystick hacia atras, por defecto), skill (REGATE + joystick atras: pisada), shot (tiro con
+## DRAG_CHARGE fotogramas de carga), pass. DRAG_FRAMES: imagenes (cada 3 fotogramas de fisica).
 
 func _ready() -> void:
 	var out: String = OS.get_environment("DRAG_OUT")
@@ -36,17 +38,36 @@ func _ready() -> void:
 	src.move = Vector2(stick, 0.0)
 	for i in 90:
 		await get_tree().physics_frame
-	src.move = Vector2(-maxf(stick, 0.7), 0.0)
+	var action: String = OS.get_environment("DRAG_ACTION") if OS.get_environment("DRAG_ACTION") != "" else "reverse"
+	var charge: int = int(OS.get_environment("DRAG_CHARGE")) if OS.get_environment("DRAG_CHARGE") != "" else 20
+	var frames: int = int(OS.get_environment("DRAG_FRAMES")) * 3 if OS.get_environment("DRAG_FRAMES") != "" else 54
+	match action:
+		"shot":
+			src.hold_shoot()
+		"pass":
+			src.hold_pass()
+		"skill":
+			src.skill()
+			src.move = Vector2(-maxf(stick, 0.7), 0.0)
+		_:
+			src.move = Vector2(-maxf(stick, 0.7), 0.0)
 	var dbk: DragBack = f.ball_handler.drag_back
-	for i in 54:
+	ball.impulse.connect(func(_a: Node, dv: float, sp: float) -> void: print("  impulso dv %.1f -> %.1f m/s" % [dv, sp]))
+	for i in frames:
+		if i == charge and action == "shot":
+			src.release_shoot()
+		elif i == charge and action == "pass":
+			src.release_pass()
 		await get_tree().physics_frame
 		await get_tree().process_frame
 		var c: Vector3 = f.global_position
 		cam.global_position = Vector3(c.x + 0.3, 1.1, 3.6)
 		cam.look_at(Vector3(c.x + 0.3, 0.45, 0.0), Vector3.UP)
-		if i % 3 == 0:
+		if i % 3 == 0 and i > 0:
 			var img: Image = get_viewport().get_texture().get_image()
 			img.save_png("%s_%02d.png" % [out, i])
-			var toe: Vector3 = f.visual.touch_ik.abs_toe_world[dbk.foot]
-			print("f%d fase %d v %.2f pelota %.2f,%.2f punta %.2f,%.2f,%.2f" % [i, dbk.phase, f.locomotion.speed, ball.global_position.x - c.x, ball.global_position.y, toe.x - c.x, toe.y, toe.z])
+			var bt: BallTurn = f.ball_handler.ball_turn
+			var ft: int = bt.foot if bt.active() else dbk.foot
+			var toe: Vector3 = f.visual.touch_ik.abs_toe_world[ft]
+			print("f%d pisada %d giro %d (toques %d) v %.2f pelota %.2f,%.2f,%.2f punta %.2f,%.2f,%.2f" % [i, dbk.phase, bt.phase, bt.touches, f.locomotion.speed, ball.global_position.x - c.x, ball.global_position.y, ball.global_position.z, toe.x - c.x, toe.y, toe.z])
 	get_tree().quit()
