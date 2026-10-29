@@ -11,6 +11,33 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-10-29 — Modelo propio del modo 2 (Newton), saque y tarjeta de la captura, modo 3 «Tripo» y rodilla en la pisada
+
+Detalle: [ANIMATION_PACK](SYSTEMS/ANIMATION_PACK.md#modo-2-de-jugabilidad-mocap-pack-05-soccer-2026-10-29) ·
+[ANIMATIONS](SYSTEMS/ANIMATIONS.md).
+
+- **Modelo del modo 2**: Newton, el personaje del pack, a 6 778 triángulos con su esqueleto Rokoko y los colores del
+  equipo (`tools/animation_pack/build_mocap_character.tscn` → `assets/characters/mocap/mocap_player.scn`,
+  `mocap_kit.gdshader`). `MocapRig` copia la pose final del futbolista (retarget inverso + IK de dos huesos en piernas y
+  brazos) en jugadores, arqueros y árbitro; el esqueleto del futbolista sigue midiendo el contacto y no se dibuja.
+- **Modo 2**: saque de banda con `mc_throw_in` (`SetPiece.MOCAP_THROW_*`), tarjeta amarilla del árbitro en las faltas
+  (`referee_foul`). Conducciones, malabares, atajadas, defensa y tarjeta roja siguen en la galería sin disparador
+  (motivo en la ficha).
+- **Modo 3 · Tripo** (`Tuning.GAMEPLAY_MODES` 1–3): modelo y presets de Tripo con la patada procedural. Tripo no crea
+  animaciones a medida (su API solo ofrece rigging y presets); cambiar de modo recarga el partido.
+- **Rodilla en la pisada**: `TouchFootIK.ik_toe` inclina el polo de la rodilla hacia el frente del cuerpo en el modo de
+  objetivo absoluto; antes la pierna se doblaba en Z al pisar la pelota en el giro.
+- Archivos: `scripts/animation/mocap_rig.gd` (nuevo), `touch_foot_ik.gd`, `animation_catalog.gd`,
+  `scripts/player/footballer_visual.gd`, `scripts/gameplay/set_piece.gd`, `referee.gd`, `tuning.gd`, `match_scene.gd`,
+  `scripts/ui/hud.gd`, `tools/animation_pack/build_mocap_character.gd`/`.tscn` (nuevos), `tools/drag_back_view.gd`
+  (`DRAG_MODE`), `tests/test_mocap_mode.gd` (+3 pruebas).
+- Verificación: `test_mocap_mode` 7/79/0 headless y con render (pies y manos de Newton a ≤ 0.066 m de los del
+  futbolista, saque sale a 1.55 m, árbitro con `mc_yellow_card`); con render `test_drag_back` 4/52/0 y
+  `test_ball_turn` 4/53/0; `LIVE_KICKS_MODE=2 test_live_kicks` 3 de 4: **sigue fallando** el pase de primera (pie de
+  apoyo 1.67 m/s, límite 1.6). Imágenes del giro con Newton revisadas (sin pliegue de rodilla). Suite headless completa:
+  205 pruebas, 1149 comprobaciones, 0 fallos (15 omitidas, las de render).
+- Sin gasto de Tripo.
+
 ## 2026-10-29 — Modo 2 de jugabilidad con el «Mocap Pack 05 Soccer» y evaluación de presets de Tripo
 
 Detalle: [ANIMATION_PACK](SYSTEMS/ANIMATION_PACK.md#modo-2-de-jugabilidad-mocap-pack-05-soccer-2026-10-29) ·

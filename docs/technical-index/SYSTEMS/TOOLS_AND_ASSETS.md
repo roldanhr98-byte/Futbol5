@@ -34,6 +34,7 @@ Notas verificadas: `tools/screenshot_probe.gd.uid` está versionado pero el `.gd
 | `assets/characters/player/player_albedo.jpg`, `player_mask_a.png`, `player_mask_b.png`, `player_regions.json`, `player_kit.gdshader` | Kit recoloreable | `make_player_textures.py` + shader propio |
 | `assets/animations/source/v1_keeper.glb`, `v1_football.glb`, `v1_more.glb`, `v1_ball.glb` | Clips crudos de Tripo (preset retargeteado sobre el rig v1.0; `v1_ball` guardado sin usar) | Tripo3D |
 | `assets/animations/mocap_clips.res` | «Mocap Pack 05 Soccer» convertido (modo 2 de jugabilidad, ver [ANIMATION_PACK](ANIMATION_PACK.md)) | pack aportado por la persona |
+| `assets/characters/mocap/mocap_player.scn` + `mocap_kit.gdshader` | Modelo del modo 2: Newton del mismo pack en baja poligonización (6 778 triángulos, esqueleto Rokoko de 76 huesos, zona del kit en `COLOR.r`); `tools/animation_pack/build_mocap_character.tscn` | pack aportado por la persona |
 | `assets/animations/footballer_clips.res` | Librería compartida de 13 clips | `build_animation_library.gd` |
 | `assets/ball/ball.gdshader`, `assets/pitch/court.gdshader`, `assets/pitch/net.gdshader` | Shaders propios (pelota, cancha, red) | código |
 | `assets/audio/` | Directorio **vacío** (sin audio en el juego) | — |

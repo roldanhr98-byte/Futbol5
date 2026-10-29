@@ -58,7 +58,10 @@ func _on_event(e: GameEvent) -> void:
 				_queue(&"referee_count", 0.3, maxf(float(e.data.get("seconds", 3.0)) - 0.5, 1.0))
 			else:
 				_queue(&"referee_point", 0.1, 1.6)
-		GameEvent.Type.GOAL, GameEvent.Type.FOUL, GameEvent.Type.OUT_OF_PLAY:
+		GameEvent.Type.FOUL:
+			# Modo 2: muestra la tarjeta amarilla de la captura; si no, senala.
+			_queue(&"referee_foul", 0.4, 2.8 if AnimationCatalog.mocap_mode() else 1.8)
+		GameEvent.Type.GOAL, GameEvent.Type.OUT_OF_PLAY:
 			_queue(&"referee_point", 0.4, 1.8)
 		GameEvent.Type.MATCH_END:
 			_queue(&"referee_wave", 0.5, 4.0)

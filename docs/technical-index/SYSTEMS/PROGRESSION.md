@@ -31,7 +31,7 @@
 | `dribbling` | Regate | campo | **sin uso todavía** |
 | `short_pass` | Pase corto | campo | `scripts/assistance/pass_assist.gd:85`, `scripts/assistance/pass_assist.gd:213` |
 | `long_pass` | Pase largo | campo | `scripts/assistance/cross_assist.gd:93`, `scripts/assistance/cross_assist.gd:103`, `scripts/assistance/pass_assist.gd:85`, `scripts/assistance/pass_assist.gd:213` |
-| `pass_accuracy` | Precisión de pase | campo | `scripts/assistance/pass_assist.gd:106`, `scripts/assistance/pass_assist.gd:247`, `scripts/gameplay/set_piece.gd:393` |
+| `pass_accuracy` | Precisión de pase | campo | `scripts/assistance/pass_assist.gd:106`, `scripts/assistance/pass_assist.gd:247`, `scripts/gameplay/set_piece.gd:405` |
 | `shot_power` | Potencia de tiro | campo | `scripts/assistance/shot_assist.gd:116` |
 | `shot_accuracy` | Precisión de tiro | campo | `scripts/assistance/shot_assist.gd:127`, `scripts/assistance/shot_assist.gd:155`, `scripts/assistance/shot_assist.gd:234` |
 | `finishing` | Finalización | campo | `scripts/assistance/shot_assist.gd:128`, `scripts/assistance/shot_assist.gd:155`, `scripts/assistance/shot_assist.gd:234` |

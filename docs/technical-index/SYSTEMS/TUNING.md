@@ -2,7 +2,7 @@
 
 ## Identificación
 
-- **Responsabilidad exacta:** el autoload `Tuning` es el **único punto de acceso** a los parámetros de balance (`Tuning.ball`, `Tuning.player`, `Tuning.assist`, `Tuning.keeper`, `Tuning.pitch`) y a las preferencias del usuario (niveles de asistencia, diagnóstico, duración, botones táctiles, zoom de cámara `camera_zoom`, sonido `sound_on` y modo de jugabilidad `gameplay_mode`: 1 pack actual, 2 mocap de fútbol). Intenta cargar un `.tres` por clase desde `resources/tuning/`; **si no existe, usa los valores por defecto escritos en la propia clase**.
+- **Responsabilidad exacta:** el autoload `Tuning` es el **único punto de acceso** a los parámetros de balance (`Tuning.ball`, `Tuning.player`, `Tuning.assist`, `Tuning.keeper`, `Tuning.pitch`) y a las preferencias del usuario (niveles de asistencia, diagnóstico, duración, botones táctiles, zoom de cámara `camera_zoom`, sonido `sound_on` y modo de jugabilidad `gameplay_mode`: 1 pack actual, 2 mocap de fútbol con el modelo Newton, 3 solo Tripo). Intenta cargar un `.tres` por clase desde `resources/tuning/`; **si no existe, usa los valores por defecto escritos en la propia clase**.
 - **Estado:** implementado. **`resources/tuning/` existe pero está vacío**: hoy el balance vive en los valores por defecto de las clases.
 - **Última verificación:** <!-- AUTO:verified -->
 2026-10-29
@@ -35,8 +35,8 @@
 | `Tuning.MATCH_MINUTES` | `[3, 5, 7, 10]` | 24 | Duracion del partido elegida (minutos): 3, 5, 7 o 10. |
 | `Tuning.CAMERA_ZOOMS` | `[0.55, 0.7, 0.85, 1.0]` | 29 | Zoom de la camara del partido: factor sobre la distancia de MatchCamera (menor = mas cerca). Niveles del menu: muy cerca, cerca (por defecto: la camara a 0.7 de la distancia de la transmision lejana), media y lejos (la transmision de antes). |
 | `Tuning.CAMERA_ZOOM_NAMES` | `["Muy cerca", "Cerca", "Media", "Lejos"]` | 30 |  |
-| `Tuning.GAMEPLAY_MODES` | `[1, 2]` | 36 | Modo de jugabilidad: 1 = animaciones del pack actual; 2 = «Mocap Pack 05 Soccer» (capturas de movimiento de futbol: pase de interior, tiro potente, penal y festejos; ver AnimationCatalog.mocap_mode). Se elige en el menu de pausa. |
-| `Tuning.GAMEPLAY_MODE_NAMES` | `{1: "1 · Pack actual", 2: "2 · Mocap fútbol"}` | 37 |  |
+| `Tuning.GAMEPLAY_MODES` | `[1, 2, 3]` | 37 | Modo de jugabilidad: 1 = animaciones del pack actual; 2 = «Mocap Pack 05 Soccer» (capturas de movimiento de futbol: pase de interior, tiro potente, penal y festejos; ver AnimationCatalog.mocap_mode); 3 = solo Tripo3D (el modelo y sus animaciones prefijadas, patada procedural; FootballerVisual.build). Se elige en el menu de pausa (reinicia el partido). |
+| `Tuning.GAMEPLAY_MODE_NAMES` | `{1: "1 · Pack actual", 2: "2 · Mocap fútbol", 3: "3 · Tripo"}` | 38 |  |
 <!-- /AUTO -->
 
 Rutas esperadas de los `.tres` (**ninguna existe hoy**): las constantes `BALL_PATH`, `PLAYER_PATH`, `ASSIST_PATH`, `KEEPER_PATH` y `PITCH_PATH` de arriba, todas dentro de `resources/tuning/`. Un `.tres` cuyo script no coincide con la clase se ignora con un aviso.
@@ -57,12 +57,12 @@ Preferencias del usuario (`user://settings.cfg`, `Tuning.save_user_settings`): s
 <!-- AUTO:funcs:scripts/gameplay/tuning.gd -->
 | Función | Línea | Qué hace |
 |---|---|---|
-| `Tuning._init()` | 40 |  |
-| `Tuning._ready()` | 43 |  |
-| `Tuning.reload()` | 47 | Recarga todos los parametros desde disco (util al ajustar valores en el laboratorio). |
-| `Tuning.load_user_settings()` | 56 | Aplica las preferencias del usuario (niveles de asistencia, diagnostico) sobre los parametros. |
-| `Tuning.save_user_settings()` | 73 |  |
-| `Tuning._load_or_default(path: String, script: GDScript)` | 89 |  |
+| `Tuning._init()` | 41 |  |
+| `Tuning._ready()` | 44 |  |
+| `Tuning.reload()` | 48 | Recarga todos los parametros desde disco (util al ajustar valores en el laboratorio). |
+| `Tuning.load_user_settings()` | 57 | Aplica las preferencias del usuario (niveles de asistencia, diagnostico) sobre los parametros. |
+| `Tuning.save_user_settings()` | 74 |  |
+| `Tuning._load_or_default(path: String, script: GDScript)` | 90 |  |
 <!-- /AUTO -->
 
 ## Recorrido de ejecución

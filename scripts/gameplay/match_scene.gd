@@ -103,6 +103,7 @@ func _ready() -> void:
 	hud.charge_provider = _charge_state
 	hud.restart_play_requested.connect(func() -> void: manager.restart_play())
 	hud.restart_match_requested.connect(func() -> void: manager.restart_match())
+	hud.gameplay_mode_changed.connect(_on_gameplay_mode_changed)
 	hud.quit_requested.connect(_on_quit_requested)
 	hud.practice_requested.connect(_on_practice_requested)
 	hud.training_toggle_requested.connect(_on_training_toggle)
@@ -188,6 +189,12 @@ func _on_quit_requested() -> void:
 ## Cambia entre partido normal y entrenamiento y vuelve a montar la escena.
 func _on_training_toggle() -> void:
 	training_mode = not training_mode
+	if get_tree().current_scene == self:
+		get_tree().paused = false
+		get_tree().reload_current_scene()
+
+## Otro modo de jugabilidad: se vuelve a montar la escena (modelos y clips del modo).
+func _on_gameplay_mode_changed() -> void:
 	if get_tree().current_scene == self:
 		get_tree().paused = false
 		get_tree().reload_current_scene()

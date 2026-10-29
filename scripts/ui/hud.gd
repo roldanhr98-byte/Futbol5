@@ -9,6 +9,8 @@ signal quit_requested
 signal practice_requested
 ## Cambiar entre partido normal y entrenamiento (tu equipo contra el arquero rival solo).
 signal training_toggle_requested
+## Se eligio otro modo de jugabilidad: el partido se vuelve a montar con los modelos y clips del modo.
+signal gameplay_mode_changed
 
 const LEVEL_NAMES: Array[String] = ["Desactivada", "Baja", "Media", "Alta"]
 
@@ -223,13 +225,14 @@ func _cycle_camera_zoom() -> void:
 	Tuning.save_user_settings()
 	_refresh_menu_labels()
 
-## Modo de jugabilidad (1 pack actual / 2 mocap de futbol): se aplica en el acto (el proximo golpeo o festejo ya usa los
-## clips del modo) y se guarda.
+## Modo de jugabilidad (1 pack actual / 2 mocap de futbol / 3 Tripo): se guarda y el partido se vuelve a montar (cada
+## modo tiene sus modelos y clips).
 func _cycle_gameplay_mode() -> void:
 	var opts: Array = Tuning.GAMEPLAY_MODES
 	Tuning.gameplay_mode = opts[(opts.find(Tuning.gameplay_mode) + 1) % opts.size()]
 	Tuning.save_user_settings()
 	_refresh_menu_labels()
+	gameplay_mode_changed.emit()
 
 ## Sonido del partido: se apaga o enciende en el acto (publico incluido) y se guarda.
 func _toggle_sound() -> void:

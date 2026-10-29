@@ -1,9 +1,10 @@
 extends TestCase
-## Modo 2 de jugabilidad (Tuning.gameplay_mode = 2): golpeos, penal y festejos del «Mocap Pack 05 Soccer»
+## Modos 2 y 3 de jugabilidad. Modo 2 (Tuning.gameplay_mode = 2): golpeos, penal, saque de banda, tarjeta del arbitro,
+## festejos y modelo propio (Newton, MocapRig) del «Mocap Pack 05 Soccer»
 ## (assets/animations/mocap_clips.res, convertido con tools/animation_pack/build_mocap_library.tscn). Se comprueba que la
 ## libreria tiene los clips con su contacto medido, que en modo 2 el pase y el tiro usan el pase de interior y el tiro
 ## potente de la captura con el pie de verdad en la pelota (a cualquier velocidad), que el penal usa su carrera y que el
-## modo 1 sigue con los clips de siempre.
+## modo 1 sigue con los clips de siempre. Modo 3: solo el modelo y los clips de Tripo, con la patada procedural.
 
 const START := Vector3(-10.0, 0.0, 0.0)
 
@@ -148,3 +149,133 @@ func test_mode2_penalty_uses_the_mocap_run_up() -> void:
 	if sp != null and m.home[0].visual.uses_pack:
 		check(String(sp.clip).begins_with("mc_penalty_kick"), "con el penal de la captura, con su carrera (%s)" % sp.clip)
 	cleanup()
+
+## Partido real en modo `mode`, todos con IA.
+func _match_scene(mode: int) -> MatchScene:
+	_set_mode(mode)
+	var m: MatchScene = load("res://scenes/main/match.tscn").instantiate()
+	m.duration_seconds = 0.0
+	m.auto_switch = false
+	m.intro_seconds = 0.0
+	spawn(m)
+	await physics_frames(3)
+	m.home[0].input_source = AIInput.new(3, 0.6)
+	m.home[0].is_human_controlled = false
+	m.controlled = null
+	await wait_seconds(1.5)
+	return m
+
+func test_mode2_draws_the_mocap_model_following_the_skeleton() -> void:
+	if _skip_if_missing():
+		return
+	if not MocapRig.available():
+		skip("no existe assets/characters/mocap/mocap_player.scn (generar con tools/animation_pack/build_mocap_character.tscn)")
+		return
+	var prev: int = Tuning.gameplay_mode
+	var m: MatchScene = await _match_scene(2)
+	var players: Array = m.home + m.away
+	var with_rig: int = players.filter(func(p: Footballer) -> bool: return p.visual.mocap_rig != null).size()
+	var keepers_rig: int = m.keepers.filter(func(k: Goalkeeper) -> bool: return k.visual != null and k.visual.mocap_rig != null).size()
+	note("modo 2: %d de %d jugadores y %d arqueros con el modelo del mocap" % [with_rig, players.size(), keepers_rig])
+	check(with_rig == players.size(), "todos los jugadores se ven con el modelo del mocap (%d de %d)" % [with_rig, players.size()])
+	check(keepers_rig == m.keepers.size(), "los arqueros tambien (%d)" % keepers_rig)
+	# El modelo copia la pose: pies y manos de Newton donde estan los del futbolista (medido justo despues de cada copia,
+	# que es lo que se dibuja), y la cabeza cerca.
+	var worst := {"limb": 0.0, "head": 0.0, "where": ""}
+	for p in players:
+		var r: MocapRig = p.visual.mocap_rig
+		if r == null:
+			continue
+		r.src.skeleton_updated.connect(func() -> void:
+			for pair in [["mixamorig_LeftFoot", "LeftFoot"], ["mixamorig_RightFoot", "RightFoot"], ["mixamorig_LeftHand", "LeftHand"], ["mixamorig_RightHand", "RightHand"], ["mixamorig_Head", "Head"]]:
+				var a: Vector3 = r.src.global_transform * r.src.get_bone_global_pose(r.src.find_bone(pair[0])).origin
+				var b: Vector3 = r.dst.global_transform * r.dst.get_bone_global_pose(r.dst.find_bone(pair[1])).origin
+				var key: String = "head" if pair[1] == "Head" else "limb"
+				if a.distance_to(b) > float(worst[key]):
+					worst[key] = a.distance_to(b)
+					if key == "limb":
+						worst["where"] = "%s %s" % [p.name, pair[1]])
+	for k in 6:
+		await wait_seconds(0.25)
+		var vis: bool = players.all(func(p: Footballer) -> bool: return p.visual.mesh_instances.all(func(mi: MeshInstance3D) -> bool: return not mi.visible))
+		check(vis, "el modelo de Tripo no se dibuja en modo 2")
+	note("separacion maxima entre los dos esqueletos: pies/manos %.3f m (%s), cabeza %.3f m" % [worst["limb"], worst["where"], worst["head"]])
+	check(float(worst["limb"]) < 0.08, "pies y manos de Newton donde estan los del futbolista (%.3f m)" % worst["limb"])
+	check(float(worst["head"]) < 0.25, "la cabeza acompana (%.3f m)" % worst["head"])
+	_set_mode(prev)
+	cleanup()
+
+func test_mode2_throw_in_and_referee_card() -> void:
+	if _skip_if_missing():
+		return
+	var prev: int = Tuning.gameplay_mode
+	var m: MatchScene = await _match_scene(2)
+	var hw: float = m.pitch.config.half_width()
+	m.ball.reset_at(Vector3(3.0, 0.11, hw + 0.4))
+	m.ball.register_touch(m.away[0])
+	await physics_frames(3)
+	var sp: SetPiece = m.manager.active_set_piece
+	check(sp != null and m.manager.set_piece_kind == "throw_in", "saque de banda")
+	if sp == null:
+		_set_mode(prev)
+		return
+	var release_y: float = -1.0
+	for i in 6 * 60:
+		await tree.physics_frame
+		if release_y < 0.0 and not m.ball.is_held():
+			release_y = m.ball.global_position.y
+		if m.manager.state == MatchManager.State.PLAYING:
+			break
+	note("saque en modo 2: clip %s, resultado %s, sale a %.2f m" % [sp.clip, sp.result, release_y])
+	check(m.manager.state == MatchManager.State.PLAYING, "el juego se reanuda tras el saque")
+	if m.home[0].visual.uses_pack:
+		check(sp.clip == SetPiece.MOCAP_THROW_CLIP, "con el saque de la captura (%s)" % sp.clip)
+	check(release_y > 1.2, "la pelota sale por encima de la cabeza (%.2f m)" % release_y)
+	# Falta: el arbitro muestra la tarjeta de la captura.
+	var ref: Referee = m.find_children("*", "Referee", true, false)[0] if not m.find_children("*", "Referee", true, false).is_empty() else null
+	if ref != null and ref.visual != null and ref.visual.uses_pack:
+		var victim: Footballer = m.home[1]
+		m.ctx.emit_event(GameEvent.make(GameEvent.Type.FOUL, m.away[1].actor_id, 1, {"victim": victim.actor_id, "pos": [0.0, 1.0]}))
+		var clip := ""
+		for i in 60:
+			await tree.physics_frame
+			if ref.visual.is_action_playing():
+				clip = String(ref.visual.current_action)
+				break
+		note("falta en modo 2: el arbitro reproduce %s" % clip)
+		check(clip == "mc_yellow_card", "el arbitro muestra la tarjeta amarilla (%s)" % clip)
+	_set_mode(prev)
+	cleanup()
+
+func test_mode3_is_tripo_only_and_kicks_connect() -> void:
+	var prev: int = Tuning.gameplay_mode
+	_set_mode(3)
+	var done := 0
+	for action in [&"pass", &"shot"]:
+		var ctx: MatchContext = await make_match(START + Vector3(0.6, 0.11, 0.0))
+		var src := ScriptedInput.new()
+		var p: Footballer = add_player(ctx, 0, START, 60, src, true)
+		p.is_human_controlled = true
+		check(not p.visual.uses_pack and p.visual.mocap_rig == null, "modo 3: modelo y clips de Tripo, sin pack ni mocap")
+		var ev := []
+		ctx.event_emitted.connect(func(e: GameEvent) -> void:
+			if e.type == GameEvent.Type.PASS or e.type == GameEvent.Type.SHOT:
+				ev.append(e))
+		src.move = Vector2(0.7, 0.0)
+		await wait_seconds(1.2)
+		if action == &"pass":
+			src.hold_pass()
+		else:
+			src.hold_shoot()
+		await physics_frames(12)
+		if action == &"pass":
+			src.release_pass()
+		else:
+			src.release_shoot()
+		await wait_seconds(1.4)
+		note("modo 3 %s: eventos %d, %s" % [action, ev.size(), str(p.ball_handler.kick_stats)])
+		check(ev.size() >= 1, "modo 3: el %s sale" % action)
+		check(int(p.ball_handler.kick_stats.get("missed", 0)) == 0, "modo 3: sin patadas en falso")
+		done += ev.size()
+		cleanup()
+	_set_mode(prev)

@@ -52,9 +52,29 @@ las otras 20.
   `AnimationCatalog.mocap_mode`): pase, pase filtrado → `mc_side_foot_pass`; tiro, vaselina, centro → `mc_power_kick`
   (los dos con espejo), con `MOCAP_EXTRA_LATENCY` 0.08 s más para que se vea el balanceo; penal y tiro libre directo →
   `mc_penalty_kick` con su carrera (`SetPiece._kick_clip`); festejos del gol y victoria → `mc_celebration_1..3`. La IA
-  usa los mismos clips. Conducciones, malabares, saque de banda, atajadas, defensa y tarjetas están en la galería de la
-  sala de práctica («Mocap fútbol (modo 2)») pero **todavía no mueven el juego**.
-- **Medido** (`tests/test_mocap_mode.gd`; con render `LIVE_KICKS_MODE=2` en `test_live_kicks`): 12 de 12 pases y tiros
+  usa los mismos clips. Saque de banda → `mc_throw_in` (parado; empieza a los 5.4 s con la pelota arriba y la suelta a
+  los 6.68 s con las manos a 0.45 m delante y 1.52 m de alto: `SetPiece.MOCAP_THROW_*`); falta → el árbitro muestra la
+  tarjeta amarilla (`mc_yellow_card`, situación `referee_foul`). Conducciones, malabares, atajadas, defensa y tarjeta roja
+  están en la galería de la sala de práctica («Mocap fútbol (modo 2)») sin disparador en partido: las conducciones son
+  tomas lentas (0.2–1.7 m/s) con giros propios de la raíz que no siguen al joystick, el pack no trae conducción en
+  carrera, y las atajadas se desplazan hasta 1.4 m sin coincidir con la trayectoria de la pelota.
+- **Modelo propio del modo 2** (Newton, el personaje del pack): `tools/animation_pack/build_mocap_character.tscn` lo
+  baja de ~33 000 a 6 778 triángulos (LOD de `ImporterMesh`) con su esqueleto Rokoko de 76 huesos y hornea en `COLOR.r`
+  la zona del kit de cada vértice según el hueso que más lo mueve (camiseta, short hasta media pierna, medias desde la
+  rodilla, botines, piel, pelo) → `assets/characters/mocap/mocap_player.scn` + `mocap_kit.gdshader` (colores del
+  equipo). En el juego `MocapRig` (`scripts/animation/mocap_rig.gd`) cuelga del visual de cada jugador, arquero y árbitro:
+  el esqueleto del futbolista sigue haciendo todo (clips, toques, IK, contacto) pero no se dibuja; en cada
+  `skeleton_updated` su pose se copia a Newton con el retarget inverso
+  (`G_R = A⁻¹·(G_T·Reposo_T⁻¹)·A·Reposo_R`, cadera escalada por la altura de cadera) y piernas y brazos se cierran con
+  IK de dos huesos hasta los pies y las manos del futbolista. Medido (`test_mocap_mode`): pies y manos a ≤ 0.06 m de los
+  del futbolista en un partido; cabeza ≤ 0.06 m.
+- **Modo 3 · Tripo** (`Tuning.gameplay_mode` = 3): `FootballerVisual.uses_pack` falso → el modelo de Tripo con sus
+  clips (presets) y la patada procedural (`ProceduralPose`), sin pack ni mocap. Tripo3D no genera animaciones a medida
+  (su API solo ofrece rigging y retarget de presets de una biblioteca fija; se comprobó en la documentación oficial),
+  así que el modo 3 es el modelo y los presets de Tripo. El cambio de modo recarga la escena del partido
+  (`Hud.gameplay_mode_changed` → `MatchScene._on_gameplay_mode_changed`).
+- **Medido** (`tests/test_mocap_mode.gd`, 7 pruebas: además saque de banda con `mc_throw_in` que sale a 1.55 m, tarjeta
+  del árbitro, modelo Newton y modo 3; con render `LIVE_KICKS_MODE=2` en `test_live_kicks`): 12 de 12 pases y tiros
   ejecutados con el clip de la captura de parado a sprint, pie a 0.008–0.057 m de la pelota; con el esqueleto animado,
   48 de 50 golpeos variados con contacto (los otros 2, pelota tocada antes por el rival), pie a 0.01–0.14 m; penal con
   `mc_penalty_kick`. Pendiente: en el pase de primera con el pase de interior el pie de apoyo patina 1.69 m/s (límite de

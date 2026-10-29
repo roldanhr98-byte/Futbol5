@@ -1807,55 +1807,55 @@
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.build",
-          "line": 165,
+          "line": 168,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual._setup_animation_tree",
-          "line": 232,
+          "line": 252,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.play_action",
-          "line": 385,
+          "line": 405,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.stop_action",
-          "line": 531,
+          "line": 551,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.update_motion",
-          "line": 548,
+          "line": 568,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.start_kick",
-          "line": 540,
+          "line": 560,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.set_kit",
-          "line": 220,
+          "line": 237,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.default_kit",
-          "line": 149,
+          "line": 152,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.keeper_kit",
-          "line": 160,
+          "line": 163,
           "kind": "func"
         },
         {
@@ -2577,19 +2577,19 @@
         {
           "file": "scripts/gameplay/match_scene.gd",
           "name": "MatchScene._spawn_teams",
-          "line": 136,
+          "line": 137,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_scene.gd",
           "name": "MatchScene.kickoff_positions",
-          "line": 204,
+          "line": 211,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_scene.gd",
           "name": "MatchScene._on_kickoff_requested",
-          "line": 213,
+          "line": 220,
           "kind": "func"
         }
       ],
@@ -2822,43 +2822,43 @@
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud.bind",
-          "line": 72,
+          "line": 74,
           "kind": "func"
         },
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud.show_message",
-          "line": 304,
+          "line": 307,
           "kind": "func"
         },
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud._build_pause_menu",
-          "line": 123,
+          "line": 125,
           "kind": "func"
         },
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud._cycle_assist",
-          "line": 254,
+          "line": 257,
           "kind": "func"
         },
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud._cycle_graphics",
-          "line": 250,
+          "line": 253,
           "kind": "func"
         },
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud._toggle_diagnostics",
-          "line": 262,
+          "line": 265,
           "kind": "func"
         },
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud.should_show_touch_controls",
-          "line": 67,
+          "line": 69,
           "kind": "func"
         },
         {
@@ -3046,25 +3046,25 @@
         {
           "file": "scripts/gameplay/tuning.gd",
           "name": "Tuning.reload",
-          "line": 47,
+          "line": 48,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/tuning.gd",
           "name": "Tuning.load_user_settings",
-          "line": 56,
+          "line": 57,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/tuning.gd",
           "name": "Tuning.save_user_settings",
-          "line": 73,
+          "line": 74,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/tuning.gd",
           "name": "Tuning._load_or_default",
-          "line": 89,
+          "line": 90,
           "kind": "func"
         },
         {
@@ -3471,19 +3471,19 @@
         {
           "file": "scripts/animation/animation_catalog.gd",
           "name": "AnimationCatalog.resolve",
-          "line": 84,
+          "line": 86,
           "kind": "func"
         },
         {
           "file": "scripts/animation/animation_catalog.gd",
           "name": "AnimationCatalog.kick_candidates",
-          "line": 102,
+          "line": 104,
           "kind": "func"
         },
         {
           "file": "scripts/animation/animation_catalog.gd",
           "name": "AnimationCatalog.step_interval",
-          "line": 116,
+          "line": 118,
           "kind": "func"
         },
         {
@@ -3507,31 +3507,31 @@
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.play_pack_clip",
-          "line": 484,
+          "line": 504,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.play_situation",
-          "line": 508,
+          "line": 528,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.stop_current_action",
-          "line": 519,
+          "line": 539,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.gait_scale_for",
-          "line": 418,
+          "line": 438,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.step_interval_for",
-          "line": 465,
+          "line": 485,
           "kind": "func"
         },
         {
@@ -4093,19 +4093,19 @@
         {
           "file": "scripts/gameplay/set_piece.gd",
           "name": "SetPiece.execute",
-          "line": 234,
+          "line": 241,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/set_piece.gd",
           "name": "SetPiece.ai_execute",
-          "line": 181,
+          "line": 188,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/set_piece.gd",
           "name": "SetPiece.force",
-          "line": 279,
+          "line": 287,
           "kind": "func"
         },
         {
@@ -4123,7 +4123,7 @@
         {
           "file": "scripts/gameplay/match_scene.gd",
           "name": "MatchScene._on_set_piece_requested",
-          "line": 270,
+          "line": 277,
           "kind": "func"
         },
         {
@@ -4517,7 +4517,7 @@
         {
           "file": "scripts/animation/touch_foot_ik.gd",
           "name": "TouchFootIK.ik_toe",
-          "line": 97,
+          "line": 106,
           "kind": "func"
         },
         {
@@ -4529,13 +4529,13 @@
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.play_touch",
-          "line": 353,
+          "line": 373,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.carry_phase",
-          "line": 363,
+          "line": 383,
           "kind": "func"
         },
         {
@@ -4993,7 +4993,14 @@
         "festejo",
         "animaciones nuevas",
         "segunda jugabilidad",
-        "gameplay mode"
+        "gameplay mode",
+        "modelo mocap",
+        "Newton",
+        "modo 3",
+        "solo Tripo",
+        "mocap model",
+        "saque de banda",
+        "tarjeta"
       ],
       "files": [
         "tools/animation_pack/build_mocap_library.gd",
@@ -5005,31 +5012,35 @@
         "scripts/gameplay/tuning.gd",
         "scripts/ui/hud.gd",
         "scripts/player/ball_handler.gd",
-        "tests/test_mocap_mode.gd"
+        "tests/test_mocap_mode.gd",
+        "scripts/animation/mocap_rig.gd",
+        "tools/animation_pack/build_mocap_character.gd",
+        "scripts/player/footballer_visual.gd",
+        "scripts/gameplay/referee.gd"
       ],
       "symbols": [
         {
           "file": "scripts/animation/animation_catalog.gd",
           "name": "AnimationCatalog.mocap_mode",
-          "line": 65,
+          "line": 67,
           "kind": "func"
         },
         {
           "file": "scripts/animation/animation_catalog.gd",
           "name": "AnimationCatalog.MOCAP_KICKS",
-          "line": 50,
+          "line": 51,
           "kind": "const"
         },
         {
           "file": "scripts/animation/animation_catalog.gd",
           "name": "AnimationCatalog.kick_candidates",
-          "line": 102,
+          "line": 104,
           "kind": "func"
         },
         {
           "file": "scripts/animation/animation_catalog.gd",
           "name": "AnimationCatalog.resolve",
-          "line": 84,
+          "line": 86,
           "kind": "func"
         },
         {
@@ -5047,20 +5058,38 @@
         {
           "file": "scripts/gameplay/set_piece.gd",
           "name": "SetPiece._kick_clip",
-          "line": 324,
+          "line": 336,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/tuning.gd",
           "name": "Tuning.gameplay_mode",
-          "line": 38,
+          "line": 39,
           "kind": "var"
         },
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud._cycle_gameplay_mode",
-          "line": 228,
+          "line": 230,
           "kind": "func"
+        },
+        {
+          "file": "scripts/animation/mocap_rig.gd",
+          "name": "MocapRig.setup",
+          "line": 47,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/animation/mocap_rig.gd",
+          "name": "MocapRig._copy_pose",
+          "line": 109,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/gameplay/set_piece.gd",
+          "name": "SetPiece.MOCAP_THROW_RELEASE",
+          "line": 30,
+          "kind": "const"
         }
       ],
       "parameters": [],

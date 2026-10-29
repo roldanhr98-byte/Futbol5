@@ -78,13 +78,20 @@ func _process_modification_with_delta(_delta: float) -> void:
 		if _abs_weight[f] >= 0.001:
 			var toe_pose: Vector3 = PoseSampler.bone_in_skeleton(sk, _bones[f][3]).origin
 			var w: float = _abs_weight[f]
-			ik_toe(sk, _bones[f], toe_pose.lerp(to_local * _abs_target[f], w), up, _abs_pitch[f] * w)
+			ik_toe(sk, _bones[f], toe_pose.lerp(to_local * _abs_target[f], w), up, _abs_pitch[f] * w, _body_forward(sk, up))
 			abs_toe_world[f] = sk.global_transform * PoseSampler.bone_in_skeleton(sk, _bones[f][3]).origin
 			continue
 		if _weight[f] < 0.001:
 			continue
 		var toe: Vector3 = PoseSampler.bone_in_skeleton(sk, _bones[f][3]).origin
 		ik_toe(sk, _bones[f], toe + to_skel * (_shift[f] * _weight[f]), up, 0.0)
+
+## Frente del cuerpo en el espacio del esqueleto (de cadera izquierda a derecha, girado sobre la vertical).
+func _body_forward(sk: Skeleton3D, up: Vector3) -> Vector3:
+	var l: Vector3 = PoseSampler.bone_in_skeleton(sk, _bones[0][0]).origin
+	var r: Vector3 = PoseSampler.bone_in_skeleton(sk, _bones[1][0]).origin
+	var fwd: Vector3 = (l - r).cross(up)
+	return fwd.normalized() if fwd.length() > 1e-5 else Vector3.ZERO
 
 static func _set_global_basis(sk: Skeleton3D, bone: int, global_basis: Basis) -> void:
 	var parent: int = sk.get_bone_parent(bone)
@@ -94,7 +101,9 @@ static func _set_global_basis(sk: Skeleton3D, bone: int, global_basis: Basis) ->
 ## Lleva la punta del pie de la pierna `bones` [muslo, pierna, pie, punta] a want_toe (espacio del esqueleto) y gira el
 ## pie `pitch` radianes alrededor de su eje lateral (negativo = punta hacia abajo). up: arriba del mundo en el espacio
 ## del esqueleto. IK analitico de dos huesos con el polo de la rodilla actual (la rodilla sigue mirando adonde miraba).
-static func ik_toe(sk: Skeleton3D, bones: Array, want_toe: Vector3, up: Vector3, pitch: float) -> void:
+## knee_fwd (frente del cuerpo, opcional): la rodilla se inclina hacia adelante. Con la pierna casi estirada el polo actual
+## es inestable: al pisar la pelota la rodilla se doblaba hacia dentro o hacia atras (la pierna se veia deformada).
+static func ik_toe(sk: Skeleton3D, bones: Array, want_toe: Vector3, up: Vector3, pitch: float, knee_fwd: Vector3 = Vector3.ZERO) -> void:
 	var u: int = bones[0]
 	var l: int = bones[1]
 	var f: int = bones[2]
@@ -122,6 +131,10 @@ static func ik_toe(sk: Skeleton3D, bones: Array, want_toe: Vector3, up: Vector3,
 	if pole.length() < 1e-5:
 		pole = up.cross(dir)
 	pole = pole.normalized()
+	if knee_fwd != Vector3.ZERO:
+		var pf: Vector3 = knee_fwd - dir * knee_fwd.dot(dir)
+		if pf.length() > 1e-4:
+			pole = (pole * maxf(pole.dot(pf.normalized()), 0.0) + pf.normalized() * 2.0).normalized()
 	var k2: Vector3 = h + dir * ax + pole * hh
 	_set_global_basis(sk, u, Basis(Quaternion((k - h).normalized(), (k2 - h).normalized())) * g_u.basis.orthonormalized())
 	var g_l2: Transform3D = PoseSampler.bone_in_skeleton(sk, l)

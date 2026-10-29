@@ -7,6 +7,9 @@ extends Node
 ## DRAG_CHARGE fotogramas de carga), pass. DRAG_FRAMES: imagenes (cada 3 fotogramas de fisica).
 
 func _ready() -> void:
+	# DRAG_MODE: modo de jugabilidad (2 = mocap con su modelo propio, 3 = Tripo).
+	if OS.get_environment("DRAG_MODE") != "":
+		Tuning.gameplay_mode = int(OS.get_environment("DRAG_MODE"))
 	var out: String = OS.get_environment("DRAG_OUT")
 	var stick: float = float(OS.get_environment("DRAG_STICK")) if OS.get_environment("DRAG_STICK") != "" else 0.7
 	var pitch := Pitch.new()

@@ -23,6 +23,13 @@ const THROW_HANDS := Vector3(0.6, 1.45, 0.0)
 ## Metros de raiz del clip de saque que se reproducen antes de lanzar (el resto de la carrerilla se omite: el jugador
 ## saca desde la linea).
 const THROW_RUNUP := 0.9
+## Modo 2: saque de banda parado de la captura (mc_throw_in, 8 s con la preparacion). Las manos, por detras de la cabeza a
+## los 6.4 s, lanzan hacia delante; a los 6.68 s estan a 0.45 m por delante y 1.52 m de altura. Se empieza a los 5.4 s,
+## con la pelota ya arriba.
+const MOCAP_THROW_CLIP := &"mc_throw_in"
+const MOCAP_THROW_RELEASE := 6.68
+const MOCAP_THROW_START := 5.4
+const MOCAP_THROW_HANDS := Vector3(0.45, 1.52, 0.0)
 const KICK_SPEED := 1.0
 ## Distancia maxima (m) entre la punta del pie del clip y la pelota en el instante de golpeo para que cuente.
 const CONTACT_RADIUS := 0.45
@@ -243,15 +250,16 @@ func execute(act: StringName, ch: float, lb: bool, dir: Vector3, cu: float = 0.0
 	var yaw: float = Locomotion.yaw_from_dir(aim_dir)
 	stage = &"run"
 	if kind == Kind.THROW_IN:
-		clip = THROW_CLIP
-		contact_t = THROW_RELEASE
+		var mocap: bool = AnimationCatalog.mocap_mode() and PackLibrary.has_clip(MOCAP_THROW_CLIP)
+		clip = MOCAP_THROW_CLIP if mocap else THROW_CLIP
+		contact_t = MOCAP_THROW_RELEASE if mocap else THROW_RELEASE
 		# Se empieza tarde en el clip: solo los ultimos THROW_RUNUP m de carrerilla, para lanzar desde la linea.
-		var start_at: float = _start_for_runup(clip, contact_t, THROW_RUNUP)
+		var start_at: float = MOCAP_THROW_START if mocap else _start_for_runup(clip, contact_t, THROW_RUNUP)
 		var root_left: Vector2 = ActionMotion.offset_between(clip, start_at, contact_t)
 		var f: Vector3 = Locomotion.dir_from_yaw(yaw)
 		var r := Vector3(-f.z, 0.0, f.x)
 		var line := Vector3(spot.x, 0.0, signf(spot.z) * ctx.pitch.config.half_width())
-		var start: Vector3 = line - f * (root_left.x + THROW_HANDS.x - 0.2) - r * root_left.y
+		var start: Vector3 = line - f * (root_left.x + _throw_hands().x - 0.2) - r * root_left.y
 		taker.place_at(start, yaw)
 		_hold_ball()
 		if not taker.actions.start(&"set_piece", clip, 1.0, contact_t - start_at + 0.6, [], start_at):
@@ -294,7 +302,7 @@ func _resolve_without_clip() -> void:
 	stage = &"done"
 	taker.set_ball_ghost(false)
 	if kind == Kind.THROW_IN:
-		var from: Vector3 = taker.global_position + taker.locomotion.forward() * THROW_HANDS.x + Vector3.UP * THROW_HANDS.y
+		var from: Vector3 = taker.global_position + taker.locomotion.forward() * _throw_hands().x + Vector3.UP * _throw_hands().y
 		var v: Vector3 = _throw_velocity(from)
 		ctx.ball.release(taker, v)
 		ctx.ball.global_position = from
@@ -306,6 +314,10 @@ func _resolve_without_clip() -> void:
 	result = &"contact"
 	taker.ball_handler.shot_curl = curl
 	taker.ball_handler.perform_action(action, aim_dir, charge, lob)
+
+## Manos al lanzar respecto del jugador, segun el clip de saque.
+func _throw_hands() -> Vector3:
+	return MOCAP_THROW_HANDS if clip == MOCAP_THROW_CLIP else THROW_HANDS
 
 ## Instante de inicio del clip para que, hasta `until`, la raiz recorra como mucho `max_m` metros.
 func _start_for_runup(id: StringName, until: float, max_m: float) -> float:

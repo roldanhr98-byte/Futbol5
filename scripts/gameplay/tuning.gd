@@ -32,9 +32,10 @@ var camera_zoom: float = 0.7
 ## Sonido del partido (Sfx) encendido.
 var sound_on: bool = true
 ## Modo de jugabilidad: 1 = animaciones del pack actual; 2 = «Mocap Pack 05 Soccer» (capturas de movimiento de futbol:
-## pase de interior, tiro potente, penal y festejos; ver AnimationCatalog.mocap_mode). Se elige en el menu de pausa.
-const GAMEPLAY_MODES := [1, 2]
-const GAMEPLAY_MODE_NAMES := {1: "1 · Pack actual", 2: "2 · Mocap fútbol"}
+## pase de interior, tiro potente, penal y festejos; ver AnimationCatalog.mocap_mode); 3 = solo Tripo3D (el modelo y sus
+## animaciones prefijadas, patada procedural; FootballerVisual.build). Se elige en el menu de pausa (reinicia el partido).
+const GAMEPLAY_MODES := [1, 2, 3]
+const GAMEPLAY_MODE_NAMES := {1: "1 · Pack actual", 2: "2 · Mocap fútbol", 3: "3 · Tripo"}
 var gameplay_mode: int = 1
 
 func _init() -> void:

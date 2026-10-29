@@ -21,6 +21,7 @@ const FIELD := {
 	&"warmup": {"pack": [&"Arm_Stretching", &"Neck_Stretching"], "tripo": []},
 	&"referee_count": {"pack": [&"Counting"], "tripo": []},
 	&"referee_point": {"pack": [&"Pointing_Forward"], "tripo": []},
+	&"referee_foul": {"pack": [&"Pointing_Forward"], "tripo": []},
 	&"referee_wave": {"pack": [&"Waving_3", &"Waving"], "tripo": []},
 	&"frustrated": {"pack": [&"Angry_Gesture_2"], "tripo": [&"frustrated"]},
 	&"fall": {"pack": [&"Falling_Down", &"Sweep_Fall", &"Fall_Flat"], "tripo": [&"fall"]},
@@ -59,6 +60,7 @@ const MOCAP_FIELD := {
 	&"celebrate_scorer": [&"mc_celebration_1", &"mc_celebration_2", &"mc_celebration_3"],
 	&"celebrate_team": [&"mc_celebration_2", &"mc_celebration_3"],
 	&"victory_end": [&"mc_celebration_1", &"mc_celebration_3"],
+	&"referee_foul": [&"mc_yellow_card"],
 }
 
 ## true si se juega con las animaciones de mocap (modo 2 elegido y la libreria convertida presente).
