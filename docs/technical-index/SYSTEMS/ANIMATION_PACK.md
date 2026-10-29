@@ -30,6 +30,36 @@
 
 La sala de práctica (`PracticeScene`, `scenes/practice/practice.tscn`, botón «Práctica de animaciones» de la pausa) lista **todos** los clips por grupo con repetir, velocidad, raíz, espejo y cámara, y los malabares encadenan clips con impulsos hacia los puntos de contacto medidos (la pelota nunca se coloca a mano).
 
+## Modo 2 de jugabilidad: «Mocap Pack 05 Soccer» (2026-10-29)
+
+La persona aportó el pack de captura de movimiento de fútbol «Mocap Pack 05 Soccer» (21 tomas: 3 conducciones, 3
+malabares, saque de banda, pase de interior, tiro potente, 2 penales, 3 festejos, 3 atajadas, 2 de defensa y 2 de
+tarjetas; versiones Rokoko, UE5 e iClone) y declaró tener autorización para usarlo. El archivo no trae licencia; dos
+tomas llegaron dañadas en el `.rar` (Rokoko `05_Juggling_02`, UE5 `12_Goal_Celebration_01`) y se usa la versión Rokoko de
+las otras 20.
+
+- **Conversión** (`tools/animation_pack/build_mocap_library.tscn`, hereda de `build_pack_library.gd`): esqueleto Rokoko
+  de 76 huesos (+Z adelante, pose T, cadera a 0.94 m) → futbolista, con `PackRetarget.bone_map` (`ROKOKO_MAP`: Hips,
+  Spine1/3/4, Neck, Head, brazos, Thigh/Shin/Foot/Toe). Las tomas de golpeo traen la carrera previa y la vuelta: se mide el
+  contacto en la toma completa, se gira para que el pie salga hacia adelante y se recorta alrededor del golpeo (pase
+  1.33 s, tiro 1.43 s, penal 2.40 s con su carrera); los pases y tiros guardan la trayectoria de los pies sin la raíz
+  (`paths_root = false`): durante el apoyo el cuerpo sigue al pie plantado. Espejo para la otra pierna. Salida
+  `assets/animations/mocap_clips.res` (24 clips `mc_*`, 2.6 MB, versionada); `PackLibrary` la suma a la librería de
+  campo. Los FBX quedan en `pack/mocap05/` (fuera del repositorio).
+- **Contactos medidos**: pase de interior, pie derecho a 4.5 m/s, 0.33 m delante y 0.17 m al costado; tiro potente, pie
+  izquierdo a 10.1 m/s (0.34 m delante, 0.32 m al costado); penales, pie derecho a 8.5–9.0 m/s.
+- **Qué cambia en el modo 2** (`Tuning.gameplay_mode` = 2, botón «Modo de juego» del menú de pausa;
+  `AnimationCatalog.mocap_mode`): pase, pase filtrado → `mc_side_foot_pass`; tiro, vaselina, centro → `mc_power_kick`
+  (los dos con espejo), con `MOCAP_EXTRA_LATENCY` 0.08 s más para que se vea el balanceo; penal y tiro libre directo →
+  `mc_penalty_kick` con su carrera (`SetPiece._kick_clip`); festejos del gol y victoria → `mc_celebration_1..3`. La IA
+  usa los mismos clips. Conducciones, malabares, saque de banda, atajadas, defensa y tarjetas están en la galería de la
+  sala de práctica («Mocap fútbol (modo 2)») pero **todavía no mueven el juego**.
+- **Medido** (`tests/test_mocap_mode.gd`; con render `LIVE_KICKS_MODE=2` en `test_live_kicks`): 12 de 12 pases y tiros
+  ejecutados con el clip de la captura de parado a sprint, pie a 0.008–0.057 m de la pelota; con el esqueleto animado,
+  48 de 50 golpeos variados con contacto (los otros 2, pelota tocada antes por el rival), pie a 0.01–0.14 m; penal con
+  `mc_penalty_kick`. Pendiente: en el pase de primera con el pase de interior el pie de apoyo patina 1.69 m/s (límite de
+  la prueba 1.6; en el modo 1, 1.2).
+
 ## Cómo funciona (un solo sistema)
 
 1. **Offline:** `tools/animation_pack/build_pack_library.tscn` convierte los clips de `selection.json` con `PackRetarget` (retarget respecto al reposo, no copia de rotaciones locales) a `assets/animations/pack_clips.res` (campo) y `pack_keeper.res` (arquero). Mide por clip: velocidad natural, raíz acumulada (**separada** de la cadera, que queda centrada), altura del tobillo, y en patadas el **contacto** (instante, pie, posición) y la **trayectoria de la punta del pie** en la ventana del golpeo.
@@ -83,13 +113,14 @@ Las librerías ya están generadas y versionadas. Solo hace falta regenerar si s
 <!-- AUTO:funcs:tools/animation_pack/pack_retarget.gd -->
 | Función | Línea | Qué hace |
 |---|---|---|
-| `PackRetarget._global_rest(sk: Skeleton3D, b: int)` | 30 |  |
-| `PackRetarget._order(sk: Skeleton3D)` | 41 |  |
-| `PackRetarget.setup(y_skel: Skeleton3D, t_skel: Skeleton3D)` | 57 |  |
-| `PackRetarget.bind(anim: Animation)` | 83 | track_of: nombre de hueso (sin prefijo) -> indice de pista de rotacion; hips_track: pista de posicion de la cadera. |
-| `PackRetarget.pose(b: Dictionary, t: float, strip_xz: bool = true)` | 102 | Aplica el instante t del clip al esqueleto de Tripo. strip_xz: elimina el movimiento raiz horizontal. |
-| `PackRetarget.ankle_min_height()` | 145 |  |
-| `PackRetarget.root_offset(b: Dictionary, t: float)` | 153 | Desplazamiento raiz acumulado (adelante, derecha) en metros de juego en el instante t, respecto al primer fotograma. |
+| `PackRetarget._src(t_name: String)` | 33 |  |
+| `PackRetarget._global_rest(sk: Skeleton3D, b: int)` | 36 |  |
+| `PackRetarget._order(sk: Skeleton3D)` | 47 |  |
+| `PackRetarget.setup(y_skel: Skeleton3D, t_skel: Skeleton3D)` | 63 |  |
+| `PackRetarget.bind(anim: Animation)` | 89 | track_of: nombre de hueso (sin prefijo) -> indice de pista de rotacion; hips_track: pista de posicion de la cadera. |
+| `PackRetarget.pose(b: Dictionary, t: float, strip_xz: bool = true)` | 108 | Aplica el instante t del clip al esqueleto de Tripo. strip_xz: elimina el movimiento raiz horizontal. |
+| `PackRetarget.ankle_min_height()` | 151 |  |
+| `PackRetarget.root_offset(b: Dictionary, t: float)` | 159 | Desplazamiento raiz acumulado (adelante, derecha) en metros de juego en el instante t, respecto al primer fotograma. |
 <!-- /AUTO -->
 
 ## Hallazgos verificados (2026-10-26, Godot 4.7.2 en Linux; nada se probó en Android)

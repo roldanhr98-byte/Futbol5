@@ -35,6 +35,8 @@ const KICK_PLANT_SPEED := 0.4
 const PLANT_FOOT_MAX_Y := 0.06
 ## m/s que la velocidad de apoyo de un clip puede superar a la del cuerpo al empezar la patada.
 const PLANT_SPEED_GAIN_MAX := 1.5
+## Latencia extra (s) de los golpeos del mocap de futbol (modo 2), ver clip_timing.
+const MOCAP_EXTRA_LATENCY := 0.08
 ## Coste (m de residuo equivalentes por m/s) de elegir un clip cuya velocidad de apoyo no encaja con la del jugador.
 const PLANT_MISMATCH_COST := 0.06
 ## Velocidad maxima del ajuste de paso (m/s) durante el balanceo, parado; a la carrera la ultima zancada puede
@@ -528,11 +530,15 @@ static func foot_contact_world(contact: Dictionary, pos: Vector3, yaw: float) ->
 ## es la imagen que se dibuja justo ANTES de que la pelota salga, y en la siguiente el pie sigue de largo con la pelota
 ## ya en marcha (medido con el esqueleto: punta del pie a 0.02-0.07 m en la imagen del contacto; el pie avanza
 ## 0.25-0.3 m por fotograma en un golpeo).
-static func clip_timing(contact_time: float, action: StringName, charge: float) -> Dictionary:
+## mocap: clip del «Mocap Pack 05 Soccer» (modo 2): su golpeo trae la carrera y el balanceo completos y se le da
+## MOCAP_EXTRA_LATENCY s mas para que se vea (a 1.6x en 0.2 s solo quedaba un latigazo del pie).
+static func clip_timing(contact_time: float, action: StringName, charge: float, mocap: bool = false) -> Dictionary:
 	var t: PlayerTuning = Tuning.player
 	var dt: float = 1.0 / float(Engine.physics_ticks_per_second)
 	var shot: bool = action == &"shot"
 	var want: float = t.kick_latency + (t.shot_windup + t.shot_windup_charge * charge if shot else 0.0)
+	if mocap:
+		want += MOCAP_EXTRA_LATENCY
 	var steps: int = maxi(int(round(want / dt)), 2)
 	# El tiro se reproduce casi a velocidad natural desde antes del balanceo (se ve la pierna atras); el pase, acelerado.
 	var speed: float = clampf(contact_time / (want + 0.08 if shot else 0.30), 1.0, t.kick_clip_speed_max)
@@ -746,7 +752,7 @@ func plan_clip_kick(action: StringName, charge: float, lob: bool) -> Dictionary:
 	for cand in AnimationCatalog.kick_candidates(kind_key):
 		for smp in contact_samples(cand["contact"]):
 			var c := {"time": smp["time"], "pos": smp["pos"], "foot": cand["foot"]}
-			var timing: Dictionary = clip_timing(float(c["time"]), action, charge)
+			var timing: Dictionary = clip_timing(float(c["time"]), action, charge, bool(PackLibrary.meta(cand["clip"]).get("mocap", false)))
 			c["plant"] = clip_plant_velocity(cand["clip"], float(c["time"]), int(c["foot"]), float(timing["speed"]))
 			var delta: Vector3 = predicted_foot_to_ball(c, timing["latency"])
 			var flat_d := Vector3(delta.x, 0.0, delta.z)

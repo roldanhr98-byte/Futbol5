@@ -8,6 +8,9 @@ const FIELD_PATH := "res://assets/animations/pack_clips.res"
 const KEEPER_PATH := "res://assets/animations/pack_keeper.res"
 ## Toques de conduccion fusionados (tools/animation_pack/build_touch_clips.tscn): se suman a la libreria de campo.
 const TOUCH_PATH := "res://assets/animations/touch_clips.res"
+## Mocap Pack 05 Soccer (tools/animation_pack/build_mocap_library.tscn, ids "mc_*"): el modo 2 de jugabilidad. Tambien
+## se suma a la libreria de campo.
+const MOCAP_PATH := "res://assets/animations/mocap_clips.res"
 
 static var _field: AnimationLibrary = null
 static var _keeper: AnimationLibrary = null
@@ -19,12 +22,14 @@ static func _ensure() -> void:
 	_loaded = true
 	if ResourceLoader.exists(FIELD_PATH):
 		_field = load(FIELD_PATH) as AnimationLibrary
-		if _field != null and ResourceLoader.exists(TOUCH_PATH):
-			var touches: AnimationLibrary = load(TOUCH_PATH) as AnimationLibrary
-			if touches != null:
-				for id in touches.get_animation_list():
+		for extra in [TOUCH_PATH, MOCAP_PATH]:
+			if _field == null or not ResourceLoader.exists(extra):
+				continue
+			var lib: AnimationLibrary = load(extra) as AnimationLibrary
+			if lib != null:
+				for id in lib.get_animation_list():
 					if not _field.has_animation(id):
-						_field.add_animation(id, touches.get_animation(id))
+						_field.add_animation(id, lib.get_animation(id))
 	if ResourceLoader.exists(KEEPER_PATH):
 		_keeper = load(KEEPER_PATH) as AnimationLibrary
 

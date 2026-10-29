@@ -2,7 +2,7 @@
 
 ## Identificación
 
-- **Responsabilidad exacta:** capa de interfaz del partido (`CanvasLayer` en `layer = 10`): marcador «LOC x - y VIS», reloj `mm:ss`, mensajes grandes (saque, gol, fin), controles táctiles (ver [INPUTS](INPUTS.md)), superposición de diagnóstico (ver [PERFORMANCE](PERFORMANCE.md)) y menú de pausa con: continuar, reiniciar jugada, reiniciar partido, ciclo de perfil gráfico, ciclo de nivel de asistencia de pase/tiro/presión, interruptor de diagnóstico, «Práctica de animaciones» (abre la sala de práctica, señal `practice_requested`) y salir (cierra el juego cuando el partido es la escena actual). Los botones van en una cuadrícula de 2 columnas. Desde el 2026-10-29 también **«Zoom de cámara»** (`_cycle_camera_zoom`: Muy cerca / Cerca / Media / Lejos, `Tuning.camera_zoom`, ver [CAMERA](CAMERA.md)) y **«Sonido: Sí/No»** (`_toggle_sound`: `Tuning.sound_on` y `Sfx.set_enabled`, ver [AUDIO](AUDIO.md)); los dos se guardan en `user://settings.cfg`.
+- **Responsabilidad exacta:** capa de interfaz del partido (`CanvasLayer` en `layer = 10`): marcador «LOC x - y VIS», reloj `mm:ss`, mensajes grandes (saque, gol, fin), controles táctiles (ver [INPUTS](INPUTS.md)), superposición de diagnóstico (ver [PERFORMANCE](PERFORMANCE.md)) y menú de pausa con: continuar, reiniciar jugada, reiniciar partido, ciclo de perfil gráfico, ciclo de nivel de asistencia de pase/tiro/presión, interruptor de diagnóstico, «Práctica de animaciones» (abre la sala de práctica, señal `practice_requested`) y salir (cierra el juego cuando el partido es la escena actual). Los botones van en una cuadrícula de 2 columnas. Desde el 2026-10-29 también **«Zoom de cámara»** (`_cycle_camera_zoom`: Muy cerca / Cerca / Media / Lejos, `Tuning.camera_zoom`, ver [CAMERA](CAMERA.md)) y **«Sonido: Sí/No»** (`_toggle_sound`: `Tuning.sound_on` y `Sfx.set_enabled`, ver [AUDIO](AUDIO.md)) y **«Modo de juego: 1 · Pack actual / 2 · Mocap fútbol»** (`_cycle_gameplay_mode`: `Tuning.gameplay_mode`, ver [ANIMATION_PACK](ANIMATION_PACK.md#modo-2-de-jugabilidad-mocap-pack-05-soccer-2026-10-29)); se guardan en `user://settings.cfg`.
 - **Estado:** implementado; el menú se construye por código y **solo se prueba el HUD táctil**, no el menú de pausa ni los textos.
 - **Última verificación:** <!-- AUTO:verified -->
 2026-10-29
@@ -26,9 +26,9 @@ No hay recursos de parámetros. Constantes y valores fijos reales:
 | Constante / enum / uniform | Valor | Línea | Descripción |
 |---|---|---|---|
 | `Hud.LEVEL_NAMES` | `["Desactivada", "Baja", "Media", "Alta"]` | 13 |  |
-| `Hud.TOUCH_SCALES` | `[0.85, 1.0, 1.2]` | 196 | Tamano de la botonera y sensibilidad del joystick (preferencias tactiles; se guardan con las demas). |
-| `Hud.JOY_SENS` | `[0.8, 1.0, 1.3]` | 197 |  |
-| `Hud.THREE_NAMES` | `["Bajo", "Normal", "Alto"]` | 198 |  |
+| `Hud.TOUCH_SCALES` | `[0.85, 1.0, 1.2]` | 198 | Tamano de la botonera y sensibilidad del joystick (preferencias tactiles; se guardan con las demas). |
+| `Hud.JOY_SENS` | `[0.8, 1.0, 1.3]` | 199 |  |
+| `Hud.THREE_NAMES` | `["Bajo", "Normal", "Alto"]` | 200 |  |
 <!-- /AUTO -->
 
 - Tamaños de fuente: marcador y reloj 30, mensaje central 68 (color `(1, 0.95, 0.4)` con contorno), pista inferior 18 (`set_hint`), título de pausa 38; botones del menú de 56 px de alto mínimo y fuente 22; panel de pausa de 760 px de ancho (2 columnas).
@@ -40,7 +40,7 @@ No hay recursos de parámetros. Constantes y valores fijos reales:
 | Elemento | Efecto real y riesgo |
 |---|---|
 | Textos «LOC»/«VIS», mensajes («¡Saque!», «¡GOL!», «Fin del partido…») | Los emite `MatchManager` (`message`) y `Hud._on_score`. Cambiarlos no rompe pruebas (no se comprueban). |
-| Nombres de botones del menú (`_pause_buttons`) | `_refresh_menu_labels` indexa por clave: `graphics`, `assist_pass`, `assist_shot`, `assist_press`, `diagnostics`, `camera_zoom`, `sound` (y las demás de ajustes); `practice` y `quit` no cambian de texto. Renombrar una clave sin tocar ambos sitios lanza un error en la apertura del menú. |
+| Nombres de botones del menú (`_pause_buttons`) | `_refresh_menu_labels` indexa por clave: `graphics`, `assist_pass`, `assist_shot`, `assist_press`, `diagnostics`, `camera_zoom`, `sound`, `gameplay_mode` (y las demás de ajustes); `practice` y `quit` no cambian de texto. Renombrar una clave sin tocar ambos sitios lanza un error en la apertura del menú. |
 | `layer = 10`, `process_mode = ALWAYS` | Necesario para que el menú funcione con el árbol en pausa. |
 | `_cycle_assist` | Usa nombres de propiedad dinámicos `"%s_assist" % kind`: una búsqueda de `pass_assist` por texto no encuentra este uso (ver ASSISTANCE). |
 
@@ -56,26 +56,27 @@ No hay recursos de parámetros. Constantes y valores fijos reales:
 | `Hud._build_scoreboard(root: Control)` | 83 |  |
 | `Hud._build_message(root: Control)` | 100 |  |
 | `Hud._build_pause_menu(root: Control)` | 123 |  |
-| `Hud._add_menu_button(parent: Container, key: String, text: String, action: Callable)` | 161 |  |
-| `Hud._level_index(v: float)` | 172 |  |
-| `Hud._refresh_menu_labels()` | 182 |  |
-| `Hud._nearest_index(values: Array, v: float)` | 200 |  |
-| `Hud._cycle_touch(kind: StringName)` | 207 |  |
-| `Hud._cycle_camera_zoom()` | 218 | Zoom de la camara (se aplica en el acto, con el suavizado de la camara, y se guarda). |
-| `Hud._toggle_sound()` | 225 | Sonido del partido: se apaga o enciende en el acto (publico incluido) y se guarda. |
-| `Hud._cycle_minutes()` | 232 | Duracion del partido: se guarda y se aplica al reiniciar el partido (el reloj del partido en curso no cambia). |
-| `Hud._cycle_graphics()` | 240 |  |
-| `Hud._cycle_assist(kind: String)` | 244 |  |
-| `Hud._toggle_diagnostics()` | 252 |  |
-| `Hud._close_pause()` | 258 |  |
-| `Hud._on_pause_pressed()` | 262 |  |
-| `Hud.show_replay(on: bool)` | 266 |  |
-| `Hud._input(event: InputEvent)` | 274 |  |
-| `Hud._unhandled_input(event: InputEvent)` | 280 |  |
-| `Hud._on_state_changed(s: int)` | 285 |  |
-| `Hud._on_score(home: int, away: int)` | 291 |  |
-| `Hud.show_message(text: String, seconds: float)` | 294 |  |
-| `Hud.set_hint(text: String)` | 303 |  |
+| `Hud._add_menu_button(parent: Container, key: String, text: String, action: Callable)` | 162 |  |
+| `Hud._level_index(v: float)` | 173 |  |
+| `Hud._refresh_menu_labels()` | 183 |  |
+| `Hud._nearest_index(values: Array, v: float)` | 202 |  |
+| `Hud._cycle_touch(kind: StringName)` | 209 |  |
+| `Hud._cycle_camera_zoom()` | 220 | Zoom de la camara (se aplica en el acto, con el suavizado de la camara, y se guarda). |
+| `Hud._cycle_gameplay_mode()` | 228 | Modo de jugabilidad (1 pack actual / 2 mocap de futbol): se aplica en el acto (el proximo golpeo o festejo ya usa los clips del modo) y se g |
+| `Hud._toggle_sound()` | 235 | Sonido del partido: se apaga o enciende en el acto (publico incluido) y se guarda. |
+| `Hud._cycle_minutes()` | 242 | Duracion del partido: se guarda y se aplica al reiniciar el partido (el reloj del partido en curso no cambia). |
+| `Hud._cycle_graphics()` | 250 |  |
+| `Hud._cycle_assist(kind: String)` | 254 |  |
+| `Hud._toggle_diagnostics()` | 262 |  |
+| `Hud._close_pause()` | 268 |  |
+| `Hud._on_pause_pressed()` | 272 |  |
+| `Hud.show_replay(on: bool)` | 276 |  |
+| `Hud._input(event: InputEvent)` | 284 |  |
+| `Hud._unhandled_input(event: InputEvent)` | 290 |  |
+| `Hud._on_state_changed(s: int)` | 295 |  |
+| `Hud._on_score(home: int, away: int)` | 301 |  |
+| `Hud.show_message(text: String, seconds: float)` | 304 |  |
+| `Hud.set_hint(text: String)` | 313 |  |
 <!-- /AUTO -->
 
 <!-- AUTO:signals:scripts/ui/hud.gd -->

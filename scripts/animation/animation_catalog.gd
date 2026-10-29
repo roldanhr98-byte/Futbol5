@@ -44,6 +44,27 @@ const KICKS := {
 }
 const ROOT_MAX := 0.30
 
+## Modo 2 de jugabilidad (Tuning.gameplay_mode = 2): golpeos y festejos del «Mocap Pack 05 Soccer» (mocap_clips.res).
+## Los golpeos de mocap traen su carrera recortada alrededor del contacto con las trayectorias de los pies SIN la raiz
+## (meta paths_root = false): el cuerpo sigue al pie de apoyo, por eso no se filtran por ROOT_MAX.
+const MOCAP_KICKS := {
+	&"pass": [&"mc_side_foot_pass"],
+	&"through": [&"mc_side_foot_pass"],
+	&"shot": [&"mc_power_kick"],
+	&"lob": [&"mc_power_kick"],
+	&"cross": [&"mc_power_kick", &"mc_side_foot_pass"],
+}
+const MOCAP_FIELD := {
+	&"celebrate": [&"mc_celebration_2", &"mc_celebration_3"],
+	&"celebrate_scorer": [&"mc_celebration_1", &"mc_celebration_2", &"mc_celebration_3"],
+	&"celebrate_team": [&"mc_celebration_2", &"mc_celebration_3"],
+	&"victory_end": [&"mc_celebration_1", &"mc_celebration_3"],
+}
+
+## true si se juega con las animaciones de mocap (modo 2 elegido y la libreria convertida presente).
+static func mocap_mode() -> bool:
+	return Tuning.gameplay_mode == 2 and PackLibrary.has_clip(&"mc_side_foot_pass")
+
 ## Arquero (libreria pack_keeper.res): nombres de situacion de los clips del arquero (Goalkeeper elige entre ellos).
 const KEEPER := {
 	&"keeper_idle": [&"goalkeeper_idle"], &"keeper_idle_ball": [&"goalkeeper_idle_2"],
@@ -64,6 +85,10 @@ static func resolve(situation: StringName, use_pack: bool, pick: int = 0) -> Dic
 	if not FIELD.has(situation):
 		return {}
 	var entry: Dictionary = FIELD[situation]
+	if use_pack and mocap_mode() and MOCAP_FIELD.has(situation):
+		var mc: Array = (MOCAP_FIELD[situation] as Array).filter(func(c: StringName) -> bool: return PackLibrary.has_clip(c))
+		if mc.size() > 0:
+			return {"source": &"pack", "clip": mc[absi(pick) % mc.size()]}
 	if use_pack:
 		var packs: Array = (entry["pack"] as Array).filter(func(c: StringName) -> bool: return PackLibrary.has_clip(c))
 		if packs.size() > 0:
@@ -76,10 +101,13 @@ static func resolve(situation: StringName, use_pack: bool, pick: int = 0) -> Dic
 ## Clips de patada disponibles (con su version izquierda "_mirror") para una accion: [{clip, foot}].
 static func kick_candidates(kind: StringName) -> Array:
 	var out: Array = []
-	for c in KICKS.get(kind, []):
+	var mocap: bool = mocap_mode() and MOCAP_KICKS.has(kind)
+	for c in (MOCAP_KICKS if mocap else KICKS).get(kind, []):
 		for id in [c, StringName(String(c) + "_mirror")]:
 			var m: Dictionary = PackLibrary.meta(id)
-			if m.is_empty() or not m.has("contact") or (m["root_total"] as Vector2).length() > ROOT_MAX:
+			if m.is_empty() or not m.has("contact"):
+				continue
+			if (m["root_total"] as Vector2).length() > ROOT_MAX and m.get("paths_root", true):
 				continue
 			out.append({"clip": id, "foot": m["contact"]["foot"], "contact": m["contact"]})
 	return out

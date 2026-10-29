@@ -135,6 +135,9 @@ func _convert(entry: Dictionary, mirrored: bool) -> Animation:
 	var root_path := PackedVector2Array()
 	var lows: Array[float] = []
 	var want: Array = entry.get("paths", [])
+	# paths_root = false: trayectorias sin la raiz (clip de mocap con carrera recortado alrededor del golpeo: el cuerpo
+	# sigue al pie de apoyo, ver BallHandler.clip_plant_velocity).
+	var with_root: bool = entry.get("paths_root", true)
 	var paths := {}
 	for w in want:
 		paths[w] = PackedVector3Array()
@@ -149,7 +152,7 @@ func _convert(entry: Dictionary, mirrored: bool) -> Animation:
 		lows.append(_ankle_min_y())
 		for w in want:
 			var arr: PackedVector3Array = paths[w]   # los arrays empaquetados se copian al castear: se reasigna
-			arr.append(_path_point(w) + Vector3(ro.x, 0.0, ro.y))
+			arr.append(_path_point(w) + (Vector3(ro.x, 0.0, ro.y) if with_root else Vector3.ZERO))
 			paths[w] = arr
 	lows.sort()
 	var meta := {
@@ -170,6 +173,8 @@ func _convert(entry: Dictionary, mirrored: bool) -> Animation:
 	if entry.get("kick", false):
 		meta["contact"] = _detect_contact(src, b)
 	meta["role"] = String(entry.get("role", ""))
+	if not with_root:
+		meta["paths_root"] = false
 	if not paths.is_empty():
 		meta["paths"] = paths   # (adelante, arriba, derecha) en metros de juego, 30 Hz, INCLUYE el desplazamiento de la raiz
 	out.set_meta("pack", meta)

@@ -11,6 +11,30 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-10-29 — Modo 2 de jugabilidad con el «Mocap Pack 05 Soccer» y evaluación de presets de Tripo
+
+Detalle: [ANIMATION_PACK](SYSTEMS/ANIMATION_PACK.md#modo-2-de-jugabilidad-mocap-pack-05-soccer-2026-10-29) ·
+[TOOLS_AND_ASSETS](SYSTEMS/TOOLS_AND_ASSETS.md) (gasto de Tripo).
+
+- **Modo 2** (botón «Modo de juego» del menú de pausa, `Tuning.gameplay_mode`): pase, pase filtrado, tiro, vaselina,
+  centro, penal y festejos con el pack de captura de movimiento de fútbol que aportó la persona (con su autorización),
+  convertido al futbolista (`tools/animation_pack/build_mocap_library.tscn` → `assets/animations/mocap_clips.res`, 24
+  clips `mc_*`). Los 20 clips restantes (conducción, malabares, saque de banda, atajadas, defensa, tarjetas) están en la
+  galería de la sala de práctica, todavía sin disparador en partido. El modo 1 no cambia.
+- **Tripo3D** (autorizado por la persona, 50 créditos, saldo 770 → 720, anotado en `docs/tripo/ledger.jsonl`): los
+  presets `dribble`, `crossover_dribble`, `front_kick_01`, `front_kick_02` y `shoot` resultaron de básquet, artes
+  marciales y disparo con arma (medido sobre el futbolista); quedan guardados sin usar en
+  `assets/animations/source/v1_ball.glb`. Después la persona pidió no usar ninguna animación de Tripo.
+- Archivos: `tools/animation_pack/build_mocap_library.gd`/`.tscn` (nuevos), `pack_retarget.gd` (`bone_map`),
+  `build_pack_library.gd` (`paths_root`), `scripts/animation/animation_catalog.gd` (`mocap_mode`, `MOCAP_KICKS`,
+  `MOCAP_FIELD`), `pack_library.gd` (`MOCAP_PATH`), `scripts/player/ball_handler.gd` (`MOCAP_EXTRA_LATENCY`),
+  `scripts/gameplay/set_piece.gd`, `tuning.gd`, `practice_scene.gd`, `scripts/ui/hud.gd`; prueba nueva
+  `tests/test_mocap_mode.gd`; `tests/test_live_kicks.gd` admite `LIVE_KICKS_MODE=2`.
+- Verificación: `test_mocap_mode` 4/58/0 (12 de 12 pases y tiros con el clip de la captura, pie a 0.008–0.057 m); con
+  render y `LIVE_KICKS_MODE=2`, `test_live_kicks` 3 de 4 pruebas: 48 de 50 golpeos con contacto; **falla** el pase de
+  primera por el pie de apoyo (patina 1.69 m/s, límite 1.6): pendiente.
+
+
 ## 2026-10-29 — Giro con toques, tiro con potencia, sonido, zoom de cámara y pelota suelta (respuesta a prueba03)
 
 Detalle: [PLAYER](SYSTEMS/PLAYER.md#giro-con-toques-ballturn-2026-10-29) ·

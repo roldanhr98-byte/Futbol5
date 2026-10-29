@@ -26,6 +26,12 @@ var hips_lift: float = 0.0
 var y_mirror_of_t: Dictionary = {}   # indice Tripo -> indice Y Bot del hueso opuesto
 var t_order: Array[int] = []
 var y_order: Array[int] = []
+## Nombre del hueso de ORIGEN para cada hueso de Tripo (vacio = mismos nombres: el pack de Mixamo). Lo usa el pack de
+## mocap de futbol (esqueleto Rokoko: Hips, Spine1-4, Thigh/Shin/Foot/Toe...; ver build_mocap_library.gd).
+var bone_map: Dictionary = {}
+
+func _src(t_name: String) -> String:
+	return String(bone_map.get(t_name, t_name))
 
 func _global_rest(sk: Skeleton3D, b: int) -> Transform3D:
 	var chain: Array[int] = []
@@ -61,19 +67,19 @@ func setup(y_skel: Skeleton3D, t_skel: Skeleton3D) -> void:
 		y_rest_g.append(_global_rest(ysk, i).basis.get_rotation_quaternion())
 	for i in tsk.get_bone_count():
 		t_rest_g.append(_global_rest(tsk, i).basis.get_rotation_quaternion())
-	y_hips = ysk.find_bone("mixamorig_Hips")
+	y_hips = ysk.find_bone(_src("mixamorig_Hips"))
 	t_hips = tsk.find_bone("mixamorig_Hips")
 	var troot: int = tsk.get_bone_parent(t_hips)
 	t_root_inv = (_global_rest(tsk, troot) if troot >= 0 else Transform3D.IDENTITY).affine_inverse()
 	k_pos = _global_rest(tsk, t_hips).origin.y / _global_rest(ysk, y_hips).origin.y
 	for i in tsk.get_bone_count():
-		var j: int = ysk.find_bone(tsk.get_bone_name(i))
+		var j: int = ysk.find_bone(_src(tsk.get_bone_name(i)))
 		if j >= 0:
 			y_of_t[i] = j
 	for i in tsk.get_bone_count():
 		var n: String = tsk.get_bone_name(i)
 		var m: String = n.replace("Left", "\u0001").replace("Right", "Left").replace("\u0001", "Right")
-		var j2: int = ysk.find_bone(m)
+		var j2: int = ysk.find_bone(_src(m))
 		if j2 >= 0:
 			y_mirror_of_t[i] = j2
 	t_order = _order(tsk)

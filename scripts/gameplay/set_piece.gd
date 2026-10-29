@@ -324,7 +324,8 @@ func _toe_at(id: StringName, key: String, t: float) -> Vector3:
 func _kick_clip(act: StringName, lb: bool) -> StringName:
 	var base: StringName = &"strike_foward_jog"
 	if act == &"shot":
-		base = &"soccer_penalty_kick"
+		# Modo 2: el penal (y el tiro libre directo) de la captura de movimiento de futbol, con su carrera.
+		base = &"mc_penalty_kick" if AnimationCatalog.mocap_mode() else &"soccer_penalty_kick"
 	elif (act == &"cross" and not lb) or (act == &"pass" and lb):
 		base = &"Chip"
 	var id: StringName = base if taker.dominant_right else StringName(String(base) + "_mirror")

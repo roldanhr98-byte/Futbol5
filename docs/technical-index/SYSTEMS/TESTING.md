@@ -64,6 +64,7 @@
 | `tests/test_ball_turn.gd` | 4 | 49 (headless) / 53 (render) | Giro con toques (joystick atrás sin botón): caminando, trote, carrera en 6 momentos del ciclo, 135°, sprint, la IA; toques, tiempo de giro, separación, pelota delante al salir; con render, el pie en la pelota en cada toque | [PLAYER](PLAYER.md) |
 | `tests/test_loose_ball_chase.gd` | 4 | 6 | El jugador de la persona va a la pelota suelta (joystick suelto o hacia ella), el joystick hacia otro lado manda, la IA no; pase pedido antes de llegar a una pelota suelta no se pierde | [PLAYER](PLAYER.md) |
 | `tests/test_audio.gd` | 3 | 26 | Sonido: los efectos existen y se cargan, público en bucle, sonido de cada golpe por el impulso real, `Ball.impulse` | [AUDIO](AUDIO.md) |
+| `tests/test_mocap_mode.gd` | 4 | 58 | Modo 2 (mocap de fútbol): librería con contactos medidos, selección de clips por modo, pase y tiro con el clip de la captura de parado a sprint con el pie en la pelota, penal con su carrera; con render, `LIVE_KICKS_MODE=2 … --filter live_kicks` mide los mismos golpeos con el esqueleto animado | [ANIMATION_PACK](ANIMATION_PACK.md) |
 | `tests/test_practice.gd` | 4 | 37 | Galería (133 clips, roles), reproducción de todos los clips, raíz y espejo, malabares por impulsos | [ANIMATIONS](ANIMATIONS.md) |
 | **Total (headless)** | **121 + 2 omitidas** | **686** | | |
 

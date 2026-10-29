@@ -13,6 +13,7 @@ const ROLE_NAMES := {
 	"entrada": "Entradas", "contacto_caida": "Contactos y caídas", "suelo": "Suelo y levantarse", "cansancio": "Cansancio",
 	"salto": "Saltos", "festejo": "Festejos", "felicitar": "Felicitar", "lamento": "Lamentos", "calentamiento": "Calentamiento",
 	"arbitro": "Árbitro", "malabares": "Malabares", "practica": "Práctica", "arquero": "Arquero", "toque": "Toques de conducción",
+	"mocap": "Mocap fútbol (modo 2)",
 }
 
 var ctx: MatchContext

@@ -155,6 +155,7 @@ func _build_pause_menu(root: Control) -> void:
 	_add_menu_button(grid, "joy_sens", "", func() -> void: _cycle_touch(&"sens"))
 	_add_menu_button(grid, "camera_zoom", "", func() -> void: _cycle_camera_zoom())
 	_add_menu_button(grid, "sound", "", func() -> void: _toggle_sound())
+	_add_menu_button(grid, "gameplay_mode", "", func() -> void: _cycle_gameplay_mode())
 	_add_menu_button(grid, "quit", "Salir", func() -> void: _close_pause(); quit_requested.emit())
 	_refresh_menu_labels()
 
@@ -189,6 +190,7 @@ func _refresh_menu_labels() -> void:
 	(_pause_buttons["joy_sens"] as Button).text = "Sensibilidad del joystick: %s" % THREE_NAMES[_nearest_index(JOY_SENS, Tuning.joystick_sensitivity)]
 	(_pause_buttons["camera_zoom"] as Button).text = "Zoom de cámara: %s" % Tuning.CAMERA_ZOOM_NAMES[_nearest_index(Tuning.CAMERA_ZOOMS, Tuning.camera_zoom)]
 	(_pause_buttons["sound"] as Button).text = "Sonido: %s" % ("Sí" if Tuning.sound_on else "No")
+	(_pause_buttons["gameplay_mode"] as Button).text = "Modo de juego: %s" % Tuning.GAMEPLAY_MODE_NAMES.get(Tuning.gameplay_mode, str(Tuning.gameplay_mode))
 	(_pause_buttons["training"] as Button).text = "Volver al partido" if MatchScene.training_mode else "Entrenamiento sin rivales"
 	(_pause_buttons["diagnostics"] as Button).text = "Diagnóstico: %s" % ("ACTIVADO" if Tuning.show_diagnostics else "desactivado")
 
@@ -218,6 +220,14 @@ func _cycle_touch(kind: StringName) -> void:
 func _cycle_camera_zoom() -> void:
 	var opts: Array = Tuning.CAMERA_ZOOMS
 	Tuning.camera_zoom = opts[(_nearest_index(opts, Tuning.camera_zoom) + 1) % opts.size()]
+	Tuning.save_user_settings()
+	_refresh_menu_labels()
+
+## Modo de jugabilidad (1 pack actual / 2 mocap de futbol): se aplica en el acto (el proximo golpeo o festejo ya usa los
+## clips del modo) y se guarda.
+func _cycle_gameplay_mode() -> void:
+	var opts: Array = Tuning.GAMEPLAY_MODES
+	Tuning.gameplay_mode = opts[(opts.find(Tuning.gameplay_mode) + 1) % opts.size()]
 	Tuning.save_user_settings()
 	_refresh_menu_labels()
 

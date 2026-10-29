@@ -31,6 +31,11 @@ const CAMERA_ZOOM_NAMES := ["Muy cerca", "Cerca", "Media", "Lejos"]
 var camera_zoom: float = 0.7
 ## Sonido del partido (Sfx) encendido.
 var sound_on: bool = true
+## Modo de jugabilidad: 1 = animaciones del pack actual; 2 = «Mocap Pack 05 Soccer» (capturas de movimiento de futbol:
+## pase de interior, tiro potente, penal y festejos; ver AnimationCatalog.mocap_mode). Se elige en el menu de pausa.
+const GAMEPLAY_MODES := [1, 2]
+const GAMEPLAY_MODE_NAMES := {1: "1 · Pack actual", 2: "2 · Mocap fútbol"}
+var gameplay_mode: int = 1
 
 func _init() -> void:
 	reload()
@@ -62,6 +67,8 @@ func load_user_settings() -> void:
 	match_minutes = mm if MATCH_MINUTES.has(mm) else 5
 	camera_zoom = clampf(float(cfg.get_value("ui", "camera_zoom", 0.7)), 0.4, 1.2)
 	sound_on = bool(cfg.get_value("ui", "sound_on", true))
+	var gm: int = int(cfg.get_value("match", "gameplay_mode", 1))
+	gameplay_mode = gm if GAMEPLAY_MODES.has(gm) else 1
 
 func save_user_settings() -> void:
 	var cfg := ConfigFile.new()
@@ -74,6 +81,7 @@ func save_user_settings() -> void:
 	cfg.set_value("match", "minutes", match_minutes)
 	cfg.set_value("ui", "camera_zoom", camera_zoom)
 	cfg.set_value("ui", "sound_on", sound_on)
+	cfg.set_value("match", "gameplay_mode", gameplay_mode)
 	var err: int = cfg.save(USER_SETTINGS_PATH)
 	if err != OK:
 		push_warning("No se pudieron guardar las preferencias (error %d)" % err)

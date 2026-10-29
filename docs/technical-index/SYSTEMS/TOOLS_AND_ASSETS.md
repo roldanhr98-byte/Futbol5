@@ -32,7 +32,8 @@ Notas verificadas: `tools/screenshot_probe.gd.uid` está versionado pero el `.gd
 |---|---|---|
 | `assets/characters/player/player_base.glb` | Modelo del futbolista (7640 triángulos, esqueleto v1.0 de 23 huesos) | Tripo3D (rig v1.0), texturas retiradas con `strip_glb_textures.py` |
 | `assets/characters/player/player_albedo.jpg`, `player_mask_a.png`, `player_mask_b.png`, `player_regions.json`, `player_kit.gdshader` | Kit recoloreable | `make_player_textures.py` + shader propio |
-| `assets/animations/source/v1_keeper.glb`, `v1_football.glb`, `v1_more.glb` | Clips crudos de Tripo (preset retargeteado sobre el rig v1.0) | Tripo3D |
+| `assets/animations/source/v1_keeper.glb`, `v1_football.glb`, `v1_more.glb`, `v1_ball.glb` | Clips crudos de Tripo (preset retargeteado sobre el rig v1.0; `v1_ball` guardado sin usar) | Tripo3D |
+| `assets/animations/mocap_clips.res` | «Mocap Pack 05 Soccer» convertido (modo 2 de jugabilidad, ver [ANIMATION_PACK](ANIMATION_PACK.md)) | pack aportado por la persona |
 | `assets/animations/footballer_clips.res` | Librería compartida de 13 clips | `build_animation_library.gd` |
 | `assets/ball/ball.gdshader`, `assets/pitch/court.gdshader`, `assets/pitch/net.gdshader` | Shaders propios (pelota, cancha, red) | código |
 | `assets/audio/` | Directorio **vacío** (sin audio en el juego) | — |
@@ -41,7 +42,7 @@ La pelota, la cancha, los arcos, las gradas y el HUD no usan modelos ni texturas
 
 ## Libro de gasto de Tripo3D (`docs/tripo/ledger.jsonl`)
 
-Una línea JSON por operación de pago: `ts`, `task`, `result`, `balance_before`, `balance_after`, `spent`, `notes`. **No contiene claves ni secretos.** Estado al 2026-10-26 (8 registros):
+Una línea JSON por operación de pago: `ts`, `task`, `result`, `balance_before`, `balance_after`, `spent`, `notes`. **No contiene claves ni secretos.** Estado al 2026-10-29 (9 registros):
 
 | Operación | Créditos |
 |---|---|
@@ -51,8 +52,15 @@ Una línea JSON por operación de pago: `ts`, `task`, `result`, `balance_before`
 | Retarget v3.0 (idle, walk, run) | 30 |
 | Auto-rig v1.0 (presets deportivos) | 25 |
 | Retarget v1.0 (3 + 5 + 5 clips) | 30 + 50 + 50 |
-| **Gastado** | **230** |
-| **Saldo** | **770 de 1000** (reserva mínima prevista: ~200) |
+| Retarget v1.0 (`dribble`, `crossover_dribble`, `front_kick_01`, `front_kick_02`, `shoot`), 2026-10-29, autorizado por la persona | 50 |
+| **Gastado** | **280** |
+| **Saldo** | **720 de 1000** (reserva mínima prevista: ~200) |
+
+Los 5 presets del 2026-10-29 no son de fútbol (medidos sobre el futbolista: `dribble` y `crossover_dribble` botan una
+pelota de básquet con la mano a 0.32 m del suelo y el pie nunca pasa de 0.30 m por delante; `front_kick_01/02` son
+patadas de artes marciales con el pie a 0.8–0.9 m de altura; `shoot` es arrodillarse y apuntar con un arma). Quedan
+guardados sin usar en `assets/animations/source/v1_ball.glb` (sin texturas, fuera de la APK). Tripo no tiene otros presets
+de fútbol ni crea animaciones nuevas o combinadas.
 
 Reglas del proyecto: comprobar coste antes (`tripo make --dry-run` existe para generación), registrar cada gasto en el libro, no superar el presupuesto, **nunca** imprimir ni versionar la clave de Tripo (`.gitignore` excluye `.tripo/`, `**/tripo_api_key*`, `**/config.json`, `.env*`).
 
