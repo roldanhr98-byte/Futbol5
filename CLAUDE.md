@@ -4,6 +4,8 @@ Juego de fútbol 5 / futsal para Android: Godot 4.7.2, GDScript, renderer GL Com
 
 ## Antes de tocar nada: usar el índice técnico
 
+> Atajo de una página (dónde está cada cosa, pruebas, APK, reglas): [`docs/START_HERE.md`](docs/START_HERE.md).
+
 1. Leer [`docs/technical-index/INDEX.md`](docs/technical-index/INDEX.md) (tabla de sistemas → archivos, símbolos, parámetros y fichas).
 2. Buscar sin leer el repositorio: `python3 tools/docs_index.py find <palabras de la petición>` (acepta español e inglés).
 3. Abrir **solo** la ficha del sistema (`docs/technical-index/SYSTEMS/<SISTEMA>.md`) y confirmar el símbolo: `python3 tools/docs_index.py where Clase.miembro`.

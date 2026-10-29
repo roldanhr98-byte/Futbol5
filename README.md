@@ -6,6 +6,8 @@ pie animado, pases filtrados, centros, tiros con chanfle, entradas, reglas con b
 los goles, árbitro que sigue la jugada y una sala de práctica con las 133 animaciones (todas usadas en el juego).
 Inspiración de jugabilidad: eFootball PES 2021 (ver [`docs/technical-index/GAMEPLAY_PES.md`](docs/technical-index/GAMEPLAY_PES.md)).
 
+> **Para otro chat de Claude / quien edite el juego:** empezar por [`docs/START_HERE.md`](docs/START_HERE.md).
+
 ## Probar el juego (APK de Android)
 
 1. En este repositorio: **Actions → Android APK → Run workflow**, activando **publish_release**.
