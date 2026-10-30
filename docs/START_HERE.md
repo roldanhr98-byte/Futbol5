@@ -1,5 +1,7 @@
 # START HERE — guía rápida para otro chat de Claude
 
+> **Chat nuevo:** primero [`ESTADO_Y_METODOLOGIA.md`](ESTADO_Y_METODOLOGIA.md) (rama de trabajo `respaldo-f3`, fases, reglas y pendientes).
+
 > Fútbol 5 / futsal para Android. **Godot 4.7.2**, GDScript, renderer GL Compatibility, física **Jolt a 60 Hz**.
 > Repo `roldanhr98-byte/Futbol5`. Esta página es un atajo: dice **dónde está cada cosa** y **cómo trabajar sin leer todo**.
 > El detalle vive en `docs/technical-index/` (se regenera con `tools/docs_index.py`; si el índice y el código no coinciden, **manda el código**).

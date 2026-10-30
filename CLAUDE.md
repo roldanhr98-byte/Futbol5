@@ -5,6 +5,7 @@ Juego de fútbol 5 / futsal para Android: Godot 4.7.2, GDScript, renderer GL Com
 ## Antes de tocar nada: usar el índice técnico
 
 > Atajo de una página (dónde está cada cosa, pruebas, APK, reglas): [`docs/START_HERE.md`](docs/START_HERE.md).
+> **Estado actual, fases y metodología de trabajo (leer primero en un chat nuevo):** [`docs/ESTADO_Y_METODOLOGIA.md`](docs/ESTADO_Y_METODOLOGIA.md).
 
 1. Leer [`docs/technical-index/INDEX.md`](docs/technical-index/INDEX.md) (tabla de sistemas → archivos, símbolos, parámetros y fichas).
 2. Buscar sin leer el repositorio: `python3 tools/docs_index.py find <palabras de la petición>` (acepta español e inglés).
@@ -21,7 +22,7 @@ El procedimiento completo está al final de `INDEX.md`. Si el índice y el códi
 - **No cambiar la mecánica de juego** salvo que la tarea lo pida; los ajustes de balance viven en los valores por defecto de las clases `*Tuning` (ver [`SYSTEMS/TUNING.md`](docs/technical-index/SYSTEMS/TUNING.md)) y los números fijos del código están listados en `ARCHITECTURE.md`.
 - **Secretos:** nunca escribir la clave de Tripo3D ni claves de firma Android en el repositorio, en el chat ni en registros. Los secretos de CI van en GitHub Secrets.
 - **Tripo3D:** las operaciones de pago (generar, rig, retarget) requieren comprobar el coste antes, no superar el presupuesto (reserva ~200 créditos) y anotar cada gasto en `docs/tripo/ledger.jsonl`. Nunca forman parte de tareas de documentación.
-- **Git:** desarrollar en la rama indicada por la sesión; no abrir PR salvo petición explícita.
+- **Git:** trabajar en la rama `respaldo-f3` (el usuario lo pidió: todo se guarda ahí y se sube a la rama principal `ccr-a6c53cd2-uoxpk0`, la rama por defecto en GitHub, solo al terminar); no abrir PR salvo petición explícita. Estado, fases y metodología acordada: [`docs/ESTADO_Y_METODOLOGIA.md`](docs/ESTADO_Y_METODOLOGIA.md).
 
 ## Convenciones de código (resumen; detalle en `ARCHITECTURE.md`)
 
