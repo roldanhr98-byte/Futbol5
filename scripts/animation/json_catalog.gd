@@ -119,6 +119,7 @@ const SITUATION_ROLES := {
 	&"warmup": [&"warmup"],
 	&"idle_fidget": [&"idle_fidget", &"nis_idle", &"idle_ready"],
 	&"tackle_stand": [&"tackle_stand"],
+	&"press_duel": [&"jostle", &"tackle_stand"],
 	&"wall": [&"wall"],
 }
 ## Recorrido de raiz maximo (m) de un clip de presentacion (se reproduce en el sitio).

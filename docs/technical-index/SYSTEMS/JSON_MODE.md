@@ -78,10 +78,10 @@ para el **reposo** del modelo y para cada instante de la animación. Medido (`re
 | KICK (494) | `kick_pass_soft`, `kick_pass`, `kick_shot`, `kick_shot_hard`, `kick_lob`, `kick_cross`, `kick_flick`, `kick_turn`, `kick_back`, `header`, `volley` | planificador de golpeos (`plan_clip_kick`, solo golpeos `clean`), golpeo girando (`plan_turn_kick`), planificador aéreo |
 | KICKSETPIECE (36), THROW (12) | `setpiece_*`, `throw_in` | `SetPiece` (alias repartidos en cada balón parado) |
 | LOCO (45), SIDESTEP (6) | `walk/jog/run/sprint`, `loco_*`, `dir_*`, `sidestep`, `jostle` | marcha y mezcla direccional (los escalones curados); el resto en la galería |
-| TACKLESLIDE (18), TACKLE (16) | `slide`, `tackle_stand` | barridas (alias repartidos); gesto de la entrada de pie (`PlayerActions.tackle_gesture`) |
+| TACKLESLIDE (18), TACKLE (16) | `slide`, `tackle_stand` | barridas (alias repartidos); gesto de la entrada de pie (`PlayerActions.tackle_gesture`); disputa al presionar pegado sin entrar (`PlayerActions.press_gesture`, con `jostle`) |
 | FALL (29), STUMBLE (28), GETUP (60) | `fall`, `stumble`, `avoid`, `getup`, `gk_getup` | caídas por carrera y sitio libre; levantarse **desde la misma postura** (`lie`); el arquero se levanta tras una estirada (`Goalkeeper._json_getup`) |
 | STAND (86) | `idle_fidget`, `idle_ready`, `idle_ball_var`, `wall`, `jostle`, `gk_idle_var` | gestos de espera tras 3.5 s quieto lejos de la pelota; barrera en un tiro libre en contra; gestos del arquero |
-| NIS (601) | `celebrate*`, `clap`, `dejected`, `angry`, `warmup`, `gesture`, `nis_*`, `manager`, `mascot`, `crowd`, `referee`, `gk_gesture` | festejos, lamentos, calentamiento, fin del partido (`JsonCatalog.situation_clip`: todos los clips del rol que se pueden reproducir en el sitio); técnicos, mascota y público (`JsonSideline`) |
+| NIS (601) | `celebrate*`, `clap`, `dejected`, `angry`, `warmup`, `gesture`, `nis_*`, `manager`, `mascot`, `crowd`, `referee`, `gk_gesture` | festejos, lamentos, calentamiento, fin del partido (`JsonCatalog.situation_clip`: todos los clips del rol que se pueden reproducir en el sitio); `manager`, `mascot` y `crowd` solo en la galería (los personajes alrededor de la cancha se quitaron: primero la jugabilidad) |
 | GKSAVE (181), GKTHROW (6), GKKICK (12) | `gk_dive`, `gk_catch`, `gk_scoop`, `gk_block`, `gk_throw`, `gk_roll`, `gk_kick` | planificador de atajadas por rol (`KeeperPlanner`), saques del arquero |
 
 Todo clip aparece además en la galería de la sala de práctica, agrupado por rol con su nombre en español
@@ -128,7 +128,7 @@ tiros hacia atrás usan siempre giro y después golpeo.
 | `PlayerActions` | `start_move` (clips con rumbo), caídas por carrera y sitio libre (`_json_fall`) con levantarse de la misma postura (`_json_getup`) |
 | `Footballer` | giros sin pelota con clip, gestos de espera, barrera en tiros libres en contra, giro del cuerpo en golpeos girando |
 | `Goalkeeper` | levantarse tras una estirada (con la pelota si la atrapó), gestos con la jugada lejos, estiradas JSON cuentan como estirada |
-| `JsonSideline` | dos técnicos, mascota y seis espectadores detrás de la valla del fondo, con librerías propias pequeñas |
+| `Pitch` | en el modo 4 sin gradas, bancos ni torres de luz (`_build_ambient`); `JsonSideline` (técnicos, mascota, público) se quitó |
 | `SetPiece`, `MatchManager` | reparto de alias en cada balón parado y saque inicial |
 
 ## Pruebas y qué se midió (2026-10-30, Godot 4.7.2, Linux, Xvfb/llvmpipe)
@@ -146,7 +146,7 @@ tiros hacia atrás usan siempre giro y después golpeo.
 | Planificar un golpeo / un golpeo aéreo | 2.4 ms / 15–18 ms (la librería se carga una vez, ~0.6 s, al montar el partido) |
 
 Revisión a ojo con `tools/json_anim/play_view.gd` (escenarios `diag`, `turn`, `turn90`, `dragback`, `turnshot`, `sideshot`, capturas en el
-instante de cada toque con `ON_TOUCH=1`) y `tools/json_anim/match_shot.gd` (técnicos, mascota y público en la imagen de transmisión).
+instante de cada toque con `ON_TOUCH=1`) y `tools/json_anim/match_shot.gd` (imagen de transmisión).
 
 ## Qué NO se verificó
 
@@ -154,4 +154,45 @@ instante de cada toque con `ON_TOUCH=1`) y `tools/json_anim/match_shot.gd` (téc
 - No se vio cada uno de los 3 223 clips en movimiento: se revisaron por imágenes los giros con pelota, la vuelta pisando la pelota, el
   golpeo girando, la conducción en diagonal y el partido; la clasificación del resto es por reglas y medidas.
 - Los zigzag muy bruscos (joystick que se invierte a ±48°) todavía dejan algún toque de rescate sin pie con la pelota a 0.5–0.7 m al costado.
-- Los técnicos, la mascota y el público solo reproducen sus clips en el sitio (no caminan ni reaccionan a la jugada).
+- (Quitados el 2026-10-30, segunda tanda: técnicos, mascota y público alrededor de la cancha.)
+
+## Segunda tanda (2026-10-30): pases, golpeo que no le daba al balón, presión y cancha despejada
+
+Pedido (vídeo de la versión 0.1.34): «la conducción es mala, los pases se sienten débiles y no buscan a un compañero, la presión a veces
+no tiene animación, al dar un pase el jugador hace la animación pero no le da al balón»; quitar el público y lo de alrededor de la cancha;
+estudiar First Touch (xapk) y Dream League Soccer (vídeos).
+
+**Lo que se vio en el vídeo** (cuadro a cuadro, 4 imágenes/s en los tramos de pase y presión): pase bajo presión que sale a ~15–20° del
+compañero y despacio, el receptor (ya controlado por la persona, con el joystick del pase todavía apretado) se aleja de la pelota y la
+recoge el rival; defensores pegados al portador 1–2 s sin ningún gesto.
+
+**Lo que se aprendió de First Touch** (sin copiar código ni recursos: nombres de parámetros en `libMPX.so` y la tabla `anims.rcd.txt`
+de `game.pak`, formato KPX con zstd): el golpeo se define por un **destino** (`BallDestination`), con potencia y error por atributo
+(`KickPower0/1`, `TechniqueKickErrorFW/BW`, `TechniqueRotPowerScaleBW`: golpear girado cuesta potencia); la presión tiene un máximo de
+presionantes y un **alcance de entrada al presionar** por fuerza (`MaxActivePresses`, `StrengthPressureTackleRange`,
+`PressureSpeedRate`, `TackleSpeedRate`); la conducción tiene tolerancia de pelota suelta (`LooseBallDribbleTolerance`) y escala de
+velocidad por técnica (`TechniqueDribbleSpeedScale`). Los nombres de `anims.rcd.txt` son los mismos que los de los clips JSON (de ahí
+vienen); su tabla da el tramo de cada toma (fotograma inicial y final) y un ángulo, no el instante de contacto.
+
+| Qué | Dónde | Antes → ahora |
+|---|---|---|
+| Pase al compañero elegido | `PassAssist.compute`, `FULL_AIM_LEVEL` | con asistencia media o alta el pase va al compañero elegido (antes corregía el 65 % del ángulo con tope de 11.7°); con baja solo se acerca (`pass_max_correction_deg` 30 por unidad) |
+| Buscar compañero | `PassAssist.pick_target`, `AssistTuning.pass_cone_deg`, `pass_fallback_cone_deg` | cono 52 → 60°; si nadie cae en él, con asistencia media o alta, cono de respaldo de 85° (el pase al espacio queda para el filtrado) |
+| Fuerza del pase | `BallTuning.pass_arrival_speed`, `pass_speed_min` | llegada 4.5 → 6 m/s, mínimo 4 → 7 m/s; pase al espacio 6–20 m (antes 4.5–19) llegando a 1.5 m/s |
+| El receptor va a la pelota | `Footballer._recv_stick_lock` | el joystick que se traía del pase no aleja al receptor: corre al punto de encuentro hasta que se suelta una vez |
+| Golpeo que no le daba al balón | `BallHandler._json_kick_ik`, `kick_reach`, `PlayerTuning.json_kick_reach` | el pie que patea va hasta la pelota real (IK) en los últimos 0.12 s y la acompaña al salir; el golpeo cuenta hasta 0.55 m (antes 0.30: 4–6 de ~22 patadas por partido se perdían en el aire con la pelota a 0.30–0.47 m) |
+| Primer toque de un giro con pelota | `JsonBallMove.MAX_LEAD` | espera máxima de 0.4 s hasta el primer toque (con 0.6 s un rival tocaba la pelota antes y el toque se erraba) |
+| Presión con animación | `PlayerActions.press_gesture`, `JsonCatalog.SITUATION_ROLES.press_duel` | quien presiona pegado sin entrar forcejea (clips `jostle` / entrada de pie), también la persona; la IA entra más (`AI_TACKLE_COMMIT` 0.3 → 0.45) |
+| Cancha | `Pitch._build_ambient`, `MatchScene` | sin gradas, bancos, torres ni personajes alrededor en el modo 4 |
+
+Medido (partido de IA de 90 s, modo 4, headless, dos semillas): golpeos en falso 5–6 → 0–1 de 16–22; pases 11–20 a 12–13 m/s de media;
+los pases perdidos de la IA son casi todos bloqueos del defensor pegado al pasador (a 0.1–1.5 m de la salida), no pases mal dirigidos;
+10–17 gestos de disputa al presionar. Giros con pelota al azar (36, con y sin sprint, esqueleto animado): ningún toque de clip errado;
+las 3 «pérdidas» del ensayo eran el jugador llegando al fondo de la cancha tras 25 m de sprint.
+
+Verificación: suite completa headless 216 pruebas / 1 425 comprobaciones / 0 fallos (16 omitidas: necesitan render); con render
+`json_mode` 10/10 (1 omitida) y `LIVE_KICKS_MODE=4 live_kicks` 4/4 (golpeos con la punta del pie a 1–7 cm de la pelota en el impulso);
+captura de transmisión con `match_shot` (cancha sin entorno). Sin prueba en Android.
+
+No se cambió: la velocidad del juego ni la de las animaciones (no hay valores de First Touch a la vista: sus parámetros llegan del
+servidor o están en el código nativo), el tiro, ni cuántos presionan a la vez en la IA (`TeamBrain`).

@@ -74,6 +74,10 @@ extends Resource
 @export_group("Patada con animacion del pack")
 ## Radio (m) entre el pie (posicion de contacto medida del clip) y el centro de la pelota para que el golpeo cuente.
 @export var kick_contact_radius: float = 0.30
+## Modo 4 (Json): alcance (m) con el que el golpeo de un clip sigue contando aunque la pelota se haya corrido del punto
+## previsto; el pie se estira hasta ella (IK) en el ultimo tramo del balanceo. Con 0.30 una de cada cinco patadas del
+## partido de IA se perdia en el aire con la pelota a 0.30-0.47 m («hace la animacion pero no le da al balon»).
+@export var json_kick_reach: float = 0.55
 ## Altura maxima (m) de la punta del pie y velocidad minima de avance (m/s) para que un punto de la trayectoria del clip
 ## cuente como golpeo: el pie debe ir bajo y lanzado, no subiendo ni frenando.
 @export var kick_foot_max_height: float = 0.25

@@ -12,12 +12,24 @@ static func pick_target(kicker: Footballer, ctx: MatchContext, intent: Vector3, 
 	var cfg: AssistTuning = Tuning.assist
 	if assist_level <= 0.0 or ctx.ball == null:
 		return null
-	var origin: Vector3 = ctx.ball.global_position
-	var best: Footballer = null
-	var best_score: float = -1.0
 	var cone: float = cfg.pass_cone_deg * lerpf(0.65, 1.0, assist_level)
 	if not has_stick:
 		cone *= 0.75
+	var best: Footballer = _pick_in_cone(kicker, ctx, intent, charge, cone)
+	# Como en First Touch y Dream League: el boton de pase busca a un companero. Si ninguno cae en el cono, con asistencia
+	# media o alta vale el mejor en un cono mas ancho (el pase al espacio queda para el filtrado).
+	if best == null and has_stick and assist_level >= FULL_AIM_LEVEL:
+		best = _pick_in_cone(kicker, ctx, intent, charge, cfg.pass_fallback_cone_deg)
+	return best
+
+## Nivel de asistencia desde el que el pase va derecho al companero elegido (Media y Alta).
+const FULL_AIM_LEVEL := 0.6
+
+static func _pick_in_cone(kicker: Footballer, ctx: MatchContext, intent: Vector3, charge: float, cone: float) -> Footballer:
+	var cfg: AssistTuning = Tuning.assist
+	var origin: Vector3 = ctx.ball.global_position
+	var best: Footballer = null
+	var best_score: float = -1.0
 	var ideal: float = 4.5 + 13.0 * charge
 	for tm in ctx.teammates_of(kicker):
 		var to: Vector3 = KickModel.flat(tm.global_position - origin)
@@ -70,14 +82,17 @@ static func compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, c
 		aim_dir = to_aim.normalized()
 	else:
 		# Pase al espacio: la distancia depende de la carga.
-		dist_to_aim = lerpf(4.5, 19.0, charge)
+		dist_to_aim = lerpf(6.0, 20.0, charge)
 		res.aim_point = origin + intent * dist_to_aim
 
 	var final_dir: Vector3 = intent
 	if best != null:
+		# Con asistencia media o alta el pase va al companero elegido (el error de ejecucion se suma despues); con baja,
+		# solo se acerca.
 		var diff: float = KickModel.signed_angle_deg(intent, aim_dir)
-		var max_corr: float = cfg.pass_max_correction_deg * assist_level
-		var applied: float = clampf(diff * assist_level, -max_corr, max_corr)
+		var share: float = clampf(assist_level / FULL_AIM_LEVEL, 0.0, 1.0)
+		var max_corr: float = cfg.pass_max_correction_deg * assist_level if assist_level < FULL_AIM_LEVEL else 180.0
+		var applied: float = clampf(diff * share, -max_corr, max_corr)
 		res.assisted_correction_deg = applied
 		final_dir = intent.rotated(Vector3.UP, deg_to_rad(applied))
 
@@ -95,11 +110,11 @@ static func compute(kicker: Footballer, ctx: MatchContext, stick_dir: Vector3, c
 	else:
 		res.kind = &"driven" if charge > 0.45 else (&"short" if best != null else &"space")
 		# Hacia un companero se llega con velocidad de control; al espacio, la pelota debe casi detenerse alli.
-		var arrival: float = ball_tuning.pass_arrival_speed if best != null else 0.8
+		var arrival: float = ball_tuning.pass_arrival_speed if best != null else 1.5
 		var v0: float = KickModel.ground_speed_for_distance(dist_to_aim, arrival)
 		if best != null:
 			v0 *= lerpf(1.0, ball_tuning.driven_pass_extra, charge)
-		var v_min: float = ball_tuning.pass_speed_min if best != null else 1.6
+		var v_min: float = ball_tuning.pass_speed_min if best != null else 4.0
 		speed_h = clampf(v0, v_min, ball_tuning.pass_speed_max * power_mult)
 
 	# --- 4. Error ---

@@ -56,17 +56,17 @@
 | `net_max_bulge` | `0.6` | float | `scripts/ball/ball_tuning.gd:52` | `scripts/pitch/goal_net.gd:200`, `scripts/pitch/goal_net.gd:208`, `scripts/pitch/goal_net.gd:210` | Abombado maximo (m): a partir de ahi la tela ya no cede. (Resistencia) |
 | `max_speed` | `38.0` | float | `scripts/ball/ball_tuning.gd:53` | `scripts/ball/ball.gd:415`, `scripts/ball/ball.gd:416` |  (Resistencia) |
 | `max_spin` | `150.0` | float | `scripts/ball/ball_tuning.gd:54` | `scripts/ball/ball.gd:417`, `scripts/ball/ball.gd:418` |  (Resistencia) |
-| `pass_speed_min` | `4.0` | float | `scripts/ball/ball_tuning.gd:57` | `scripts/assistance/cross_assist.gd:83`, `scripts/assistance/pass_assist.gd:102`, `scripts/assistance/pass_assist.gd:224` |  (Pase) |
-| `pass_speed_max` | `28.0` | float | `scripts/ball/ball_tuning.gd:58` | `scripts/assistance/cross_assist.gd:83`, `scripts/assistance/pass_assist.gd:64`, `scripts/assistance/pass_assist.gd:103`, `scripts/assistance/pass_assist.gd:224` |  (Pase) |
-| `pass_arrival_speed` | `4.5` | float | `scripts/ball/ball_tuning.gd:60` | `scripts/assistance/pass_assist.gd:64`, `scripts/assistance/pass_assist.gd:98` | Velocidad a la que queremos que el pase raso llegue al receptor. (Pase) |
-| `lob_angle_deg` | `38.0` | float | `scripts/ball/ball_tuning.gd:61` | `scripts/assistance/pass_assist.gd:90` |  (Pase) |
-| `driven_pass_extra` | `1.25` | float | `scripts/ball/ball_tuning.gd:62` | `scripts/assistance/pass_assist.gd:101` |  (Pase) |
-| `shot_speed_min` | `12.0` | float | `scripts/ball/ball_tuning.gd:66` | `scripts/assistance/shot_assist.gd:117`, `scripts/assistance/shot_assist.gd:119` | Tiro flojo / a carga maxima (m/s). prueba03: «shootar se siente horrible, necesita mas potencia» (antes 9 y 27). (Tiro) |
-| `shot_speed_max` | `30.0` | float | `scripts/ball/ball_tuning.gd:67` | `scripts/assistance/shot_assist.gd:117`, `scripts/assistance/shot_assist.gd:119`, `scripts/assistance/shot_assist.gd:124` |  (Tiro) |
-| `shot_charge_time` | `0.9` | float | `scripts/ball/ball_tuning.gd:69` | `scripts/ai/ai_input.gd:471`, `scripts/player/ball_handler.gd:448` | Segundos para cargar el tiro al maximo. (Tiro) |
-| `shot_loft_low_deg` | `4.0` | float | `scripts/ball/ball_tuning.gd:70` | `scripts/assistance/shot_assist.gd:158`, `scripts/assistance/shot_assist.gd:163`, `scripts/assistance/shot_assist.gd:164`, `scripts/assistance/shot_assist.gd:224` |  (Tiro) |
-| `shot_loft_high_deg` | `22.0` | float | `scripts/ball/ball_tuning.gd:71` | `scripts/assistance/shot_assist.gd:163`, `scripts/assistance/shot_assist.gd:164` |  (Tiro) |
-| `shot_spin_factor` | `14.0` | float | `scripts/ball/ball_tuning.gd:73` | `scripts/assistance/shot_assist.gd:183` | Factor de efecto (spin) aplicado segun la desviacion lateral del golpeo. (Tiro) |
+| `pass_speed_min` | `7.0` | float | `scripts/ball/ball_tuning.gd:58` | `scripts/assistance/cross_assist.gd:83`, `scripts/assistance/pass_assist.gd:117`, `scripts/assistance/pass_assist.gd:239` | Velocidad minima (m/s) de un pase raso a un companero (antes 4: los pases cortos se sentian flojos). (Pase) |
+| `pass_speed_max` | `28.0` | float | `scripts/ball/ball_tuning.gd:59` | `scripts/assistance/cross_assist.gd:83`, `scripts/assistance/pass_assist.gd:76`, `scripts/assistance/pass_assist.gd:118`, `scripts/assistance/pass_assist.gd:239` |  (Pase) |
+| `pass_arrival_speed` | `6.0` | float | `scripts/ball/ball_tuning.gd:62` | `scripts/assistance/pass_assist.gd:76`, `scripts/assistance/pass_assist.gd:113` | Velocidad a la que queremos que el pase raso llegue al receptor (antes 4.5: «los pases se sienten debiles»; en First Touch y Dream League el pase llega tenso al pie). (Pase) |
+| `lob_angle_deg` | `38.0` | float | `scripts/ball/ball_tuning.gd:63` | `scripts/assistance/pass_assist.gd:105` |  (Pase) |
+| `driven_pass_extra` | `1.25` | float | `scripts/ball/ball_tuning.gd:64` | `scripts/assistance/pass_assist.gd:116` |  (Pase) |
+| `shot_speed_min` | `12.0` | float | `scripts/ball/ball_tuning.gd:68` | `scripts/assistance/shot_assist.gd:117`, `scripts/assistance/shot_assist.gd:119` | Tiro flojo / a carga maxima (m/s). prueba03: «shootar se siente horrible, necesita mas potencia» (antes 9 y 27). (Tiro) |
+| `shot_speed_max` | `30.0` | float | `scripts/ball/ball_tuning.gd:69` | `scripts/assistance/shot_assist.gd:117`, `scripts/assistance/shot_assist.gd:119`, `scripts/assistance/shot_assist.gd:124` |  (Tiro) |
+| `shot_charge_time` | `0.9` | float | `scripts/ball/ball_tuning.gd:71` | `scripts/ai/ai_input.gd:471`, `scripts/player/ball_handler.gd:449` | Segundos para cargar el tiro al maximo. (Tiro) |
+| `shot_loft_low_deg` | `4.0` | float | `scripts/ball/ball_tuning.gd:72` | `scripts/assistance/shot_assist.gd:158`, `scripts/assistance/shot_assist.gd:163`, `scripts/assistance/shot_assist.gd:164`, `scripts/assistance/shot_assist.gd:224` |  (Tiro) |
+| `shot_loft_high_deg` | `22.0` | float | `scripts/ball/ball_tuning.gd:73` | `scripts/assistance/shot_assist.gd:163`, `scripts/assistance/shot_assist.gd:164` |  (Tiro) |
+| `shot_spin_factor` | `14.0` | float | `scripts/ball/ball_tuning.gd:75` | `scripts/assistance/shot_assist.gd:183` | Factor de efecto (spin) aplicado segun la desviacion lateral del golpeo. (Tiro) |
 <!-- /AUTO -->
 
 ### Riesgos al modificar (verificados con las pruebas y mediciones de esta sesión)

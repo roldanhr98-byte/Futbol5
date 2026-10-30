@@ -384,6 +384,7 @@ func update(frame: InputFrame, stick_world: Vector3, stick_mag: float, desired_d
 			_finish_kick()
 		elif not _kick_clip.is_empty():
 			_steer_clip_kick()
+			_json_kick_ik()
 		return
 	if _pending_action != &"":
 		_pending_age += dt
@@ -1133,8 +1134,8 @@ func _finish_clip_kick() -> void:
 	last_foot_distance = d
 	var interfered: bool = b != null and b.last_touch_msec != _kick_start_touch and b.last_toucher != owner
 	var dv: float = (KickModel.flat(b.linear_velocity) - _kick_start_ball_v).length() if b != null else 0.0
-	var info := {"clip": String(plan["clip"]), "foot_distance": d, "predicted": plan["residual"], "latency": plan["latency"], "adjust_m": (plan["adjust"] as Vector3).length(), "interfered": interfered, "ball_dv": dv, "by_team": int(b.last_touch_team) if b != null else -1, "own_team": owner.team}
-	if d < 0.0 or d > Tuning.player.kick_contact_radius:
+	var info := {"clip": String(plan["clip"]), "foot_distance": d, "predicted": plan["residual"], "latency": plan["latency"], "adjust_m": (plan["adjust"] as Vector3).length(), "interfered": interfered, "ball_dv": dv, "by_team": int(b.last_touch_team) if b != null else -1, "own_team": owner.team, "ball_v0": _kick_start_ball_v.length(), "body_v0": _kick_v0.length(), "turn": plan.has("turn"), "ball_y": b.global_position.y if b != null else 0.0}
+	if d < 0.0 or d > kick_reach():
 		lockout = 0.3
 		touch_timer = lockout
 		kick_stats["missed"] += 1
@@ -1144,8 +1145,11 @@ func _finish_clip_kick() -> void:
 	kick_stats["contact"] += 1
 	_log_kick(action, &"contact", info)
 	_kick_event_info = info
-	perform_action(action, _kick_stick, _kick_charge, _kick_lob)
+	var res: KickModel.KickResult = perform_action(action, _kick_stick, _kick_charge, _kick_lob)
 	_kick_event_info = {}
+	if _json_kicks():
+		# El pie acompana a la pelota un instante al salir (y luego vuelve al gesto del clip).
+		_json_touch_ik_start(1 if int(plan["contact"]["foot"]) > 0 else 0, res.velocity if res != null else Vector3.ZERO, JSON_KICK_IK_MAX)
 
 func _finish_kick() -> void:
 	if not _kick_clip.is_empty():
@@ -2346,10 +2350,43 @@ const JSON_TOUCH_IK_FADE := 0.07
 var _jik_foot: int = -1
 var _jik_t: float = 0.0
 var _jik_dir: Vector3 = Vector3.ZERO
+var _jik_max: float = JSON_TOUCH_IK_MAX
 
-func _json_touch_ik_start(foot: int, push: Vector3) -> void:
+## Modo 4: en los ultimos JSON_KICK_IK_IN s del balanceo de un golpeo el pie que patea va hasta la pelota real (IK), hasta
+## JSON_KICK_IK_MAX m desde el gesto del clip: el golpe se ve dado con el pie aunque la pelota se haya corrido un poco.
+const JSON_KICK_IK_IN := 0.12
+const JSON_KICK_IK_MAX := 0.5
+
+## true si este jugador patea con los clips del modo 4 (Json).
+func _json_kicks() -> bool:
+	return owner.visual != null and owner.visual.json_mode
+
+## Distancia (m) maxima entre el pie del clip y la pelota para que el golpeo cuente.
+func kick_reach() -> float:
+	return Tuning.player.json_kick_reach if _json_kicks() else Tuning.player.kick_contact_radius
+
+func _json_kick_ik() -> void:
+	if _kick_timer > JSON_KICK_IK_IN or not _json_kicks() or _foot_ik() == null:
+		return
+	var b: Ball = ball()
+	if b == null or b.is_held():
+		return
+	var foot: int = 1 if int(_kick_clip["contact"]["foot"]) > 0 else 0
+	var toe: Vector3 = _toe_now[foot]
+	var bp: Vector3 = b.global_position
+	var app: Vector3 = KickModel.flat(bp - toe)
+	var dir: Vector3 = app.normalized() if app.length() > 0.02 else owner.locomotion.forward()
+	var want: Vector3 = bp - dir * (b.radius + 0.02)
+	want.y = clampf(bp.y, 0.05, 0.3)
+	var w: float = smoothstep(0.0, 1.0, 1.0 - _kick_timer / JSON_KICK_IK_IN)
+	if app.length() > JSON_KICK_IK_MAX + b.radius:
+		w = 0.0
+	_foot_ik().set_target(foot, want, 0.0, w)
+
+func _json_touch_ik_start(foot: int, push: Vector3, max_reach: float = JSON_TOUCH_IK_MAX) -> void:
 	if _foot_ik() == null:
 		return
+	_jik_max = max_reach
 	if _jik_foot >= 0 and _jik_foot != foot:
 		_foot_ik().set_target(_jik_foot, Vector3.ZERO, 0.0, 0.0)
 	_jik_foot = foot
@@ -2371,7 +2408,7 @@ func _json_touch_ik_step(dt: float) -> void:
 	var toe: Vector3 = _toe_now[_jik_foot]
 	var want: Vector3 = b.global_position - _jik_dir * (b.radius + 0.025)
 	want.y = clampf(toe.y, 0.03, 0.12)
-	if KickModel.flat(want - toe).length() > JSON_TOUCH_IK_MAX:
+	if KickModel.flat(want - toe).length() > _jik_max:
 		w = 0.0
 	ik.set_target(_jik_foot, want, 0.0, w)
 	if w <= 0.0:

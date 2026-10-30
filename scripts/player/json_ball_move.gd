@@ -35,6 +35,9 @@ const FOOT_SLACK := 0.16
 const BALL_LEAD := 0.12
 ## A mas de MISS_DIST m del pie en un toque, el toque se pierde; dos seguidos cancelan el movimiento.
 const MISS_DIST := 0.5
+## Espera maxima (s) hasta el primer toque del clip: con mas, en partido un rival tocaba o desviaba la pelota antes y el
+## clip seguia hasta errar el toque (medido: primeros toques a 0.6-0.9 m tras 0.6 s de espera).
+const MAX_LEAD := 0.4
 ## IK del pie: empieza IK_LEAD s antes del toque y se suelta IK_HOLD s despues; mas lejos de IK_MAX m no se fuerza.
 const IK_LEAD := 0.16
 const IK_HOLD := 0.06
@@ -76,6 +79,8 @@ var _ik_foot: int = -1
 var _released_t: float = 0.0
 var stats := {"started": 0, "done": 0, "touches": 0, "missed": 0, "aborted": 0}
 var last := {}
+## Ultimos movimientos terminados o cortados (diagnostico y pruebas).
+var history: Array = []
 
 func _init(h: BallHandler) -> void:
 	handler = h
@@ -207,6 +212,8 @@ func plan_move(roles: Array[StringName], want: float, tol: float, both_sides: bo
 				var lead: Vector3 = (f0 * vel1.x + r0 * vel1.y).normalized() * BALL_LEAD if vel1.length() > 0.3 else Vector3.ZERO
 				var target: Vector3 = origin + f0 * p1.x + r0 * p1.z + lead
 				var dt1: float = t1 - start_at
+				if dt1 > MAX_LEAD:
+					continue
 				var bp: Vector3 = KickModel.flat(b.global_position + handler.ball_travel(b, dt1))
 				var err: Vector3 = bp - target
 				var corr: Vector3 = err.limit_length(minf(CORR_MAX, CORR_SPEED * dt1))
@@ -386,6 +393,7 @@ func finish() -> void:
 		return
 	active = false
 	stats["done"] += 1
+	_remember()
 	_cooldown = maxf(_cooldown, COOLDOWN)
 	handler.touch_timer = 0.12
 	_release_ik()
@@ -396,6 +404,7 @@ func _abort(reason: String) -> void:
 	active = false
 	stats["aborted"] += 1
 	last["aborted"] = reason
+	_remember()
 	_cooldown = COOLDOWN
 	_release_ik()
 	# Sin pelota que llevar el clip no sigue: se corta con un fundido y vuelve la marcha (el jugador puede ir a por ella).
@@ -404,6 +413,11 @@ func _abort(reason: String) -> void:
 	owner.actions.motion.stop()
 	if owner.visual != null:
 		owner.visual.stop_current_action()
+
+func _remember() -> void:
+	history.append(last)
+	if history.size() > 20:
+		history.pop_front()
 
 ## La accion se corto desde fuera (saque, gol, caida).
 func cancel() -> void:

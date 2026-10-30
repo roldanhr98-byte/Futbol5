@@ -87,12 +87,6 @@ func _ready() -> void:
 		add_child(referee)
 		# Con bandas el arbitro corre por fuera de la linea; con paredes, por dentro junto a la pared.
 		referee.setup(ctx, Vector3(-2.0, 0.0, Tuning.pitch.width * 0.5 + (1.1 if out_of_bounds else -0.9)))
-	# Modo 4: tecnicos, mascota y publico con las escenas del JSON (presentacion).
-	if PackLibrary.json_mode():
-		var sideline := JsonSideline.new()
-		sideline.name = "JsonSideline"
-		add_child(sideline)
-		sideline.setup(Tuning.pitch)
 	manager = MatchManager.new()
 	manager.name = "MatchManager"
 	manager.duration_seconds = duration_seconds

@@ -297,6 +297,19 @@ func tackle_gesture(carrier: Footballer) -> void:
 		c = StringName(String(c) + "_mirror")
 	owner.visual.play_pack_clip(c, 1.35, 0.0, 0.8)
 
+## Modo 4: disputa de quien presiona pegado al portador sin llegar a entrar (forcejeo con el cuerpo y amago de pierna,
+## clips «jostle» y entradas de pie del zip): la presion siempre se ve, como en First Touch. Solo presentacion.
+func press_gesture(carrier: Footballer) -> void:
+	if not PackLibrary.json_mode() or owner.visual == null or owner.visual.is_action_playing() or carrier == null:
+		return
+	var c: StringName = JsonCatalog.situation_clip(&"press_duel", owner.actor_id)
+	if c == &"":
+		return
+	if KickModel.flat(carrier.global_position - owner.global_position).dot(owner.locomotion.right()) < 0.0 and PackLibrary.has_clip(StringName(String(c) + "_mirror")):
+		c = StringName(String(c) + "_mirror")
+	owner.visual.play_pack_clip(c, 1.2, 0.0, 0.9)
+	stats["press_gestures"] = int(stats.get("press_gestures", 0)) + 1
+
 ## true si el defensor corre a la par del portador (hombro con hombro): mismos sentidos, cerca y de costado.
 func _alongside(carrier: Footballer) -> bool:
 	var d: Vector3 = KickModel.flat(carrier.global_position - owner.global_position)

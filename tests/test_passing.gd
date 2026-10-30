@@ -198,3 +198,27 @@ func test_assist_picks_best_aligned_and_ignores_out_of_cone() -> void:
 	check(r3.target != behind and r3.target != left_mate, "no elige a un companero fuera del cono de intencion")
 	var r4: KickModel.KickResult = PassAssist.compute(p, ctx, Vector3(1.0, 0.0, -0.45).normalized(), 0.3, false, rng, 0.0)
 	check(r4.target == null and absf(r4.assisted_correction_deg) < 0.001, "con asistencia desactivada no hay objetivo ni correccion")
+
+func test_medium_assist_pass_goes_to_the_chosen_teammate_firmly() -> void:
+	# Como en First Touch y Dream League: con asistencia media el pase va al companero elegido (no a medio camino) y
+	# llega tenso. Joystick a ~30 grados del companero, y a ~70 (fuera del cono normal: cono amplio de respaldo).
+	var ctx: MatchContext = await make_match(Vector3(-9.45, 0.11, 0.0))
+	var p: Footballer = _setup_passer(ctx, 50)
+	var mate: Footballer = add_player(ctx, 0, Vector3(-2.0, 0.0, -4.5))
+	mate.set_physics_process(false)
+	await physics_frames(2)
+	var to_mate: Vector3 = KickModel.flat(mate.global_position - ctx.ball.global_position).normalized()
+	for off in [30.0, 70.0]:
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 3
+		var stick: Vector3 = to_mate.rotated(Vector3.UP, deg_to_rad(off))
+		var r: KickModel.KickResult = PassAssist.compute(p, ctx, stick, 0.2, false, rng, 0.65)
+		var miss: float = absf(KickModel.signed_angle_deg(KickModel.flat(r.final_dir), to_mate))
+		note("joystick a %.0f grados: objetivo %s, correccion %.1f, error %.1f, desvio final %.1f grados, %.1f m/s" % [off, str(r.target == mate), r.assisted_correction_deg, r.error_deg, miss, KickModel.flat(r.velocity).length()])
+		check(r.target == mate, "a %.0f grados elige al companero" % off)
+		check(miss <= absf(r.error_deg) + 1.0, "a %.0f grados el pase va al companero salvo el error de ejecucion (%.1f grados)" % [off, miss])
+		check(KickModel.flat(r.velocity).length() >= Tuning.ball.pass_speed_min, "el pase sale tenso (%.1f m/s)" % KickModel.flat(r.velocity).length())
+	var low := RandomNumberGenerator.new()
+	low.seed = 3
+	var rl: KickModel.KickResult = PassAssist.compute(p, ctx, to_mate.rotated(Vector3.UP, deg_to_rad(30.0)), 0.2, false, low, 0.35)
+	check(absf(rl.assisted_correction_deg) < 29.0, "con asistencia baja solo se acerca (%.1f grados)" % rl.assisted_correction_deg)

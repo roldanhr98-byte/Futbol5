@@ -27,13 +27,13 @@
 <!-- AUTO:params:MatchManager -->
 | Parámetro | Defecto | Rango / tipo | Definido en | Dónde se usa (accesos reales) | Descripción |
 |---|---|---|---|---|---|
-| `duration_seconds` | `300.0` | float | `scripts/gameplay/match_manager.gd:23` | `scripts/ui/hud.gd:250`, `scripts/gameplay/match_manager.gd:156`, `scripts/gameplay/match_scene.gd:98` | Duracion en segundos (0 = sin limite, util en el laboratorio). |
+| `duration_seconds` | `300.0` | float | `scripts/gameplay/match_manager.gd:23` | `scripts/ui/hud.gd:250`, `scripts/gameplay/match_manager.gd:156`, `scripts/gameplay/match_scene.gd:92` | Duracion en segundos (0 = sin limite, util en el laboratorio). |
 | `goal_celebration_seconds` | `3.0` | float | `scripts/gameplay/match_manager.gd:24` | `scripts/gameplay/match_manager.gd:163`, `scripts/gameplay/match_manager.gd:292`, `scripts/gameplay/match_manager.gd:296` |  |
 | `replay_after_seconds` | `1.3` | float | `scripts/gameplay/match_manager.gd:26` | `scripts/gameplay/match_manager.gd:163` | Segundos de festejo en vivo antes de la repeticion del gol (0 o menos = sin repeticion). |
-| `replay_active` | `false` | bool | `scripts/gameplay/match_manager.gd:28` | `scripts/gameplay/match_manager.gd:89`, `scripts/gameplay/match_scene.gd:259`, `scripts/gameplay/match_scene.gd:263` | true mientras se ve la repeticion (la pausa del juego no se puede abrir encima). |
+| `replay_active` | `false` | bool | `scripts/gameplay/match_manager.gd:28` | `scripts/gameplay/match_manager.gd:89`, `scripts/gameplay/match_scene.gd:253`, `scripts/gameplay/match_scene.gd:257` | true mientras se ve la repeticion (la pausa del juego no se puede abrir encima). |
 | `_replay_done` | `false` | bool | `scripts/gameplay/match_manager.gd:29` | `scripts/gameplay/match_manager.gd:163`, `scripts/gameplay/match_manager.gd:164`, `scripts/gameplay/match_manager.gd:290` |  |
 | `pre_kickoff_seconds` | `1.2` | float | `scripts/gameplay/match_manager.gd:30` | `scripts/gameplay/match_manager.gd:111` |  |
-| `intro_seconds` | `0.0` | float | `scripts/gameplay/match_manager.gd:32` | `scripts/gameplay/match_manager.gd:110`, `scripts/gameplay/match_manager.gd:111`, `scripts/gameplay/match_scene.gd:100` | Presentacion antes del primer saque (calentamiento y arbitro). 0 = sin presentacion. |
+| `intro_seconds` | `0.0` | float | `scripts/gameplay/match_manager.gd:32` | `scripts/gameplay/match_manager.gd:110`, `scripts/gameplay/match_manager.gd:111`, `scripts/gameplay/match_scene.gd:94` | Presentacion antes del primer saque (calentamiento y arbitro). 0 = sin presentacion. |
 | `assist_window_seconds` | `6.0` | float | `scripts/gameplay/match_manager.gd:34` | `scripts/gameplay/match_manager.gd:286` | Ventana para considerar asistencia el pase previo al gol. |
 | `ctx` | `—` | MatchContext | `scripts/gameplay/match_manager.gd:36` | `scripts/gameplay/match_manager.gd:61`, `scripts/gameplay/match_manager.gd:62`, `scripts/gameplay/match_manager.gd:63`, `scripts/gameplay/match_manager.gd:64` (+38) |  |
 | `state` | `State.PRE_KICKOFF` | State | `scripts/gameplay/match_manager.gd:37` | `scripts/ui/hud.gd:272`, `scripts/gameplay/match_manager.gd:79`, `scripts/gameplay/match_manager.gd:91`, `scripts/gameplay/match_manager.gd:94` (+10) |  |
@@ -44,7 +44,7 @@
 | `goal_kick_keeper` | `null` | Node | `scripts/gameplay/match_manager.gd:45` | `scripts/gameplay/match_manager.gd:107`, `scripts/gameplay/match_manager.gd:232`, `scripts/gameplay/match_manager.gd:248`, `scripts/gameplay/match_manager.gd:249` (+2) |  |
 | `set_piece_kind` | `""` | String | `scripts/gameplay/match_manager.gd:46` | `scripts/gameplay/match_manager.gd:228`, `scripts/gameplay/match_manager.gd:258` |  |
 | `set_piece_team` | `-1` | int | `scripts/gameplay/match_manager.gd:47` | `scripts/gameplay/match_manager.gd:229` |  |
-| `training` | `false` | bool | `scripts/gameplay/match_manager.gd:50` | `scripts/gameplay/match_manager.gd:167`, `scripts/gameplay/match_manager.gd:226`, `scripts/gameplay/match_scene.gd:99` | Entrenamiento (sin rivales de campo): los saques siempre los hace el equipo de la persona, salvo el saque de arco del arquero rival; tras un gol vuelve a sacar el equipo de la persona. |
+| `training` | `false` | bool | `scripts/gameplay/match_manager.gd:50` | `scripts/gameplay/match_manager.gd:167`, `scripts/gameplay/match_manager.gd:226`, `scripts/gameplay/match_scene.gd:93` | Entrenamiento (sin rivales de campo): los saques siempre los hace el equipo de la persona, salvo el saque de arco del arquero rival; tras un gol vuelve a sacar el equipo de la persona. |
 | `set_piece_pos` | `Vector3.ZERO` | Vector3 | `scripts/gameplay/match_manager.gd:51` | `scripts/gameplay/match_manager.gd:230` |  |
 | `set_piece_setup_seconds` | `0.9` | float | `scripts/gameplay/match_manager.gd:53` | `scripts/gameplay/match_manager.gd:237` | Segundos de pelota muerta antes de habilitar al ejecutor (la escena coloca a los jugadores). |
 | `stats` | `{"throw_in": 0, "corner": 0, "goal_kick": 0, "free_kick": 0, "penalty": 0}` |  | `scripts/gameplay/match_manager.gd:56` | `scripts/gameplay/match_manager.gd:145`, `scripts/gameplay/match_manager.gd:233` |  |
@@ -56,37 +56,37 @@
 <!-- AUTO:params:MatchScene -->
 | Parámetro | Defecto | Rango / tipo | Definido en | Dónde se usa (accesos reales) | Descripción |
 |---|---|---|---|---|---|
-| `duration_seconds` | `-1.0` | float | `scripts/gameplay/match_scene.gd:9` | `scripts/gameplay/match_scene.gd:58`, `scripts/gameplay/match_scene.gd:59`, `scripts/gameplay/match_scene.gd:62`, `scripts/gameplay/match_scene.gd:98` | Duracion del partido (s). Negativo = la que eligio la persona (3, 5, 7 o 10 minutos, ver Tuning.match_minutes). |
-| `home_field_players` | `4` | int | `scripts/gameplay/match_scene.gd:11` | `scripts/gameplay/match_scene.gd:145` | Cantidad de futbolistas de campo por equipo en esta etapa (1 = etapa inicial). |
-| `away_field_players` | `4` | int | `scripts/gameplay/match_scene.gd:12` | `scripts/gameplay/match_scene.gd:61`, `scripts/gameplay/match_scene.gd:152` |  |
-| `auto_switch` | `true` | bool | `scripts/gameplay/match_scene.gd:14` | `scripts/gameplay/match_scene.gd:589` | Cambia solo al jugador del humano mas cercano a la pelota cuando el actual queda lejos. |
-| `ai_skill` | `0.6` | float | `scripts/gameplay/match_scene.gd:16` | `scripts/gameplay/match_scene.gd:147`, `scripts/gameplay/match_scene.gd:154`, `scripts/gameplay/match_scene.gd:622`, `scripts/gameplay/match_scene.gd:644` (+1) | Calidad de decision de la IA (0..1). |
-| `intro_seconds` | `4.5` | float | `scripts/gameplay/match_scene.gd:18` | `scripts/gameplay/match_scene.gd:63`, `scripts/gameplay/match_scene.gd:100` | Presentacion antes del primer saque (s): calentamiento de los jugadores y arbitro contando. 0 = sin presentacion. |
+| `duration_seconds` | `-1.0` | float | `scripts/gameplay/match_scene.gd:9` | `scripts/gameplay/match_scene.gd:58`, `scripts/gameplay/match_scene.gd:59`, `scripts/gameplay/match_scene.gd:62`, `scripts/gameplay/match_scene.gd:92` | Duracion del partido (s). Negativo = la que eligio la persona (3, 5, 7 o 10 minutos, ver Tuning.match_minutes). |
+| `home_field_players` | `4` | int | `scripts/gameplay/match_scene.gd:11` | `scripts/gameplay/match_scene.gd:139` | Cantidad de futbolistas de campo por equipo en esta etapa (1 = etapa inicial). |
+| `away_field_players` | `4` | int | `scripts/gameplay/match_scene.gd:12` | `scripts/gameplay/match_scene.gd:61`, `scripts/gameplay/match_scene.gd:146` |  |
+| `auto_switch` | `true` | bool | `scripts/gameplay/match_scene.gd:14` | `scripts/gameplay/match_scene.gd:583` | Cambia solo al jugador del humano mas cercano a la pelota cuando el actual queda lejos. |
+| `ai_skill` | `0.6` | float | `scripts/gameplay/match_scene.gd:16` | `scripts/gameplay/match_scene.gd:141`, `scripts/gameplay/match_scene.gd:148`, `scripts/gameplay/match_scene.gd:616`, `scripts/gameplay/match_scene.gd:638` (+1) | Calidad de decision de la IA (0..1). |
+| `intro_seconds` | `4.5` | float | `scripts/gameplay/match_scene.gd:18` | `scripts/gameplay/match_scene.gd:63`, `scripts/gameplay/match_scene.gd:94` | Presentacion antes del primer saque (s): calentamiento de los jugadores y arbitro contando. 0 = sin presentacion. |
 | `with_referee` | `true` | bool | `scripts/gameplay/match_scene.gd:19` | `scripts/gameplay/match_scene.gd:84` |  |
 | `out_of_bounds` | `true` | bool | `scripts/gameplay/match_scene.gd:22` | `scripts/gameplay/match_scene.gd:69`, `scripts/gameplay/match_scene.gd:89` | Reglas de futbol con bandas: la pelota sale y se repone (saque de banda, corner, saque de arco). Con false, cancha cerrada con paredes (la pelota rebota y nunca sale). |
 | `referee` | `null` | Referee | `scripts/gameplay/match_scene.gd:23` | `scripts/gameplay/match_scene.gd:85`, `scripts/gameplay/match_scene.gd:86`, `scripts/gameplay/match_scene.gd:87`, `scripts/gameplay/match_scene.gd:89` (+2) |  |
-| `replay` | `null` | GoalReplay | `scripts/gameplay/match_scene.gd:25` | `scripts/gameplay/match_scene.gd:242`, `scripts/gameplay/match_scene.gd:243`, `scripts/gameplay/match_scene.gd:244`, `scripts/gameplay/match_scene.gd:252` (+7) | Repeticion de los goles (graba siempre; se muestra tras cada gol). |
-| `goal_replays` | `true` | bool | `scripts/gameplay/match_scene.gd:26` | `scripts/gameplay/match_scene.gd:253`, `scripts/gameplay/match_scene.gd:272` |  |
-| `training_mode` | `false` | bool | `scripts/gameplay/match_scene.gd:29` | `scripts/gameplay/match_scene.gd:29`, `scripts/gameplay/match_scene.gd:60`, `scripts/gameplay/match_scene.gd:99`, `scripts/gameplay/match_scene.gd:116` (+1) | Entrenamiento: tu equipo (con su arquero) contra el arquero rival SOLO, sin rivales de campo ni reloj, para probar conduccion, pases y tiros al arco. Se elige en el menu de pausa y se mantiene al reiniciar la escena. |
+| `replay` | `null` | GoalReplay | `scripts/gameplay/match_scene.gd:25` | `scripts/gameplay/match_scene.gd:236`, `scripts/gameplay/match_scene.gd:237`, `scripts/gameplay/match_scene.gd:238`, `scripts/gameplay/match_scene.gd:246` (+7) | Repeticion de los goles (graba siempre; se muestra tras cada gol). |
+| `goal_replays` | `true` | bool | `scripts/gameplay/match_scene.gd:26` | `scripts/gameplay/match_scene.gd:247`, `scripts/gameplay/match_scene.gd:266` |  |
+| `training_mode` | `false` | bool | `scripts/gameplay/match_scene.gd:29` | `scripts/gameplay/match_scene.gd:29`, `scripts/gameplay/match_scene.gd:60`, `scripts/gameplay/match_scene.gd:93`, `scripts/gameplay/match_scene.gd:110` (+1) | Entrenamiento: tu equipo (con su arquero) contra el arquero rival SOLO, sin rivales de campo ni reloj, para probar conduccion, pases y tiros al arco. Se elige en el menu de pausa y se mantiene al reiniciar la escena. |
 | `ctx` | `—` | MatchContext | `scripts/gameplay/match_scene.gd:31` | `scripts/gameplay/match_scene.gd:64`, `scripts/gameplay/match_scene.gd:75`, `scripts/gameplay/match_scene.gd:76`, `scripts/gameplay/match_scene.gd:81` (+24) |  |
 | `pitch` | `—` | Pitch | `scripts/gameplay/match_scene.gd:32` | `scripts/gameplay/match_scene.gd:65`, `scripts/gameplay/match_scene.gd:66`, `scripts/gameplay/match_scene.gd:67`, `scripts/gameplay/match_scene.gd:70` (+10) |  |
 | `ball` | `—` | Ball | `scripts/gameplay/match_scene.gd:33` | `scripts/gameplay/match_scene.gd:54`, `scripts/gameplay/match_scene.gd:71`, `scripts/gameplay/match_scene.gd:72`, `scripts/gameplay/match_scene.gd:73` (+20) |  |
 | `camera` | `—` | MatchCamera | `scripts/gameplay/match_scene.gd:34` | `scripts/gameplay/match_scene.gd:78`, `scripts/gameplay/match_scene.gd:79`, `scripts/gameplay/match_scene.gd:80`, `scripts/gameplay/match_scene.gd:81` (+15) |  |
-| `manager` | `—` | MatchManager | `scripts/gameplay/match_scene.gd:35` | `scripts/gameplay/match_scene.gd:96`, `scripts/gameplay/match_scene.gd:97`, `scripts/gameplay/match_scene.gd:98`, `scripts/gameplay/match_scene.gd:99` (+16) |  |
-| `hud` | `—` | Hud | `scripts/gameplay/match_scene.gd:36` | `scripts/gameplay/match_scene.gd:105`, `scripts/gameplay/match_scene.gd:106`, `scripts/gameplay/match_scene.gd:107`, `scripts/gameplay/match_scene.gd:108` (+17) |  |
-| `controlled` | `null` | Footballer | `scripts/gameplay/match_scene.gd:37` | `scripts/gameplay/match_scene.gd:126`, `scripts/gameplay/match_scene.gd:160`, `scripts/gameplay/match_scene.gd:161`, `scripts/gameplay/match_scene.gd:333` (+40) |  |
-| `home` | `[]` | Array[Footballer] | `scripts/gameplay/match_scene.gd:38` | `scripts/gameplay/match_scene.gd:150`, `scripts/gameplay/match_scene.gd:159`, `scripts/gameplay/match_scene.gd:160`, `scripts/gameplay/match_scene.gd:227` (+18) |  |
-| `away` | `[]` | Array[Footballer] | `scripts/gameplay/match_scene.gd:39` | `scripts/gameplay/match_scene.gd:157`, `scripts/gameplay/match_scene.gd:227`, `scripts/gameplay/match_scene.gd:230`, `scripts/gameplay/match_scene.gd:246` (+5) |  |
-| `keepers` | `[]` | Array[Goalkeeper] | `scripts/gameplay/match_scene.gd:40` | `scripts/gameplay/match_scene.gd:171`, `scripts/gameplay/match_scene.gd:248`, `scripts/gameplay/match_scene.gd:293`, `scripts/gameplay/match_scene.gd:402` |  |
-| `marker` | `null` | PlayerMarker | `scripts/gameplay/match_scene.gd:42` | `scripts/gameplay/match_scene.gd:118`, `scripts/gameplay/match_scene.gd:119`, `scripts/gameplay/match_scene.gd:556`, `scripts/gameplay/match_scene.gd:557` | Indicadores sobre el jugador controlado y sobre el que recibiria el control con CAMBIO. |
-| `next_marker` | `null` | PlayerMarker | `scripts/gameplay/match_scene.gd:43` | `scripts/gameplay/match_scene.gd:120`, `scripts/gameplay/match_scene.gd:121`, `scripts/gameplay/match_scene.gd:558` |  |
-| `possession_ring` | `null` | GroundRing | `scripts/gameplay/match_scene.gd:45` | `scripts/gameplay/match_scene.gd:122`, `scripts/gameplay/match_scene.gd:123`, `scripts/gameplay/match_scene.gd:537`, `scripts/gameplay/match_scene.gd:541` (+1) | Aro de posesion (bajo el unico jugador con la pelota) y aro del companero que recibiria el pase ahora. |
-| `pass_ring` | `null` | GroundRing | `scripts/gameplay/match_scene.gd:46` | `scripts/gameplay/match_scene.gd:124`, `scripts/gameplay/match_scene.gd:125`, `scripts/gameplay/match_scene.gd:553` |  |
-| `controlled_keeper` | `null` | Goalkeeper | `scripts/gameplay/match_scene.gd:50` | `scripts/gameplay/match_scene.gd:333`, `scripts/gameplay/match_scene.gd:398`, `scripts/gameplay/match_scene.gd:408`, `scripts/gameplay/match_scene.gd:422` (+13) | Arquero propio bajo control de la persona (null = lo lleva la IA). Mientras lo maneja, el jugador de campo `controlled` queda en manos de la IA pero se recuerda para devolverle el control. |
-| `with_keepers` | `true` | bool | `scripts/gameplay/match_scene.gd:52` | `scripts/gameplay/match_scene.gd:162` | Con false no se crean arqueros (algunas pruebas y la practica los omiten). |
-| `_last_kick_actor` | `-1` | int | `scripts/gameplay/match_scene.gd:497` | `scripts/gameplay/match_scene.gd:420`, `scripts/gameplay/match_scene.gd:510` |  |
-| `_last_kick_frame` | `-1000` | int | `scripts/gameplay/match_scene.gd:498` | `scripts/gameplay/match_scene.gd:421`, `scripts/gameplay/match_scene.gd:510` |  |
-| `_switch_cooldown` | `0.0` | float | `scripts/gameplay/match_scene.gd:521` | `scripts/gameplay/match_scene.gd:439`, `scripts/gameplay/match_scene.gd:563`, `scripts/gameplay/match_scene.gd:589`, `scripts/gameplay/match_scene.gd:627` (+2) |  |
+| `manager` | `—` | MatchManager | `scripts/gameplay/match_scene.gd:35` | `scripts/gameplay/match_scene.gd:90`, `scripts/gameplay/match_scene.gd:91`, `scripts/gameplay/match_scene.gd:92`, `scripts/gameplay/match_scene.gd:93` (+16) |  |
+| `hud` | `—` | Hud | `scripts/gameplay/match_scene.gd:36` | `scripts/gameplay/match_scene.gd:99`, `scripts/gameplay/match_scene.gd:100`, `scripts/gameplay/match_scene.gd:101`, `scripts/gameplay/match_scene.gd:102` (+17) |  |
+| `controlled` | `null` | Footballer | `scripts/gameplay/match_scene.gd:37` | `scripts/gameplay/match_scene.gd:120`, `scripts/gameplay/match_scene.gd:154`, `scripts/gameplay/match_scene.gd:155`, `scripts/gameplay/match_scene.gd:327` (+40) |  |
+| `home` | `[]` | Array[Footballer] | `scripts/gameplay/match_scene.gd:38` | `scripts/gameplay/match_scene.gd:144`, `scripts/gameplay/match_scene.gd:153`, `scripts/gameplay/match_scene.gd:154`, `scripts/gameplay/match_scene.gd:221` (+18) |  |
+| `away` | `[]` | Array[Footballer] | `scripts/gameplay/match_scene.gd:39` | `scripts/gameplay/match_scene.gd:151`, `scripts/gameplay/match_scene.gd:221`, `scripts/gameplay/match_scene.gd:224`, `scripts/gameplay/match_scene.gd:240` (+5) |  |
+| `keepers` | `[]` | Array[Goalkeeper] | `scripts/gameplay/match_scene.gd:40` | `scripts/gameplay/match_scene.gd:165`, `scripts/gameplay/match_scene.gd:242`, `scripts/gameplay/match_scene.gd:287`, `scripts/gameplay/match_scene.gd:396` |  |
+| `marker` | `null` | PlayerMarker | `scripts/gameplay/match_scene.gd:42` | `scripts/gameplay/match_scene.gd:112`, `scripts/gameplay/match_scene.gd:113`, `scripts/gameplay/match_scene.gd:550`, `scripts/gameplay/match_scene.gd:551` | Indicadores sobre el jugador controlado y sobre el que recibiria el control con CAMBIO. |
+| `next_marker` | `null` | PlayerMarker | `scripts/gameplay/match_scene.gd:43` | `scripts/gameplay/match_scene.gd:114`, `scripts/gameplay/match_scene.gd:115`, `scripts/gameplay/match_scene.gd:552` |  |
+| `possession_ring` | `null` | GroundRing | `scripts/gameplay/match_scene.gd:45` | `scripts/gameplay/match_scene.gd:116`, `scripts/gameplay/match_scene.gd:117`, `scripts/gameplay/match_scene.gd:531`, `scripts/gameplay/match_scene.gd:535` (+1) | Aro de posesion (bajo el unico jugador con la pelota) y aro del companero que recibiria el pase ahora. |
+| `pass_ring` | `null` | GroundRing | `scripts/gameplay/match_scene.gd:46` | `scripts/gameplay/match_scene.gd:118`, `scripts/gameplay/match_scene.gd:119`, `scripts/gameplay/match_scene.gd:547` |  |
+| `controlled_keeper` | `null` | Goalkeeper | `scripts/gameplay/match_scene.gd:50` | `scripts/gameplay/match_scene.gd:327`, `scripts/gameplay/match_scene.gd:392`, `scripts/gameplay/match_scene.gd:402`, `scripts/gameplay/match_scene.gd:416` (+13) | Arquero propio bajo control de la persona (null = lo lleva la IA). Mientras lo maneja, el jugador de campo `controlled` queda en manos de la IA pero se recuerda para devolverle el control. |
+| `with_keepers` | `true` | bool | `scripts/gameplay/match_scene.gd:52` | `scripts/gameplay/match_scene.gd:156` | Con false no se crean arqueros (algunas pruebas y la practica los omiten). |
+| `_last_kick_actor` | `-1` | int | `scripts/gameplay/match_scene.gd:491` | `scripts/gameplay/match_scene.gd:414`, `scripts/gameplay/match_scene.gd:504` |  |
+| `_last_kick_frame` | `-1000` | int | `scripts/gameplay/match_scene.gd:492` | `scripts/gameplay/match_scene.gd:415`, `scripts/gameplay/match_scene.gd:504` |  |
+| `_switch_cooldown` | `0.0` | float | `scripts/gameplay/match_scene.gd:515` | `scripts/gameplay/match_scene.gd:433`, `scripts/gameplay/match_scene.gd:557`, `scripts/gameplay/match_scene.gd:583`, `scripts/gameplay/match_scene.gd:621` (+2) |  |
 <!-- /AUTO -->
 
 `MatchScene.duration_seconds` (300) se copia a `MatchManager.duration_seconds` en `_ready`; **el valor efectivo es el de la escena**. `0` = sin límite (lo usan las pruebas).
@@ -145,41 +145,41 @@
 | Función | Línea | Qué hace |
 |---|---|---|
 | `MatchScene._ready()` | 57 |  |
-| `MatchScene._spawn_teams()` | 143 |  |
-| `MatchScene._seed_ai(f: Footballer, id: int)` | 173 |  |
-| `MatchScene._make_footballer(team: int, id: int, source: InputSource)` | 177 |  |
-| `MatchScene._exit_tree()` | 186 |  |
-| `MatchScene._on_quit_requested()` | 190 | Con el partido como escena actual, «Salir» cierra el juego; si lo aloja otro nodo (pruebas) solo avisa. |
-| `MatchScene._on_training_toggle()` | 196 | Cambia entre partido normal y entrenamiento y vuelve a montar la escena. |
-| `MatchScene._on_gameplay_mode_changed()` | 203 | Otro modo de jugabilidad: se vuelve a montar la escena (modelos y clips del modo). |
-| `MatchScene._on_practice_requested()` | 209 | Abre la sala de practica (galeria de animaciones y malabares) y vuelve aqui con «Volver». |
-| `MatchScene.kickoff_positions(team: int, kicking: bool = true)` | 217 | Formacion de saque: 4 jugadores de campo por equipo (cierre, alas, pivote); los arqueros van a su arco. El equipo que saca coloca a su pivot |
-| `MatchScene._on_kickoff_requested(kicking_team: int)` | 226 |  |
-| `MatchScene._setup_replay()` | 241 |  |
-| `MatchScene.score_total_consistent()` | 268 | Comprobacion de coherencia (pruebas): el marcador suma los goles del partido. |
-| `MatchScene._on_replay_requested()` | 271 |  |
-| `MatchScene._on_set_piece_requested(kind: String, team: int, pos: Vector3)` | 283 | Prepara un balon parado: ejecutor (el mas cercano del equipo que saca; el arquero en el saque de arco), pelota en su sitio y rivales a dista |
-| `MatchScene._focus_after_set_piece(taker: Footballer)` | 337 |  |
-| `MatchScene._clear_zone(pos: Vector3, team: int, radius: float)` | 344 | Aleja a los rivales del equipo que saca a `radius` metros de la pelota (direccion radial, dentro de la cancha). |
-| `MatchScene._arrange_box(kind: String, team: int, pos: Vector3, taker: Footballer)` | 357 | Jugada ensayada en el area rival: atacantes a primer palo, segundo palo, punto de penal y borde del area; cada defensor marca a uno por el l |
-| `MatchScene.human_actor()` | 397 | Nodo que maneja la persona ahora mismo: el arquero si lo ha tomado, si no el jugador de campo. Lo usan la camara y los indicadores. |
-| `MatchScene.own_keeper()` | 401 | Arquero propio (el que defiende el arco de este equipo). |
-| `MatchScene._charge_state()` | 407 |  |
-| `MatchScene._on_match_event(e: GameEvent)` | 418 | Con un pase de la persona el control pasa al RECEPTOR en el momento del pase (como en los juegos de futbol de consola): la persona maneja a  |
-| `MatchScene.pass_receiver(passer: Footballer)` | 454 | Receptor de un pase propio sin destinatario: el companero (no el pasador) que llega antes a algun punto de la trayectoria predicha de la pel |
-| `MatchScene._teammate_with_ball()` | 500 |  |
-| `MatchScene.touch_context()` | 525 | Situacion para la botonera tactil: ataque (la pelota es del equipo de la persona o le llega un pase propio), defensa (la tiene el rival) o s |
-| `MatchScene._update_rings()` | 536 | Aro de posesion bajo el poseedor (color de su equipo; sin aro = pelota suelta) y, con la pelota en los pies de la persona, aro bajo el compa |
-| `MatchScene._physics_process(delta: float)` | 555 |  |
-| `MatchScene._person_plays()` | 594 | true si una persona maneja al equipo 0 (jugador de campo o arquero). Las pruebas que dejan al equipo 0 en manos de la IA le ponen un AIInput |
-| `MatchScene._ball_in_own_third()` | 600 | true si la pelota esta en el tercio defensivo propio (zona donde tiene sentido manejar al arquero). |
-| `MatchScene._keeper_is_best_candidate()` | 605 | true si al pulsar CAMBIO conviene pasar al arquero: la jugada esta en el area propia y el arquero es quien mejor puede intervenir (mas cerca |
-| `MatchScene.take_keeper_control()` | 617 | Pasa el control de la persona al arquero propio: el jugador de campo que llevaba vuelve a la IA. |
-| `MatchScene.release_keeper_control()` | 633 | Devuelve el control a un jugador de campo (el mas cercano a la pelota) y el arquero vuelve a la IA. |
-| `MatchScene.switch_candidate()` | 655 | Companero que recibiria el control al pulsar CAMBIO: el mas cercano a la pelota, sin contar al actual. Lo usan tanto el cambio como el indic |
-| `MatchScene.switch_to_nearest_to_ball()` | 668 | Pasa el control humano al companero mas cercano a la pelota (distinto del actual). |
-| `MatchScene._auto_switch()` | 673 |  |
-| `MatchScene._give_control(target: Footballer)` | 691 |  |
+| `MatchScene._spawn_teams()` | 137 |  |
+| `MatchScene._seed_ai(f: Footballer, id: int)` | 167 |  |
+| `MatchScene._make_footballer(team: int, id: int, source: InputSource)` | 171 |  |
+| `MatchScene._exit_tree()` | 180 |  |
+| `MatchScene._on_quit_requested()` | 184 | Con el partido como escena actual, «Salir» cierra el juego; si lo aloja otro nodo (pruebas) solo avisa. |
+| `MatchScene._on_training_toggle()` | 190 | Cambia entre partido normal y entrenamiento y vuelve a montar la escena. |
+| `MatchScene._on_gameplay_mode_changed()` | 197 | Otro modo de jugabilidad: se vuelve a montar la escena (modelos y clips del modo). |
+| `MatchScene._on_practice_requested()` | 203 | Abre la sala de practica (galeria de animaciones y malabares) y vuelve aqui con «Volver». |
+| `MatchScene.kickoff_positions(team: int, kicking: bool = true)` | 211 | Formacion de saque: 4 jugadores de campo por equipo (cierre, alas, pivote); los arqueros van a su arco. El equipo que saca coloca a su pivot |
+| `MatchScene._on_kickoff_requested(kicking_team: int)` | 220 |  |
+| `MatchScene._setup_replay()` | 235 |  |
+| `MatchScene.score_total_consistent()` | 262 | Comprobacion de coherencia (pruebas): el marcador suma los goles del partido. |
+| `MatchScene._on_replay_requested()` | 265 |  |
+| `MatchScene._on_set_piece_requested(kind: String, team: int, pos: Vector3)` | 277 | Prepara un balon parado: ejecutor (el mas cercano del equipo que saca; el arquero en el saque de arco), pelota en su sitio y rivales a dista |
+| `MatchScene._focus_after_set_piece(taker: Footballer)` | 331 |  |
+| `MatchScene._clear_zone(pos: Vector3, team: int, radius: float)` | 338 | Aleja a los rivales del equipo que saca a `radius` metros de la pelota (direccion radial, dentro de la cancha). |
+| `MatchScene._arrange_box(kind: String, team: int, pos: Vector3, taker: Footballer)` | 351 | Jugada ensayada en el area rival: atacantes a primer palo, segundo palo, punto de penal y borde del area; cada defensor marca a uno por el l |
+| `MatchScene.human_actor()` | 391 | Nodo que maneja la persona ahora mismo: el arquero si lo ha tomado, si no el jugador de campo. Lo usan la camara y los indicadores. |
+| `MatchScene.own_keeper()` | 395 | Arquero propio (el que defiende el arco de este equipo). |
+| `MatchScene._charge_state()` | 401 |  |
+| `MatchScene._on_match_event(e: GameEvent)` | 412 | Con un pase de la persona el control pasa al RECEPTOR en el momento del pase (como en los juegos de futbol de consola): la persona maneja a  |
+| `MatchScene.pass_receiver(passer: Footballer)` | 448 | Receptor de un pase propio sin destinatario: el companero (no el pasador) que llega antes a algun punto de la trayectoria predicha de la pel |
+| `MatchScene._teammate_with_ball()` | 494 |  |
+| `MatchScene.touch_context()` | 519 | Situacion para la botonera tactil: ataque (la pelota es del equipo de la persona o le llega un pase propio), defensa (la tiene el rival) o s |
+| `MatchScene._update_rings()` | 530 | Aro de posesion bajo el poseedor (color de su equipo; sin aro = pelota suelta) y, con la pelota en los pies de la persona, aro bajo el compa |
+| `MatchScene._physics_process(delta: float)` | 549 |  |
+| `MatchScene._person_plays()` | 588 | true si una persona maneja al equipo 0 (jugador de campo o arquero). Las pruebas que dejan al equipo 0 en manos de la IA le ponen un AIInput |
+| `MatchScene._ball_in_own_third()` | 594 | true si la pelota esta en el tercio defensivo propio (zona donde tiene sentido manejar al arquero). |
+| `MatchScene._keeper_is_best_candidate()` | 599 | true si al pulsar CAMBIO conviene pasar al arquero: la jugada esta en el area propia y el arquero es quien mejor puede intervenir (mas cerca |
+| `MatchScene.take_keeper_control()` | 611 | Pasa el control de la persona al arquero propio: el jugador de campo que llevaba vuelve a la IA. |
+| `MatchScene.release_keeper_control()` | 627 | Devuelve el control a un jugador de campo (el mas cercano a la pelota) y el arquero vuelve a la IA. |
+| `MatchScene.switch_candidate()` | 649 | Companero que recibiria el control al pulsar CAMBIO: el mas cercano a la pelota, sin contar al actual. Lo usan tanto el cambio como el indic |
+| `MatchScene.switch_to_nearest_to_ball()` | 662 | Pasa el control humano al companero mas cercano a la pelota (distinto del actual). |
+| `MatchScene._auto_switch()` | 667 |  |
+| `MatchScene._give_control(target: Footballer)` | 685 |  |
 <!-- /AUTO -->
 
 <!-- AUTO:funcs:scripts/gameplay/match_context.gd -->

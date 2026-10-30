@@ -370,4 +370,5 @@ func _build_ambient() -> void:
 			var pz: float = sz * (hw + 2.4)
 			_add_visual_box(_ambient_root, Vector3(0.25, 11.0, 0.25), Vector3(px, 5.5, pz), pole_mat)
 			_add_visual_box(_ambient_root, Vector3(1.6, 0.6, 0.3), Vector3(px, 11.2, pz), lamp_mat)
-	_ambient_root.visible = GraphicsSettings.ambient_props_enabled() if is_inside_tree() else true
+	# Modo 4 (Json): cancha sin gradas, bancos ni torres (por ahora se prioriza la jugabilidad).
+	_ambient_root.visible = (GraphicsSettings.ambient_props_enabled() if is_inside_tree() else true) and not PackLibrary.json_mode()

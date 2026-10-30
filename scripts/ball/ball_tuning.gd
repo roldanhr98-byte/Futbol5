@@ -54,10 +54,12 @@ extends Resource
 @export var max_spin: float = 150.0
 
 @export_group("Pase")
-@export var pass_speed_min: float = 4.0
+## Velocidad minima (m/s) de un pase raso a un companero (antes 4: los pases cortos se sentian flojos).
+@export var pass_speed_min: float = 7.0
 @export var pass_speed_max: float = 28.0
-## Velocidad a la que queremos que el pase raso llegue al receptor.
-@export var pass_arrival_speed: float = 4.5
+## Velocidad a la que queremos que el pase raso llegue al receptor (antes 4.5: «los pases se sienten debiles»; en First
+## Touch y Dream League el pase llega tenso al pie).
+@export var pass_arrival_speed: float = 6.0
 @export var lob_angle_deg: float = 38.0
 @export var driven_pass_extra: float = 1.25
 

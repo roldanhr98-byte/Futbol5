@@ -34,7 +34,7 @@ var assist_override_shot: float = -1.0
 ## Marcado por el gestor de partido: este futbolista es el que maneja la persona.
 var is_human_controlled: bool = false
 ## Probabilidad de que la IA entre cuando puede disputar una pelota protegida por el portador (ver _ai_commits_tackle).
-const AI_TACKLE_COMMIT := 0.3
+const AI_TACKLE_COMMIT := 0.45
 ## Angulo (grados) entre el joystick y la pelota suelta por debajo del cual el rumbo se ajusta al punto donde se alcanza.
 const LOOSE_SNAP_DEG := 40.0
 ## Velocidad extra (m/s) de un ajuste de zancada para llegar a la pelota al patear. Mueve el cuerpo pero NO entra en
@@ -60,6 +60,8 @@ var set_piece: SetPiece = null
 var incoming_pass_point: Vector3 = Vector3.ZERO
 var incoming_pass_kind: StringName = &""
 var incoming_pass_time: float = 0.0
+## Recepcion: true desde que se anuncia un pase hasta que el joystick se suelta una vez (el que se traia no cuenta).
+var _recv_stick_lock: bool = false
 ## Quien hizo el pase que viene (en los primeros pasos tras patear sigue contando como poseedor: no corta el pase).
 var incoming_pass_from: Node = null
 ## Carrera al espacio tras dar un pase (pared): direccion y segundos que quedan. La usa la IA del pasador.
@@ -122,6 +124,7 @@ func expect_pass(point: Vector3, kind: StringName, from: Node = null) -> void:
 	incoming_pass_point = Vector3(point.x, 0.0, point.z)
 	incoming_pass_kind = kind
 	incoming_pass_time = 2.5 if String(kind).begins_with("through") or String(kind).begins_with("cross") else 1.6
+	_recv_stick_lock = true
 
 ## true mientras hay un pase en camino hacia este jugador (y la pelota no la tiene nadie todavia).
 func has_incoming_pass() -> bool:
@@ -239,7 +242,11 @@ func _physics_process(delta: float) -> void:
 	# (se orienta y ajusta los pasos a la trayectoria real de la pelota). Mover el joystick manda siempre.
 	# Con una orden de golpeo de primera esperando la pelota, el joystick es la puntería y el jugador va a la trayectoria.
 	var first_time: bool = is_human_controlled and ball_handler.is_waiting_first_time()
-	if is_human_controlled and (first_time or (stick_mag < 0.2 and has_incoming_pass())) and not ball_handler.has_possession():
+	# El joystick que se traia del pase (al cambiar al receptor sigue apretado) no aleja al receptor de la pelota: manda
+	# de nuevo cuando se suelta una vez.
+	if stick_mag < 0.2:
+		_recv_stick_lock = false
+	if is_human_controlled and (first_time or ((stick_mag < 0.2 or _recv_stick_lock) and has_incoming_pass())) and not ball_handler.has_possession():
 		var meet: Vector3 = pass_meet_point() if has_incoming_pass() else ball_handler.incoming_ball_point()
 		var to_meet: Vector3 = KickModel.flat(meet - global_position)
 		if first_time and to_meet.length() <= 0.5:
@@ -283,6 +290,10 @@ func _physics_process(delta: float) -> void:
 					actions.tackle_gesture(press_info.carrier)
 					var won: bool = ball_handler.attempt_tackle(press_info.carrier)
 					tackled.emit(won)
+				elif press_info.attempt_tackle:
+					actions.press_gesture(press_info.carrier)
+			elif press_info.attempt_tackle and press_info.carrier != null:
+				actions.press_gesture(press_info.carrier)
 	else:
 		press.reset()
 	if frame.tackle_pressed and not ball_handler.controls_ball():

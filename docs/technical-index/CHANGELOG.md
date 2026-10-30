@@ -11,6 +11,26 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-10-30 — Jugabilidad del modo 4: pases al compañero y tensos, golpeo que le da al balón, presión con disputa, cancha despejada
+
+Pedido (vídeo de la 0.1.34): conducción insegura, pases débiles que no buscan compañero, presión sin animación, pase con animación
+pero sin tocar la pelota; quitar público y lo de alrededor de la cancha; estudiar First Touch (xapk) y Dream League Soccer.
+Detalle y medidas: [JSON_MODE](SYSTEMS/JSON_MODE.md#segunda-tanda-2026-10-30-pases-golpeo-que-no-le-daba-al-balón-presión-y-cancha-despejada).
+
+- **Pases** (`PassAssist`, `AssistTuning`, `BallTuning`): con asistencia media o alta el pase va al compañero elegido (antes ~65 % del
+  ángulo, tope 11.7°); cono 52 → 60° y cono de respaldo de 85°; llegada 4.5 → 6 m/s, mínimo 4 → 7 m/s; pase al espacio más largo y vivo.
+- **Receptor** (`Footballer._recv_stick_lock`): el joystick que se traía del pase no lo aleja de la pelota.
+- **Golpeo** (`BallHandler._json_kick_ik`, `kick_reach`, `PlayerTuning.json_kick_reach` = 0.55): pie llevado a la pelota (IK) al final
+  del balanceo y golpeo válido hasta 0.55 m en el modo 4; golpeos en falso por partido de IA 5–6 → 0–1.
+- **Giros con pelota** (`JsonBallMove.MAX_LEAD` = 0.4 s): menos primeros toques errados por interferencia; `history` para diagnóstico.
+- **Presión** (`PlayerActions.press_gesture`, `JsonCatalog` «press_duel»): forcejeo al presionar pegado sin entrar (IA y persona);
+  `Footballer.AI_TACKLE_COMMIT` 0.3 → 0.45.
+- **Cancha** (`Pitch._build_ambient`, `MatchScene`): en el modo 4 sin gradas, bancos ni torres; borrado json_sideline.gd (JsonSideline).
+- Pruebas nuevas: `test_passing::test_medium_assist_pass_goes_to_the_chosen_teammate_firmly`; `test_json_mode::test_ai_match_in_json_mode`
+  comprueba ≤ 2 golpeos en falso.
+- Verificación: suite completa headless 216 / 1 425 / 0 fallos (16 omitidas); con render `json_mode` 10/10 y
+  `LIVE_KICKS_MODE=4 live_kicks` 4/4. Sin prueba en Android.
+
 ## 2026-10-30 — Modo 4 «Json»: las 2 022 animaciones conectadas, giros con pelota, vuelta pisando la pelota, golpeo girando y toques con el pie
 
 Pedido: conducción con toques visibles al avanzar y en diagonal, giro con la pelota, pisar la pelota y volver atrás sin errarla, no
@@ -34,7 +54,7 @@ Detalle: [JSON_MODE](SYSTEMS/JSON_MODE.md).
 - **Resto conectado**: festejos/lamentos/gestos/calentamiento/barrera/espera por rol (`JsonCatalog.situation_clip`, `AnimationCatalog`),
   reparto de alias en cada balón parado y saque inicial (`PackLibrary.vary_aliases`, `SetPiece`, `MatchManager`), caídas por carrera con
   levantarse de la misma postura (`PlayerActions._json_fall/_json_getup`), gesto de entrada de pie, levantarse y gestos del arquero
-  (`Goalkeeper._json_getup`), técnicos/mascota/público (`scripts/gameplay/json_sideline.gd`, nuevo; `MatchScene`), nombres de rol en la
+  (`Goalkeeper._json_getup`), técnicos/mascota/público (json_sideline.gd, nuevo, borrado en la entrada siguiente; `MatchScene`), nombres de rol en la
   galería (`PracticeScene.ROLE_NAMES`).
 - **Rendimiento**: planificar un golpeo evalúa los 24 candidatos que mejor encajan (2.4 ms con cientos de clips); cajas de trayectoria en
   el planificador aéreo (15–18 ms). La IA usa los giros de clip con límites (con pelota ≥ 110° cada 3 s; sin pelota solo desde parado):

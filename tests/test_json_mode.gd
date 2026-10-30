@@ -228,6 +228,13 @@ func test_ai_match_in_json_mode() -> void:
 		check(int(counts.get("PASS", 0)) >= 2, "%s: hay pases (%d)" % [name, int(counts.get("PASS", 0))])
 		check(int(counts.get("SHOT", 0)) >= 1, "%s: hay tiros (%d)" % [name, int(counts.get("SHOT", 0))])
 		check(out_of_bounds == 0, "%s: nadie se sale de la cancha (%d)" % [name, out_of_bounds])
+		# Con el alcance del golpeo del modo 4 (PlayerTuning.json_kick_reach) y el pie llevado a la pelota casi ninguna patada
+		# se pierde en el aire (antes 4-6 de ~22 por partido).
+		check(int(ks["missed"]) <= 2, "%s: casi ningun golpeo en falso (%d de %d)" % [name, int(ks["missed"]), int(ks["started"])])
+		var gestures := 0
+		for f in m.home + m.away:
+			gestures += int(f.actions.stats.get("press_gestures", 0))
+		note("%s: gestos de disputa al presionar %d" % [name, gestures])
 		check(m.home[1].visual.json_mode and m.keepers[0].visual.json_mode, "%s: jugadores y arquero usan el modo Json" % name)
 		cleanup()
 	_restore(prev)
