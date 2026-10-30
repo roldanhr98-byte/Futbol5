@@ -135,7 +135,7 @@ tiros hacia atrás usan siempre giro y después golpeo.
 
 | Qué | Resultado |
 |---|---|
-| Suite completa headless (`tools/run_tests.sh`) | 215 pruebas, 16 omitidas (render); 1 fallo en la primera pasada: el partido de IA del modo 4 sin tiros en 90 s (azar); repetido 6 veces después: 1–4 tiros, todo OK |
+| Suite completa headless (`tools/run_tests.sh`) | pasada final: 215 pruebas / 1 416 comprobaciones / 0 fallos (16 omitidas: necesitan render). En una pasada anterior, a mitad del trabajo, falló una vez el partido de IA del modo 4 (0 tiros en 90 s, azar); en las 6 repeticiones siguientes, 1–4 tiros |
 | `json_mode` con render | 10/10: conducción trote 20/20 toques con el pie, carrera 24/24, sprint 16/23, zigzag 32/34 |
 | `LIVE_KICKS_MODE=4 live_kicks` (esqueleto animado) | 4/4 pruebas en dos pasadas; 48–49 de 50 golpeos con contacto |
 | `TEST_GAMEPLAY_MODE=4 live_feet` | 6/7 (el séptimo, «encima de la pelota al acelerar» 5 % con límite < 5 %, ya fallaba antes y está calibrado para el modo 1) |

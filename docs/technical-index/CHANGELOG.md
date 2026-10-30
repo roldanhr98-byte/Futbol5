@@ -39,8 +39,10 @@ Detalle: [JSON_MODE](SYSTEMS/JSON_MODE.md).
 - **Rendimiento**: planificar un golpeo evalúa los 24 candidatos que mejor encajan (2.4 ms con cientos de clips); cajas de trayectoria en
   el planificador aéreo (15–18 ms). La IA usa los giros de clip con límites (con pelota ≥ 110° cada 3 s; sin pelota solo desde parado):
   sin límites pasaba de 14–17 a 6–12 pases en 90 s.
-- **Verificación**: ver la tabla de JSON_MODE (suite completa, `json_mode` con render, `live_kicks` y `live_feet` en modo 4, partidos de
-  IA repetidos, capturas). `test_json_mode.gd` ajustado a un solo modelo. Sin prueba en Android.
+- **Verificación**: suite headless 215 / 1 416 / 0 fallos (16 omitidas, render); con render como en CI `live_feet` 7/7, `live_kicks`
+  4/4, `pack_motion` 2/2, `json_mode` 10/10; en modo 4 `live_kicks` 4/4 (48–49 de 50 golpeos con contacto) y `live_feet` 6/7 (el fallo,
+  «encima de la pelota al acelerar» 5 %, ya existía). Detalle en la tabla de JSON_MODE. `test_json_mode.gd` ajustado a un solo modelo.
+  Sin prueba en Android.
 
 ## 2026-10-29 — Modo 4 «Json»: las animaciones JSON sobre un esqueleto canónico, con dos modelos (Tripo adaptado y humanoide realista)
 
