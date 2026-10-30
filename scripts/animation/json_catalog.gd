@@ -21,6 +21,38 @@ const CARRY := [
 ## Roles de la mezcla direccional (marcaje, arquero): la direccion de cada clip sale de su meta natural_dir.
 const DIR_ROLES: Array[StringName] = [&"dir_back", &"dir_back_diag", &"dir_fwd_diag", &"dir_side", &"dir_back_walk", &"dir_fwd_diag_walk"]
 
+## Mezcla direccional del modo 4 (marcaje y presion mirando al rival, arquero, arbitro): [clip, x, y] con x = derecha e
+## y = adelante, todos a distancia 1 en la direccion medida del clip (meta natural_dir = adelante, derecha); al frente, el
+## trote de la marcha. Sin esto la mezcla quedaba sin clips (buscaba los nombres del pack de Mixamo) y el jugador que
+## presionaba se deslizaba con la pose fija («como estatuas»).
+static func dir_points() -> Array:
+	var out: Array = []
+	if PackLibrary.has_clip(DIR_FORWARD):
+		out.append([DIR_FORWARD, 0.0, 1.0])
+	for role in DIR_JOG_ROLES:
+		for id in PackLibrary.by_role(role):
+			var nd: Vector2 = PackLibrary.meta(id).get("natural_dir", Vector2.ZERO)
+			if nd.length() < 0.5:
+				continue
+			var d: Vector2 = Vector2(nd.y, nd.x).normalized()
+			out.append([id, d.x, d.y])
+	return out
+
+## Velocidad media (m/s) de los clips de dir_points a su ritmo natural (referencia de la cadencia de la mezcla).
+static func dir_ref_speed() -> float:
+	var sum := 0.0
+	var n := 0
+	for pt in dir_points():
+		var v: float = float(PackLibrary.meta(pt[0]).get("natural_speed", 0.0))
+		if v > 0.3:
+			sum += v
+			n += 1
+	return sum / float(n) if n > 0 else 2.3
+
+const DIR_FORWARD := &"jn_jog_1144"
+## Roles de la mezcla direccional usados en la marcha (los de paso, *_walk, quedan para la galeria).
+const DIR_JOG_ROLES: Array[StringName] = [&"dir_back", &"dir_back_diag", &"dir_fwd_diag", &"dir_side"]
+
 static func active() -> bool:
 	return PackLibrary.json_mode()
 

@@ -90,6 +90,18 @@ func test_model_builds_and_animates() -> void:
 		check(v.skeleton != null and v.skeleton.get_bone_count() == 23, "%s: 23 huesos del esqueleto canonico" % name)
 		check(v.uses_pack and v.anim_tree != null, "%s: arbol de animacion con la libreria JSON" % name)
 		check(v.json_human, "%s: el humanoide propio" % name)
+		# Mezcla direccional (marcaje y presion mirando al rival): con clips del modo 4. Sin ellos el jugador que presionaba
+		# se deslizaba con la pose fija («como estatuas»).
+		var dir_space: AnimationNodeBlendSpace2D = (v.anim_tree.tree_root as AnimationNodeBlendTree).get_node(&"Dir") as AnimationNodeBlendSpace2D
+		var npts: int = dir_space.get_blend_point_count() if dir_space != null else 0
+		note("%s: mezcla direccional con %d clips (%s)" % [name, npts, str(JsonCatalog.dir_points().map(func(pt: Array) -> String: return String(pt[0])))])
+		check(npts >= 6, "%s: la mezcla direccional tiene clips del modo Json (%d)" % [name, npts])
+		var dir_ok := true
+		for i in npts:
+			var an: AnimationNodeAnimation = dir_space.get_blend_point_node(i) as AnimationNodeAnimation
+			if an == null or v.anim_player == null or not v.anim_player.has_animation(an.animation):
+				dir_ok = false
+		check(dir_ok, "%s: todos los clips de la mezcla direccional existen en el reproductor" % name)
 		# Marcha: de parado a sprint, con y sin pelota; la pose cambia y la cadera queda a una altura creible.
 		var hips: int = v.skeleton.find_bone("mixamorig_Hips")
 		var ys: Array[float] = []
@@ -230,7 +242,13 @@ func test_ai_match_in_json_mode() -> void:
 		check(out_of_bounds == 0, "%s: nadie se sale de la cancha (%d)" % [name, out_of_bounds])
 		# Con el alcance del golpeo del modo 4 (PlayerTuning.json_kick_reach) y el pie llevado a la pelota casi ninguna patada
 		# se pierde en el aire (antes 4-6 de ~22 por partido).
-		check(int(ks["missed"]) <= 2, "%s: casi ningun golpeo en falso (%d de %d)" % [name, int(ks["missed"]), int(ks["started"])])
+		# Solo cuentan los fallos sin un rival que toque la pelota durante el balanceo (si la toca, fallar es lo correcto).
+		var clean_miss := 0
+		for f in m.home + m.away:
+			for e in f.ball_handler.kick_log:
+				if e.get("result", &"") == &"missed" and not bool(e.get("interfered", false)):
+					clean_miss += 1
+		check(clean_miss <= 2, "%s: casi ningun golpeo en falso sin rival de por medio (%d; %d en total de %d)" % [name, clean_miss, int(ks["missed"]), int(ks["started"])])
 		var gestures := 0
 		for f in m.home + m.away:
 			gestures += int(f.actions.stats.get("press_gestures", 0))

@@ -11,6 +11,16 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-10-30 — Modo 4: jugadores que se deslizaban sin animación («estatuas»), sobre todo al presionar
+
+- **Causa**: la mezcla direccional (marcaje/presión mirando al rival, arquero, árbitro) no tenía clips en el modo 4 (buscaba los
+  del pack de Mixamo): pose fija mientras el cuerpo se movía. **Arreglo**: `JsonCatalog.dir_points` / `dir_ref_speed` y su uso en
+  `FootballerVisual._setup_animation_tree` / `drive_motion`.
+- Gestos en el sitio con el cuerpo corriendo: se cortan (`Footballer._json_clip_slides`) y solo empiezan casi frenado
+  (`PlayerActions.GESTURE_MAX_SPEED`).
+- Medido (60 s de partido de IA con render): imágenes con los pies quietos corriendo 808 → 81. Prueba nueva en
+  `test_json_mode::test_model_builds_and_animates`. Detalle: [JSON_MODE](SYSTEMS/JSON_MODE.md).
+
 ## 2026-10-30 — Jugabilidad del modo 4: pases al compañero y tensos, golpeo que le da al balón, presión con disputa, cancha despejada
 
 Pedido (vídeo de la 0.1.34): conducción insegura, pases débiles que no buscan compañero, presión sin animación, pase con animación
@@ -20,8 +30,8 @@ Detalle y medidas: [JSON_MODE](SYSTEMS/JSON_MODE.md#segunda-tanda-2026-10-30-pas
 - **Pases** (`PassAssist`, `AssistTuning`, `BallTuning`): con asistencia media o alta el pase va al compañero elegido (antes ~65 % del
   ángulo, tope 11.7°); cono 52 → 60° y cono de respaldo de 85°; llegada 4.5 → 6 m/s, mínimo 4 → 7 m/s; pase al espacio más largo y vivo.
 - **Receptor** (`Footballer._recv_stick_lock`): el joystick que se traía del pase no lo aleja de la pelota.
-- **Golpeo** (`BallHandler._json_kick_ik`, `kick_reach`, `PlayerTuning.json_kick_reach` = 0.55): pie llevado a la pelota (IK) al final
-  del balanceo y golpeo válido hasta 0.55 m en el modo 4; golpeos en falso por partido de IA 5–6 → 0–1.
+- **Golpeo** (`BallHandler._json_kick_ik`, `kick_reach`, `PlayerTuning.json_kick_reach` = 0.65): pie llevado a la pelota (IK, hasta 0.55 m) al
+  final del balanceo y golpeo válido hasta 0.65 m en el modo 4; golpeos en falso por partido de IA 5–6 → 0 (4 de 4 partidos).
 - **Giros con pelota** (`JsonBallMove.MAX_LEAD` = 0.4 s): menos primeros toques errados por interferencia; `history` para diagnóstico.
 - **Presión** (`PlayerActions.press_gesture`, `JsonCatalog` «press_duel»): forcejeo al presionar pegado sin entrar (IA y persona);
   `Footballer.AI_TACKLE_COMMIT` 0.3 → 0.45.

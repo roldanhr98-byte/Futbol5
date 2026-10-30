@@ -2355,7 +2355,7 @@ var _jik_max: float = JSON_TOUCH_IK_MAX
 ## Modo 4: en los ultimos JSON_KICK_IK_IN s del balanceo de un golpeo el pie que patea va hasta la pelota real (IK), hasta
 ## JSON_KICK_IK_MAX m desde el gesto del clip: el golpe se ve dado con el pie aunque la pelota se haya corrido un poco.
 const JSON_KICK_IK_IN := 0.12
-const JSON_KICK_IK_MAX := 0.5
+const JSON_KICK_IK_MAX := 0.55
 
 ## true si este jugador patea con los clips del modo 4 (Json).
 func _json_kicks() -> bool:

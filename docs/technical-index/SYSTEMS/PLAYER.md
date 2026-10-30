@@ -63,22 +63,22 @@
 | `kick_lockout` | `0.35` | float | `scripts/player/player_tuning.gd:71` | `scripts/player/ball_handler.gd:1252` | Segundos de bloqueo despues de un pase/tiro antes de poder volver a tocar la pelota. (Conduccion) |
 | `possession_radius` | `1.1` | float | `scripts/player/player_tuning.gd:72` | `scripts/ai/ai_input.gd:589`, `scripts/assistance/press_controller.gd:44`, `scripts/assistance/press_controller.gd:49`, `scripts/assistance/press_controller.gd:51` (+3) |  (Conduccion) |
 | `kick_contact_radius` | `0.30` | float | `scripts/player/player_tuning.gd:76` | `scripts/player/ball_handler.gd:2366` | Radio (m) entre el pie (posicion de contacto medida del clip) y el centro de la pelota para que el golpeo cuente. (Patada con animacion del pack) |
-| `json_kick_reach` | `0.55` | float | `scripts/player/player_tuning.gd:80` | `scripts/player/ball_handler.gd:2366` | Modo 4 (Json): alcance (m) con el que el golpeo de un clip sigue contando aunque la pelota se haya corrido del punto previsto; el pie se estira hasta ella (IK) en el ultimo tramo del balanceo. Con 0.30 una de cada cinco patadas del partido de IA se perdia en el aire con la pelota a 0.30-0.47 m («hace la animacion pero no le da al balon»). (Patada con animacion del pack) |
-| `kick_foot_max_height` | `0.25` | float | `scripts/player/player_tuning.gd:83` | `scripts/player/ball_handler.gd:743` | Altura maxima (m) de la punta del pie y velocidad minima de avance (m/s) para que un punto de la trayectoria del clip cuente como golpeo: el pie debe ir bajo y lanzado, no subiendo ni frenando. (Patada con animacion del pack) |
-| `kick_foot_min_speed` | `3.0` | float | `scripts/player/player_tuning.gd:84` | `scripts/player/ball_handler.gd:743` |  (Patada con animacion del pack) |
-| `kick_adjust_max` | `0.30` | float | `scripts/player/player_tuning.gd:87` | `scripts/player/ball_handler.gd:781`, `scripts/player/ball_handler.gd:874` | Ajuste de zancada: desplazamiento maximo (m) del cuerpo hacia la pelota durante la latencia para que el pie llegue. Crece con la velocidad (a sprint la zancada es larga): kick_adjust_max + kick_adjust_sprint * ratio de sprint. (Patada con animacion del pack) |
-| `kick_adjust_sprint` | `0.28` | float | `scripts/player/player_tuning.gd:88` | `scripts/player/ball_handler.gd:781`, `scripts/player/ball_handler.gd:874` |  (Patada con animacion del pack) |
-| `kick_start_residual` | `0.18` | float | `scripts/player/player_tuning.gd:90` | `scripts/player/ball_handler.gd:797`, `scripts/player/ball_handler.gd:798`, `scripts/player/ball_handler.gd:799`, `scripts/player/ball_handler.gd:845` (+5) | Error maximo (m) que se acepta al INICIAR el balanceo, medido tras el ajuste con la pelota y el jugador predichos al contacto. (Patada con animacion del pack) |
-| `kick_latency` | `0.20` | float | `scripts/player/player_tuning.gd:92` | `scripts/player/ball_handler.gd:577`, `scripts/player/ball_handler.gd:909` | Latencia objetivo (s) entre soltar el boton y el golpeo; el clip se acelera/recorta para llegar a ella. (Patada con animacion del pack) |
-| `shot_windup` | `0.12` | float | `scripts/player/player_tuning.gd:96` | `scripts/player/ball_handler.gd:577` | Preparacion extra (s) del TIRO sobre kick_latency (+ shot_windup_charge con la carga al maximo): el clip arranca antes y a velocidad casi natural, asi se ve el balanceo de la pierna hacia atras (prueba03: el tiro duraba 0.17 s en pantalla y no se notaba). Los pases conservan la latencia corta. (Patada con animacion del pack) |
-| `shot_windup_charge` | `0.06` | float | `scripts/player/player_tuning.gd:97` | `scripts/player/ball_handler.gd:577` |  (Patada con animacion del pack) |
-| `kick_clip_speed_max` | `1.6` | float | `scripts/player/player_tuning.gd:99` | `scripts/player/ball_handler.gd:582` | Aceleracion maxima del clip de patada (1 = velocidad original del clip). (Patada con animacion del pack) |
-| `kick_turn_scale` | `0.35` | float | `scripts/player/player_tuning.gd:101` | `scripts/player/ball_handler.gd:599`, `scripts/player/ball_handler.gd:603`, `scripts/player/ball_handler.gd:1088` | Fraccion de la velocidad de giro que se conserva mientras el pie se prepara (el pie de apoyo fija la direccion). (Patada con animacion del pack) |
-| `kick_follow_through` | `0.30` | float | `scripts/player/player_tuning.gd:103` | `scripts/player/ball_handler.gd:1098` | Segundos de continuacion del clip tras el golpeo antes de devolver el cuerpo a la marcha. (Patada con animacion del pack) |
-| `first_touch_absorb` | `0.65` | float | `scripts/player/player_tuning.gd:107` | `scripts/player/ball_handler.gd:2709` | Fraccion de energia que absorbe el control orientado (0 = rebote total). (Contacto con balon) |
-| `body_mass` | `75.0` | float | `scripts/player/player_tuning.gd:108` | **sin uso** |  (Contacto con balon) |
-| `capsule_radius` | `0.3` | float | `scripts/player/player_tuning.gd:109` | `scripts/player/ball_handler.gd:1464`, `scripts/player/ball_handler.gd:1474`, `scripts/player/footballer.gd:85` |  (Contacto con balon) |
-| `capsule_height` | `1.75` | float | `scripts/player/player_tuning.gd:110` | `scripts/player/ball_handler.gd:1464`, `scripts/player/footballer.gd:86`, `scripts/player/footballer.gd:88` |  (Contacto con balon) |
+| `json_kick_reach` | `0.65` | float | `scripts/player/player_tuning.gd:81` | `scripts/player/ball_handler.gd:2366` | Modo 4 (Json): alcance (m) con el que el golpeo de un clip sigue contando aunque la pelota se haya corrido del punto previsto; el pie se estira hasta ella (IK) en el ultimo tramo del balanceo. Con 0.30 una de cada cinco patadas del partido de IA se perdia en el aire con la pelota a 0.30-0.47 m («hace la animacion pero no le da al balon»); con 0.55 seguian perdiendose 2-4 por partido a 0.56-0.73 m en jugadas disputadas (el cuerpo empujado 0.4-1.1 m en el balanceo). (Patada con animacion del pack) |
+| `kick_foot_max_height` | `0.25` | float | `scripts/player/player_tuning.gd:84` | `scripts/player/ball_handler.gd:743` | Altura maxima (m) de la punta del pie y velocidad minima de avance (m/s) para que un punto de la trayectoria del clip cuente como golpeo: el pie debe ir bajo y lanzado, no subiendo ni frenando. (Patada con animacion del pack) |
+| `kick_foot_min_speed` | `3.0` | float | `scripts/player/player_tuning.gd:85` | `scripts/player/ball_handler.gd:743` |  (Patada con animacion del pack) |
+| `kick_adjust_max` | `0.30` | float | `scripts/player/player_tuning.gd:88` | `scripts/player/ball_handler.gd:781`, `scripts/player/ball_handler.gd:874` | Ajuste de zancada: desplazamiento maximo (m) del cuerpo hacia la pelota durante la latencia para que el pie llegue. Crece con la velocidad (a sprint la zancada es larga): kick_adjust_max + kick_adjust_sprint * ratio de sprint. (Patada con animacion del pack) |
+| `kick_adjust_sprint` | `0.28` | float | `scripts/player/player_tuning.gd:89` | `scripts/player/ball_handler.gd:781`, `scripts/player/ball_handler.gd:874` |  (Patada con animacion del pack) |
+| `kick_start_residual` | `0.18` | float | `scripts/player/player_tuning.gd:91` | `scripts/player/ball_handler.gd:797`, `scripts/player/ball_handler.gd:798`, `scripts/player/ball_handler.gd:799`, `scripts/player/ball_handler.gd:845` (+5) | Error maximo (m) que se acepta al INICIAR el balanceo, medido tras el ajuste con la pelota y el jugador predichos al contacto. (Patada con animacion del pack) |
+| `kick_latency` | `0.20` | float | `scripts/player/player_tuning.gd:93` | `scripts/player/ball_handler.gd:577`, `scripts/player/ball_handler.gd:909` | Latencia objetivo (s) entre soltar el boton y el golpeo; el clip se acelera/recorta para llegar a ella. (Patada con animacion del pack) |
+| `shot_windup` | `0.12` | float | `scripts/player/player_tuning.gd:97` | `scripts/player/ball_handler.gd:577` | Preparacion extra (s) del TIRO sobre kick_latency (+ shot_windup_charge con la carga al maximo): el clip arranca antes y a velocidad casi natural, asi se ve el balanceo de la pierna hacia atras (prueba03: el tiro duraba 0.17 s en pantalla y no se notaba). Los pases conservan la latencia corta. (Patada con animacion del pack) |
+| `shot_windup_charge` | `0.06` | float | `scripts/player/player_tuning.gd:98` | `scripts/player/ball_handler.gd:577` |  (Patada con animacion del pack) |
+| `kick_clip_speed_max` | `1.6` | float | `scripts/player/player_tuning.gd:100` | `scripts/player/ball_handler.gd:582` | Aceleracion maxima del clip de patada (1 = velocidad original del clip). (Patada con animacion del pack) |
+| `kick_turn_scale` | `0.35` | float | `scripts/player/player_tuning.gd:102` | `scripts/player/ball_handler.gd:599`, `scripts/player/ball_handler.gd:603`, `scripts/player/ball_handler.gd:1088` | Fraccion de la velocidad de giro que se conserva mientras el pie se prepara (el pie de apoyo fija la direccion). (Patada con animacion del pack) |
+| `kick_follow_through` | `0.30` | float | `scripts/player/player_tuning.gd:104` | `scripts/player/ball_handler.gd:1098` | Segundos de continuacion del clip tras el golpeo antes de devolver el cuerpo a la marcha. (Patada con animacion del pack) |
+| `first_touch_absorb` | `0.65` | float | `scripts/player/player_tuning.gd:108` | `scripts/player/ball_handler.gd:2709` | Fraccion de energia que absorbe el control orientado (0 = rebote total). (Contacto con balon) |
+| `body_mass` | `75.0` | float | `scripts/player/player_tuning.gd:109` | **sin uso** |  (Contacto con balon) |
+| `capsule_radius` | `0.3` | float | `scripts/player/player_tuning.gd:110` | `scripts/player/ball_handler.gd:1464`, `scripts/player/ball_handler.gd:1474`, `scripts/player/footballer.gd:85` |  (Contacto con balon) |
+| `capsule_height` | `1.75` | float | `scripts/player/player_tuning.gd:111` | `scripts/player/ball_handler.gd:1464`, `scripts/player/footballer.gd:86`, `scripts/player/footballer.gd:88` |  (Contacto con balon) |
 <!-- /AUTO -->
 
 ### Riesgos al modificar (con las pruebas que los vigilan)
@@ -123,15 +123,16 @@ Ver la tabla «Valores fijos» de [ARCHITECTURE.md](../ARCHITECTURE.md) (carga d
 | `Footballer._keep_inside(dir: Vector3)` | 482 | Quita la componente que saca al jugador mas alla de las lineas (con medio metro de margen). |
 | `Footballer._ai_commits_tackle(carrier: Footballer)` | 495 | La IA no disputa en cada ocasion: contiene (jockey) y entra cuando la pelota queda expuesta (toque largo del portador, pelota suelta) o, con |
 | `Footballer._skill_is_drag_back(frame: InputFrame)` | 504 | El boton REGATE pide la vuelta pisando la pelota cuando el joystick apunta hacia atras (>= DragBack.MIN_ANGLE grados del frente) con la pelo |
-| `Footballer._gait_overlays(desired_dir: Vector3, want_sprint: bool, stick_mag: float, speed_before: float, delta: float)` | 510 |  |
-| `Footballer._cancel_reaction()` | 550 |  |
-| `Footballer._on_match_event(e: GameEvent)` | 560 | Reacciones de presentacion a eventos del partido: - Gol: el goleador, el asistente, el resto del equipo y el rival reaccionan distinto (un a |
-| `Footballer._try_block_jump(e: GameEvent)` | 602 |  |
-| `Footballer.rng_delay()` | 617 |  |
-| `Footballer._set_reaction(situation: StringName, wait: float, cut: float)` | 620 |  |
-| `Footballer._update_reaction(delta: float)` | 627 | La reaccion a un gol arranca cuando el jugador casi se ha detenido (o tras REACTION_MAX_WAIT) para no animar un clip en el sitio sobre un cu |
-| `Footballer._check_player_collisions()` | 641 | Un choque a velocidad con otro jugador provoca un tropiezo (presentacion) o, si es fuerte, un golpe de hombro y caida. |
-| `Footballer.capture_state()` | 663 | Datos replicables del jugador (para snapshots de red / pruebas). |
+| `Footballer._json_clip_slides(cur: StringName, delta: float)` | 517 |  |
+| `Footballer._gait_overlays(desired_dir: Vector3, want_sprint: bool, stick_mag: float, speed_before: float, delta: float)` | 530 |  |
+| `Footballer._cancel_reaction()` | 572 |  |
+| `Footballer._on_match_event(e: GameEvent)` | 582 | Reacciones de presentacion a eventos del partido: - Gol: el goleador, el asistente, el resto del equipo y el rival reaccionan distinto (un a |
+| `Footballer._try_block_jump(e: GameEvent)` | 624 |  |
+| `Footballer.rng_delay()` | 639 |  |
+| `Footballer._set_reaction(situation: StringName, wait: float, cut: float)` | 642 |  |
+| `Footballer._update_reaction(delta: float)` | 649 | La reaccion a un gol arranca cuando el jugador casi se ha detenido (o tras REACTION_MAX_WAIT) para no animar un clip en el sitio sobre un cu |
+| `Footballer._check_player_collisions()` | 663 | Un choque a velocidad con otro jugador provoca un tropiezo (presentacion) o, si es fuerte, un golpe de hombro y caida. |
+| `Footballer.capture_state()` | 685 | Datos replicables del jugador (para snapshots de red / pruebas). |
 <!-- /AUTO -->
 
 <!-- AUTO:funcs:scripts/player/locomotion.gd -->

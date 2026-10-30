@@ -93,6 +93,8 @@ var current_action: StringName = &""
 var uses_pack: bool = false
 ## true para el arquero: carga ademas la libreria de sus clips y usa su reposo como centro de la mezcla direccional.
 var keeper_mode: bool = false
+## Velocidad (m/s) de referencia de la mezcla direccional (DIR_REF_SPEED con el pack; la de los clips en el modo 4).
+var _dir_ref: float = DIR_REF_SPEED
 ## El dueño pide la mezcla direccional (velocidad local (adelante, derecha) en m/s).
 var directional: bool = false
 ## true mientras el futbolista lleva la pelota: mezcla los clips de conduccion sobre la marcha normal.
@@ -313,9 +315,12 @@ func _setup_animation_tree() -> void:
 		dir.min_space = Vector2(-DIR_MAX - 0.1, -DIR_MAX - 0.1)
 		dir.max_space = Vector2(DIR_MAX + 0.1, DIR_MAX + 0.1)
 		var center: StringName = PackLibrary.anim_path(&"goalkeeper_idle") if (keeper_mode and PackLibrary.has_clip(&"goalkeeper_idle")) else StringName("%s/%s" % [PACK_LIB, PACK_GAIT_CLIPS[0]])
+		if json_mode and not (keeper_mode and PackLibrary.has_clip(&"goalkeeper_idle")):
+			center = PackLibrary.anim_path(JsonCatalog.GAIT[0][0])
 		dir.add_blend_point(_anim_node(center), Vector2.ZERO, -1, &"d_center")
 		var di := 0
-		for pt in (TWIN_DIR_POINTS if twin_rig else DIR_POINTS):
+		_dir_ref = JsonCatalog.dir_ref_speed() if json_mode else DIR_REF_SPEED
+		for pt in (JsonCatalog.dir_points() if json_mode else (TWIN_DIR_POINTS if twin_rig else DIR_POINTS)):
 			if PackLibrary.has_clip(pt[0]):
 				dir.add_blend_point(_anim_node(PackLibrary.anim_path(pt[0])), Vector2(pt[1], pt[2]), -1, StringName("d%d" % di))
 				di += 1
@@ -657,12 +662,12 @@ func drive_motion(speed: float, turn_rate: float, delta: float) -> void:
 		anim_tree.set("parameters/ModeMix/blend_amount", _dir_weight)
 		if _dir_weight > 0.0:
 			var ds: float = dir_velocity.length()
-			var p := Vector2(dir_velocity.y, dir_velocity.x) / DIR_REF_SPEED
+			var p := Vector2(dir_velocity.y, dir_velocity.x) / _dir_ref
 			# Solo el lateral hacia la derecha tiene un clip rapido (Strafe_3); el resto se limita al radio 1.
-			var lim: float = DIR_MAX if p.x > 0.8 and absf(p.y) < 0.5 else 1.0
+			var lim: float = DIR_MAX if p.x > 0.8 and absf(p.y) < 0.5 and not json_mode else 1.0
 			if p.length() > lim:
 				p = p.normalized() * lim
-			var ref: float = lerpf(DIR_REF_SPEED, STRAFE_FAST_SPEED, clampf((p.x - 1.0) / (DIR_MAX - 1.0), 0.0, 1.0))
+			var ref: float = _dir_ref if json_mode else lerpf(DIR_REF_SPEED, STRAFE_FAST_SPEED, clampf((p.x - 1.0) / (DIR_MAX - 1.0), 0.0, 1.0))
 			if dir_scale_override > 0.0:
 				p = dir_blend_override
 			anim_tree.set("parameters/Dir/blend_position", p)

@@ -825,7 +825,7 @@
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer.capture_state",
-          "line": 663,
+          "line": 685,
           "kind": "func"
         }
       ],
@@ -1188,25 +1188,25 @@
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.first_touch_absorb",
           "default": "0.65",
-          "line": 107
+          "line": 108
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.body_mass",
           "default": "75.0",
-          "line": 108
+          "line": 109
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.capsule_radius",
           "default": "0.3",
-          "line": 109
+          "line": 110
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.capsule_height",
           "default": "1.75",
-          "line": 110
+          "line": 111
         }
       ],
       "dependencies": [
@@ -1807,55 +1807,55 @@
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.build",
-          "line": 172,
+          "line": 174,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual._setup_animation_tree",
-          "line": 282,
+          "line": 284,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.play_action",
-          "line": 443,
+          "line": 448,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.stop_action",
-          "line": 598,
+          "line": 603,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.update_motion",
-          "line": 615,
+          "line": 620,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.start_kick",
-          "line": 607,
+          "line": 612,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.set_kit",
-          "line": 248,
+          "line": 250,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.default_kit",
-          "line": 156,
+          "line": 158,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.keeper_kit",
-          "line": 167,
+          "line": 169,
           "kind": "func"
         },
         {
@@ -3507,37 +3507,37 @@
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.play_pack_clip",
-          "line": 551,
+          "line": 556,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.play_situation",
-          "line": 575,
+          "line": 580,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.stop_current_action",
-          "line": 586,
+          "line": 591,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.gait_scale_for",
-          "line": 476,
+          "line": 481,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.step_interval_for",
-          "line": 527,
+          "line": 532,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer._on_match_event",
-          "line": 560,
+          "line": 582,
           "kind": "func"
         }
       ],
@@ -3640,55 +3640,55 @@
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.kick_latency",
-          "line": 92,
+          "line": 93,
           "default": "0.20"
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.kick_clip_speed_max",
-          "line": 99,
+          "line": 100,
           "default": "1.6"
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.kick_turn_scale",
-          "line": 101,
+          "line": 102,
           "default": "0.35"
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.kick_follow_through",
-          "line": 103,
+          "line": 104,
           "default": "0.30"
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.kick_foot_max_height",
-          "line": 83,
+          "line": 84,
           "default": "0.25"
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.kick_foot_min_speed",
-          "line": 84,
+          "line": 85,
           "default": "3.0"
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.kick_adjust_max",
-          "line": 87,
+          "line": 88,
           "default": "0.30"
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.kick_adjust_sprint",
-          "line": 88,
+          "line": 89,
           "default": "0.28"
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.kick_start_residual",
-          "line": 90,
+          "line": 91,
           "default": "0.18"
         }
       ],
@@ -3903,19 +3903,19 @@
         {
           "file": "scripts/player/player_actions.gd",
           "name": "PlayerActions.suffer_contact",
-          "line": 396,
+          "line": 404,
           "kind": "func"
         },
         {
           "file": "scripts/player/player_actions.gd",
           "name": "PlayerActions.try_skill",
-          "line": 499,
+          "line": 507,
           "kind": "func"
         },
         {
           "file": "scripts/player/player_actions.gd",
           "name": "PlayerActions.stumble",
-          "line": 515,
+          "line": 523,
           "kind": "func"
         },
         {
@@ -4529,13 +4529,13 @@
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.play_touch",
-          "line": 409,
+          "line": 414,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.carry_phase",
-          "line": 419,
+          "line": 424,
           "kind": "func"
         },
         {
@@ -4813,7 +4813,7 @@
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.turn_crouch",
-          "line": 143,
+          "line": 145,
           "kind": "var"
         }
       ],
@@ -5225,13 +5225,13 @@
         {
           "file": "scripts/animation/json_catalog.gd",
           "name": "JsonCatalog.cycles_per_second",
-          "line": 54,
+          "line": 86,
           "kind": "func"
         },
         {
           "file": "scripts/animation/json_catalog.gd",
           "name": "JsonCatalog.kick_candidates",
-          "line": 76,
+          "line": 108,
           "kind": "func"
         },
         {
@@ -5255,7 +5255,7 @@
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual._json_cycle_node",
-          "line": 268,
+          "line": 270,
           "kind": "func"
         },
         {
@@ -5339,7 +5339,7 @@
         {
           "file": "scripts/animation/json_catalog.gd",
           "name": "JsonCatalog.situation_clip",
-          "line": 131,
+          "line": 163,
           "kind": "func"
         },
         {

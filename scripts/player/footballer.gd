@@ -507,6 +507,26 @@ func _skill_is_drag_back(frame: InputFrame) -> bool:
 	var w: Vector3 = frame.move_world if frame.use_world else ctx.screen_to_world(frame.move)
 	return KickModel.angle_between_deg(locomotion.forward(), KickModel.flat(w).normalized()) >= DragBack.MIN_ANGLE - 15.0
 
+## Modo 4: un clip de accion que el cuerpo deja atras (gesto de entrada, forcejeo, recepcion, tropiezo en el sitio) mientras
+## el jugador corre a mas de SLIDE_CUT_SPEED m/s por encima de la carrera del propio clip durante SLIDE_CUT_TIME s se corta:
+## si no, el jugador se desliza con las piernas quietas. Los clips que mueven al cuerpo (PlayerActions) y los golpeos no.
+const SLIDE_CUT_SPEED := 1.8
+const SLIDE_CUT_TIME := 0.15
+var _slide_t: float = 0.0
+
+func _json_clip_slides(cur: StringName, delta: float) -> bool:
+	if cur == &"" or not visual.json_mode or actions.active() or ball_handler.is_kick_in_progress():
+		_slide_t = 0.0
+		return false
+	var m: Dictionary = PackLibrary.meta(cur)
+	var dur: float = maxf(float(m.get("duration", 1.0)), 0.1)
+	var clip_v: float = maxf((m.get("root_total", Vector2.ZERO) as Vector2).length() / dur, maxf(float(m.get("v_in", 0.0)), float(m.get("v_out", 0.0))))
+	_slide_t = _slide_t + delta if locomotion.speed - clip_v > SLIDE_CUT_SPEED else 0.0
+	if _slide_t >= SLIDE_CUT_TIME:
+		_slide_t = 0.0
+		return true
+	return false
+
 func _gait_overlays(desired_dir: Vector3, want_sprint: bool, stick_mag: float, speed_before: float, delta: float) -> void:
 	_overlay_cd = maxf(_overlay_cd - delta, 0.0)
 	_tired_cd = maxf(_tired_cd - delta, 0.0)
@@ -521,6 +541,8 @@ func _gait_overlays(desired_dir: Vector3, want_sprint: bool, stick_mag: float, s
 	elif cur == IDLE_TO_SPRINT and stick_mag < 0.3:
 		visual.stop_current_action()
 	elif cur != &"" and cur == _fidget and (locomotion.speed > 0.5 or stick_mag > 0.3):
+		visual.stop_current_action()
+	elif _json_clip_slides(cur, delta):
 		visual.stop_current_action()
 	if visual.is_action_playing() or actions.active() or ball_handler.is_kick_in_progress() or ball_handler.has_possession():
 		_idle_t = 0.0

@@ -289,6 +289,8 @@ var _tackle_cd: float = 0.0
 func tackle_gesture(carrier: Footballer) -> void:
 	if not PackLibrary.json_mode() or owner.visual == null or owner.visual.is_action_playing():
 		return
+	if owner.locomotion.speed > GESTURE_MAX_SPEED:
+		return
 	var c: StringName = JsonCatalog.situation_clip(&"tackle_stand", owner.actor_id)
 	if c == &"":
 		return
@@ -297,10 +299,16 @@ func tackle_gesture(carrier: Footballer) -> void:
 		c = StringName(String(c) + "_mirror")
 	owner.visual.play_pack_clip(c, 1.35, 0.0, 0.8)
 
+## Velocidad (m/s) maxima del cuerpo para los gestos en el sitio (entrada de pie, forcejeo) del modo 4.
+const GESTURE_MAX_SPEED := 2.2
+
 ## Modo 4: disputa de quien presiona pegado al portador sin llegar a entrar (forcejeo con el cuerpo y amago de pierna,
 ## clips «jostle» y entradas de pie del zip): la presion siempre se ve, como en First Touch. Solo presentacion.
 func press_gesture(carrier: Footballer) -> void:
 	if not PackLibrary.json_mode() or owner.visual == null or owner.visual.is_action_playing() or carrier == null:
+		return
+	# Gesto en el sitio: solo con el cuerpo casi frenado junto al portador (corriendo se veria deslizarse).
+	if owner.locomotion.speed > GESTURE_MAX_SPEED:
 		return
 	var c: StringName = JsonCatalog.situation_clip(&"press_duel", owner.actor_id)
 	if c == &"":

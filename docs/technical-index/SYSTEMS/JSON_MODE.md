@@ -180,12 +180,12 @@ vienen); su tabla da el tramo de cada toma (fotograma inicial y final) y un áng
 | Buscar compañero | `PassAssist.pick_target`, `AssistTuning.pass_cone_deg`, `pass_fallback_cone_deg` | cono 52 → 60°; si nadie cae en él, con asistencia media o alta, cono de respaldo de 85° (el pase al espacio queda para el filtrado) |
 | Fuerza del pase | `BallTuning.pass_arrival_speed`, `pass_speed_min` | llegada 4.5 → 6 m/s, mínimo 4 → 7 m/s; pase al espacio 6–20 m (antes 4.5–19) llegando a 1.5 m/s |
 | El receptor va a la pelota | `Footballer._recv_stick_lock` | el joystick que se traía del pase no aleja al receptor: corre al punto de encuentro hasta que se suelta una vez |
-| Golpeo que no le daba al balón | `BallHandler._json_kick_ik`, `kick_reach`, `PlayerTuning.json_kick_reach` | el pie que patea va hasta la pelota real (IK) en los últimos 0.12 s y la acompaña al salir; el golpeo cuenta hasta 0.55 m (antes 0.30: 4–6 de ~22 patadas por partido se perdían en el aire con la pelota a 0.30–0.47 m) |
+| Golpeo que no le daba al balón | `BallHandler._json_kick_ik`, `kick_reach`, `PlayerTuning.json_kick_reach` | el pie que patea va hasta la pelota real (IK) en los últimos 0.12 s y la acompaña al salir; el golpeo cuenta hasta 0.65 m, el pie se estira hasta 0.55 m (antes 0.30: 4–6 de ~22 patadas por partido se perdían en el aire con la pelota a 0.30–0.47 m) |
 | Primer toque de un giro con pelota | `JsonBallMove.MAX_LEAD` | espera máxima de 0.4 s hasta el primer toque (con 0.6 s un rival tocaba la pelota antes y el toque se erraba) |
 | Presión con animación | `PlayerActions.press_gesture`, `JsonCatalog.SITUATION_ROLES.press_duel` | quien presiona pegado sin entrar forcejea (clips `jostle` / entrada de pie), también la persona; la IA entra más (`AI_TACKLE_COMMIT` 0.3 → 0.45) |
 | Cancha | `Pitch._build_ambient`, `MatchScene` | sin gradas, bancos, torres ni personajes alrededor en el modo 4 |
 
-Medido (partido de IA de 90 s, modo 4, headless, dos semillas): golpeos en falso 5–6 → 0–1 de 16–22; pases 11–20 a 12–13 m/s de media;
+Medido (partido de IA de 90 s, modo 4, headless): golpeos en falso 5–6 → 0–4 de 16–22 con alcance 0.55 (los que quedaban, a 0.56–0.73 m en jugadas disputadas: el cuerpo empujado 0.4–1.1 m durante el balanceo) y 0 en 4 de 4 partidos con 0.65; pases 11–20 a 12–13 m/s de media;
 los pases perdidos de la IA son casi todos bloqueos del defensor pegado al pasador (a 0.1–1.5 m de la salida), no pases mal dirigidos;
 10–17 gestos de disputa al presionar. Giros con pelota al azar (36, con y sin sprint, esqueleto animado): ningún toque de clip errado;
 las 3 «pérdidas» del ensayo eran el jugador llegando al fondo de la cancha tras 25 m de sprint.
@@ -196,3 +196,18 @@ captura de transmisión con `match_shot` (cancha sin entorno). Sin prueba en And
 
 No se cambió: la velocidad del juego ni la de las animaciones (no hay valores de First Touch a la vista: sus parámetros llegan del
 servidor o están en el código nativo), el tiro, ni cuántos presionan a la vez en la IA (`TeamBrain`).
+
+## Jugadores que se deslizaban «como estatuas» (2026-10-30, tercera tanda)
+
+Pedido: «mis jugadores se desplazaban por la cancha como estatuas fijas sin animación, me pasó más cuando presionaba».
+
+Medido con el esqueleto animado (partido de IA de 60 s, modo 4, imágenes en las que la punta del pie no se mueve respecto
+al esqueleto con el cuerpo a más de 2.5 m/s): **808** imágenes (635 presionando), casi todas sin ninguna acción en curso.
+
+| Causa | Arreglo |
+|---|---|
+| La mezcla direccional (marcaje y presión mirando al rival: `Locomotion.jockeying` → `FootballerVisual.directional`) buscaba los clips del pack de Mixamo (`DIR_POINTS`), que no existen en el modo 4: quedaba solo el punto central, y el cuerpo se deslizaba con la pose fija. Lo mismo el arquero al acomodarse y el árbitro. | `JsonCatalog.dir_points` / `dir_ref_speed`: trote al frente y los clips `dir_back`, `dir_back_diag`, `dir_fwd_diag`, `dir_side` (y espejos) a distancia 1 en su dirección medida (`natural_dir`); cadencia con su velocidad media; centro, el reposo de la marcha del modo. |
+| Gestos en el sitio (entrada de pie, forcejeo, recepción) que seguían sonando con el cuerpo corriendo | `Footballer._json_clip_slides`: se cortan si el cuerpo va más de `SLIDE_CUT_SPEED` (1.8 m/s) por encima de la carrera del clip durante `SLIDE_CUT_TIME` (0.15 s); los gestos de presión y entrada solo empiezan con el cuerpo a ≤ `PlayerActions.GESTURE_MAX_SPEED` (2.2 m/s). |
+
+Después: **81** imágenes (7 presionando). Prueba: `test_json_mode::test_model_builds_and_animates` comprueba que la mezcla
+direccional del modo 4 tiene ≥ 6 clips y que todos existen.
