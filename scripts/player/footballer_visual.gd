@@ -89,6 +89,8 @@ var mesh_instances: Array[MeshInstance3D] = []
 var kit_material: ShaderMaterial = null
 var is_placeholder: bool = false
 var current_action: StringName = &""
+## Arbitro de acciones del futbolista (null en el arquero y el arbitro, que manejan su pose ellos mismos).
+var arbiter: ActionArbiter = null
 ## true si este futbolista usa los clips del pack (si no, Tripo + patada procedural).
 var uses_pack: bool = false
 ## true para el arquero: carga ademas la libreria de sus clips y usa su reposo como centro de la mezcla direccional.
@@ -629,7 +631,11 @@ func drive_motion(speed: float, turn_rate: float, delta: float) -> void:
 		return
 	if _action_timer > 0.0:
 		_action_timer -= delta
-		if _action_timer <= 0.0:
+		# La pose de una accion con raiz termina con la raiz (la libera PlayerActions): antes se apagaba un paso antes y en
+		# esa imagen el cuerpo seguia moviendose con la raiz sin su pose.
+		if _action_timer <= 0.0 and arbiter != null and arbiter.holds_pose(current_action):
+			_action_timer = 0.0001
+		elif _action_timer <= 0.0:
 			var finished: StringName = current_action
 			if _action_cut and uses_pack:
 				anim_tree.set("parameters/PackShot/request", AnimationNodeOneShot.ONE_SHOT_REQUEST_FADE_OUT)

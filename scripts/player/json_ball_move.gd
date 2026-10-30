@@ -408,11 +408,10 @@ func _abort(reason: String) -> void:
 	_cooldown = COOLDOWN
 	_release_ik()
 	# Sin pelota que llevar el clip no sigue: se corta con un fundido y vuelve la marcha (el jugador puede ir a por ella).
+	# PlayerActions.stop corta raiz y pose y libera el lugar en el arbitro.
 	var owner: Footballer = handler.owner
 	owner.actions.motion.extra_velocity = Vector3.ZERO
-	owner.actions.motion.stop()
-	if owner.visual != null:
-		owner.visual.stop_current_action()
+	owner.actions.stop(reason)
 
 func _remember() -> void:
 	history.append(last)

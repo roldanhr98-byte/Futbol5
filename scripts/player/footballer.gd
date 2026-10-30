@@ -28,6 +28,8 @@ var is_pressing: bool = false
 var press_info: PressController.PressOutput = null
 ## Acciones de cuerpo completo con clips (barrida, caidas, levantarse).
 var actions: PlayerActions = null
+## Autoridad unica sobre el cuerpo y la pose: decide que accion entra y cual sigue (ActionArbiter).
+var arbiter: ActionArbiter = null
 ## Sobrescritura de asistencia por jugador (-1 = usar la configuracion global).
 var assist_override_pass: float = -1.0
 var assist_override_shot: float = -1.0
@@ -91,6 +93,7 @@ func _ready() -> void:
 	ball_handler = BallHandler.new(self)
 	ball_handler.kicked.connect(func(a: StringName, r: KickModel.KickResult) -> void: kicked.emit(a, r))
 	press = PressController.new()
+	arbiter = ActionArbiter.new(self)
 	actions = PlayerActions.new(self)
 	if build_visual:
 		visual = get_node_or_null("Visual") as FootballerVisual
@@ -99,6 +102,7 @@ func _ready() -> void:
 			visual.name = "Visual"
 			add_child(visual)
 			visual.build(FootballerVisual.default_kit(team))
+		visual.arbiter = arbiter
 
 ## Configura el jugador dentro de un partido.
 func setup(context: MatchContext, team_index: int, id: int, attrs: PlayerAttributes, source: InputSource) -> void:
@@ -172,6 +176,8 @@ func reset_motion() -> void:
 	set_piece = null
 	if actions != null:
 		actions.reset()
+	if arbiter != null:
+		arbiter.reset("reset_motion")
 	velocity = Vector3.ZERO
 	if locomotion != null:
 		locomotion.stop()
@@ -180,8 +186,8 @@ func place_at(pos: Vector3, yaw: float) -> void:
 	_cancel_reaction()
 	if actions != null:
 		actions.reset()
-		if visual != null:
-			visual.stop_current_action()
+	if arbiter != null:
+		arbiter.reset("colocacion")
 	global_position = pos
 	if locomotion != null:
 		locomotion.yaw = yaw
@@ -210,9 +216,7 @@ func _physics_process(delta: float) -> void:
 			set_piece = null
 	# Modo 4: un giro sin pelota (clip) se corta si la pelota llega cerca: primero esta la jugada.
 	if actions.kind == &"turn" and ctx.ball != null and KickModel.flat(ctx.ball.global_position - global_position).length() < JSON_TURN_BALL_DIST * 0.5:
-		actions.reset()
-		if visual != null:
-			visual.stop_current_action()
+		actions.stop("pelota cerca")
 	# Una accion de cuerpo completo (barrida, caida, levantarse) mueve al jugador con la raiz del clip.
 	if actions.tick(delta):
 		if visual != null:
@@ -433,7 +437,7 @@ func _json_idle(stick_mag: float, delta: float) -> void:
 	if _idle_t > IDLE_FIDGET_AFTER + float(actor_id % 4):
 		_idle_t = -2.0
 		var c: StringName = JsonCatalog.situation_clip(&"idle_fidget", actor_id)
-		if c != &"" and visual.play_pack_clip(c, 1.0, 0.0, 4.5) > 0.0:
+		if c != &"" and arbiter.play(&"idle_fidget", ActionArbiter.Level.GESTURE, &"Footballer", c, 1.0, 0.0, 4.5, true) != 0:
 			_fidget = c
 
 ## Modo 4: giros sin pelota con los clips de giro (de parado o en carrera, 90 a 180 grados): el cuerpo gira y arranca con el
@@ -448,7 +452,7 @@ var _turn_cd: float = 0.0
 
 func _json_turn_move(desired_dir: Vector3, desired_mag: float, delta: float) -> void:
 	_turn_cd = maxf(_turn_cd - delta, 0.0)
-	if _turn_cd > 0.0 or desired_mag < 0.5 or desired_dir.length_squared() < 0.01 or actions.active() or ball_handler.has_possession():
+	if _turn_cd > 0.0 or desired_mag < 0.5 or desired_dir.length_squared() < 0.01 or not actions.can_start(&"turn") or ball_handler.has_possession():
 		return
 	if ctx.ball == null or KickModel.flat(ctx.ball.global_position - global_position).length() < JSON_TURN_BALL_DIST or has_incoming_pass():
 		return
@@ -515,13 +519,11 @@ const SLIDE_CUT_TIME := 0.15
 var _slide_t: float = 0.0
 
 func _json_clip_slides(cur: StringName, delta: float) -> bool:
-	if cur == &"" or not visual.json_mode or actions.active() or ball_handler.is_kick_in_progress():
+	# Solo gestos y capas: las acciones con raiz y el golpeo mueven el cuerpo con su clip.
+	if cur == &"" or not visual.json_mode or arbiter.current_level() > ActionArbiter.Level.OVERLAY:
 		_slide_t = 0.0
 		return false
-	var m: Dictionary = PackLibrary.meta(cur)
-	var dur: float = maxf(float(m.get("duration", 1.0)), 0.1)
-	var clip_v: float = maxf((m.get("root_total", Vector2.ZERO) as Vector2).length() / dur, maxf(float(m.get("v_in", 0.0)), float(m.get("v_out", 0.0))))
-	_slide_t = _slide_t + delta if locomotion.speed - clip_v > SLIDE_CUT_SPEED else 0.0
+	_slide_t = _slide_t + delta if locomotion.speed - ActionArbiter.clip_speed(cur) > SLIDE_CUT_SPEED else 0.0
 	if _slide_t >= SLIDE_CUT_TIME:
 		_slide_t = 0.0
 		return true
@@ -535,35 +537,35 @@ func _gait_overlays(desired_dir: Vector3, want_sprint: bool, stick_mag: float, s
 	var cur: StringName = visual.current_action
 	# Cortes: el clip deja de valer si el cuerpo ya no hace lo que muestra.
 	if cur == TIRED_STOP and locomotion.speed > 1.0:
-		visual.stop_current_action()
+		arbiter.cut_pose("cansado y en marcha")
 	elif cur == SPRINT_TURN and locomotion.speed < 2.5:
-		visual.stop_current_action()
+		arbiter.cut_pose("giro en sprint sin sprint")
 	elif cur == IDLE_TO_SPRINT and stick_mag < 0.3:
-		visual.stop_current_action()
+		arbiter.cut_pose("arranque sin joystick")
 	elif cur != &"" and cur == _fidget and (locomotion.speed > 0.5 or stick_mag > 0.3):
-		visual.stop_current_action()
+		arbiter.cut_pose("espera interrumpida")
 	elif _json_clip_slides(cur, delta):
-		visual.stop_current_action()
-	if visual.is_action_playing() or actions.active() or ball_handler.is_kick_in_progress() or ball_handler.has_possession():
+		arbiter.cut_pose("pose en el sitio con el cuerpo corriendo")
+	if arbiter.current_level() != ActionArbiter.Level.NONE or ball_handler.has_possession():
 		_idle_t = 0.0
 		return
 	if PackLibrary.json_mode():
 		_json_idle(stick_mag, delta)
 	if _tired_cd <= 0.0 and locomotion.exhausted and locomotion.speed < 0.4 and speed_before < 0.6 and PackLibrary.has_clip(TIRED_STOP):
-		if visual.play_pack_clip(TIRED_STOP, 1.0, TIRED_STOP_FROM, 2.6) > 0.0:
+		if arbiter.play(&"tired_stop", ActionArbiter.Level.OVERLAY, &"Footballer", TIRED_STOP, 1.0, TIRED_STOP_FROM, 2.6, true) != 0:
 			_tired_cd = 7.0
 		return
 	if _overlay_cd > 0.0:
 		return
 	if want_sprint and stick_mag > 0.8 and speed_before < 0.6 and locomotion.speed < 1.5:
-		if visual.play_pack_clip(IDLE_TO_SPRINT, 1.0, 0.0, 0.55) > 0.0:
+		if arbiter.play(&"idle_to_sprint", ActionArbiter.Level.OVERLAY, &"Footballer", IDLE_TO_SPRINT, 1.0, 0.0, 0.55) != 0:
 			_overlay_cd = 1.5
 		return
 	if locomotion.sprinting and locomotion.speed > 4.5 and desired_dir.length_squared() > 0.01:
 		var turn: float = rad_to_deg(wrapf(Locomotion.yaw_from_dir(desired_dir.normalized()) - locomotion.yaw, -PI, PI))
 		# yaw decreciente = giro a la derecha.
 		if turn < -35.0 and turn > -110.0:
-			if visual.play_pack_clip(SPRINT_TURN, 1.2, 0.0, 0.6) > 0.0:
+			if arbiter.play(&"sprint_turn", ActionArbiter.Level.OVERLAY, &"Footballer", SPRINT_TURN, 1.2, 0.0, 0.6) != 0:
 				_overlay_cd = 3.0
 			return
 
@@ -571,8 +573,9 @@ func _gait_overlays(desired_dir: Vector3, want_sprint: bool, stick_mag: float, s
 
 func _cancel_reaction() -> void:
 	_reaction = &""
-	if visual != null and visual.is_action_playing():
-		visual.stop_current_action()
+	# Solo gestos y capas: una caida o un golpeo en curso no se cortan por un evento del partido.
+	if arbiter != null:
+		arbiter.cut_pose("reaccion cancelada")
 
 ## Reacciones de presentacion a eventos del partido:
 ##  - Gol: el goleador, el asistente, el resto del equipo y el rival reaccionan distinto (un autor de gol en contra
@@ -611,10 +614,10 @@ func _on_match_event(e: GameEvent) -> void:
 				if Vector2(global_position.x - float(sp[0]), global_position.z - float(sp[1])).length() < 12.0:
 					_set_reaction(&"wall", 1.2 + rng_delay(), 5.0)
 		GameEvent.Type.FIRST_TOUCH:
-			if e.actor_id == actor_id and locomotion.speed <= RECEIVE_MAX_SPEED and not ball_handler.is_kick_in_progress() and not visual.is_action_playing() and not actions.active():
+			if e.actor_id == actor_id and locomotion.speed <= RECEIVE_MAX_SPEED:
 				# Pelota que llega rapida: control con el cuerpo (Receive); suave: control con el pie (receive_soccerball).
 				var soft: bool = float(e.data.get("incoming_speed", 9.0)) < 6.0
-				visual.play_situation(&"receive", 1 if soft else 0, 1.0, RECEIVE_MAX_SECONDS)
+				arbiter.play_situation(&"receive", ActionArbiter.Level.GESTURE, &"Footballer", 1 if soft else 0, 1.0, RECEIVE_MAX_SECONDS)
 		GameEvent.Type.SHOT:
 			_try_block_jump(e)
 
@@ -622,7 +625,7 @@ func _on_match_event(e: GameEvent) -> void:
 ## hace su cuerpo (la capsula) si la pelota le pega; el salto es la reaccion visible a un tiro que le viene encima.
 const BLOCK_CLIP := &"Defender_2"
 func _try_block_jump(e: GameEvent) -> void:
-	if e.team == team or actions.active() or visual.is_action_playing() or ctx.ball == null or not PackLibrary.has_clip(BLOCK_CLIP):
+	if e.team == team or not arbiter.can_start(ActionArbiter.Level.OVERLAY) or ctx.ball == null or not PackLibrary.has_clip(BLOCK_CLIP):
 		return
 	var b: Ball = ctx.ball
 	var d: Array = e.data.get("dir", [0.0, 0.0])
@@ -633,8 +636,8 @@ func _try_block_jump(e: GameEvent) -> void:
 	var along: float = to_me.dot(v.normalized())
 	var off_line: float = (to_me - v.normalized() * along).length()
 	if along > 0.6 and along < 6.0 and off_line < 1.4:
-		visual.play_pack_clip(BLOCK_CLIP, 1.4, 0.0, 0.85)
-		locomotion.face_towards(-v, 1.0, 360.0)
+		if arbiter.play(&"block_jump", ActionArbiter.Level.OVERLAY, &"Footballer", BLOCK_CLIP, 1.4, 0.0, 0.85) != 0:
+			locomotion.face_towards(-v, 1.0, 360.0)
 
 func rng_delay() -> float:
 	return float(actor_id % 5) * 0.12
@@ -650,12 +653,12 @@ func _update_reaction(delta: float) -> void:
 	if _reaction == &"":
 		return
 	_reaction_wait -= delta
-	if _reaction_wait > 0.0 or (locomotion.speed > REACTION_START_SPEED and _reaction_wait > -REACTION_MAX_WAIT) or actions.active():
+	if _reaction_wait > 0.0 or (locomotion.speed > REACTION_START_SPEED and _reaction_wait > -REACTION_MAX_WAIT) or not arbiter.can_start(ActionArbiter.Level.GESTURE):
 		return
 	var sit: StringName = _reaction
 	_reaction = &""
-	if not ball_handler.is_kick_in_progress():
-		visual.play_situation(sit, actor_id + int(ctx.match_time), 1.0, _reaction_cut)
+	# Pose en el sitio: si el jugador sigue corriendo (paso REACTION_MAX_WAIT) el arbitro la rechaza en vez de deslizarlo.
+	arbiter.play_situation(sit, ActionArbiter.Level.GESTURE, &"Footballer", actor_id + int(ctx.match_time), 1.0, _reaction_cut)
 
 var _collision_cd: float = 0.0
 

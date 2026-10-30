@@ -48,20 +48,35 @@ var rng := RandomNumberGenerator.new()
 var _chain: Array[Dictionary] = []
 var _slide: Dictionary = {}
 var _slide_cd: float = 0.0
+## Testigo del arbitro de la accion en curso (0 = ninguna).
+var _token: int = 0
 var stats := {"slides": 0, "slide_wins": 0, "slide_fouls": 0, "falls": 0}
 
 func _init(o: Footballer) -> void:
 	owner = o
 	rng.randomize()
 
-## Corta cualquier accion en curso (saque, reinicio, gol).
+## Corta cualquier accion en curso (saque, reinicio, gol) y libera su lugar en el arbitro, pose incluida.
 func reset() -> void:
+	stop("reinicio")
+
+## Corta la accion en curso por una razon del juego (pelota cerca, toque perdido, reinicio): raiz, encadenados, movimiento
+## con pelota y pose. Nada de la accion cortada sigue moviendo al jugador.
+func stop(why: String) -> void:
+	var t: int = _token
+	interrupt()
+	if owner.arbiter != null:
+		owner.arbiter.release(t, why)
+
+## Corte interno (lo llama tambien el arbitro cuando otra accion de mas nivel la sustituye): sin tocar el arbitro.
+func interrupt() -> void:
 	if kind == &"ball_move":
 		owner.ball_handler.json_move.cancel()
 	motion.stop()
 	_chain.clear()
 	_slide = {}
 	kind = &""
+	_token = 0
 
 ## true mientras una accion (o su encadenado) controla el cuerpo.
 func active() -> bool:
@@ -70,34 +85,54 @@ func active() -> bool:
 func _can_play() -> bool:
 	return owner.visual != null and owner.visual.uses_pack and not owner.visual.is_placeholder
 
-## Empieza una accion. chain: [{kind, clip, speed, cut}] que se encadenan al terminar.
+## true si una accion de este tipo podria empezar ahora: la decide el arbitro por nivel (sin arbitro, como antes: nada en
+## curso). Las condiciones propias de cada accion (clips disponibles, enfriamientos) las sigue mirando quien llama.
+func can_start(k: StringName) -> bool:
+	if owner.arbiter == null:
+		return not active()
+	return owner.arbiter.can_start(ActionArbiter.level_for_action(k))
+
+## Empieza una accion. chain: [{kind, clip, speed, cut}] que se encadenan al terminar. El arbitro decide si entra (por
+## nivel: una caida corta un giro o un movimiento con pelota; un giro no corta una caida).
 func start(k: StringName, clip: StringName, speed: float = 1.0, cut: float = -1.0, chain: Array = [], start_at: float = 0.0) -> bool:
 	if not _can_play() or not PackLibrary.has_clip(clip):
 		return false
+	if not _begin(k, clip, speed, cut, start_at, false):
+		return false
 	owner.ball_handler.abort_kick()
 	owner.ball_handler.cancel_charge()
-	_chain.clear()
+	owner.ball_handler.drag_back.cancel("accion")
+	owner.ball_handler.ball_turn.cancel("accion")
 	for c in chain:
 		_chain.append(c)
-	_begin(k, clip, speed, cut, start_at)
 	return true
 
-func _begin(k: StringName, clip: StringName, speed: float, cut: float, start_at: float = 0.0) -> void:
+## Arranca un clip de la accion: el primero pide el control al arbitro (y puede ser rechazado); los encadenados siguen con
+## el mismo testigo.
+func _begin(k: StringName, clip: StringName, speed: float, cut: float, start_at: float = 0.0, chained: bool = false) -> bool:
+	if chained:
+		if owner.arbiter == null or not owner.arbiter.handover(_token, k, clip):
+			return false
+		owner.visual.play_pack_clip(clip, speed, start_at, cut)
+	else:
+		var t: int = owner.arbiter.play(k, ActionArbiter.level_for_action(k), &"PlayerActions", clip, speed, start_at, cut) if owner.arbiter != null else 0
+		if t == 0:
+			return false
+		_token = t
+		_chain.clear()
 	kind = k
-	owner.visual.play_pack_clip(clip, speed, start_at, cut)
 	motion.start(clip, speed, start_at, cut)
 	# Clip con rumbo propio: la orientacion de su inicio es la de ahora menos lo que ya giro hasta start_at.
 	motion.yaw0 = owner.locomotion.yaw - motion.heading_at(start_at)
 	owner.ball_handler.lockout = maxf(owner.ball_handler.lockout, 0.3)
+	return true
 
 ## Modo 4: movimiento de cuerpo entero con rumbo propio (giro, giro con pelota, regate) desde `start_at` s del clip. Igual
 ## que start pero sin cortar las acciones de pelota que lo piden (JsonBallMove maneja la pelota durante el clip).
 func start_move(k: StringName, clip: StringName, speed: float = 1.0, start_at: float = 0.0) -> bool:
 	if not _can_play() or not PackLibrary.has_clip(clip):
 		return false
-	_chain.clear()
-	_begin(k, clip, speed, -1.0, start_at)
-	return true
+	return _begin(k, clip, speed, -1.0, start_at, false)
 
 ## Avanza un paso de fisica moviendo el cuerpo con la raiz del clip. Devuelve true si la accion se ocupo del paso.
 func tick(delta: float) -> bool:
@@ -141,13 +176,18 @@ func tick(delta: float) -> bool:
 		_skill_touches()
 	if kind == &"ball_move":
 		owner.ball_handler.json_move.step(motion.t, delta)
+		if _token == 0:
+			return true   # el movimiento con pelota se corto en este paso (toque perdido): ya libero su lugar
 	if not motion.active:
 		if not _chain.is_empty():
 			var nxt: Dictionary = _chain.pop_front()
-			_begin(nxt.get("kind", &"chain"), nxt["clip"], float(nxt.get("speed", 1.0)), float(nxt.get("cut", -1.0)))
-		else:
+			if not _begin(nxt.get("kind", &"chain"), nxt["clip"], float(nxt.get("speed", 1.0)), float(nxt.get("cut", -1.0)), 0.0, true):
+				_chain.clear()
+		if not motion.active:
 			var ended: StringName = kind
+			var t: int = _token
 			kind = &""
+			_token = 0
 			if motion.heading_driven:
 				# Giros y movimientos con pelota terminan en marcha: el cuerpo sigue con la velocidad de salida del clip.
 				loco.velocity = Vector3(wv.x, 0.0, wv.z)
@@ -158,6 +198,8 @@ func tick(delta: float) -> bool:
 				owner.velocity = Vector3.ZERO
 			if ended == &"ball_move":
 				owner.ball_handler.json_move.finish()
+			if owner.arbiter != null:
+				owner.arbiter.release(t, "fin")
 	return true
 
 # --- Barrida ------------------------------------------------------------------------------------------------
@@ -166,7 +208,7 @@ func tick(delta: float) -> bool:
 ## donde estara la punta del pie en su instante de contacto y donde estara la pelota; solo se lanza si llegan.
 ## Devuelve true si la inicio (entonces el robo normal no se hace).
 func try_slide_tackle(carrier: Footballer, forced: bool = false) -> bool:
-	if carrier == null or active() or _slide_cd > 0.0 or not _can_play():
+	if carrier == null or not can_start(&"slide") or _slide_cd > 0.0 or not _can_play():
 		return false
 	var loco: Locomotion = owner.locomotion
 	var to_c: Vector3 = KickModel.flat(carrier.global_position - owner.global_position)
@@ -249,7 +291,7 @@ func _slide_candidate(variant: StringName, yaw: float, ball: Ball, yaw_fix: floa
 ## aire: el defensor se compromete, pierde velocidad y queda un instante sin poder volver a intentarlo.
 ## Devuelve &"stand", &"shoulder", &"slide", &"whiff" o &"" (no hizo nada: ya estaba en una accion).
 func tackle_request(carrier: Footballer) -> StringName:
-	if active() or _tackle_cd > 0.0:
+	if not can_start(&"slide") or _tackle_cd > 0.0:
 		return &""
 	var ball: Ball = owner.ctx.ball
 	if ball == null or ball.is_held():
@@ -287,9 +329,7 @@ var _tackle_cd: float = 0.0
 ## Modo 4: el gesto de la entrada de pie (uno de los clips de entrada parada, del lado de la pelota). Solo presentacion: el
 ## robo lo decide attempt_tackle.
 func tackle_gesture(carrier: Footballer) -> void:
-	if not PackLibrary.json_mode() or owner.visual == null or owner.visual.is_action_playing():
-		return
-	if owner.locomotion.speed > GESTURE_MAX_SPEED:
+	if not PackLibrary.json_mode() or owner.arbiter == null:
 		return
 	var c: StringName = JsonCatalog.situation_clip(&"tackle_stand", owner.actor_id)
 	if c == &"":
@@ -297,26 +337,21 @@ func tackle_gesture(carrier: Footballer) -> void:
 	var ball: Ball = owner.ctx.ball
 	if ball != null and KickModel.flat(ball.global_position - owner.global_position).dot(owner.locomotion.right()) < 0.0 and PackLibrary.has_clip(StringName(String(c) + "_mirror")):
 		c = StringName(String(c) + "_mirror")
-	owner.visual.play_pack_clip(c, 1.35, 0.0, 0.8)
-
-## Velocidad (m/s) maxima del cuerpo para los gestos en el sitio (entrada de pie, forcejeo) del modo 4.
-const GESTURE_MAX_SPEED := 2.2
+	# Gesto en el sitio: el arbitro lo rechaza con otra accion en curso o con el cuerpo corriendo mas que el clip.
+	owner.arbiter.play(&"tackle_gesture", ActionArbiter.Level.GESTURE, &"PlayerActions", c, 1.35, 0.0, 0.8, true)
 
 ## Modo 4: disputa de quien presiona pegado al portador sin llegar a entrar (forcejeo con el cuerpo y amago de pierna,
 ## clips «jostle» y entradas de pie del zip): la presion siempre se ve, como en First Touch. Solo presentacion.
 func press_gesture(carrier: Footballer) -> void:
-	if not PackLibrary.json_mode() or owner.visual == null or owner.visual.is_action_playing() or carrier == null:
-		return
-	# Gesto en el sitio: solo con el cuerpo casi frenado junto al portador (corriendo se veria deslizarse).
-	if owner.locomotion.speed > GESTURE_MAX_SPEED:
+	if not PackLibrary.json_mode() or owner.arbiter == null or carrier == null:
 		return
 	var c: StringName = JsonCatalog.situation_clip(&"press_duel", owner.actor_id)
 	if c == &"":
 		return
 	if KickModel.flat(carrier.global_position - owner.global_position).dot(owner.locomotion.right()) < 0.0 and PackLibrary.has_clip(StringName(String(c) + "_mirror")):
 		c = StringName(String(c) + "_mirror")
-	owner.visual.play_pack_clip(c, 1.2, 0.0, 0.9)
-	stats["press_gestures"] = int(stats.get("press_gestures", 0)) + 1
+	if owner.arbiter.play(&"press_gesture", ActionArbiter.Level.GESTURE, &"PlayerActions", c, 1.2, 0.0, 0.9, true) != 0:
+		stats["press_gestures"] = int(stats.get("press_gestures", 0)) + 1
 
 ## true si el defensor corre a la par del portador (hombro con hombro): mismos sentidos, cerca y de costado.
 func _alongside(carrier: Footballer) -> bool:
@@ -360,7 +395,7 @@ func shoulder_charge(carrier: Footballer) -> bool:
 
 ## Trastabilla con el clip con raiz (pierde el equilibrio a la carrera y se recupera sin caer).
 func stumble_root(_from_dir: Vector3 = Vector3.ZERO) -> void:
-	if not _can_play() or active():
+	if not _can_play() or not can_start(&"stumble"):
 		return
 	if start(&"stumble", STUMBLE_ROOT, 1.15, 0.9):
 		stats["stumbles"] = int(stats.get("stumbles", 0)) + 1
@@ -402,7 +437,9 @@ func _resolve_slide() -> void:
 
 ## El jugador cae por un contacto: "trip" (zancadilla), "hit" (golpe de hombro). Luego se levanta solo.
 func suffer_contact(k: StringName, from_dir: Vector3) -> void:
-	if not _can_play() or active():
+	# La caida tiene el nivel mas alto: corta un giro, un movimiento con pelota o una barrida en curso (antes una falta
+	# sobre un jugador en un giro con pelota no lo derribaba). No corta otra caida ni el levantarse.
+	if not _can_play() or not can_start(&"fall"):
 		return
 	var clip: StringName = FALL_TRIP if k == &"trip" else FALL_HIT
 	var shove: bool = false
@@ -505,7 +542,7 @@ var _skill_cd: float = 0.0
 ## Ruleta de 360 grados con la pelota (Soccer_Spin): mientras dura, el portador esta protegido de las entradas y la
 ## pelota sigue con el (toques de conduccion durante la accion). Requiere llevar la pelota y cierta velocidad.
 func try_skill() -> bool:
-	if active() or _skill_cd > 0.0 or not _can_play() or not owner.ball_handler.has_possession():
+	if not can_start(&"skill") or _skill_cd > 0.0 or not _can_play() or not owner.ball_handler.has_possession():
 		return false
 	if owner.locomotion.speed < SKILL_MIN_SPEED:
 		return false
@@ -521,5 +558,5 @@ func _skill_touches() -> void:
 
 ## Tropiezo leve (solo presentacion): el cuerpo sigue su movimiento y el clip actua sobre el tronco.
 func stumble() -> void:
-	if _can_play() and not active() and not owner.visual.is_action_playing():
-		owner.visual.play_pack_clip(&"Jogging_Stumble_inplace", 1.0, 0.0, 0.9)
+	if _can_play() and owner.arbiter != null:
+		owner.arbiter.play(&"stumble_light", ActionArbiter.Level.OVERLAY, &"PlayerActions", &"Jogging_Stumble_inplace", 1.0, 0.0, 0.9, true)

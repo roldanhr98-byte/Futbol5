@@ -148,6 +148,8 @@ var _pending_stick: Vector3 = Vector3.ZERO
 var _pending_age: float = 0.0
 ## Patada en curso: el impulso se aplica en el instante de contacto de la animacion.
 var _kick_action: StringName = &""
+## Testigo del arbitro del golpeo con clip en curso (0 = ninguno).
+var _kick_token: int = 0
 var _kick_timer: float = 0.0
 var _kick_stick: Vector3 = Vector3.ZERO
 var _kick_charge: float = 0.0
@@ -510,9 +512,10 @@ func _try_execute_pending() -> bool:
 				return true
 			return false   # ningun pie llegaria a la pelota: se espera (buffer) o se descarta
 		var act: StringName = _pending_action
+		if not _start_clip_kick(act, plan, _pending_stick, _pending_charge, _pending_lob):
+			return false   # el arbitro no da el control ahora: la orden sigue pendiente
 		_pending_action = &""
 		_kick_curl = _pending_curl
-		_start_clip_kick(act, plan, _pending_stick, _pending_charge, _pending_lob)
 		return true
 	if not can_reach(Tuning.player.touch_reach + 0.3):
 		return false
@@ -606,6 +609,9 @@ func _predicted_yaw(latency: float) -> float:
 ## Aborta una patada en curso y la accion pendiente (caida, barrida): no se aplica ningun impulso.
 func abort_kick() -> void:
 	if _kick_action != &"":
+		if owner.arbiter != null:
+			owner.arbiter.relevel(_kick_token, ActionArbiter.Level.OVERLAY)
+		_kick_token = 0
 		_kick_action = &""
 		_kick_clip = {}
 		_kick_turn = {}
@@ -1069,8 +1075,14 @@ func _turn_kick_foot_to_ball() -> Vector3:
 	bp.y = b.global_position.y
 	return bp - foot_contact_world(ct, body_c, yaw0 + ActionMotion.heading_rel(hp, ct_t))
 
-func _start_clip_kick(action: StringName, plan: Dictionary, stick_world: Vector3, charge: float, lob: bool) -> void:
+func _start_clip_kick(action: StringName, plan: Dictionary, stick_world: Vector3, charge: float, lob: bool) -> bool:
 	var t: PlayerTuning = Tuning.player
+	# El golpeo pide el control (pose del clip) al arbitro: una accion de mas nivel en curso lo deja pendiente.
+	if owner.arbiter != null:
+		var tok: int = owner.arbiter.play(&"kick", ActionArbiter.Level.KICK, &"BallHandler", plan["clip"], plan["speed"], plan["offset"], float(plan["latency"]) + t.kick_follow_through)
+		if tok == 0:
+			return false
+		_kick_token = tok
 	_kick_action = action
 	_kick_stick = stick_world
 	_kick_charge = charge
@@ -1095,8 +1107,10 @@ func _start_clip_kick(action: StringName, plan: Dictionary, stick_world: Vector3
 	# Durante el balanceo el cuerpo (que se acerca a la pelota por el ajuste de zancada) no debe empujarla: el golpe lo da
 	# el pie en el instante de contacto, con impulso.
 	owner.set_ball_ghost(true)
-	owner.visual.play_pack_clip(plan["clip"], plan["speed"], plan["offset"], _kick_timer + t.kick_follow_through)
+	if owner.arbiter == null:
+		owner.visual.play_pack_clip(plan["clip"], plan["speed"], plan["offset"], _kick_timer + t.kick_follow_through)
 	kick_stats["started"] += 1
+	return true
 
 func _log_kick(action: StringName, result: StringName, extra: Dictionary = {}) -> void:
 	var entry := {"action": action, "result": result, "time_ms": Time.get_ticks_msec()}
@@ -1112,6 +1126,10 @@ func _finish_clip_kick() -> void:
 	var plan: Dictionary = _kick_clip
 	_kick_action = &""
 	_kick_clip = {}
+	# Resuelto el golpeo, su continuacion queda como capa en el arbitro.
+	if owner.arbiter != null:
+		owner.arbiter.relevel(_kick_token, ActionArbiter.Level.OVERLAY)
+	_kick_token = 0
 	lockout = 0.0
 	owner.locomotion.turn_scale = 1.0
 	owner.nudge_velocity = Vector3.ZERO

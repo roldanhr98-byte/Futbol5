@@ -207,7 +207,14 @@ al esqueleto con el cuerpo a más de 2.5 m/s): **808** imágenes (635 presionand
 | Causa | Arreglo |
 |---|---|
 | La mezcla direccional (marcaje y presión mirando al rival: `Locomotion.jockeying` → `FootballerVisual.directional`) buscaba los clips del pack de Mixamo (`DIR_POINTS`), que no existen en el modo 4: quedaba solo el punto central, y el cuerpo se deslizaba con la pose fija. Lo mismo el arquero al acomodarse y el árbitro. | `JsonCatalog.dir_points` / `dir_ref_speed`: trote al frente y los clips `dir_back`, `dir_back_diag`, `dir_fwd_diag`, `dir_side` (y espejos) a distancia 1 en su dirección medida (`natural_dir`); cadencia con su velocidad media; centro, el reposo de la marcha del modo. |
-| Gestos en el sitio (entrada de pie, forcejeo, recepción) que seguían sonando con el cuerpo corriendo | `Footballer._json_clip_slides`: se cortan si el cuerpo va más de `SLIDE_CUT_SPEED` (1.8 m/s) por encima de la carrera del clip durante `SLIDE_CUT_TIME` (0.15 s); los gestos de presión y entrada solo empiezan con el cuerpo a ≤ `PlayerActions.GESTURE_MAX_SPEED` (2.2 m/s). |
+| Gestos en el sitio (entrada de pie, forcejeo, recepción) que seguían sonando con el cuerpo corriendo | `Footballer._json_clip_slides`: se cortan si el cuerpo va más de `SLIDE_CUT_SPEED` (1.8 m/s) por encima de la carrera del clip durante `SLIDE_CUT_TIME` (0.15 s); los gestos de presión y entrada solo empiezan si el cuerpo no corre más que el clip (+1.8 m/s; desde F2 lo decide `ActionArbiter.fits_in_place`, antes la constante PlayerActions.GESTURE_MAX_SPEED). |
 
 Después: **81** imágenes (7 presionando). Prueba: `test_json_mode::test_model_builds_and_animates` comprueba que la mezcla
 direccional del modo 4 tiene ≥ 6 clips y que todos existen.
+
+## Árbitro de acciones (F2, 2026-10-30)
+
+Una sola autoridad por futbolista decide qué acción controla el cuerpo y la pose (`ActionArbiter`, ver
+[PLAYER](PLAYER.md#árbitro-de-acciones-actionarbiter-f2-2026-10-30)). En el modo 4: pose distinta de la raíz 237 → 0 imágenes
+en 3 partidos de IA de 180 s; una falta derriba también a un jugador en un movimiento con pelota de clip; sin poses huérfanas
+tras un reinicio. Las situaciones de presentación que no tienen clip JSON ya no recurren a clips de Tripo.

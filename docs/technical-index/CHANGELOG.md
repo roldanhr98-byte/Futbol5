@@ -11,13 +11,29 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-10-30 — F2: árbitro de acciones del futbolista (`ActionArbiter`)
+
+- **Nuevo** `scripts/player/action_arbiter.gd`: autoridad única sobre cuerpo y pose, con niveles, testigos, interrupción
+  completa, caducidad, poses en el sitio según la velocidad del clip y registro de decisiones.
+- **Integrado en** `PlayerActions` (`start`, `start_move`, `stop`, `interrupt`, `can_start`, gestos, caída, tropiezo),
+  `BallHandler` (golpeo con testigo; tras el contacto baja a capa), `Footballer` (crea el árbitro; espera, capas, recepción,
+  bloqueo, reacciones, colocación y cortes por el árbitro), `FootballerVisual` (la pose de una acción con raíz dura lo que la
+  raíz), `JsonBallMove` (el corte libera su lugar). Se quitó la constante PlayerActions.GESTURE_MAX_SPEED, sustituida por
+  `ActionArbiter.fits_in_place`.
+- **Corrige (demostrado):** una falta no derribaba a un jugador en un movimiento con pelota de clip; un festejo sustituía la
+  pose de una caída en curso; pose huérfana tras `PlayerActions.reset`; pose apagada una imagen antes que la raíz (237 → 0
+  imágenes en 3 × 180 s); gestos en el sitio iniciados corriendo (242 → 118 imágenes, cortados en ≤ 8).
+- **Cambio de comportamiento:** las situaciones sin clip JSON ya no usan Tripo (`test_pack_reactions::test_tripo_fallback…`,
+  modo descartado, falla por eso).
+- Pruebas: `tests/test_action_arbiter.gd` (9/9). Suites: ver el informe de F2.
+
 ## 2026-10-30 — Modo 4: jugadores que se deslizaban sin animación («estatuas»), sobre todo al presionar
 
 - **Causa**: la mezcla direccional (marcaje/presión mirando al rival, arquero, árbitro) no tenía clips en el modo 4 (buscaba los
   del pack de Mixamo): pose fija mientras el cuerpo se movía. **Arreglo**: `JsonCatalog.dir_points` / `dir_ref_speed` y su uso en
   `FootballerVisual._setup_animation_tree` / `drive_motion`.
 - Gestos en el sitio con el cuerpo corriendo: se cortan (`Footballer._json_clip_slides`) y solo empiezan casi frenado
-  (`PlayerActions.GESTURE_MAX_SPEED`).
+  (PlayerActions.GESTURE_MAX_SPEED (retirada en F2)).
 - Medido (60 s de partido de IA con render): imágenes con los pies quietos corriendo 808 → 81. Prueba nueva en
   `test_json_mode::test_model_builds_and_animates`. Detalle: [JSON_MODE](SYSTEMS/JSON_MODE.md).
 
