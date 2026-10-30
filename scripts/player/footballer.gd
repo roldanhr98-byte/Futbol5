@@ -205,6 +205,11 @@ func _physics_process(delta: float) -> void:
 			return
 		if set_piece.stage == &"done":
 			set_piece = null
+	# Modo 4: un giro sin pelota (clip) se corta si la pelota llega cerca: primero esta la jugada.
+	if actions.kind == &"turn" and ctx.ball != null and KickModel.flat(ctx.ball.global_position - global_position).length() < JSON_TURN_BALL_DIST * 0.5:
+		actions.reset()
+		if visual != null:
+			visual.stop_current_action()
 	# Una accion de cuerpo completo (barrida, caida, levantarse) mueve al jugador con la raiz del clip.
 	if actions.tick(delta):
 		if visual != null:
@@ -213,6 +218,10 @@ func _physics_process(delta: float) -> void:
 	# REGATE con el joystick hacia atras y la pelota al pie: vuelta pisando la pelota (DragBack); si no, la ruleta.
 	if frame.skill_pressed and _skill_is_drag_back(frame):
 		ball_handler.drag_back.request()
+		ball_handler.json_move.request_skill()
+	elif frame.skill_pressed and PackLibrary.json_mode():
+		# Modo 4: el regate es un clip JSON con sus toques (JsonBallMove), no la ruleta del pack.
+		ball_handler.json_move.request_skill()
 	elif frame.skill_pressed:
 		actions.try_skill()
 		if actions.tick(0.0):
@@ -271,6 +280,7 @@ func _physics_process(delta: float) -> void:
 				elif press_info.carrier != null and actions._alongside(press_info.carrier) and actions.rng.randf() < 0.04:
 					actions.shoulder_charge(press_info.carrier)
 				elif press_info.attempt_tackle and _ai_commits_tackle(press_info.carrier):
+					actions.tackle_gesture(press_info.carrier)
 					var won: bool = ball_handler.attempt_tackle(press_info.carrier)
 					tackled.emit(won)
 	else:
@@ -342,6 +352,8 @@ func _physics_process(delta: float) -> void:
 	if ball_handler.is_dribbling() and ball_handler.ball_distance() <= ball_handler.possession_radius() and approach.is_empty():
 		cap = ball_handler.dribble_speed_cap()
 	var speed_before: float = locomotion.speed
+	if PackLibrary.json_mode() and not is_pressing and not kicking:
+		_json_turn_move(desired_dir, desired_mag, delta)
 	# Vuelta atras pisando la pelota o giro con toques en curso: el cuerpo lo mueve la accion (llegar, frenar, girar, salir).
 	var scripted: Dictionary = ball_handler.drag_back.body_control()
 	if scripted.is_empty():
@@ -354,6 +366,11 @@ func _physics_process(delta: float) -> void:
 	if kicking:
 		locomotion.velocity = ball_handler.kick_body_velocity()
 		locomotion.speed = locomotion.velocity.length()
+		# Golpeo girando (modo 4): el cuerpo gira con el clip hasta el contacto.
+		var kyaw: float = ball_handler.kick_body_yaw()
+		if not is_nan(kyaw):
+			locomotion.turn_rate = wrapf(kyaw - locomotion.yaw, -PI, PI) / maxf(delta, 0.001)
+			locomotion.yaw = kyaw
 	_gait_overlays(desired_dir, want_sprint, stick_mag, speed_before, delta)
 
 	velocity.x = locomotion.velocity.x + nudge_velocity.x
@@ -389,6 +406,65 @@ const SPRINT_TURN := &"Sprint_Turn"
 const TIRED_STOP := &"Running_Tired"
 const TIRED_STOP_FROM := 2.0
 var _overlay_cd: float = 0.0
+
+## Modo 4: gestos de espera (clips de pie y escenas de espera) tras IDLE_FIDGET_AFTER s quieto sin la pelota cerca.
+const IDLE_FIDGET_AFTER := 3.5
+const IDLE_FIDGET_BALL_DIST := 7.0
+var _idle_t: float = 0.0
+var _fidget: StringName = &""
+
+func _json_idle(stick_mag: float, delta: float) -> void:
+	var ball_near: bool = ctx.ball != null and KickModel.flat(ctx.ball.global_position - global_position).length() < IDLE_FIDGET_BALL_DIST
+	if locomotion.speed > 0.25 or stick_mag > 0.2 or ball_near:
+		_idle_t = 0.0
+		return
+	_idle_t += delta
+	if _idle_t > IDLE_FIDGET_AFTER + float(actor_id % 4):
+		_idle_t = -2.0
+		var c: StringName = JsonCatalog.situation_clip(&"idle_fidget", actor_id)
+		if c != &"" and visual.play_pack_clip(c, 1.0, 0.0, 4.5) > 0.0:
+			_fidget = c
+
+## Modo 4: giros sin pelota con los clips de giro (de parado o en carrera, 90 a 180 grados): el cuerpo gira y arranca con el
+## clip (raiz y rumbo) en vez de rotar en el sitio. Solo lejos de la pelota (JSON_TURN_BALL_DIST): cerca manda la jugada.
+const JSON_TURN_MIN := 100.0
+const JSON_TURN_TOL := 35.0
+const JSON_TURN_BALL_DIST := 6.0
+const JSON_TURN_COOLDOWN := 2.5
+const JSON_TURN_COOLDOWN_AI := 4.0
+const JSON_TURN_SPEED_AI := 1.3
+var _turn_cd: float = 0.0
+
+func _json_turn_move(desired_dir: Vector3, desired_mag: float, delta: float) -> void:
+	_turn_cd = maxf(_turn_cd - delta, 0.0)
+	if _turn_cd > 0.0 or desired_mag < 0.5 or desired_dir.length_squared() < 0.01 or actions.active() or ball_handler.has_possession():
+		return
+	if ctx.ball == null or KickModel.flat(ctx.ball.global_position - global_position).length() < JSON_TURN_BALL_DIST or has_incoming_pass():
+		return
+	var spd: float = locomotion.speed
+	var role: StringName = &"turn_start" if spd < 1.3 else (&"turn_run" if spd >= 2.2 and spd <= 5.6 else &"")
+	# La IA: solo los giros desde parado (los de carrera la frenaban: en un partido de IA, 41 giros de clip en 90 s).
+	if role == &"" or (role == &"turn_run" and not is_human_controlled):
+		return
+	var ang: float = rad_to_deg(wrapf(Locomotion.yaw_from_dir(desired_dir.normalized()) - locomotion.yaw, -PI, PI))
+	if absf(ang) < JSON_TURN_MIN:
+		return
+	_turn_cd = JSON_TURN_COOLDOWN if is_human_controlled else JSON_TURN_COOLDOWN_AI
+	var best: StringName = &""
+	var best_s: float = INF
+	for id in PackLibrary.by_role(role):
+		var m: Dictionary = PackLibrary.meta(id)
+		var turn: float = rad_to_deg(ActionMotion.heading_rel(m.get("heading_path", PackedFloat32Array()), float(m.get("duration", 1.0))))
+		var dturn: float = absf(turn - ang)
+		var dv: float = absf(float(m.get("v_in", 0.0)) - spd)
+		if dturn > JSON_TURN_TOL or dv > 1.6:
+			continue
+		var s: float = dturn / JSON_TURN_TOL + 0.3 * dv + actions.rng.randf() * 0.3
+		if s < best_s:
+			best_s = s
+			best = id
+	if best != &"" and actions.start_move(&"turn", best, 1.15 if is_human_controlled else JSON_TURN_SPEED_AI):
+		actions.stats["turns"] = int(actions.stats.get("turns", 0)) + 1
 var _tired_cd: float = 0.0
 
 ## Quita la componente que saca al jugador mas alla de las lineas (con medio metro de margen).
@@ -433,8 +509,13 @@ func _gait_overlays(desired_dir: Vector3, want_sprint: bool, stick_mag: float, s
 		visual.stop_current_action()
 	elif cur == IDLE_TO_SPRINT and stick_mag < 0.3:
 		visual.stop_current_action()
+	elif cur != &"" and cur == _fidget and (locomotion.speed > 0.5 or stick_mag > 0.3):
+		visual.stop_current_action()
 	if visual.is_action_playing() or actions.active() or ball_handler.is_kick_in_progress() or ball_handler.has_possession():
+		_idle_t = 0.0
 		return
+	if PackLibrary.json_mode():
+		_json_idle(stick_mag, delta)
 	if _tired_cd <= 0.0 and locomotion.exhausted and locomotion.speed < 0.4 and speed_before < 0.6 and PackLibrary.has_clip(TIRED_STOP):
 		if visual.play_pack_clip(TIRED_STOP, 1.0, TIRED_STOP_FROM, 2.6) > 0.0:
 			_tired_cd = 7.0
@@ -490,6 +571,12 @@ func _on_match_event(e: GameEvent) -> void:
 				_set_reaction(&"warmup", rng_delay(), maxf(float(e.data.get("seconds", 3.0)) - 0.6, 1.0))
 		GameEvent.Type.RESTART, GameEvent.Type.MATCH_START:
 			_cancel_reaction()
+		GameEvent.Type.SET_PIECE:
+			# Modo 4: tiro libre en contra cerca de este jugador: se planta como barrera (clips de barrera del JSON).
+			if PackLibrary.json_mode() and e.team != team and String(e.data.get("kind", "")) == "free_kick":
+				var sp: Array = e.data.get("pos", [0.0, 0.0])
+				if Vector2(global_position.x - float(sp[0]), global_position.z - float(sp[1])).length() < 12.0:
+					_set_reaction(&"wall", 1.2 + rng_delay(), 5.0)
 		GameEvent.Type.FIRST_TOUCH:
 			if e.actor_id == actor_id and locomotion.speed <= RECEIVE_MAX_SPEED and not ball_handler.is_kick_in_progress() and not visual.is_action_playing() and not actions.active():
 				# Pelota que llega rapida: control con el cuerpo (Receive); suave: control con el pie (receive_soccerball).

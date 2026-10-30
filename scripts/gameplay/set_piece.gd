@@ -67,6 +67,8 @@ static func kind_name(k: Kind) -> String:
 	return KIND_NAMES.get(k, "set_piece")
 
 func _init(k: Kind, team_index: int, at: Vector3, who: Footballer, context: MatchContext) -> void:
+	# Modo 4: cada balon parado usa otro de los clips convertidos de su rol (saque de banda, tiro libre, centro...).
+	PackLibrary.vary_aliases()
 	kind = k
 	team = team_index
 	spot = Vector3(at.x, 0.0, at.z)

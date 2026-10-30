@@ -20,6 +20,8 @@ const MOCAP_PATH := "res://assets/animations/mocap_clips.res"
 ## Modo 4 (Json).
 const JSON_FIELD_PATH := "res://assets/animations/json_clips.res"
 const JSON_KEEPER_PATH := "res://assets/animations/json_keeper.res"
+## Escenas del modo 4 (festejos, lamentos, gestos, esperas, barrera...): se suman a la libreria de campo.
+const JSON_SCENES_PATH := "res://assets/animations/json_scenes.res"
 
 static var _field: AnimationLibrary = null
 static var _keeper: AnimationLibrary = null
@@ -48,10 +50,17 @@ static func _ensure() -> void:
 	_field = null
 	_keeper = null
 	_alias = {}
+	_alias_base = {}
 	_roles = {}
 	_reset_caches()
 	if want_json:
 		_field = load(JSON_FIELD_PATH) as AnimationLibrary
+		if _field != null and ResourceLoader.exists(JSON_SCENES_PATH):
+			var sc: AnimationLibrary = load(JSON_SCENES_PATH) as AnimationLibrary
+			if sc != null:
+				for id in sc.get_animation_list():
+					if not _field.has_animation(id):
+						_field.add_animation(id, sc.get_animation(id))
 		if ResourceLoader.exists(JSON_KEEPER_PATH):
 			_keeper = load(JSON_KEEPER_PATH) as AnimationLibrary
 		for lib in [_field, _keeper]:
@@ -87,6 +96,7 @@ static func _reset_caches() -> void:
 	FootballerVisual.reset_caches()
 	BallHandler.reset_caches()
 	KeeperPlanner.reset_caches()
+	JsonCatalog.reset_caches()
 
 ## Id real de un clip pedido por su nombre del pack de Mixamo (modo 4); fuera de ese modo, el mismo id.
 static func resolve(id: StringName) -> StringName:
@@ -171,9 +181,52 @@ static func by_role(role: StringName) -> Array[StringName]:
 		out.assign(_roles[role])
 	return out
 
+## Roles cuyos nombres del pack se reparten entre TODOS los clips del rol (modo 4): en cada saque inicial y en cada balon
+## parado (vary_aliases) cada nombre pasa a otro clip del mismo rol, asi a lo largo del partido se ven todas las barridas,
+## saques de banda, balones parados, tropiezos y empujones convertidos (y no siempre el mismo).
+const VARY_ROLES: Array[StringName] = [&"slide", &"throw_in", &"setpiece_pass", &"setpiece_shot", &"setpiece_lob", &"stumble", &"shove",
+	&"gk_throw", &"gk_roll", &"gk_kick", &"gk_place", &"gk_direct", &"gk_block", &"gk_miss"]
+static var _alias_base: Dictionary = {}
+static var _vary_rng := RandomNumberGenerator.new()
+
+## Reparte de nuevo los nombres del pack de los roles VARY_ROLES entre los clips de su rol (modo 4). Lo llaman el saque
+## inicial y el comienzo de cada balon parado: nunca a mitad de una accion que vuelve a pedir el clip por su nombre.
+static func vary_aliases() -> void:
+	_ensure()
+	if not _loaded_json:
+		return
+	if _alias_base.is_empty():
+		_alias_base = _alias.duplicate()
+		_vary_rng.randomize()
+	for a in _alias_base:
+		var orig: StringName = _alias_base[a]
+		var lib: AnimationLibrary = _field if (_field != null and _field.has_animation(orig)) else _keeper
+		if lib == null or not lib.has_animation(orig):
+			continue
+		var om: Dictionary = lib.get_animation(orig).get_meta("pack", {})
+		var role: StringName = StringName(String(om.get("role", "")))
+		if not VARY_ROLES.has(role) or not _roles.has(role):
+			continue
+		var need_mirror: bool = lib.has_animation(StringName(String(orig) + "_mirror"))
+		var pool: Array = []
+		for id in _roles[role]:
+			var s: String = String(id)
+			if s.ends_with("_mirror") or not lib.has_animation(id):
+				continue
+			if need_mirror and not lib.has_animation(StringName(s + "_mirror")):
+				continue
+			var m: Dictionary = lib.get_animation(id).get_meta("pack", {})
+			# Saques y golpeos: solo los que traen la suelta / el contacto medidos (el juego los usa).
+			if om.has("release") != m.has("release") or om.has("contact") != m.has("contact"):
+				continue
+			pool.append(id)
+		if not pool.is_empty():
+			_alias[a] = pool[_vary_rng.randi() % pool.size()]
+
 ## Fuerza una nueva lectura de disco (pruebas).
 static func reload() -> void:
 	_loaded = false
+	_alias_base = {}
 	_field = null
 	_keeper = null
 	_alias = {}

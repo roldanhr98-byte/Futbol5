@@ -3,6 +3,7 @@ extends Node
 ## librerias de clips del modo Json sobre el esqueleto canonico JsonRig:
 ##   assets/animations/json_clips.res   clips de campo
 ##   assets/animations/json_keeper.res  clips de arquero
+##   assets/animations/json_scenes.res  escenas: festejos, lamentos, gestos, esperas, barrera (se suman a los de campo)
 ## La seleccion (que clips, con que rol, espejo, bucle) esta en tools/json_anim/selection.json (la genera make_selection.py).
 ## Cada Animation lleva set_meta("pack", {...}) con los mismos campos que el pack de Mixamo (duration, loop, natural_speed,
 ## root_total, root_path, contact, paths...) mas los propios del JSON (role, touches, strides, kick...), medidos sobre las
@@ -17,12 +18,16 @@ extends Node
 const SEL_PATH := "res://tools/json_anim/selection.json"
 const OUT_FIELD := "res://assets/animations/json_clips.res"
 const OUT_KEEPER := "res://assets/animations/json_keeper.res"
+const OUT_SCENES := "res://assets/animations/json_scenes.res"
 const DATA_FPS := 60.0
 const REST_ANKLE_Y := 0.095
 const CONTACT_FPS := 120.0
 const PATH_BEFORE := 0.12
 const PATH_AFTER := 0.05
 const HEADING_SIGMA := 0.25
+## Clips con rumbo «turn» (giros, giros con pelota, golpeos girando): el juego gira al jugador con este rumbo, asi que se
+## suaviza poco (queda en las articulaciones solo la torsion rapida de caderas y hombros).
+const HEADING_SIGMA_TURN := 0.1
 const STEP_KEY := 30.0
 const STEP_KEY_HI := 60.0
 
@@ -36,7 +41,7 @@ func _ready() -> void:
 	_rt = JsonRetarget.new(JsonRig.Pose.A)
 	var sel_path: String = OS.get_environment("SELECTION") if OS.get_environment("SELECTION") != "" else SEL_PATH
 	var sel: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(sel_path))
-	var libs := {"field": AnimationLibrary.new(), "keeper": AnimationLibrary.new()}
+	var libs := {"field": AnimationLibrary.new(), "keeper": AnimationLibrary.new(), "scenes": AnimationLibrary.new()}
 	var report: Array = []
 	var only: String = OS.get_environment("ONLY")
 	var bytes := 0
@@ -65,13 +70,15 @@ func _ready() -> void:
 	var out_keeper: String = OS.get_environment("OUT_KEEPER") if OS.get_environment("OUT_KEEPER") != "" else OUT_KEEPER
 	var e1: int = ResourceSaver.save(libs["field"], out_field)
 	var e2: int = ResourceSaver.save(libs["keeper"], out_keeper)
-	print("CONVERSOR guardado: %s (error=%d, %d clips) | %s (error=%d, %d clips)" % [out_field, e1, (libs["field"] as AnimationLibrary).get_animation_list().size(), out_keeper, e2, (libs["keeper"] as AnimationLibrary).get_animation_list().size()])
+	var out_scenes: String = OS.get_environment("OUT_SCENES") if OS.get_environment("OUT_SCENES") != "" else OUT_SCENES
+	var e3: int = ResourceSaver.save(libs["scenes"], out_scenes)
+	print("CONVERSOR guardado: %s (error=%d, %d clips) | %s (error=%d, %d clips) | %s (error=%d, %d clips)" % [out_field, e1, (libs["field"] as AnimationLibrary).get_animation_list().size(), out_keeper, e2, (libs["keeper"] as AnimationLibrary).get_animation_list().size(), out_scenes, e3, (libs["scenes"] as AnimationLibrary).get_animation_list().size()])
 	var out_dir: String = OS.get_environment("OUT")
 	if out_dir != "":
 		var f := FileAccess.open(out_dir + "/json_report.json", FileAccess.WRITE)
 		f.store_string(JSON.stringify(report, "\t"))
 		f.close()
-	get_tree().quit(0 if e1 == OK and e2 == OK else 1)
+	get_tree().quit(0 if e1 == OK and e2 == OK and e3 == OK else 1)
 
 func _find(prefix: String) -> String:
 	for f in _files:
@@ -146,7 +153,7 @@ func _convert(c: JsonClipData, entry: Dictionary, mirrored: bool) -> Animation:
 			for k in samples:
 				heading[k] = mean
 		_:
-			var sigma: float = HEADING_SIGMA * DATA_FPS
+			var sigma: float = (HEADING_SIGMA_TURN if mode == "turn" else HEADING_SIGMA) * DATA_FPS
 			var rad: int = int(sigma * 3.0)
 			for k in samples:
 				var acc := 0.0
@@ -208,11 +215,12 @@ func _convert(c: JsonClipData, entry: Dictionary, mirrored: bool) -> Animation:
 			out.rotation_track_insert_key(tracks[b], t, q)
 		out.position_track_insert_key(hip_tr, t, (res["hips"] as Vector3) * JsonRig.UNIT)
 	# 3) Metadatos.
-	var meta := _meta(c, entry, mirrored, joints_s, heading, loop, n60, f0, cycle.size() == 2, src_loop, mode == "initial")
+	var meta := _meta(c, entry, mirrored, joints_s, heading, loop, n60, f0, cycle.size() == 2, src_loop, mode == "initial" or mode == "turn")
+	meta["heading_mode"] = mode
 	meta["reach_err_cm"] = reach_err * 100.0
 	out.set_meta("pack", meta)
 	if bool(entry.get("compress", true)):
-		out.compress(8192, 120, 4.0)
+		out.compress(8192, int(fps_key), 4.0)
 	return out
 
 func _sample_sm(joints_s: Array, f: float) -> Dictionary:
@@ -322,16 +330,85 @@ func _meta(c: JsonClipData, entry: Dictionary, mirrored: bool, js: Array, headin
 		p_head.append((jj["head"] as Vector3) + off)
 		p_hands.append(((jj["l_wrist"] as Vector3) + (jj["r_wrist"] as Vector3)) * 0.5 + off)
 		k += 2
-	var paths := {"toe_l": p_toe_l, "toe_r": p_toe_r, "knee_l": p_knee_l, "knee_r": p_knee_r, "head": p_head, "hands": p_hands}
-	m["paths"] = paths
+	if bool(entry.get("paths", true)):
+		var paths := {"toe_l": p_toe_l, "toe_r": p_toe_r, "knee_l": p_knee_l, "knee_r": p_knee_r, "head": p_head, "hands": p_hands}
+		m["paths"] = paths
+	# Accion con raiz y rumbo: el juego mueve al cuerpo con root_path y lo gira con heading_path (ActionMotion).
+	m["move"] = bool(entry.get("move", false))
+	if entry.has("lie"):
+		m["lie"] = String(entry["lie"])
+	if entry.get("ball", false):
+		m["ball_touches"] = _ball_touches(c, js, heading, f0, n60, cropped, src_loop, mirrored, rotate_root)
 	if entry.get("kick", false):
 		var ct: Dictionary = _contact(c, js, mirrored, n60)
 		if not ct.is_empty():
+			# Hacia donde sale la pelota respecto al frente del INICIO del clip (grados, + izquierda) y cuanto giro el cuerpo
+			# hasta el contacto: con eso el juego elige el golpeo girando cuando el destino no esta delante.
+			var kturn: float = -float(c.meta.get("kick_dir", 0.0))
+			ct["kick_turn"] = -kturn if mirrored else kturn
+			var kc: int = clampi(int(round(float(ct["time"]) * DATA_FPS)), 0, heading.size() - 1)
+			ct["body_turn"] = rad_to_deg(heading[kc] - heading[0])
+			var rp_c: PackedVector2Array = m["root_path"]
+			ct["root"] = rp_c[clampi(int(round(float(ct["time"]) * 30.0)), 0, rp_c.size() - 1)] if rp_c.size() > 0 else Vector2.ZERO
+			# Golpeo «limpio» para el planificador de pases y tiros a ras: punta baja, por delante del cuerpo, a un costado
+			# razonable, rapida, con el pie de apoyo en el suelo y la pelota saliendo hacia delante.
+			var cp: Vector3 = ct["pos"]
+			var plant_key: String = "l_toe" if int(ct["foot"]) > 0 else "r_toe"
+			var plant_y: float = (_sample_sm(js, float(kc))[plant_key] as Vector3).y
+			ct["plant_y"] = plant_y
+			# Pie de apoyo quieto sobre el suelo (raiz + punta, en el mundo del clip) en los 0.1 s previos al contacto: si aun
+			# esta aterrizando, el pie patina al jugarlo con el cuerpo plantado.
+			# Maximo por fotograma (60 Hz) en los 5 fotogramas previos: un pie que aterriza justo antes del contacto patina en
+			# ese fotograma aunque la media salga baja.
+			var r0c: Vector2 = c.sample_root(f0)
+			var plant_slide: float = 0.0
+			var prev_w := Vector3.INF
+			# Y apoyado (punta baja) desde KICK_PLANT_TIME antes del contacto: el juego planta el cuerpo en ese tramo.
+			var planted: bool = true
+			for kk2 in range(maxi(kc - 6, 0), kc + 1):
+				if (js[kk2][plant_key] as Vector3).y > 0.06:
+					planted = false
+			ct["planted"] = planted
+			for kk in range(maxi(kc - 5, 0), kc + 1):
+				var pk: Vector2 = c.sample_root(f0 + float(kk)) - r0c
+				var wk: Vector3 = Vector3(pk.x, 0.0, pk.y) + Basis(Vector3.UP, heading[kk]) * (js[kk][plant_key] as Vector3)
+				if prev_w != Vector3.INF:
+					plant_slide = maxf(plant_slide, Vector2(wk.x - prev_w.x, wk.z - prev_w.z).length() * DATA_FPS)
+				prev_w = wk
+			ct["plant_slide"] = plant_slide
+			ct["clean"] = cp.y <= 0.3 and cp.x >= 0.0 and cp.x <= 0.95 and absf(cp.z) <= 0.5 and float(ct["speed"]) >= 4.0 and plant_y <= 0.06 and absf(kturn) < 45.0 and plant_slide <= 1.2 and planted
 			m["contact"] = ct
 	if entry.get("throw", false):
 		m["release"] = _release(js, m["root_path"] as PackedVector2Array)
 	m["kick_kind"] = String(entry.get("kick_kind", ""))
 	return m
+
+## Toques de pelota del clip (los del JSON): para cada uno, el instante, el pie y DONDE esta la punta de ese pie respecto al
+## cuerpo al INICIO del clip (adelante, arriba, derecha; con la raiz y el giro del cuerpo hasta ese instante), y hacia donde
+## va la punta (adelante, derecha). Con eso el juego manda la pelota de un toque al siguiente: llega al pie justo cuando el
+## pie la toca.
+func _ball_touches(c: JsonClipData, js: Array, heading: PackedFloat32Array, f0: float, n60: int, cropped: bool, src_loop: bool, mirrored: bool, rotate_root: bool) -> Array:
+	var out: Array = []
+	var r0: Vector2 = c.sample_root(f0)
+	var h0: float = heading[0]
+	var hroot := Basis(Vector3.UP, -h0) if rotate_root else Basis.IDENTITY
+	for t in c.meta.get("touches", []):
+		var tf: float = _rel_frame(float(t[0]), f0, n60, cropped, src_loop, c.frames)
+		if tf < 0.0:
+			continue
+		var foot: int = _foot_sign(String(t[1]), mirrored)
+		var key: String = "r_toe" if foot > 0 else "l_toe"
+		var pts: Array[Vector3] = []
+		for d in [-2.0, 0.0, 2.0]:
+			var ff: float = clampf(tf + d, 0.0, float(js.size() - 1))
+			var k: int = clampi(int(round(ff)), 0, js.size() - 1)
+			var rp: Vector2 = c.sample_root(minf(f0 + ff, float(c.frames))) - r0
+			var rr: Vector3 = hroot * Vector3(rp.x, 0.0, rp.y)
+			var toe: Vector3 = Basis(Vector3.UP, heading[k] - h0) * (_sample_sm(js, ff)[key] as Vector3)
+			pts.append(rr + toe)
+		var vel: Vector3 = (pts[2] - pts[0]) * (DATA_FPS / 4.0)
+		out.append([tf / DATA_FPS, foot, pts[1], Vector2(vel.x, vel.z)])
+	return out
 
 ## Suelta de un lanzamiento con las manos: el primer instante en que las dos manos se separan (> 12 cm) tras haber ido juntas.
 ## hands = (adelante, arriba, derecha) respecto a la pelvis en ese instante (medio de las dos muñecas, un fotograma antes).

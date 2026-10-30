@@ -11,6 +11,37 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-10-30 — Modo 4 «Json»: las 2 022 animaciones conectadas, giros con pelota, vuelta pisando la pelota, golpeo girando y toques con el pie
+
+Pedido: conducción con toques visibles al avanzar y en diagonal, giro con la pelota, pisar la pelota y volver atrás sin errarla, no
+patear de espaldas (girarse y patear), conectar todas las animaciones del zip; y descartar el GLB de Tripo adaptado (se deformaba).
+Detalle: [JSON_MODE](SYSTEMS/JSON_MODE.md).
+
+- **Modelo**: solo el humanoide propio. Quitados json_tripo.scn, la herramienta build_json_tripo, el botón «Modelo Json» del
+  menú (`Hud`) y `json_model` de `Tuning` (y de `settings.cfg`).
+- **Todas las animaciones**: `make_selection.py` clasifica los 2 022 clips (listas curadas + reglas por categoría, nombre y geometría
+  medida); `build_json_library.gd` genera `json_clips.res` (2 125 clips), `json_keeper.res` (476) y `json_scenes.res` (622, nueva),
+  con rumbo «turn» (el juego gira al jugador con el clip), `ball_touches`, giro del golpeo (`kick_turn`), golpeo limpio (`clean`) y
+  postura tendida (`lie`). ~39 MB en total.
+- **Movimientos con pelota** (`scripts/player/json_ball_move.gd`, nuevo): giros con pelota, vuelta pisando la pelota (REGATE + atrás),
+  regates (REGATE), frenadas y giro previo a un golpeo hacia atrás, con el clip moviendo y girando al cuerpo y la pelota yendo de un toque
+  del clip al siguiente (impulsos), con IK del pie al toque.
+- **Golpeo girando** (`BallHandler.plan_turn_kick`, `estimated_kick_dir`, `kick_body_yaw`; `Footballer`): con el destino a ≥ 50° del
+  frente, clip de girar y patear con el cuerpo siguiendo su raíz y rumbo; a ≥ 100° sin clip que llegue, giro con pelota y después el golpeo.
+- **Conducción**: IK del pie hasta la pelota en cada toque (`_json_touch_ik_*`), pie más cercano estirado en lugar del toque de rescate,
+  toque de rumbo en diagonal/zigzag (`_steer_touch_ready`, `STEER_TOUCH_DEG`).
+- **Acciones con rumbo** (`ActionMotion.heading_rel`, `PlayerActions.start_move`): giros sin pelota con clip (`Footballer._json_turn_move`).
+- **Resto conectado**: festejos/lamentos/gestos/calentamiento/barrera/espera por rol (`JsonCatalog.situation_clip`, `AnimationCatalog`),
+  reparto de alias en cada balón parado y saque inicial (`PackLibrary.vary_aliases`, `SetPiece`, `MatchManager`), caídas por carrera con
+  levantarse de la misma postura (`PlayerActions._json_fall/_json_getup`), gesto de entrada de pie, levantarse y gestos del arquero
+  (`Goalkeeper._json_getup`), técnicos/mascota/público (`scripts/gameplay/json_sideline.gd`, nuevo; `MatchScene`), nombres de rol en la
+  galería (`PracticeScene.ROLE_NAMES`).
+- **Rendimiento**: planificar un golpeo evalúa los 24 candidatos que mejor encajan (2.4 ms con cientos de clips); cajas de trayectoria en
+  el planificador aéreo (15–18 ms). La IA usa los giros de clip con límites (con pelota ≥ 110° cada 3 s; sin pelota solo desde parado):
+  sin límites pasaba de 14–17 a 6–12 pases en 90 s.
+- **Verificación**: ver la tabla de JSON_MODE (suite completa, `json_mode` con render, `live_kicks` y `live_feet` en modo 4, partidos de
+  IA repetidos, capturas). `test_json_mode.gd` ajustado a un solo modelo. Sin prueba en Android.
+
 ## 2026-10-29 — Modo 4 «Json»: las animaciones JSON sobre un esqueleto canónico, con dos modelos (Tripo adaptado y humanoide realista)
 
 Detalle: [JSON_MODE](SYSTEMS/JSON_MODE.md) · herramientas: `tools/json_anim/README.md`.
@@ -28,7 +59,7 @@ Detalle: [JSON_MODE](SYSTEMS/JSON_MODE.md) · herramientas: `tools/json_anim/REA
   Mixamo que sustituye (`alias`).
 - **Modelos**: `json_tripo.scn` (la malla, UV y pesos de `player_base.glb` sin cambios sobre el esqueleto canónico en pose T) y
   `json_human.scn` (humanoide de ~7 200 triángulos con zonas de kit en `COLOR.r`, oclusión en `COLOR.g`, cara, manos y botines;
-  `json_kit.gdshader`). Selector en el menú de pausa («Modelo Json»), `Tuning.json_model`.
+  `json_kit.gdshader`). Selector en el menú de pausa («Modelo Json», json_model; quitados el 2026-10-30 con el modelo de Tripo).
 - **Juego**: `Tuning.gameplay_mode = 4`; `PackLibrary` (librerías JSON, `resolve` por alias, `by_role`, recarga al cambiar de modo);
   `JsonCatalog` (escalones de marcha, direcciones, candidatos de patada por potencia); `FootballerVisual` (ciclos con línea de
   tiempo común, sin clips de Tripo, menos inclinación propia); `BallHandler` (variedad entre patadas que encajan igual, coste de

@@ -1,6 +1,0 @@
-[gd_scene format=3]
-
-[ext_resource type="Script" path="res://tools/json_anim/build_json_tripo.gd" id="1"]
-
-[node name="BuildJsonTripo" type="Node"]
-script = ExtResource("1")

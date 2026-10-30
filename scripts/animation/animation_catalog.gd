@@ -31,6 +31,8 @@ const FIELD := {
 	&"receive": {"pack": [&"Receive", &"receive_soccerball"], "tripo": []},
 	&"jump": {"pack": [&"Jumping_Up", &"Jump_4"], "tripo": [&"jump"]},
 	&"jump_running": {"pack": [&"Jump_2"], "tripo": [&"jump"]},
+	# Solo modo 4 (roles de los clips JSON, JsonCatalog.SITUATION_ROLES): barrera en un tiro libre en contra.
+	&"wall": {"pack": [], "tripo": []},
 }
 
 ## Patadas conectadas: SOLO clips "en el sitio" (desplazamiento de raiz < ROOT_MAX), porque el pie de contacto medido
@@ -91,6 +93,11 @@ static func resolve(situation: StringName, use_pack: bool, pick: int = 0) -> Dic
 		var mc: Array = (MOCAP_FIELD[situation] as Array).filter(func(c: StringName) -> bool: return PackLibrary.has_clip(c))
 		if mc.size() > 0:
 			return {"source": &"pack", "clip": mc[absi(pick) % mc.size()]}
+	if use_pack and PackLibrary.json_mode():
+		# Modo 4: entre todos los clips JSON del rol de la situacion (festejos, lamentos, gestos...).
+		var jc: StringName = JsonCatalog.situation_clip(situation, pick)
+		if jc != &"":
+			return {"source": &"pack", "clip": jc}
 	if use_pack:
 		var packs: Array = (entry["pack"] as Array).filter(func(c: StringName) -> bool: return PackLibrary.has_clip(c))
 		if packs.size() > 0:

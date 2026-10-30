@@ -188,12 +188,12 @@ jobs:
             unzip -l "$APK" | grep -q "animations/pack_keeper.res" || { echo "::error::pack_keeper.res no esta en la APK"; exit 1; }
             unzip -p "$APK" "assets/assets/animations/pack_keeper.res" | cmp -s - assets/animations/pack_keeper.res || { echo "::error::la libreria del arquero de la APK difiere de la del repositorio"; exit 1; }
           fi
-          # Modo 4 (Json): librerias de clips (identicas a las del repositorio) y los dos modelos dentro de la APK.
-          for f in animations/json_clips.res animations/json_keeper.res; do
+          # Modo 4 (Json): librerias de clips (identicas a las del repositorio) y el humanoide dentro de la APK.
+          for f in animations/json_clips.res animations/json_scenes.res animations/json_keeper.res; do
             unzip -l "$APK" | grep -q "$f" || { echo "::error::$f no esta en la APK"; exit 1; }
             unzip -p "$APK" "assets/assets/$f" | cmp -s - "assets/$f" || { echo "::error::$f de la APK difiere del repositorio"; exit 1; }
           done
-          for f in characters/json/json_human.scn characters/json/json_tripo.scn characters/json/json_kit.gdshader; do
+          for f in characters/json/json_human.scn characters/json/json_kit.gdshader; do
             unzip -l "$APK" | grep -q "$f" || echo "::warning::$f no aparece en la APK (modo Json): revisar la lista del paquete"
           done
           unzip -l "$APK" | grep -q "animations/footballer_clips.res" || { echo "::error::faltan los clips de Tripo (respaldo)"; exit 1; }
@@ -208,7 +208,7 @@ jobs:
             echo "- Tamano: $(du -h "build/$NAME" | cut -f1) · arm64-v8a · sin permisos"
             echo "- Firma de DEPURACION verificada (v2), SHA-256 del certificado: \`${FPR}\` (clave de depuracion de esta ejecucion)"
             echo "- Animaciones: $( [ "$PACK_INCLUDED" = true ] && echo 'pack de Mixamo (133 clips de campo y arquero, librerias verificadas dentro de la APK) + respaldo Tripo' || echo 'SIN el pack: Tripo + patada procedural')"
-            echo "- Modo 4 (Json): animaciones JSON (json_clips.res + json_keeper.res) y los dos modelos (Tripo adaptado y humanoide) verificados dentro de la APK"
+            echo "- Modo 4 (Json): las 2 022 animaciones JSON (json_clips.res + json_scenes.res + json_keeper.res) y el humanoide verificados dentro de la APK"
             echo "- Commit: \`${GITHUB_SHA::7}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 

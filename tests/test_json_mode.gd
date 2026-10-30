@@ -1,10 +1,9 @@
 extends TestCase
 ## Modo 4 de jugabilidad (Json): las animaciones de animaciones_futbol5_JSON (posiciones de 19 articulaciones) convertidas al
 ## esqueleto canonico JsonRig (assets/animations/json_clips.res y json_keeper.res, tools/json_anim/build_json_library.tscn)
-## sobre dos modelos con ese esqueleto: el GLB de Tripo adaptado y el humanoide realista propio
-## (assets/characters/json/json_tripo.scn y json_human.scn).
+## sobre el humanoide propio con ese esqueleto (assets/characters/json/json_human.scn; el GLB de Tripo adaptado se descarto).
 ## Se comprueba la libreria (clips, roles, alias de los nombres del pack, contactos medidos), el retarget (error de los
-## extremos frente a los datos), los dos modelos, la mezcla de marcha, y que pases y tiros salgan del pie de verdad.
+## extremos frente a los datos), el modelo, la mezcla de marcha, y que pases y tiros salgan del pie de verdad.
 
 const START := Vector3(-10.0, 0.0, 0.0)
 
@@ -74,26 +73,23 @@ func test_retarget_reaches_the_data() -> void:
 	check(worst < 1.5, "tobillos y muñecas alcanzan el dato (%.2f cm)" % worst)
 	_restore(prev)
 
-func _visual_for(model: int) -> FootballerVisual:
-	Tuning.json_model = model
+func _visual() -> FootballerVisual:
 	var v := FootballerVisual.new()
 	spawn(v)
 	v.build(FootballerVisual.default_kit(0))
 	return v
 
-func test_both_models_build_and_animate() -> void:
+func test_model_builds_and_animates() -> void:
 	if _skip_if_missing():
 		return
 	var prev: int = Tuning.gameplay_mode
-	var prev_model: int = Tuning.json_model
 	_mode4()
-	for model in [0, 1]:
-		var v: FootballerVisual = _visual_for(model)
-		var name: String = Tuning.JSON_MODEL_NAMES[model]
+	for name in ["Humanoide"]:
+		var v: FootballerVisual = _visual()
 		check(not v.is_placeholder and v.json_mode, "%s: se construye el modelo del modo Json" % name)
 		check(v.skeleton != null and v.skeleton.get_bone_count() == 23, "%s: 23 huesos del esqueleto canonico" % name)
 		check(v.uses_pack and v.anim_tree != null, "%s: arbol de animacion con la libreria JSON" % name)
-		check(v.json_human == (model == 1), "%s: tipo de modelo" % name)
+		check(v.json_human, "%s: el humanoide propio" % name)
 		# Marcha: de parado a sprint, con y sin pelota; la pose cambia y la cadera queda a una altura creible.
 		var hips: int = v.skeleton.find_bone("mixamorig_Hips")
 		var ys: Array[float] = []
@@ -111,7 +107,6 @@ func test_both_models_build_and_animate() -> void:
 			v.anim_tree.advance(1.0 / 60.0)
 		check(true, "%s: marcha con pelota sin errores" % name)
 		v.queue_free()
-	Tuning.json_model = prev_model
 	_restore(prev)
 
 ## Conduce `run_s` s con el joystick a `stick` (y sprint) y pulsa pase o tiro; devuelve el golpeo.
@@ -182,14 +177,15 @@ func _scene(duration: float) -> MatchScene:
 	await physics_frames(3)
 	return m
 
-func test_ai_match_in_json_mode_with_both_models() -> void:
+func test_ai_match_in_json_mode() -> void:
 	# Un partido de IA contra IA con el modo Json: se juega de verdad, nadie se sale, el arbitro y los arqueros usan sus clips.
 	if _skip_if_missing():
 		return
+	if DisplayServer.get_name() != "headless":
+		skip("se mide en la suite headless (con render y OpenGL por software tarda ~9 min)")
+		return
 	var prev: int = Tuning.gameplay_mode
-	var prev_model: int = Tuning.json_model
-	for model in [1, 0]:
-		Tuning.json_model = model
+	for name in ["Humanoide"]:
 		_mode4()
 		var m: MatchScene = await _scene(0.0)
 		m.home[0].input_source = AIInput.new(3, 0.6)
@@ -211,26 +207,29 @@ func test_ai_match_in_json_mode_with_both_models() -> void:
 				for f in m.home + m.away:
 					if m.manager.state == MatchManager.State.PLAYING and (absf(f.global_position.x) > half_l + 1.0 or absf(f.global_position.z) > half_w + 1.0):
 						out_of_bounds += 1
-		var name: String = Tuning.JSON_MODEL_NAMES[model]
 		var slides := 0
 		var falls := 0
+		var turns := 0
+		var moves := {}
 		var ks := {"started": 0, "contact": 0, "missed": 0, "out_of_reach": 0}
 		for f in m.home + m.away:
 			slides += int(f.actions.stats.get("slides", 0))
 			falls += int(f.actions.stats.get("falls", 0))
+			turns += int(f.actions.stats.get("turns", 0))
+			for k in f.ball_handler.json_move.stats:
+				moves[k] = int(moves.get(k, 0)) + int(f.ball_handler.json_move.stats[k])
 			for k in ks:
 				ks[k] = int(ks[k]) + int(f.ball_handler.kick_stats.get(k, 0))
 			for e in f.ball_handler.kick_log:
 				if e.get("result", &"") == &"missed":
 					note("   fallo %s: clip %s pie a %.2f m, previsto %.2f, ajuste %.2f m, interferido %s, latencia %.2f" % [e.get("action", ""), e.get("clip", ""), float(e.get("foot_distance", 0.0)), float(e.get("predicted", 0.0)), float(e.get("adjust_m", 0.0)), str(e.get("interfered", false)), float(e.get("latency", 0.0))])
-		note("%s: patadas con clip %s" % [Tuning.JSON_MODEL_NAMES[model], str(ks)])
+		note("%s: patadas con clip %s | giros sin pelota (clip) %d | movimientos con pelota %s" % [name, str(ks), turns, str(moves)])
 		note("%s, 90 s de partido: eventos=%s | barridas %d, caidas %d | arbitro recorrio %.0f m" % [name, str(counts), slides, falls, m.referee.travelled if m.get("referee") != null else -1.0])
 		check(int(counts.get("PASS", 0)) >= 2, "%s: hay pases (%d)" % [name, int(counts.get("PASS", 0))])
 		check(int(counts.get("SHOT", 0)) >= 1, "%s: hay tiros (%d)" % [name, int(counts.get("SHOT", 0))])
 		check(out_of_bounds == 0, "%s: nadie se sale de la cancha (%d)" % [name, out_of_bounds])
 		check(m.home[1].visual.json_mode and m.keepers[0].visual.json_mode, "%s: jugadores y arquero usan el modo Json" % name)
 		cleanup()
-	Tuning.json_model = prev_model
 	_restore(prev)
 
 func test_practice_scene_opens_in_json_mode() -> void:
@@ -248,8 +247,7 @@ func test_practice_scene_opens_in_json_mode() -> void:
 	_restore(prev)
 
 ## Conduce con el esqueleto ANIMADO (render) y mide la pelota respecto al cuerpo: distancia, toques dados con el pie.
-func _drive(model: int, stick_fn: Callable, sprint: bool, seconds: float) -> Dictionary:
-	Tuning.json_model = model
+func _drive(stick_fn: Callable, sprint: bool, seconds: float) -> Dictionary:
 	var ctx: MatchContext = await make_match(START + Vector3(0.6, 0.11, 0.0))
 	var src := ScriptedInput.new()
 	var p: Footballer = add_player(ctx, 0, START, 60, src, true)
@@ -274,35 +272,32 @@ func _drive(model: int, stick_fn: Callable, sprint: bool, seconds: float) -> Dic
 	cleanup()
 	return out
 
-func test_live_dribble_keeps_the_ball_with_foot_touches_for_both_models() -> void:
+func test_live_dribble_keeps_the_ball_with_foot_touches() -> void:
 	if DisplayServer.get_name() == "headless":
 		skip("el esqueleto no se anima en headless: ejecutar con xvfb-run --rendering-driver opengl3")
 		return
 	if _skip_if_missing():
 		return
 	var prev: int = Tuning.gameplay_mode
-	var prev_model: int = Tuning.json_model
-	for model in [1, 0]:
-		var name: String = Tuning.JSON_MODEL_NAMES[model]
+	for name in ["Humanoide"]:
 		_mode4()
-		var jog: Dictionary = await _drive(model, func(_i: int) -> Vector2: return Vector2(0.6, 0.0), false, 7.0)
+		var jog: Dictionary = await _drive(func(_i: int) -> Vector2: return Vector2(0.6, 0.0), false, 7.0)
 		_mode4()
-		var run: Dictionary = await _drive(model, func(_i: int) -> Vector2: return Vector2(0.9, 0.0), false, 7.0)
+		var run: Dictionary = await _drive(func(_i: int) -> Vector2: return Vector2(0.9, 0.0), false, 7.0)
 		_mode4()
-		var sprint: Dictionary = await _drive(model, func(_i: int) -> Vector2: return Vector2(1.0, 0.0), true, 8.0)
+		var sprint: Dictionary = await _drive(func(_i: int) -> Vector2: return Vector2(1.0, 0.0), true, 8.0)
 		_mode4()
-		var zig: Dictionary = await _drive(model, func(i: int) -> Vector2: return Vector2(0.8, 0.9 * sin(float(i) / 60.0 * 2.2)), false, 9.0)
+		var zig: Dictionary = await _drive(func(i: int) -> Vector2: return Vector2(0.8, 0.9 * sin(float(i) / 60.0 * 2.2)), false, 9.0)
 		for pair in [["trote", jog], ["carrera", run], ["sprint", sprint], ["zigzag", zig]]:
 			var r: Dictionary = pair[1]
 			note("%s, %s: pelota-cuerpo mediana %.2f m, max %.2f m, toques %d (con el pie %d), velocidad max %.1f m/s" % [name, pair[0], r["median"], r["max"], r["touches"], r["foot"], r["speed"]])
 			check(r["max"] < 1.6, "%s, %s: la pelota nunca se va (max %.2f m)" % [name, pair[0], r["max"]])
 			check(r["median"] > 0.25 and r["median"] < 1.1, "%s, %s: va al pie (mediana %.2f m)" % [name, pair[0], r["median"]])
 			check(int(r["foot"]) >= int(int(r["touches"]) * 0.5), "%s, %s: la mayoria de los toques los da el pie (%d de %d)" % [name, pair[0], r["foot"], r["touches"]])
-	Tuning.json_model = prev_model
 	_restore(prev)
 
 func test_kick_planning_with_many_clips_is_cheap() -> void:
-	# Con ~60 patadas candidatas, planificar un golpeo no puede costar mas de unos milisegundos (se repite cada paso mientras la
+	# Con cientos de patadas candidatas, planificar un golpeo no puede costar mas de unos milisegundos (se repite cada paso mientras la
 	# orden espera la pelota).
 	if _skip_if_missing():
 		return
@@ -312,6 +307,8 @@ func test_kick_planning_with_many_clips_is_cheap() -> void:
 	var p: Footballer = add_player(ctx, 0, START, 60, null, false)
 	p.locomotion.yaw = Locomotion.yaw_from_dir(Vector3(1, 0, 0))
 	await physics_frames(5)
+	# La libreria se carga al montar el partido (aqui no hay modelos): la primera planificacion no cuenta.
+	PackLibrary.field()
 	var t0: int = Time.get_ticks_usec()
 	var n := 60
 	var found := 0
@@ -351,6 +348,7 @@ func test_aerial_planning_cost_and_clips() -> void:
 	var p: Footballer = add_player(ctx, 0, START, 60, null, false)
 	p.locomotion.yaw = Locomotion.yaw_from_dir(Vector3(1, 0, 0))
 	ctx.ball.linear_velocity = Vector3(-3.5, 0.5, 0.0)
+	PackLibrary.field()
 	var t0: int = Time.get_ticks_usec()
 	var n := 10
 	var plans: Array = []

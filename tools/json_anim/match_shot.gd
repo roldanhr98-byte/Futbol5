@@ -1,11 +1,10 @@
 extends Node
 ## Capturas del partido completo (camara de transmision) en el modo 4 para revisar a ojo como se ven los modelos a la escala de
-## juego. Necesita render: MODEL=1 SHOTS=6,12,20 OUT=/tmp/m xvfb-run -a godot --rendering-driver opengl3 --fixed-fps 60 --path .
-## res://tools/json_anim/match_shot.tscn (guarda /tmp/m_<segundo>.png). Env: MODE (4), MODEL, SHOTS (segundos separados por coma), W/H.
+## juego. Necesita render: SHOTS=6,12,20 OUT=/tmp/m xvfb-run -a godot --rendering-driver opengl3 --fixed-fps 60 --path .
+## res://tools/json_anim/match_shot.tscn (guarda /tmp/m_<segundo>.png). Env: MODE (4), SHOTS (segundos separados por coma), W/H.
 
 func _ready() -> void:
 	Tuning.gameplay_mode = int(OS.get_environment("MODE")) if OS.get_environment("MODE") != "" else 4
-	Tuning.json_model = int(OS.get_environment("MODEL")) if OS.get_environment("MODEL") != "" else 1
 	PackLibrary.reload()
 	var w: int = int(OS.get_environment("W")) if OS.get_environment("W") != "" else 1280
 	var h: int = int(OS.get_environment("H")) if OS.get_environment("H") != "" else 720

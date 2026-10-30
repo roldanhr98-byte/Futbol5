@@ -1,15 +1,14 @@
 extends Node
 ## Revision a ojo de las atajadas del arquero en el modo 4 (Json): dispara a una esquina y guarda una tira de imagenes del
 ## arquero (camara detras del arco, mirando al tirador). Necesita render:
-##   TARGET=0.8,1.4 SPEED=15 MODEL=1 OUT=/tmp/k.png xvfb-run -a godot --rendering-driver opengl3 --fixed-fps 60 --path . res://tools/json_anim/keeper_view.tscn
-## Env: TARGET "z,y" del tiro en la linea de gol, SPEED m/s, FROM_X (m), COUNT imagenes, EVERY pasos de fisica, MODE, MODEL.
+##   TARGET=0.8,1.4 SPEED=15 OUT=/tmp/k.png xvfb-run -a godot --rendering-driver opengl3 --fixed-fps 60 --path . res://tools/json_anim/keeper_view.tscn
+## Env: TARGET "z,y" del tiro en la linea de gol, SPEED m/s, FROM_X (m), COUNT imagenes, EVERY pasos de fisica, MODE.
 
 func _env(k: String, d: String) -> String:
 	return OS.get_environment(k) if OS.get_environment(k) != "" else d
 
 func _ready() -> void:
 	Tuning.gameplay_mode = int(_env("MODE", "4"))
-	Tuning.json_model = int(_env("MODEL", "1"))
 	PackLibrary.reload()
 	var w: int = int(_env("W", "300"))
 	var h: int = int(_env("H", "300"))

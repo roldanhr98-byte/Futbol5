@@ -43,6 +43,20 @@ const JSON_PLANT_MISMATCH_COST := 0.28
 ## Modo 4: coste (m de residuo por m de ajuste de zancada): con tantos clips se prefiere el que apenas obliga a mover el cuerpo
 ## (y el pie del lado de la pelota al del lado contrario).
 const JSON_STEP_COST := 0.35
+## Modo 4: golpeos evaluados a fondo por planificacion (los de contacto mas cercano a la pelota prevista).
+const JSON_KICK_EVAL := 24
+## Modo 4: con el destino a TURN_KICK_MIN grados o mas del frente, el golpeo es un clip que gira el cuerpo y patea (de 45 a
+## 180 grados, de taco, de rabona): el jugador no patea de espaldas. TURN_KICK_TOL: diferencia admitida entre hacia donde
+## sale la pelota en el clip y el destino; TURN_KICK_MAX_LATENCY: segundos maximos hasta el contacto (el giro se ve entero).
+## Sin golpeo girando que llegue y con el destino a TURN_FIRST_MIN grados o mas, primero un giro con pelota (clip) y despues
+## el golpeo (la orden espera).
+const TURN_KICK_MIN := 50.0
+const TURN_KICK_TOL := 40.0
+const TURN_FIRST_MIN := 100.0
+const TURN_KICK_MAX_LATENCY := 0.6
+## Con un rival a menos de TURN_KICK_PRESS_DIST m no hay tiempo para un giro largo: TURN_KICK_PRESSED_LATENCY s como mucho.
+const TURN_KICK_PRESS_DIST := 2.2
+const TURN_KICK_PRESSED_LATENCY := 0.4
 ## Latencia extra (s) de los golpeos del mocap de futbol (modo 2), ver clip_timing.
 const MOCAP_EXTRA_LATENCY := 0.08
 ## Coste (m de residuo equivalentes por m/s) de elegir un clip cuya velocidad de apoyo no encaja con la del jugador.
@@ -140,6 +154,10 @@ var _kick_charge: float = 0.0
 var _kick_lob: bool = false
 ## Patada con clip del pack en curso: {clip, speed, offset, latency, contact, distance (al iniciar)}. Vacio = patada procedural.
 var _kick_clip: Dictionary = {}
+## Golpeo girando en curso (modo 4): {clip, yaw0, start_at, speed, latency}. El cuerpo sigue la raiz y el rumbo del clip.
+var _kick_turn: Dictionary = {}
+## Direccion del golpeo pedido que necesita girar antes (modo 4, ver TURN_FIRST_MIN); cero si no.
+var _kick_turn_dir: Vector3 = Vector3.ZERO
 
 ## Contadores y registro de patadas con animacion (diagnostico reproducible; ver kick_log).
 ## started: balanceos iniciados; contact: golpeos validos; missed: balanceos que no alcanzaron la pelota;
@@ -160,6 +178,8 @@ var shot_charge: float = 0.0
 var through_charge: float = 0.0
 var cross_charge: float = 0.0
 
+## Modo 4 (Json): giros con pelota, vuelta atras, regates y frenadas con los clips JSON y sus toques (JsonBallMove).
+var json_move: JsonBallMove = null
 ## Vuelta atras pisando la pelota (DragBack): regate con el boton REGATE y el joystick hacia atras.
 var drag_back: DragBack = null
 ## Giro con toques (joystick hacia atras conduciendo, estilo Dream League Soccer); ver BallTurn.
@@ -170,6 +190,7 @@ func _init(o: Footballer) -> void:
 	rng.randomize()
 	drag_back = DragBack.new(self)
 	ball_turn = BallTurn.new(self)
+	json_move = JsonBallMove.new(self)
 
 func ball() -> Ball:
 	return owner.ctx.ball if owner.ctx != null else null
@@ -353,6 +374,7 @@ func update(frame: InputFrame, stick_world: Vector3, stick_mag: float, desired_d
 	owner.set_ball_ghost(_kick_action != &"" or _pass_ghost > 0.0 or (is_dribbling() and ball_distance() < DRIBBLE_GHOST_RANGE))
 	_desired_dir = desired_dir
 	_sample_feet(dt)
+	_json_touch_ik_step(dt)
 	_update_buttons(frame, stick_world, dt)
 	if _kick_action != &"":
 		drag_back.cancel("golpeo")
@@ -386,6 +408,8 @@ func update(frame: InputFrame, stick_world: Vector3, stick_mag: float, desired_d
 	if lockout > 0.0 or owner.ctx.ball_locked_for(owner) or ball_owned_by_other():
 		drag_back.cancel("bloqueo")
 		ball_turn.cancel("bloqueo")
+		return
+	if PackLibrary.json_mode() and json_move.consider(desired_dir, stick_mag, dt):
 		return
 	if drag_back.update(desired_dir, stick_mag, dt):
 		return
@@ -478,6 +502,11 @@ func _try_execute_pending() -> bool:
 	if uses_clip_kicks():
 		var plan: Dictionary = plan_clip_kick(_pending_action, _pending_charge, _pending_lob)
 		if plan.is_empty():
+			# Modo 4, destino detras: giro con la pelota (clip) y la orden sigue pendiente para despues del giro.
+			if _kick_turn_dir != Vector3.ZERO and json_move.turn_for_kick(_kick_turn_dir):
+				_kick_turn_dir = Vector3.ZERO
+				_pending_age = 0.0
+				return true
 			return false   # ningun pie llegaria a la pelota: se espera (buffer) o se descarta
 		var act: StringName = _pending_action
 		_pending_action = &""
@@ -578,6 +607,7 @@ func abort_kick() -> void:
 	if _kick_action != &"":
 		_kick_action = &""
 		_kick_clip = {}
+		_kick_turn = {}
 		owner.locomotion.turn_scale = 1.0
 		owner.nudge_velocity = Vector3.ZERO
 		owner.set_ball_ghost(false)
@@ -644,6 +674,16 @@ func is_clip_kick_in_progress() -> bool:
 
 ## Velocidad del cuerpo durante una patada con clip: la de partida, frenada con el pie de apoyo plantado.
 func kick_body_velocity() -> Vector3:
+	if not _kick_turn.is_empty():
+		# Golpeo girando: el cuerpo va con la raiz del clip (marco del inicio del clip).
+		var rp: PackedVector2Array = PackLibrary.meta(_kick_clip["clip"]).get("root_path", PackedVector2Array())
+		if rp.size() < 2:
+			return Vector3.ZERO
+		var ct2: float = _turn_kick_clip_t()
+		var fi: float = clampf(ct2 * 30.0, 0.0, float(rp.size() - 2))
+		var rv: Vector2 = (rp[int(fi) + 1] - rp[int(fi)]) * 30.0 * float(_kick_turn["speed"])
+		var f0: Vector3 = Locomotion.dir_from_yaw(float(_kick_turn["yaw0"]))
+		return f0 * rv.x + Vector3(-f0.z, 0.0, f0.x) * rv.y
 	if _kick_timer > KICK_PLANT_TIME:
 		return _kick_v0
 	return plant_velocity(_kick_clip["contact"], owner.locomotion.yaw, _kick_v0)
@@ -658,7 +698,7 @@ func _steer_clip_kick() -> void:
 	if b == null or b.is_held():
 		owner.nudge_velocity = Vector3.ZERO
 		return
-	var delta: Vector3 = predicted_foot_to_ball(_kick_clip["contact"], _kick_timer, _kick_v0)
+	var delta: Vector3 = _turn_kick_foot_to_ball() if not _kick_turn.is_empty() else predicted_foot_to_ball(_kick_clip["contact"], _kick_timer, _kick_v0)
 	var flat_d := Vector3(delta.x, 0.0, delta.z)
 	owner.nudge_velocity = (flat_d / maxf(_kick_timer - KICK_PLANT_TIME, 0.04)).limit_length(kick_nudge_cap(_kick_v0))
 
@@ -740,13 +780,29 @@ func plan_aerial_kick(action: StringName, charge: float) -> Dictionary:
 	var adjust_max: float = t.kick_adjust_max + t.kick_adjust_sprint * _sprint_ratio()
 	var best: Dictionary = {}
 	var best_score: float = INF
+	var json: bool = PackLibrary.json_mode()
+	# Modo 4 (cientos de cabezazos y voleas): ventana de la pelota en el marco del jugador entre 0.1 y 1.1 s, para descartar
+	# con la caja de cada trayectoria los clips que no pueden llegar.
+	var wlo := Vector3(INF, INF, INF)
+	var whi := Vector3(-INF, -INF, -INF)
+	if json:
+		var lf: Vector3 = owner.locomotion.forward()
+		var lr: Vector3 = owner.locomotion.right()
+		for i in range(3, mini(traj.size(), 34)):
+			var d: Vector3 = traj[i] - owner.global_position
+			var lp := Vector3(d.dot(lf), traj[i].y, d.dot(lr))
+			wlo = Vector3(minf(wlo.x, lp.x), minf(wlo.y, lp.y), minf(wlo.z, lp.z))
+			whi = Vector3(maxf(whi.x, lp.x), maxf(whi.y, lp.y), maxf(whi.z, lp.z))
+		var body_move: float = owner.locomotion.speed * 1.1 + adjust_max + t.kick_start_residual + 0.2
+		wlo -= Vector3(body_move, t.kick_start_residual + 0.1, body_move)
+		whi += Vector3(body_move, t.kick_start_residual + 0.1, body_move)
 	for set in AERIAL_SETS:
 		# Modo 4: los clips de cada conjunto son todos los del rol (cabezazo / volea), ya con sus espejos.
 		var clip_list: Array = set["clips"]
-		if PackLibrary.json_mode():
+		if json:
 			clip_list = PackLibrary.by_role(&"header" if set["kind"] == &"header" else &"volley")
 		for base in clip_list:
-			for clip in [base, StringName(String(base) + "_mirror")]:
+			for clip in ([base] if json else [base, StringName(String(base) + "_mirror")]):
 				if not PackLibrary.has_clip(clip):
 					continue
 				var paths: Dictionary = PackLibrary.meta(clip).get("paths", {})
@@ -754,6 +810,12 @@ func plan_aerial_kick(action: StringName, charge: float) -> Dictionary:
 					if not paths.has(key):
 						continue
 					var path: PackedVector3Array = paths[key]
+					if json:
+						var bb: Array = _path_bbox(clip, key, path)
+						var lo: Vector3 = bb[0]
+						var hi: Vector3 = bb[1]
+						if whi.x < lo.x or wlo.x > hi.x or whi.y < lo.y or wlo.y > hi.y or whi.z < lo.z or wlo.z > hi.z:
+							continue
 					# Modo 4 (muchos clips): un instante de cada dos (a 30 Hz sobran).
 					for k in range(4, path.size() - 1, 2 if PackLibrary.json_mode() else 1):
 						var v: float = (path[k + 1] - path[k - 1]).length() * 15.0
@@ -781,6 +843,22 @@ func plan_aerial_kick(action: StringName, charge: float) -> Dictionary:
 									"residual": residual, "adjust": step, "aerial": set["kind"]}
 	return best if not best.is_empty() and best["residual"] <= t.kick_start_residual else {}
 
+static var _bbox_cache: Dictionary = {}
+
+## Caja (min, max) de la trayectoria `key` de un clip en el marco del cuerpo, entre 0.1 y 1.1 s (lo que prueba el planificador
+## aereo), guardada por clip.
+static func _path_bbox(clip: StringName, key: String, path: PackedVector3Array) -> Array:
+	var ck: String = String(clip) + ":" + key
+	if _bbox_cache.has(ck):
+		return _bbox_cache[ck]
+	var lo := Vector3(INF, INF, INF)
+	var hi := Vector3(-INF, -INF, -INF)
+	for k in range(3, mini(path.size(), 34)):
+		lo = Vector3(minf(lo.x, path[k].x), minf(lo.y, path[k].y), minf(lo.z, path[k].z))
+		hi = Vector3(maxf(hi.x, path[k].x), maxf(hi.y, path[k].y), maxf(hi.z, path[k].z))
+	_bbox_cache[ck] = [lo, hi]
+	return [lo, hi]
+
 ## Elige el mejor clip, pierna E INSTANTE DE CONTACTO para la accion. El instante sale de la trayectoria real del pie del
 ## clip (contact_samples), no es fijo: se busca el punto que mejor encaja con la pelota predicha. Cada opcion puede
 ## compensar hasta el ajuste de zancada maximo; se empieza solo si, tras el ajuste, el pie quedaria a menos de
@@ -806,7 +884,41 @@ func plan_clip_kick(action: StringName, charge: float, lob: bool) -> Dictionary:
 	var bfwd: float = bo.dot(owner.locomotion.forward())
 	var bright: float = bo.dot(owner.locomotion.right())
 	var margin: float = adjust_max + t.kick_start_residual + 0.2 + 0.35 * KickModel.flat(b.linear_velocity - owner.locomotion.velocity).length()
-	for cand in AnimationCatalog.kick_candidates(kind_key, charge):
+	_kick_turn_dir = Vector3.ZERO
+	if json:
+		# Destino lejos del frente: golpeo girando (si alguno llega a la pelota); si no, el golpeo de siempre.
+		var kd: Vector3 = estimated_kick_dir(action, _pending_stick if _pending_stick.length_squared() > 0.01 else _desired_dir, charge, lob)
+		if kd != Vector3.ZERO:
+			var alpha: float = rad_to_deg(wrapf(Locomotion.yaw_from_dir(kd) - owner.locomotion.yaw, -PI, PI))
+			last_plan_debug = "alpha %.0f" % alpha
+			if absf(alpha) >= TURN_KICK_MIN:
+				var tp: Dictionary = plan_turn_kick(action, alpha, adjust_max)
+				last_plan_debug += " giro: %s" % ("sin plan" if tp.is_empty() else String(tp["clip"]))
+				if not tp.is_empty():
+					return tp
+				if absf(alpha) >= TURN_FIRST_MIN:
+					# Ningun golpeo girando sirve (el destino queda casi detras): primero se gira con la pelota.
+					_kick_turn_dir = kd
+					return {}
+	var cands: Array = AnimationCatalog.kick_candidates(kind_key, charge)
+	if json and cands.size() > JSON_KICK_EVAL:
+		# Cientos de golpeos: se evaluan a fondo solo los JSON_KICK_EVAL cuyo contacto queda mas cerca de donde estara la pelota
+		# (cuenta barata: pelota relativa al cuerpo, con la velocidad relativa durante una latencia tipica).
+		var rel_v: Vector3 = KickModel.flat(b.linear_velocity - owner.locomotion.velocity)
+		var lat0: float = t.kick_latency
+		var pf: float = bfwd + rel_v.dot(owner.locomotion.forward()) * lat0
+		var pr: float = bright + rel_v.dot(owner.locomotion.right()) * lat0
+		var scored: Array = []
+		var spd: float = owner.locomotion.speed
+		for cand in cands:
+			var cp0: Vector3 = cand["contact"]["pos"]
+			# Tambien la carrera de entrada del clip (v_in) frente a la del jugador: si no, a un jugador parado le tocaban
+			# golpeos con carrera y el pie de apoyo patinaba (medido: 3 m/s).
+			var v_in: float = float(PackLibrary.meta(cand["clip"]).get("v_in", spd))
+			scored.append([Vector2(cp0.x - pf, cp0.z - pr).length() + JSON_PLANT_MISMATCH_COST * absf(v_in - spd), cand])
+		scored.sort_custom(func(a: Array, c: Array) -> bool: return float(a[0]) < float(c[0]))
+		cands = scored.slice(0, JSON_KICK_EVAL).map(func(e: Array) -> Dictionary: return e[1])
+	for cand in cands:
 		var samples: Array = contact_samples_cached(cand["clip"], cand["contact"]) if json else contact_samples(cand["contact"])
 		if json:
 			var cp: Vector3 = cand["contact"]["pos"]
@@ -843,6 +955,119 @@ func plan_clip_kick(action: StringName, charge: float, lob: bool) -> Dictionary:
 			best = (ok[rng.randi() % ok.size()] as Array)[1]
 	return best if not best.is_empty() and best["residual"] <= t.kick_start_residual else {}
 
+## Direccion (plana) en la que saldria la pelota si se golpeara ahora: la misma asistencia que el golpeo real (receptor del
+## pase, arco del tiro...), con un azar fijo. Cero si no se puede estimar.
+func estimated_kick_dir(action: StringName, stick: Vector3, charge: float, lob: bool) -> Vector3:
+	var ctx: MatchContext = owner.ctx
+	if ctx == null or ball() == null:
+		return Vector3.ZERO
+	var tmp := RandomNumberGenerator.new()
+	tmp.seed = 7
+	var res: KickModel.KickResult = null
+	match action:
+		&"pass":
+			res = PassAssist.compute(owner, ctx, stick, charge, lob, tmp, assist_pass_level())
+		&"through":
+			res = PassAssist.compute_through(owner, ctx, stick, charge, lob, tmp, assist_pass_level())
+		&"cross":
+			res = CrossAssist.compute(owner, ctx, stick, charge, lob, tmp, assist_pass_level(), 0.0)
+		_:
+			res = ShotAssist.compute(owner, ctx, stick, charge, lob, tmp, assist_shot_level(), 0.0)
+	if res == null:
+		return Vector3.ZERO
+	var v: Vector3 = KickModel.flat(res.velocity)
+	return v.normalized() if v.length() > 0.1 else Vector3.ZERO
+
+## Modo 4: planifica un golpeo girando hacia un destino a `alpha` grados del frente (+ izquierda). El cuerpo sigue la raiz y
+## el rumbo del clip (gira y patea); se busca el clip cuya pelota sale hacia el destino y cuyo pie llega a la pelota prevista
+## con un ajuste de paso acotado. {} si ninguno llega.
+func plan_turn_kick(action: StringName, alpha: float, adjust_max: float) -> Dictionary:
+	var b: Ball = ball()
+	var t: PlayerTuning = Tuning.player
+	var loco: Locomotion = owner.locomotion
+	var pos: Vector3 = KickModel.flat(owner.global_position)
+	var dt: float = 1.0 / float(Engine.physics_ticks_per_second)
+	var best: Dictionary = {}
+	var best_score: float = INF
+	var max_lat: float = TURN_KICK_PRESSED_LATENCY if nearest_opponent(TURN_KICK_PRESS_DIST) != null else TURN_KICK_MAX_LATENCY
+	for role in [&"kick_turn", &"kick_back"]:
+		for id in PackLibrary.by_role(role):
+			var m: Dictionary = PackLibrary.meta(id)
+			if not m.has("contact"):
+				continue
+			var ct: Dictionary = m["contact"]
+			var kt: float = float(ct.get("kick_turn", 0.0))
+			var dk: float = absf(wrapf(kt - alpha, -180.0, 180.0))
+			if dk > TURN_KICK_TOL or (ct["pos"] as Vector3).y > 0.35:
+				continue
+			if action == &"shot" and float(ct["speed"]) < 7.0:
+				continue
+			var hp: PackedFloat32Array = m.get("heading_path", PackedFloat32Array())
+			var rp: PackedVector2Array = m.get("root_path", PackedVector2Array())
+			var tc: float = float(ct["time"])
+			var rc: Vector2 = ct.get("root", Vector2.ZERO)
+			var dv: float = absf(float(m.get("v_in", 0.0)) - loco.speed)
+			for start_at in [0.0, 0.15, 0.3]:
+				if tc - start_at < 0.22:
+					break
+				for sp in [1.0, 1.3]:
+					var steps: int = maxi(int(round((tc - start_at) / sp / dt)), 2)
+					var lat: float = float(steps) * dt
+					if lat > max_lat:
+						continue
+					var speed: float = (tc - start_at) / lat
+					var yaw0: float = loco.yaw - ActionMotion.heading_rel(hp, start_at)
+					var f0: Vector3 = Locomotion.dir_from_yaw(yaw0)
+					var r0 := Vector3(-f0.z, 0.0, f0.x)
+					var rs: Vector2 = ActionMotion._at(rp, start_at) if rp.size() >= 2 else Vector2.ZERO
+					var body_c: Vector3 = pos + f0 * (rc.x - rs.x) + r0 * (rc.y - rs.y)
+					var yaw_c: float = yaw0 + ActionMotion.heading_rel(hp, tc)
+					var bp: Vector3 = b.global_position + ball_travel(b, lat)
+					bp.y = b.global_position.y
+					var delta: Vector3 = bp - foot_contact_world(ct, body_c, yaw_c)
+					var flat_d := Vector3(delta.x, 0.0, delta.z)
+					var step: Vector3 = flat_d.limit_length(minf(adjust_max, KICK_NUDGE_MAX * maxf(lat - KICK_PLANT_TIME, 0.0)))
+					var residual: float = Vector3(flat_d.x - step.x, delta.y, flat_d.z - step.z).length()
+					var score: float = residual + 0.3 * step.length() + 0.006 * dk + 0.12 * dv + (0.04 if sp > 1.0 else 0.0) + rng.randf() * 0.03
+					if score < best_score:
+						best_score = score
+						best = {"clip": id, "speed": speed, "offset": start_at, "latency": lat - 0.0005, "contact": ct, "distance": delta.length(),
+							"residual": residual, "adjust": step, "turn": {"yaw0": yaw0, "start_at": start_at, "speed": speed, "latency": lat - 0.0005, "kick_turn": kt, "alpha": alpha}}
+	if not best.is_empty():
+		last_plan_debug += " mejor %s resid %.2f ajuste %.2f" % [best["clip"], best["residual"], (best["adjust"] as Vector3).length()]
+	return best if not best.is_empty() and best["residual"] <= t.kick_start_residual else {}
+
+## Golpeo girando en curso: instante del clip ahora.
+func _turn_kick_clip_t() -> float:
+	var tk: Dictionary = _kick_turn
+	return float(tk["start_at"]) + (float(tk["latency"]) - _kick_timer) * float(tk["speed"])
+
+## Orientacion del cuerpo durante un golpeo girando (NAN si no hay): la del clip.
+func kick_body_yaw() -> float:
+	if _kick_turn.is_empty() or _kick_clip.is_empty():
+		return NAN
+	var hp: PackedFloat32Array = PackLibrary.meta(_kick_clip["clip"]).get("heading_path", PackedFloat32Array())
+	return float(_kick_turn["yaw0"]) + ActionMotion.heading_rel(hp, _turn_kick_clip_t())
+
+## Golpeo girando: donde quedara la punta del pie en el contacto respecto a la pelota prevista, con el cuerpo en su sitio de
+## ahora siguiendo la raiz del clip.
+func _turn_kick_foot_to_ball() -> Vector3:
+	var b: Ball = ball()
+	var m: Dictionary = PackLibrary.meta(_kick_clip["clip"])
+	var ct: Dictionary = _kick_clip["contact"]
+	var rp: PackedVector2Array = m.get("root_path", PackedVector2Array())
+	var hp: PackedFloat32Array = m.get("heading_path", PackedFloat32Array())
+	var yaw0: float = float(_kick_turn["yaw0"])
+	var f0: Vector3 = Locomotion.dir_from_yaw(yaw0)
+	var r0 := Vector3(-f0.z, 0.0, f0.x)
+	var ct_t: float = float(ct["time"])
+	var now_r: Vector2 = ActionMotion._at(rp, _turn_kick_clip_t()) if rp.size() >= 2 else Vector2.ZERO
+	var rc: Vector2 = ct.get("root", Vector2.ZERO)
+	var body_c: Vector3 = KickModel.flat(owner.global_position) + f0 * (rc.x - now_r.x) + r0 * (rc.y - now_r.y)
+	var bp: Vector3 = b.global_position + ball_travel(b, maxf(_kick_timer, 0.0))
+	bp.y = b.global_position.y
+	return bp - foot_contact_world(ct, body_c, yaw0 + ActionMotion.heading_rel(hp, ct_t))
+
 func _start_clip_kick(action: StringName, plan: Dictionary, stick_world: Vector3, charge: float, lob: bool) -> void:
 	var t: PlayerTuning = Tuning.player
 	_kick_action = action
@@ -861,6 +1086,11 @@ func _start_clip_kick(action: StringName, plan: Dictionary, stick_world: Vector3
 	touch_timer = lockout
 	owner.locomotion.turn_scale = t.kick_turn_scale
 	owner.nudge_velocity = ((plan["adjust"] as Vector3) / maxf(_kick_timer - KICK_PLANT_TIME, 0.05)).limit_length(kick_nudge_cap(_kick_v0))
+	_kick_turn = plan.get("turn", {})
+	if not _kick_turn.is_empty():
+		# El joystick no gira al cuerpo: lo gira el clip.
+		owner.locomotion.turn_scale = 0.0
+		kick_stats["turn"] = int(kick_stats.get("turn", 0)) + 1
 	# Durante el balanceo el cuerpo (que se acerca a la pelota por el ajuste de zancada) no debe empujarla: el golpe lo da
 	# el pie en el instante de contacto, con impulso.
 	owner.set_ball_ghost(true)
@@ -886,9 +1116,16 @@ func _finish_clip_kick() -> void:
 	owner.nudge_velocity = Vector3.ZERO
 	# El cuerpo sigue sin chocar con la pelota un instante (KICK_GHOST_SECONDS): la que sale golpeada no rebota en el.
 	_pass_ghost = maxf(_pass_ghost, KICK_GHOST_SECONDS)
-	# Tras el golpe el cuerpo sigue con la velocidad que traia (la del pie plantado era solo del balanceo).
-	owner.locomotion.velocity = _kick_v0
-	owner.locomotion.speed = _kick_v0.length()
+	# Tras el golpe el cuerpo sigue con la velocidad que traia (la del pie plantado era solo del balanceo). Girando, con la
+	# del clip en el contacto (ya mira hacia otro lado).
+	var after_v: Vector3 = _kick_v0
+	if not _kick_turn.is_empty():
+		_kick_clip = plan
+		after_v = kick_body_velocity()
+		_kick_clip = {}
+		_kick_turn = {}
+	owner.locomotion.velocity = after_v
+	owner.locomotion.speed = after_v.length()
 	var b: Ball = ball()
 	var d: float = -1.0
 	if b != null and not b.is_held():
@@ -1318,6 +1555,7 @@ static var _touch_cache: Dictionary = {}
 
 ## Vacia los datos calculados con la libreria de clips (cambian al cambiar de modo).
 static func reset_caches() -> void:
+	_bbox_cache = {}
 	_touch_cache = {}
 	_samples_cache = {}
 
@@ -1883,7 +2121,10 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 		var closing_fast: bool = body_v.dot(off / maxf(dist, 0.01)) > 2.5
 		var rev_reach: float = reach * (1.5 if closing_fast else 1.2)
 		var reversal: bool = mode == &"redirect" and turn_angle > 100.0 and dist < rev_reach and touch_timer < interval * 0.9 - REVERSAL_TOUCH_GAP
-		if touch_timer > interval * 0.45 and not reversal:
+		# Modo 4: cambio de rumbo en carrera (diagonal, zigzag) con la pelota al pie: toque de rumbo ya, con el pie que esta
+		# junto a la pelota, en vez de esperar al siguiente paso (la pelota seguia derecho y quedaba al costado).
+		var steer_now: bool = PackLibrary.json_mode() and mode == &"carry" and _steer_touch_ready(b, desired_dir, stick_mag, interval)
+		if touch_timer > interval * 0.45 and not reversal and not steer_now:
 			return
 		var close_in: bool = off.dot(fwd) < _foot_reach * 0.9 and (mode == &"carry" or mode == &"setup")
 		strike = _foot_strike(b, mode, close_in)
@@ -1976,6 +2217,8 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 			carry_speed = _carry_speed_after_turn(stick_mag, turn_angle)
 			gap = carry_gap(carry_speed, skill)
 			var w: float = 0.45 if turn_angle < 25.0 else 0.8
+			if PackLibrary.json_mode() and _steer_angle(b, desired_dir) > STEER_TOUCH_DEG:
+				w = 0.95
 			touch_dir = (fwd * (1.0 - w) + desired_dir.normalized() * w).normalized() if has_dir else fwd
 			# A sprint el toque puede pasarse (toque largo); con mejor control se pasa menos.
 			gap += absf(rng.randfn(0.0, t.touch_overshoot_sprint * (1.2 - skill))) * ratio * ratio
@@ -2006,6 +2249,14 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 	gap = minf(gap, reach * 1.35 - 0.05)
 	_planned_gap = gap
 	_foot_wait = 0.0
+	if strike < 0 and feet_live and PackLibrary.json_mode():
+		# Modo 4: sin pie justo en la pelota, el pie bajo mas cercano se estira hasta ella (IK, JSON_TOUCH_IK_MAX): el toque
+		# tambien se ve dado con el pie (en los cambios de rumbo la pelota queda a un costado del paso).
+		var best_d: float = FOOT_CONTACT + 0.2
+		for fi in 2:
+			if _toe_now[fi].y <= FOOT_MAX_Y and foot_distance(fi, b.global_position) < best_d:
+				best_d = foot_distance(fi, b.global_position)
+				strike = fi
 	last_touch_foot = strike
 	if strike >= 0:
 		foot_touches += 1
@@ -2079,10 +2330,75 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 	rel *= clampf(rng.randfn(1.0, 0.03 + 0.05 * ratio), 0.85, 1.15)
 	v = body_v + rel
 	b.kick(v, b.rolling_spin(v), owner)
+	if strike >= 0 and PackLibrary.json_mode():
+		_json_touch_ik_start(strike, v - body_v)
 	touch_timer = interval * rng.randf_range(0.9, 1.1)
 	dribble_touch_count += 1
 	last_touch_mode = mode
 	touched_ball.emit(mode)
+
+## Modo 4: el pie que da el toque de conduccion se lleva hasta la pelota (TouchFootIK) un instante, y la acompana mientras
+## sale: el toque se ve dado con el pie (sin esto la punta quedaba a 0.1-0.17 m de la superficie de la pelota).
+## JSON_TOUCH_IK_MAX: lo maximo (m) que se estira el pie desde el gesto de la marcha.
+const JSON_TOUCH_IK_MAX := 0.34
+const JSON_TOUCH_IK_HOLD := 0.05
+const JSON_TOUCH_IK_FADE := 0.07
+var _jik_foot: int = -1
+var _jik_t: float = 0.0
+var _jik_dir: Vector3 = Vector3.ZERO
+
+func _json_touch_ik_start(foot: int, push: Vector3) -> void:
+	if _foot_ik() == null:
+		return
+	if _jik_foot >= 0 and _jik_foot != foot:
+		_foot_ik().set_target(_jik_foot, Vector3.ZERO, 0.0, 0.0)
+	_jik_foot = foot
+	_jik_t = 0.0
+	var p: Vector3 = KickModel.flat(push)
+	_jik_dir = p.normalized() if p.length() > 0.05 else owner.locomotion.forward()
+	_json_touch_ik_step(0.0)
+
+func _json_touch_ik_step(dt: float) -> void:
+	if _jik_foot < 0:
+		return
+	var ik: TouchFootIK = _foot_ik()
+	var b: Ball = ball()
+	if ik == null or b == null:
+		_jik_foot = -1
+		return
+	_jik_t += dt
+	var w: float = 1.0 if _jik_t <= JSON_TOUCH_IK_HOLD else clampf(1.0 - (_jik_t - JSON_TOUCH_IK_HOLD) / JSON_TOUCH_IK_FADE, 0.0, 1.0)
+	var toe: Vector3 = _toe_now[_jik_foot]
+	var want: Vector3 = b.global_position - _jik_dir * (b.radius + 0.025)
+	want.y = clampf(toe.y, 0.03, 0.12)
+	if KickModel.flat(want - toe).length() > JSON_TOUCH_IK_MAX:
+		w = 0.0
+	ik.set_target(_jik_foot, want, 0.0, w)
+	if w <= 0.0:
+		_jik_foot = -1
+
+## Modo 4: angulo (grados) entre hacia donde va la pelota respecto al cuerpo y el rumbo pedido a partir del cual se da un
+## toque de rumbo, y alcance extra (m) del pie para darlo.
+const STEER_TOUCH_DEG := 18.0
+const STEER_TOUCH_REACH := 0.1
+
+## Angulo (grados) entre el camino de la pelota (su velocidad, o hacia donde esta si va quieta) y el rumbo pedido.
+func _steer_angle(b: Ball, desired_dir: Vector3) -> float:
+	if desired_dir.length_squared() < 0.01:
+		return 0.0
+	var bv: Vector3 = KickModel.flat(b.linear_velocity)
+	var path: Vector3 = bv if bv.length() > 0.8 else ball_offset()
+	if path.length() < 0.05:
+		return 0.0
+	return KickModel.angle_between_deg(path.normalized(), KickModel.flat(desired_dir).normalized())
+
+func _steer_touch_ready(b: Ball, desired_dir: Vector3, stick_mag: float, interval: float) -> bool:
+	if stick_mag < 0.3 or touch_timer > interval * 0.8 or _steer_angle(b, desired_dir) < STEER_TOUCH_DEG:
+		return false
+	for i in 2:
+		if _toe_now[i].y <= FOOT_MAX_Y and foot_distance(i, b.global_position) <= FOOT_CONTACT + STEER_TOUCH_REACH:
+			return true
+	return false
 
 ## Velocidad a la que el jugador podra llevar la pelota tras el giro (en un giro cerrado el cuerpo frena antes de
 ## acelerar hacia el rumbo nuevo: empujar la pelota al ritmo de la carrera actual la perderia).

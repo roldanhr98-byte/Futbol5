@@ -56,6 +56,8 @@ func _init(o: Footballer) -> void:
 
 ## Corta cualquier accion en curso (saque, reinicio, gol).
 func reset() -> void:
+	if kind == &"ball_move":
+		owner.ball_handler.json_move.cancel()
 	motion.stop()
 	_chain.clear()
 	_slide = {}
@@ -84,7 +86,18 @@ func _begin(k: StringName, clip: StringName, speed: float, cut: float, start_at:
 	kind = k
 	owner.visual.play_pack_clip(clip, speed, start_at, cut)
 	motion.start(clip, speed, start_at, cut)
+	# Clip con rumbo propio: la orientacion de su inicio es la de ahora menos lo que ya giro hasta start_at.
+	motion.yaw0 = owner.locomotion.yaw - motion.heading_at(start_at)
 	owner.ball_handler.lockout = maxf(owner.ball_handler.lockout, 0.3)
+
+## Modo 4: movimiento de cuerpo entero con rumbo propio (giro, giro con pelota, regate) desde `start_at` s del clip. Igual
+## que start pero sin cortar las acciones de pelota que lo piden (JsonBallMove maneja la pelota durante el clip).
+func start_move(k: StringName, clip: StringName, speed: float = 1.0, start_at: float = 0.0) -> bool:
+	if not _can_play() or not PackLibrary.has_clip(clip):
+		return false
+	_chain.clear()
+	_begin(k, clip, speed, -1.0, start_at)
+	return true
 
 ## Avanza un paso de fisica moviendo el cuerpo con la raiz del clip. Devuelve true si la accion se ocupo del paso.
 func tick(delta: float) -> bool:
@@ -96,6 +109,13 @@ func tick(delta: float) -> bool:
 	var rv: Vector2 = motion.step(delta)
 	var loco: Locomotion = owner.locomotion
 	var wv: Vector3 = loco.forward() * rv.x + loco.right() * rv.y
+	if motion.heading_driven:
+		# Raiz en el marco del inicio del clip y el cuerpo girando con el rumbo del clip (giros, giros con pelota).
+		var f0: Vector3 = Locomotion.dir_from_yaw(motion.yaw0)
+		wv = f0 * rv.x + Vector3(-f0.z, 0.0, f0.x) * rv.y + motion.extra_velocity
+		var new_yaw: float = motion.yaw0 + motion.heading_at(motion.t)
+		loco.turn_rate = wrapf(new_yaw - loco.yaw, -PI, PI) / maxf(delta, 0.001)
+		loco.yaw = new_yaw
 	# Modo 4: la raiz de una caida o barrida puede llevar varios metros; el cuerpo no se sale del area de juego (+0.8 m).
 	if PackLibrary.json_mode() and owner.ctx != null and owner.ctx.pitch != null:
 		var cfg: PitchConfig = owner.ctx.pitch.config
@@ -119,14 +139,25 @@ func tick(delta: float) -> bool:
 		_resolve_slide()
 	if kind == &"skill":
 		_skill_touches()
+	if kind == &"ball_move":
+		owner.ball_handler.json_move.step(motion.t, delta)
 	if not motion.active:
 		if not _chain.is_empty():
 			var nxt: Dictionary = _chain.pop_front()
 			_begin(nxt.get("kind", &"chain"), nxt["clip"], float(nxt.get("speed", 1.0)), float(nxt.get("cut", -1.0)))
 		else:
+			var ended: StringName = kind
 			kind = &""
-			loco.stop()
-			owner.velocity = Vector3.ZERO
+			if motion.heading_driven:
+				# Giros y movimientos con pelota terminan en marcha: el cuerpo sigue con la velocidad de salida del clip.
+				loco.velocity = Vector3(wv.x, 0.0, wv.z)
+				loco.speed = loco.velocity.length()
+				loco.turn_rate = 0.0
+			else:
+				loco.stop()
+				owner.velocity = Vector3.ZERO
+			if ended == &"ball_move":
+				owner.ball_handler.json_move.finish()
 	return true
 
 # --- Barrida ------------------------------------------------------------------------------------------------
@@ -233,7 +264,10 @@ func tackle_request(carrier: Footballer) -> StringName:
 	if to_ball.length() <= Tuning.assist.press_tackle_range * 1.2 and ball.global_position.y < 0.6 \
 			and KickModel.angle_between_deg(loco.forward(), to_ball) < 100.0:
 		if owner.visual != null:
-			owner.visual.start_kick(0.12, 0.45, 1 if to_ball.dot(loco.right()) >= 0.0 else -1)
+			if PackLibrary.json_mode():
+				tackle_gesture(carrier)
+			else:
+				owner.visual.start_kick(0.12, 0.45, 1 if to_ball.dot(loco.right()) >= 0.0 else -1)
 		var won: bool = bh.attempt_tackle(carrier)
 		# Entrar por detras derriba al portador: falta.
 		if not won and carrier != null and _from_behind(carrier) and rng.randf() < 0.45:
@@ -249,6 +283,19 @@ func tackle_request(carrier: Footballer) -> StringName:
 	return &"whiff"
 
 var _tackle_cd: float = 0.0
+
+## Modo 4: el gesto de la entrada de pie (uno de los clips de entrada parada, del lado de la pelota). Solo presentacion: el
+## robo lo decide attempt_tackle.
+func tackle_gesture(carrier: Footballer) -> void:
+	if not PackLibrary.json_mode() or owner.visual == null or owner.visual.is_action_playing():
+		return
+	var c: StringName = JsonCatalog.situation_clip(&"tackle_stand", owner.actor_id)
+	if c == &"":
+		return
+	var ball: Ball = owner.ctx.ball
+	if ball != null and KickModel.flat(ball.global_position - owner.global_position).dot(owner.locomotion.right()) < 0.0 and PackLibrary.has_clip(StringName(String(c) + "_mirror")):
+		c = StringName(String(c) + "_mirror")
+	owner.visual.play_pack_clip(c, 1.35, 0.0, 0.8)
 
 ## true si el defensor corre a la par del portador (hombro con hombro): mismos sentidos, cerca y de costado.
 func _alongside(carrier: Footballer) -> bool:
@@ -355,20 +402,62 @@ func suffer_contact(k: StringName, from_dir: Vector3) -> void:
 			shove = true
 		else:
 			clip = [&"Falling_Down", &"Sweep_Fall"][rng.randi() % 2]
+	if PackLibrary.json_mode() and not shove:
+		# Modo 4: cualquiera de las caidas convertidas, segun la carrera y el sitio que hay por delante.
+		var jf: StringName = _json_fall(owner.locomotion.speed)
+		if jf != &"":
+			clip = jf
 	var side: float = from_dir.dot(owner.locomotion.right())
 	if side < 0.0 and PackLibrary.has_clip(StringName(String(clip) + "_mirror")):
 		clip = StringName(String(clip) + "_mirror")
 	var getup: StringName = GET_UP[rng.randi() % GET_UP.size()]
+	var lie_ok: bool = true
+	if PackLibrary.json_mode():
+		# Se levanta desde la misma postura en que quedo tendido (boca arriba, boca abajo o de costado).
+		var lie: String = String(PackLibrary.meta(clip).get("lie", ""))
+		var jg: StringName = _json_getup(lie)
+		if jg != &"":
+			getup = jg
+		lie_ok = lie == "" or String(PackLibrary.meta(FALLEN_IDLE).get("lie", "")) == lie
 	var chain: Array = [] if shove else [{"kind": &"getup", "clip": getup, "speed": FALL_SPEED}]
 	if k == &"trip" and PackLibrary.has_clip(PAIN_CLIP):
 		# Tras una zancadilla se queda un momento en el suelo con dolor antes de levantarse.
 		chain.push_front({"kind": &"pain", "clip": PAIN_CLIP, "speed": 1.0, "cut": PAIN_SECONDS})
-	elif not shove and PackLibrary.has_clip(FALLEN_IDLE):
+	elif not shove and PackLibrary.has_clip(FALLEN_IDLE) and lie_ok:
 		# Tras un golpe queda tendido un instante (aturdido) antes de levantarse.
 		chain.push_front({"kind": &"down", "clip": FALLEN_IDLE, "speed": 1.0, "cut": FALLEN_SECONDS})
 	if start(&"fall", clip, FALL_SPEED, -1.0, chain):
 		stats["falls"] += 1
 		owner.ctx.emit_event(GameEvent.make(GameEvent.Type.TURNOVER, owner.actor_id, owner.team, {"reason": String(k)}))
+
+## Modo 4: una caida convertida al azar con un recorrido acorde a la carrera (a sprint resbala; parado, cae en el sitio) y
+## que entra en el sitio libre por delante. &"" si no hay.
+func _json_fall(speed: float) -> StringName:
+	var room: float = _room_ahead()
+	var lo: float = 1.5 if speed >= FALL_SPRINT_MIN_SPEED else 0.0
+	var hi: float = minf(1.3 if speed < 3.0 else 4.0, room - 0.5) if speed < FALL_SPRINT_MIN_SPEED else minf(8.0, room - 0.5)
+	var pool: Array[StringName] = []
+	for role in [&"fall", &"fall_hit", &"trip"]:
+		for id in PackLibrary.by_role(role):
+			if String(id).ends_with("_mirror"):
+				continue
+			var m: Dictionary = PackLibrary.meta(id)
+			var travel: float = (m.get("root_total", Vector2.ZERO) as Vector2).length()
+			if travel >= lo and travel <= maxf(hi, 0.4) and m.has("lie"):
+				pool.append(id)
+	return pool[rng.randi() % pool.size()] if not pool.is_empty() else &""
+
+## Modo 4: un levantarse convertido que empieza en la postura `lie` (cualquiera si no hay de esa postura).
+func _json_getup(lie: String) -> StringName:
+	var same: Array[StringName] = []
+	var all: Array[StringName] = []
+	for id in PackLibrary.by_role(&"getup"):
+		var m: Dictionary = PackLibrary.meta(id)
+		all.append(id)
+		if String(m.get("lie", "")) == lie:
+			same.append(id)
+	var pool: Array[StringName] = same if not same.is_empty() else all
+	return pool[rng.randi() % pool.size()] if not pool.is_empty() else &""
 
 ## Metros libres por delante del jugador hasta el borde del area de juego (lineas + area exterior).
 func _room_ahead() -> float:

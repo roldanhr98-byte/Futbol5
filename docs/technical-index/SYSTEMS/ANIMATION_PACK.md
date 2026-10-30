@@ -6,7 +6,7 @@
 - **Estado (2026-10-27):** **integrado por completo.** Los 133 clips están convertidos (134 en `pack_clips.res` con sus espejos, 37 en `pack_keeper.res`) y **los 133 tienen disparador en el juego**. Los 40 que antes solo estaban en la galería se conectaron así: marcha (`Jogging_inplace` en la marcha; `Running_inplace` y `Two_Cycle_Sprint_inplace` en la marcha con pelota; `Strafe_3_inplace` en la mezcla direccional), transiciones (`Idle_To_Sprint`, `Sprint_Turn`, parada agotado con `Running_Tired`), balón parado con raíz real (`throw_in`, `Chip`, `strike_foward_jog`, `soccer_penalty_kick`), arquero (`goalkeeper_idle_2`, `goalkeeper_miss`, `goalkeeper_directing(_2)`, `goalkeeper_placing_ball(_2)`), defensa y contacto (`Defender`, `Defender_2`, `Jogging_Stumble`, `Sprint_To_Backslide(_inplace)`, `fallen_idle`), recepción (`receive_soccerball`) y el árbitro, que se mueve con el desplazamiento de raíz medido de los **gemelos con raíz** (`Walking_7`, `Jogging`, `Running`, `Sprint`, `Two_Cycle_Sprint`, `Strafe_3`, `jog_*`). La prueba `test_pes_mechanics::test_every_former_gallery_clip_is_wired_into_gameplay` lo comprueba. Detalle clip a clip: columna «Estado» y «Uso» de [ANIMATION_PACK_CLIPS.md](../ANIMATION_PACK_CLIPS.md).
 - **Dónde están:** las animaciones van **dentro del juego** ya convertidas (`assets/animations/pack_clips.res` y `pack_keeper.res`, versionadas, y dentro de la APK). Los FBX originales (`pack/`) son solo la fuente para regenerar las librerías: están en `.gitignore` (no se suben al repositorio; cada copia local los pone en `pack/` si quiere reconvertir). Sin las librerías el juego funciona con Tripo + patada procedural y las pruebas del pack se **omiten** (no se dan por buenas).
 - **Última verificación:** <!-- AUTO:verified -->
-2026-10-29
+2026-10-30
 <!-- /AUTO -->
 - **Dónde está lo demás:** biblioteca y modelo de Tripo → [ANIMATIONS](ANIMATIONS.md); contacto con la pelota y conducción → [PLAYER](PLAYER.md).
 - **Tabla de los 133 clips (una fila por clip, con recomendación y estado):** [ANIMATION_PACK_CLIPS.md](../ANIMATION_PACK_CLIPS.md).
@@ -80,9 +80,9 @@ las otras 20.
   `mc_penalty_kick`. Pendiente: en el pase de primera con el pase de interior el pie de apoyo patina 1.69 m/s (límite de
   la prueba 1.6; en el modo 1, 1.2).
 
-- **Modo 4 · Json** (2026-10-29): las animaciones de `animaciones_futbol5_JSON` sobre un esqueleto canónico propio y dos modelos
-  elegibles; `PackLibrary` en el modo 4 carga `json_clips.res` / `json_keeper.res` y traduce los nombres del pack de Mixamo a clips
-  JSON por alias. Ficha completa: [JSON_MODE](JSON_MODE.md).
+- **Modo 4 · Json** (2026-10-29, ampliado el 2026-10-30): las 2 022 animaciones de `animaciones_futbol5_JSON` sobre un esqueleto
+  canónico propio y el humanoide propio; `PackLibrary` en el modo 4 carga `json_clips.res` + `json_scenes.res` / `json_keeper.res`,
+  traduce los nombres del pack de Mixamo a clips JSON por alias y los reparte entre los clips de su rol. Ficha completa: [JSON_MODE](JSON_MODE.md).
 
 ## Cómo funciona (un solo sistema)
 

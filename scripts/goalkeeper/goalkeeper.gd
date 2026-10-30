@@ -608,6 +608,10 @@ func _tick_action(delta: float) -> void:
 		_evaluated = true
 		_evaluate_contact(k)
 	if not _motion.active:
+		# Modo 4: si la estirada lo dejo en el suelo, se levanta con un clip que empieza en esa postura (con la pelota en
+		# las manos si la atrapo).
+		if PackLibrary.json_mode() and not _plan.get("getup", false) and _json_getup():
+			return
 		_set_lying(false)
 		if ctx.ball.holder == self:
 			_enter_hold()
@@ -628,7 +632,7 @@ func _evaluate_contact(k: int) -> void:
 		stats["beaten"] += 1
 		_log_save(&"beaten", info)
 		return
-	var is_dive: bool = String(clip).contains("diving") or String(clip).contains("sidestep")
+	var is_dive: bool = String(clip).contains("diving") or String(clip).contains("sidestep") or String(clip).contains("gk_dive")
 	var catch_limit: float = _tune.catch_speed_max * attributes.factor("catching", 0.4) * (_tune.dive_catch_factor if is_dive else 1.0)
 	if _plan.get("pickup", false) or speed <= catch_limit:
 		ball.hold(_anchor, self)
@@ -1102,6 +1106,35 @@ func _plan_miss(traj: PackedVector3Array, ci: int) -> Dictionary:
 	return {"clip": id, "speed": 1.0, "k": int(tau * 30.0), "tau": tau, "delay": maxf(t_arrive - tau, 0.0),
 		"arrive": t_arrive, "dist": 9.0, "radius": 0.45, "travel": 0.65}
 
+## Modo 4: levantarse tras una estirada que termina tendido (meta lie): un clip de levantarse del arquero (o de campo) que
+## empieza en la misma postura; con la pelota en las manos, uno «con pelota». Devuelve true si empezo.
+func _json_getup() -> bool:
+	var lie: String = String(PackLibrary.meta(_plan["clip"]).get("lie", ""))
+	if lie == "" or lie == "up":
+		return false
+	var holding: bool = ctx.ball.holder == self
+	var best: Array[StringName] = []
+	var any: Array[StringName] = []
+	for role in [&"gk_getup", &"getup"]:
+		for id in PackLibrary.by_role(role):
+			var m: Dictionary = PackLibrary.meta(id)
+			var with_ball: bool = String(m.get("source", "")).to_lower().contains("with_ball")
+			if with_ball != holding:
+				continue
+			any.append(id)
+			if String(m.get("lie", "")) == lie:
+				best.append(id)
+	var pool: Array[StringName] = best if not best.is_empty() else any
+	if pool.is_empty():
+		return false
+	var clip: StringName = pool[rng.randi() % pool.size()]
+	_plan = {"clip": clip, "speed": 1.15, "tau": INF, "getup": true}
+	visual.play_pack_clip(clip, 1.15)
+	_motion.start(clip, 1.15)
+	_state_time = 0.0
+	stats["getups"] = int(stats.get("getups", 0)) + 1
+	return true
+
 ## Indicaciones al equipo (presentacion): con la jugada lejos y sin peligro, de vez en cuando el arquero ordena.
 func _maybe_direct_team() -> void:
 	if _direct_cd > 0.0 or visual == null or not visual.uses_pack or visual.is_action_playing() or is_human_controlled:
@@ -1113,6 +1146,15 @@ func _maybe_direct_team() -> void:
 	_direct_cd = DIRECT_COOLDOWN * rng.randf_range(0.8, 1.3)
 	var own_ball: bool = ball.last_touch_team == team
 	var id: StringName = DIRECT_ATTACK_CLIP if own_ball else DIRECT_DEFENSE_CLIP
+	if PackLibrary.json_mode() and rng.randf() < 0.6:
+		# Modo 4: tambien los gestos y esperas del arquero convertidos (escenas de arquero, variantes de espera).
+		var pool: Array[StringName] = []
+		for role in [&"gk_gesture", &"gk_idle_var", &"gk_direct"]:
+			for c in PackLibrary.by_role(role):
+				if not String(c).ends_with("_mirror") and (PackLibrary.meta(c).get("root_total", Vector2.ZERO) as Vector2).length() < 1.0:
+					pool.append(c)
+		if not pool.is_empty():
+			id = pool[rng.randi() % pool.size()]
 	if PackLibrary.has_clip(id):
 		visual.play_pack_clip(id, 1.0, 0.0, DIRECT_SECONDS)
 		stats["directing"] = int(stats.get("directing", 0)) + 1

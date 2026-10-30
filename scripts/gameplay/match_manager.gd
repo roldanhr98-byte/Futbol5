@@ -112,6 +112,7 @@ func _begin_kickoff(team: int, intro: bool = false) -> void:
 	_set_state(State.PRE_KICKOFF)
 	kickoff_requested.emit(team)
 	message.emit("¡Saque!", _state_timer)
+	PackLibrary.vary_aliases()
 	ctx.emit_event(GameEvent.make(GameEvent.Type.KICKOFF, -1, team, {"intro": with_intro, "seconds": _state_timer}))
 
 func _physics_process(delta: float) -> void:
