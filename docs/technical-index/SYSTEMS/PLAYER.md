@@ -79,7 +79,7 @@
 | `kick_turn_scale` | `0.35` | float | `scripts/player/player_tuning.gd:102` | `scripts/player/ball_handler.gd:607`, `scripts/player/ball_handler.gd:611`, `scripts/player/ball_handler.gd:1105` | Fraccion de la velocidad de giro que se conserva mientras el pie se prepara (el pie de apoyo fija la direccion). (Patada con animacion del pack) |
 | `kick_follow_through` | `0.30` | float | `scripts/player/player_tuning.gd:104` | `scripts/player/ball_handler.gd:1087`, `scripts/player/ball_handler.gd:1116` | Segundos de continuacion del clip tras el golpeo antes de devolver el cuerpo a la marcha. (Patada con animacion del pack) |
 | `first_touch_absorb` | `0.65` | float | `scripts/player/player_tuning.gd:108` | `scripts/player/ball_handler.gd:2752` | Fraccion de energia que absorbe el control orientado (0 = rebote total). (Contacto con balon) |
-| `receive_contact` | `{` | Dictionary | `scripts/player/player_tuning.gd:112` | `scripts/player/json_receive.gd:553` | Recepcion con clip (modo 4, JsonReceive.contact_velocity), por parte del cuerpo: Vector3(restitucion, conservacion a lo largo de la superficie, empuje hacia delante en m/s). Los dos primeros se escalan con lo que el jugador no amortigua (first_touch_absorb): un buen control deja la pelota muerta. Valores iniciales para ajustar en el juego, no medidos. (Contacto con balon) |
+| `receive_contact` | `{` | Dictionary | `scripts/player/player_tuning.gd:112` | `scripts/player/json_receive.gd:560` | Recepcion con clip (modo 4, JsonReceive.contact_velocity), por parte del cuerpo: Vector3(restitucion, conservacion a lo largo de la superficie, empuje hacia delante en m/s). Los dos primeros se escalan con lo que el jugador no amortigua (first_touch_absorb): un buen control deja la pelota muerta. Valores iniciales para ajustar en el juego, no medidos. (Contacto con balon) |
 | `body_mass` | `75.0` | float | `scripts/player/player_tuning.gd:118` | **sin uso** |  (Contacto con balon) |
 | `capsule_radius` | `0.3` | float | `scripts/player/player_tuning.gd:119` | `scripts/player/ball_handler.gd:1487`, `scripts/player/ball_handler.gd:1497`, `scripts/player/footballer.gd:87` |  (Contacto con balon) |
 | `capsule_height` | `1.75` | float | `scripts/player/player_tuning.gd:120` | `scripts/player/ball_handler.gd:1487`, `scripts/player/footballer.gd:88`, `scripts/player/footballer.gd:90` |  (Contacto con balon) |
@@ -493,7 +493,9 @@ por nombre los controles aéreos (auditoría de los 124 clips).
   va hacia allí (la persona solo con el joystick suelto).
 - **Contacto** (`JsonBallMove.step`, intención `receive`): cuando la pelota y la parte del cuerpo animada (posición y rumbo
   reales del cuerpo + su trayectoria en el clip) se encuentran dentro de la ventana (−0.12 / +0.25 s del instante estimado), no
-  en un instante fijo; si no se encuentran, el toque se pierde y queda el control físico. En la ventana el cuerpo es fantasma
+  en un instante fijo; si no se encuentran, el toque se pierde y queda el control físico. Antes del contacto, si la pelota
+  real se aparta de la trayectoria prevista (> 0.35 m o > 1 m/s: desviada, frenada, patinando), la recepción se corta enseguida
+  para que actúe el control físico a tiempo. En la ventana el cuerpo es fantasma
   (la cápsula de 0.3 m es más ancha que las piernas); antes no.
 - **Respuesta física** (`JsonReceive.contact_velocity`, ajustable en `PlayerTuning.receive_contact`): pie a ras de piso = la del
   clip más el rebote no amortiguado; pie en el aire, muslo, rodilla y pecho = choque con la normal de esa parte (restitución y
@@ -503,7 +505,8 @@ por nombre los controles aéreos (auditoría de los 124 clips).
 - **Después:** toques de pie posteriores del clip solo si la pelota está ahí (si no, `segundo contacto no llega`: el clip se
   corta y el jugador va a por ella); un pase o golpeo del clip no se reproduce como impulso: el clip se corta antes y el golpeo
   lo da el sistema de pase/tiro (destino real) si hay orden. Árbitro: acción `ball_move`, nivel `BALL_MOVE` (sin cambios de F2).
-- **Medido** (`tests/test_receive.gd`, modo 4): parte acorde a la altura real (0.70–0.76 m pie en el aire, 0.92 m muslo,
+- **Medido** (`tests/test_receive.gd`, modo 4): parado, 42 de 42 pases rasos recibidos con clip y controlados (domina
+  `control_stand_1330`); parte acorde a la altura real (0.70–0.76 m pie en el aire, 0.92 m muslo,
   1.00–1.06 m pecho; pelota a 0.23–0.90 m al final); con render, punta del pie animado a −0.02/0.05 m de la pelota en el contacto.
 - **Limitaciones:** sin clip de recepción a ras de piso para trote o carrera (todos empiezan a ≤ 1 m/s; ahí control físico); un
   globo en carrera sin clip compatible no lo controla el control físico (> 0.7 m): la pelota se pierde (prueba en rojo); el giro

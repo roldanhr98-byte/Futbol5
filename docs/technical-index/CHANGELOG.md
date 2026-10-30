@@ -23,6 +23,9 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 - `JsonBallMove`: contacto cuando la pelota llega a la parte del cuerpo animada, cuerpo fantasma solo en la ventana, toques
   posteriores solo si la pelota llega (si no, se corta), corte antes del pase del clip (lo da el sistema de pase).
 - `Footballer`: el receptor va a `JsonReceive.approach` (persona: joystick suelto).
+- Corte por desvío: si antes del contacto la pelota se aparta de la trayectoria prevista (> 0.35 m o > 1 m/s), la recepción se
+  corta y actúa el control físico (antes una pelota que patinaba dejaba al jugador sin control).
+- `tests/test_receive.gd`: la prueba de cobertura pateaba dos veces en el mismo paso (los impulsos se sumaban); ahora una.
 - `receive_view`: pelotas por el aire (`ARRIVE_Y`) y pase cargado (`PASS`).
 
 ## 2026-10-30 — F3: recepción y control de pelota con clips (`JsonReceive`)

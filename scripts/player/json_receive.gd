@@ -75,6 +75,12 @@ const APPROACH_MAX := 2.5
 const APPROACH_STARTS: Array[float] = [0.15, 0.3, 0.45, 0.6, 0.8]
 const APPROACH_SPEED := 4.0
 const APPROACH_EVERY := 4
+## Desvio (m) maximo de la pelota real respecto de la trayectoria prevista antes del contacto: mas, la recepcion se corta y
+## actua el control fisico (pelota desviada, frenada o que patina).
+const TRAJ_DRIFT := 0.35
+## Diferencia (m/s) maxima entre la velocidad real de la pelota y la prevista antes del contacto (una pelota que patina frena
+## mucho mas que la rodadura prevista: se nota antes en la velocidad que en la posicion).
+const TRAJ_DV := 1.0
 ## Pasos de fisica entre intentos de planificar y segundos sin planificar tras una recepcion.
 const PLAN_EVERY := 2
 const COOLDOWN := 0.4
@@ -418,7 +424,8 @@ func plan(desired_dir: Vector3, stick_mag: float) -> Dictionary:
 						"t_contact": t1, "foot": int(cp["foot"]), "cp": cp, "confidence": p["confidence"], "post_t": post_t,
 						"from_deg": from_deg, "touches_after": p["touches_after"],
 						"contact_local": _local_point(rc, hd, lp),
-						"incoming_speed": (bv - owner.velocity).length(), "ball_y": bp.y, "pred_ball": bp, "pred_contact": contact + corr}
+						"incoming_speed": (bv - owner.velocity).length(), "ball_y": bp.y, "pred_ball": bp, "pred_contact": contact + corr,
+						"traj": traj, "frame": Engine.get_physics_frames()}
 	return best
 
 ## Anticipacion: entre los clips que se podrian usar ahora (mismas condiciones que plan), donde tendria que estar el cuerpo

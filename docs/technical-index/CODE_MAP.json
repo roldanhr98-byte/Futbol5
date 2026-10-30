@@ -4111,61 +4111,61 @@
         {
           "file": "scripts/player/json_receive.gd",
           "name": "JsonReceive.consider",
-          "line": 233,
+          "line": 239,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_receive.gd",
           "name": "JsonReceive.plan",
-          "line": 294,
+          "line": 300,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_receive.gd",
           "name": "JsonReceive.profile",
-          "line": 102,
+          "line": 108,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_receive.gd",
           "name": "JsonReceive.selectable",
-          "line": 117,
+          "line": 123,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_receive.gd",
           "name": "JsonReceive.contact_point",
-          "line": 155,
+          "line": 161,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_receive.gd",
           "name": "JsonReceive.path_point",
-          "line": 220,
+          "line": 226,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_receive.gd",
           "name": "JsonReceive.contact_velocity",
-          "line": 541,
+          "line": 548,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_receive.gd",
           "name": "JsonReceive.contact_offset",
-          "line": 529,
+          "line": 536,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_receive.gd",
           "name": "JsonReceive.ended",
-          "line": 583,
+          "line": 590,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_ball_move.gd",
           "name": "JsonBallMove.start_receive",
-          "line": 276,
+          "line": 279,
           "kind": "func"
         },
         {
@@ -4235,6 +4235,18 @@
           "name": "JsonReceive.REBOUND",
           "default": "0.6",
           "line": 64
+        },
+        {
+          "file": "scripts/player/json_receive.gd",
+          "name": "JsonReceive.TRAJ_DRIFT",
+          "default": "0.35",
+          "line": 80
+        },
+        {
+          "file": "scripts/player/json_receive.gd",
+          "name": "JsonReceive.TRAJ_DV",
+          "default": "1.0",
+          "line": 83
         }
       ],
       "dependencies": [
@@ -5573,25 +5585,25 @@
         {
           "file": "scripts/player/json_ball_move.gd",
           "name": "JsonBallMove.consider",
-          "line": 107,
+          "line": 110,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_ball_move.gd",
           "name": "JsonBallMove.plan_move",
-          "line": 189,
+          "line": 192,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_ball_move.gd",
           "name": "JsonBallMove.turn_for_kick",
-          "line": 176,
+          "line": 179,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_ball_move.gd",
           "name": "JsonBallMove.step",
-          "line": 304,
+          "line": 309,
           "kind": "func"
         },
         {

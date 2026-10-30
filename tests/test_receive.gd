@@ -25,7 +25,7 @@ func _restore() -> void:
 ## Escena: un jugador en ME mirando a +X (con un compañero a +X a 8 m para los pases), la pelota sale rodando desde `ang`
 ## grados (respecto al frente, + izquierda) a `dist` m, apuntada adonde estara el jugador. run: joystick de marcha previa
 ## hacia +X; stick: joystick durante la recepcion (coordenadas de pantalla = x, z del mundo).
-func _setup(ang: float, spd: float, seed: int, run: float = 0.0, stick: Vector2 = Vector2.ZERO, dist: float = 6.0, rival: bool = false) -> Dictionary:
+func _setup(ang: float, spd: float, seed: int, run: float = 0.0, stick: Vector2 = Vector2.ZERO, dist: float = 6.0, rival: bool = false, lat: float = 0.0) -> Dictionary:
 	_mode4()
 	var from: Vector3 = FACE.rotated(Vector3.UP, deg_to_rad(ang))
 	var start: Vector3 = ME + from * dist
@@ -42,7 +42,7 @@ func _setup(ang: float, spd: float, seed: int, run: float = 0.0, stick: Vector2 
 		src.move = Vector2(run, 0.0)
 		await physics_frames(40)
 	var t_arrive: float = start.distance_to(p.global_position) / spd
-	var aim: Vector3 = p.global_position + p.velocity * t_arrive
+	var aim: Vector3 = p.global_position + p.velocity * t_arrive + Vector3(-from.z, 0.0, from.x) * lat
 	var dir: Vector3 = KickModel.flat(aim - start).normalized()
 	ctx.ball.kick(dir * spd, ctx.ball.rolling_spin(dir * spd), null)
 	if stick != Vector2.ZERO:
@@ -431,14 +431,10 @@ func test_coverage_of_standing_receptions() -> void:
 	for ang in [0.0, 30.0, -30.0, 60.0, -60.0, 90.0, -90.0]:
 		for spd in [9.0, 12.0]:
 			for lat in [-0.4, 0.0, 0.4]:
-				var from: Vector3 = FACE.rotated(Vector3.UP, deg_to_rad(ang))
-				var side := Vector3(-from.z, 0.0, from.x)
-				var s: Dictionary = await _setup(ang, spd, 100 + total)
+				# Desvio lateral: la pelota sale del mismo sitio pero apuntada a `lat` m del jugador (una sola patada: dos en el
+				# mismo paso se suman, Ball.kick aplica un impulso).
+				var s: Dictionary = await _setup(ang, spd, 100 + total, 0.0, Vector2.ZERO, 6.0, false, lat)
 				var ctx: MatchContext = s["ctx"]
-				# Desvio lateral: la pelota sale del mismo sitio pero apuntada a `lat` m del jugador.
-				var start: Vector3 = ctx.ball.global_position
-				var dir: Vector3 = KickModel.flat(ME + side * lat - start).normalized()
-				ctx.ball.kick(dir * spd, ctx.ball.rolling_spin(dir * spd), null)
 				var r: Dictionary = await _run(s, 130)
 				total += 1
 				if r["contact"] >= 0:

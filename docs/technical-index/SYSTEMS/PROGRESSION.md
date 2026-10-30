@@ -26,7 +26,7 @@
 | `stamina` | Resistencia | campo | `scripts/player/locomotion.gd:79`, `scripts/player/locomotion.gd:165`, `scripts/player/locomotion.gd:192` |
 | `balance` | Equilibrio | campo | `scripts/assistance/kick_model.gd:85`, `scripts/player/ball_handler.gd:2778`, `scripts/player/player_actions.gd:375`, `scripts/player/player_actions.gd:376` |
 | `agility` | Agilidad | campo | `scripts/player/ball_handler.gd:610`, `scripts/player/ball_handler.gd:1882`, `scripts/player/ball_turn.gd:191`, `scripts/player/ball_turn.gd:204`, `scripts/player/drag_back.gd:198`, `scripts/player/drag_back.gd:292`, `scripts/player/locomotion.gd:74`, `scripts/player/locomotion.gd:190` |
-| `ball_control` | Control de balón | campo | `scripts/player/ball_handler.gd:1423`, `scripts/player/ball_handler.gd:2734`, `scripts/player/ball_handler.gd:2738`, `scripts/player/ball_handler.gd:2752`, `scripts/player/json_receive.gd:544` |
+| `ball_control` | Control de balón | campo | `scripts/player/ball_handler.gd:1423`, `scripts/player/ball_handler.gd:2734`, `scripts/player/ball_handler.gd:2738`, `scripts/player/ball_handler.gd:2752`, `scripts/player/json_receive.gd:551` |
 | `ball_carrying` | Conducción | campo | `scripts/player/ball_handler.gd:353`, `scripts/player/ball_handler.gd:1423` |
 | `dribbling` | Regate | campo | **sin uso todavía** |
 | `short_pass` | Pase corto | campo | `scripts/assistance/pass_assist.gd:100`, `scripts/assistance/pass_assist.gd:228` |

@@ -91,6 +91,9 @@ var _recv_cut: float = -1.0
 var _recv_cp: Dictionary = {}
 ## Distancia minima (m) entre la pelota y la parte del cuerpo antes del contacto (diagnostico).
 var _recv_gap: float = INF
+## Trayectoria prevista de la pelota al planificar y paso de fisica del plan.
+var _recv_traj: PackedVector3Array = PackedVector3Array()
+var _recv_frame0: int = 0
 var stats := {"started": 0, "done": 0, "touches": 0, "missed": 0, "aborted": 0}
 var last := {}
 ## Ultimos movimientos terminados o cortados (diagnostico y pruebas).
@@ -289,6 +292,8 @@ func start_receive(plan: Dictionary) -> bool:
 	if String(PackLibrary.meta(clip).get("heading_mode", "")) != "turn":
 		_turn_end = 0.0   # el cuerpo no gira con este clip (ActionMotion): la salida es el frente
 	_recv_gap = INF
+	_recv_traj = plan.get("traj", PackedVector3Array())
+	_recv_frame0 = int(plan.get("frame", Engine.get_physics_frames()))
 	# Toques: el primer contacto real (la parte del cuerpo del perfil, no el primer `ball_touches`) y los toques de pie
 	# registrados despues, sin el pase o golpeo posterior (lo da el sistema de pase/tiro si hay orden).
 	var touches: Array = [[_recv_t, int(plan.get("foot", 0)), plan["contact_local"], Vector2.ZERO]]
@@ -368,6 +373,14 @@ func _receive_step(clip_t: float, dt: float, b: Ball) -> bool:
 	if _next == 0 and b.last_toucher != _recv_toucher:
 		_abort("pelota desviada")
 		return true
+	if _next == 0 and _recv_traj.size() > 1:
+		# La pelota no va por donde se previo (desviada, frenada, patinando): se corta ya, a tiempo para el control fisico.
+		var tp: float = float(Engine.get_physics_frames() - _recv_frame0) / float(Engine.physics_ticks_per_second)
+		var v_pred: Vector3 = (JsonReceive._at(_recv_traj, tp + JsonReceive.TRAJ_STEP) - JsonReceive._at(_recv_traj, tp)) / JsonReceive.TRAJ_STEP
+		if b.global_position.distance_to(JsonReceive._at(_recv_traj, tp)) > JsonReceive.TRAJ_DRIFT \
+				or (b.linear_velocity - v_pred).length() > JsonReceive.TRAJ_DV:
+			_abort("la pelota no va por donde se previo")
+			return true
 	var fr: InputFrame = owner.last_frame
 	if fr != null:
 		var sw: Vector3 = fr.move_world if fr.use_world else owner.ctx.screen_to_world(fr.move)
