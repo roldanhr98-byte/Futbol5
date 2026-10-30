@@ -87,7 +87,7 @@ para el **reposo** del modelo y para cada instante de la animación. Medido (`re
 Todo clip aparece además en la galería de la sala de práctica, agrupado por rol con su nombre en español
 (`PracticeScene.ROLE_NAMES`). No tienen disparador propio en el juego (solo galería) los `nis_misc`, `nis_walk`, `nis_sit` (escenas que
 caminan o se sientan), las variantes de marcha `loco_*` (los escalones de la marcha son los curados, con fases alineadas) y los
-`control_stand` / `receive` de recepción con giro grande (la recepción en el juego es la de siempre, `Receive`/`receive_soccerball`).
+`control_stand` / `receive` que no sirven para recibir a ras de piso (desde F3 la recepción usa los que sí: ver «Recepción»).
 
 ## Mecánica del modo (qué cambia en el juego)
 
@@ -100,6 +100,15 @@ Solo empieza si la pelota llega al primer toque: se prueban clips, inicio (0–0
 el pie (`TouchFootIK`, hasta 0.32 m). La velocidad de entrada del clip debe estar a ≤ 1.5 m/s de la del jugador (≤ 3 m/s con el botón
 REGATE): a más velocidad manda el giro con toques de siempre (`BallTurn`), que no se interrumpe. La IA gira con clip solo en giros de
 ≥ 110° y como mucho cada 3 s (mientras dura el clip no puede pasar).
+
+### Recepción (`JsonReceive`, F3)
+
+Una pelota que llega (rasante, con bote o por el aire) se recibe con el clip cuya parte del cuerpo del primer contacto real
+(perfiles `ReceiveProfiles`: pie, pie en el aire, muslo, rodilla, pecho) encaja con la trayectoria 3D prevista; el contacto se
+da cuando la pelota y esa parte del cuerpo animada se encuentran, con una respuesta física propia de cada parte, y la acción
+pasa por el árbitro (`ball_move`). Detalle en [PLAYER](PLAYER.md#recepción-y-control-con-clips-jsonreceive-f3-corregido-2026-10-30).
+Entran en la selección 50 de los 124 clips (23 utilizables y 27 con condiciones, y sus espejos); 70 esperan verificación visual
+y 4 son arranques de conducción. Los nombres tienen el lado invertido respecto de los datos.
 
 ### Golpeo girando (`BallHandler.plan_turn_kick`)
 
@@ -218,3 +227,10 @@ Una sola autoridad por futbolista decide qué acción controla el cuerpo y la po
 [PLAYER](PLAYER.md#árbitro-de-acciones-actionarbiter-f2-2026-10-30)). En el modo 4: pose distinta de la raíz 237 → 0 imágenes
 en 3 partidos de IA de 180 s; una falta derriba también a un jugador en un movimiento con pelota de clip; sin poses huérfanas
 tras un reinicio. Las situaciones de presentación que no tienen clip JSON ya no recurren a clips de Tripo.
+
+## Recepción con clips (F3 corregido, 2026-10-30)
+
+La recepción deja de ser un gesto después del toque y ya no depende de `ball_touches[0]`: perfiles de contacto por clip,
+trayectoria 3D, anticipación del receptor, contacto cuando la pelota llega a la parte del cuerpo animada y respuesta física por
+parte (pie, pie en el aire, muslo, rodilla, pecho). Medido en `tests/test_receive.gd` y visto en
+`tools/json_anim/receive_view.tscn` (tiras por familia).

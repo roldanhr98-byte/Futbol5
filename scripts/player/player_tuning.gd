@@ -106,6 +106,15 @@ extends Resource
 @export_group("Contacto con balon")
 ## Fraccion de energia que absorbe el control orientado (0 = rebote total).
 @export var first_touch_absorb: float = 0.65
+## Recepcion con clip (modo 4, JsonReceive.contact_velocity), por parte del cuerpo: Vector3(restitucion, conservacion a lo
+## largo de la superficie, empuje hacia delante en m/s). Los dos primeros se escalan con lo que el jugador no amortigua
+## (first_touch_absorb): un buen control deja la pelota muerta. Valores iniciales para ajustar en el juego, no medidos.
+@export var receive_contact: Dictionary = {
+	"foot_air": Vector3(0.15, 0.25, 0.7),
+	"thigh": Vector3(0.35, 0.3, 0.6),
+	"knee": Vector3(0.3, 0.35, 0.8),
+	"chest": Vector3(0.15, 0.15, 0.45),
+}
 @export var body_mass: float = 75.0
 @export var capsule_radius: float = 0.3
 @export var capsule_height: float = 1.75

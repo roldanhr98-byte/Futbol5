@@ -11,6 +11,33 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-10-30 — F3 corregido: recepción por perfiles de contacto, trayectoria 3D y partes del cuerpo
+
+- **Error corregido:** la recepción tomaba el primer `ball_touches` como primer contacto y descartaba por nombre los controles
+  aéreos. Ahora usa perfiles de contacto (`scripts/player/receive_profiles.gd`, generado por
+  `tools/json_anim/make_receive_profiles.py` con la auditoría de los 124 clips: 23 / 27 / 70 / 4).
+- `JsonReceive`: plan con `BallPredictor.trajectory` (rasante, bote, aire), punto y trayectoria de la parte del cuerpo por
+  cinemática del clip, dirección de llegada del nombre (lado invertido), condiciones por clip, anticipación (`approach`) y
+  respuesta física por parte (`PlayerTuning.receive_contact`). Se quitaron `usable`/`EXCLUDED_TAGS` y `pre_touch_lift` (los
+  reemplaza el perfil: estado y parte del primer contacto).
+- `JsonBallMove`: contacto cuando la pelota llega a la parte del cuerpo animada, cuerpo fantasma solo en la ventana, toques
+  posteriores solo si la pelota llega (si no, se corta), corte antes del pase del clip (lo da el sistema de pase).
+- `Footballer`: el receptor va a `JsonReceive.approach` (persona: joystick suelto).
+- `receive_view`: pelotas por el aire (`ARRIVE_Y`) y pase cargado (`PASS`).
+
+## 2026-10-30 — F3: recepción y control de pelota con clips (`JsonReceive`)
+
+- **Nuevo** `scripts/player/json_receive.gd`: planifica la recepción de una pelota que llega rodando con los clips de recepción (el
+  pie del primer toque del clip en la pelota en su instante de toque) y modela el toque (amortiguación según control, equilibrio y
+  carrera; lo no amortiguado vuelve como rebote).
+- **Cambiado** `JsonBallMove`: intención `&"receive"` (`start_receive`): cuerpo no fantasma hasta el toque, pelota desviada corta la
+  recepción, botones leídos durante el clip (golpeo de primera antes del toque, golpeo tras el control después), toque y pie al
+  toque con el lado por donde llega la pelota. `BallHandler`: crea `JsonReceive`, la consulta en `update` y comparte la
+  amortiguación (`first_touch_absorb`, misma fórmula que antes).
+- **Herramienta** `tools/json_anim/receive_view.tscn`: escena reproducible (render) con tira de imágenes y medida del pie animado.
+- **Árbitro:** sin cambios de contrato (la recepción es una acción `ball_move`, nivel `BALL_MOVE`).
+- Pruebas: `tests/test_receive.gd` (21; 20 headless + 1 con render). Clasificación de los 124 clips en el informe de F3.
+
 ## 2026-10-30 — F2: árbitro de acciones del futbolista (`ActionArbiter`)
 
 - **Nuevo** `scripts/player/action_arbiter.gd`: autoridad única sobre cuerpo y pose, con niveles, testigos, interrupción

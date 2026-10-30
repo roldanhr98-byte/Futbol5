@@ -77,6 +77,20 @@ var _plan_tick: int = 0
 var _skill_req: float = 0.0
 var _ik_foot: int = -1
 var _released_t: float = 0.0
+## Recepcion (intencion &"receive", JsonReceive): quien toco la pelota por ultimo al planificar (si otro la toca antes del
+## primer toque la recepcion se corta) y si ya hubo toque.
+var _recv_toucher: Node = null
+## Direccion (en el suelo) por donde llega la pelota a recibir: el pie se pone delante de ella (JsonReceive.contact_offset).
+var _recv_inc: Vector3 = Vector3.ZERO
+## Parte del cuerpo e instante (s del clip) del primer contacto de la recepcion (perfil de JsonReceive), e instante en que se
+## corta el clip antes de su pase o golpeo posterior (-1 = sin corte).
+var _recv_part: StringName = &""
+var _recv_t: float = 0.0
+var _recv_cut: float = -1.0
+## Perfil de contacto (trayectoria de la parte del cuerpo alrededor del contacto, JsonReceive.contact_point).
+var _recv_cp: Dictionary = {}
+## Distancia minima (m) entre la pelota y la parte del cuerpo antes del contacto (diagnostico).
+var _recv_gap: float = INF
 var stats := {"started": 0, "done": 0, "touches": 0, "missed": 0, "aborted": 0}
 var last := {}
 ## Ultimos movimientos terminados o cortados (diagnostico y pruebas).
@@ -257,6 +271,35 @@ func _start(plan: Dictionary, new_intent: StringName) -> bool:
 	last = {"clip": String(id), "intent": String(new_intent), "residual": plan["residual"], "turn": plan["turn"], "touches": []}
 	return true
 
+## Recepcion planificada por JsonReceive: el mismo movimiento con pelota, pero la pelota llega al primer toque desde lejos
+## y, hasta ese toque, el cuerpo no es fantasma (la pelota no lo atraviesa).
+func start_receive(plan: Dictionary) -> bool:
+	var b: Ball = handler.ball()
+	var toucher: Node = b.last_toucher if b != null else null
+	if not _start(plan, &"receive"):
+		return false
+	_recv_toucher = toucher
+	_recv_inc = plan.get("inc", Vector3.ZERO)
+	_recv_part = plan.get("part", &"foot")
+	_recv_t = float(plan.get("t_contact", 0.0))
+	var post_t: float = float(plan.get("post_t", -1.0))
+	# Corte antes del pase o golpeo del clip (-2: el nombre dice pase pero no hay toque registrado: 0.25 s tras el contacto).
+	_recv_cut = post_t - 0.05 if post_t > 0.0 else (_recv_t + 0.25 if post_t < -1.5 else -1.0)
+	_recv_cp = plan.get("cp", {})
+	if String(PackLibrary.meta(clip).get("heading_mode", "")) != "turn":
+		_turn_end = 0.0   # el cuerpo no gira con este clip (ActionMotion): la salida es el frente
+	_recv_gap = INF
+	# Toques: el primer contacto real (la parte del cuerpo del perfil, no el primer `ball_touches`) y los toques de pie
+	# registrados despues, sin el pase o golpeo posterior (lo da el sistema de pase/tiro si hay orden).
+	var touches: Array = [[_recv_t, int(plan.get("foot", 0)), plan["contact_local"], Vector2.ZERO]]
+	for bt in PackLibrary.meta(clip).get("ball_touches", []):
+		var tt: float = float(bt[0])
+		if tt > _recv_t + 0.05 and (_recv_cut < 0.0 or tt < _recv_cut):
+			touches.append(bt)
+	_touches = touches
+	handler.owner.set_ball_ghost(false)
+	return true
+
 ## Paso de fisica durante el clip (PlayerActions.tick). clip_t: tiempo del clip ya avanzado.
 func step(clip_t: float, dt: float) -> void:
 	if not active:
@@ -264,10 +307,45 @@ func step(clip_t: float, dt: float) -> void:
 	var owner: Footballer = handler.owner
 	var b: Ball = handler.ball()
 	handler._sample_feet(dt)
-	owner.set_ball_ghost(true)
+	var receiving: bool = intent == &"receive"
+	# Recibiendo, el cuerpo no es fantasma hasta el contacto (la pelota no lo atraviesa); con pecho, muslo o rodilla el punto
+	# de contacto esta dentro de la capsula y pasa a fantasma un instante antes.
+	# Dentro de la ventana de contacto el cuerpo es fantasma: la capsula (0.3 m de radio) es mas ancha que las piernas y
+	# frenaba la pelota que iba al pie a un costado; antes de la ventana la pelota no cruza el cuerpo (JsonReceive._path_clear).
+	owner.set_ball_ghost(not receiving or _next > 0 or clip_t >= float(_recv_cp.get("path_t0", _recv_t)))
 	if b == null or b.is_held() or handler.ball_owned_by_other() or (b.last_toucher != owner and b.last_toucher != null and _next > 0):
 		_abort("pelota perdida")
 		return
+	if receiving and _receive_step(clip_t, dt, b):
+		return
+	if receiving and _next == 0:
+		# Primer contacto: cuando la pelota y la parte del cuerpo animada (posicion y rumbo reales del cuerpo + su trayectoria
+		# en el clip) se encuentran dentro de la ventana; pasada la ventana sin encontrarse, el toque se pierde.
+		if clip_t <= float(_touches[0][0]):
+			owner.actions.motion.extra_velocity = _corr
+		else:
+			owner.actions.motion.extra_velocity = Vector3.ZERO
+		var lp: Vector3 = JsonReceive.path_point(_recv_cp, clip_t)
+		if lp != Vector3.INF:
+			var f: Vector3 = owner.locomotion.forward()
+			var r := Vector3(-f.z, 0.0, f.x)
+			var part_w: Vector3 = KickModel.flat(owner.global_position) + f * lp.x + r * lp.z + Vector3(0.0, lp.y, 0.0)
+			var reach: float = b.radius + float(JsonReceive.PART_REACH.get(_recv_part, 0.08))
+			var gap: float = b.global_position.distance_to(part_w)
+			_recv_gap = minf(_recv_gap, gap)
+			if gap <= reach:
+				_touch(0, b, true)
+				if not active:
+					return
+				_next = 1
+		elif clip_t > float(_recv_cp.get("path_t0", 0.0)) + 0.1:
+			last["contact_gap"] = snappedf(_recv_gap, 0.01)
+			handler.receive.stats["missed"] += 1
+			_abort("la pelota no llego a la parte del cuerpo")
+			return
+		if _next == 0:
+			_update_ik(clip_t, b)
+			return
 	# El ajuste de paso solo hasta el primer toque.
 	if _next > 0 or clip_t >= float(_touches[0][0]):
 		owner.actions.motion.extra_velocity = Vector3.ZERO
@@ -278,6 +356,32 @@ func step(clip_t: float, dt: float) -> void:
 			return
 		_next += 1
 	_update_ik(clip_t, b)
+
+## Recepcion en curso: la pelota desviada antes del toque la corta; los botones se leen (PlayerActions no deja pasar el
+## paso normal de BallHandler): una orden de golpeo antes del toque es de primera (se corta la recepcion y golpea el
+## planificador de siempre) y despues del toque corta la cola del clip para golpear ya. true si la recepcion termino.
+func _receive_step(clip_t: float, dt: float, b: Ball) -> bool:
+	var owner: Footballer = handler.owner
+	if _recv_cut > 0.0 and clip_t >= _recv_cut:
+		_end_early("golpeo tras el control" if handler._pending_action != &"" else "corte antes del golpeo del clip")
+		return true
+	if _next == 0 and b.last_toucher != _recv_toucher:
+		_abort("pelota desviada")
+		return true
+	var fr: InputFrame = owner.last_frame
+	if fr != null:
+		var sw: Vector3 = fr.move_world if fr.use_world else owner.ctx.screen_to_world(fr.move)
+		handler._update_buttons(fr, sw.limit_length(1.0), dt)
+	var charging: bool = handler._pass_active or handler._shoot_active or handler._through_active or handler._cross_active
+	# Antes del contacto, una orden de golpeo es de primera; cargandola, solo sigue un clip con accion posterior (recibir y
+	# luego pasar o tirar: el golpeo lo da el sistema de pase/tiro al soltar tras el contacto o en el corte del clip).
+	if _next == 0 and (handler._pending_action != &"" or (charging and _recv_cut < 0.0)):
+		_abort("golpeo de primera")
+		return true
+	if _next > 0 and handler._pending_action != &"":
+		_end_early("golpeo tras el control")
+		return true
+	return false
 
 ## Lo que se desvio el cuerpo de la trayectoria prevista (choques): se suma a los puntos de toque.
 func _drift(clip_t: float) -> Vector3:
@@ -295,9 +399,11 @@ func _touch_point(i: int, drift: Vector3) -> Vector3:
 	var p: Vector3 = _touches[i][2]
 	var vel: Vector2 = _touches[i][3]
 	var lead: Vector3 = (f0 * vel.x + r0 * vel.y).normalized() * BALL_LEAD if vel.length() > 0.3 else Vector3.ZERO
+	if intent == &"receive" and i == 0 and _recv_inc != Vector3.ZERO:
+		lead = JsonReceive.contact_offset(_recv_inc, handler.ball())
 	return _origin + drift + f0 * p.x + r0 * p.z + lead
 
-func _touch(i: int, b: Ball) -> void:
+func _touch(i: int, b: Ball, met: bool = false) -> void:
 	var owner: Footballer = handler.owner
 	var clip_t: float = float(_touches[i][0])
 	var drift: Vector3 = _drift(owner.actions.motion.t)
@@ -305,13 +411,33 @@ func _touch(i: int, b: Ball) -> void:
 	var bp: Vector3 = KickModel.flat(b.global_position)
 	var d: float = bp.distance_to(here)
 	(last["touches"] as Array).append(snappedf(d, 0.01))
-	if d > MISS_DIST:
+	var receiving: bool = intent == &"receive"
+	# Recibiendo, tambien la altura: el primer contacto a la altura de su parte del cuerpo; los toques de pie posteriores,
+	# con la pelota ya abajo.
+	var high: bool = false
+	if receiving:
+		var want_y: float = float((_touches[i][2] as Vector3).y) if i == 0 else 0.0
+		high = absf(b.global_position.y - want_y) > 0.35 if i == 0 else b.global_position.y > 0.45
+	if (d > MISS_DIST or high) and not met:
 		_misses += 1
 		stats["missed"] += 1
+		if receiving:
+			handler.receive.stats["missed"] += 1
+			if i > 0:
+				# La pelota no llega al toque siguiente del clip: se corta y el jugador va a por ella.
+				_end_early("segundo contacto no llega")
+				return
 		if _misses >= 2 or i == 0:
 			_abort("toque perdido")
 		return
 	_misses = 0
+	if receiving and i == 0 and _recv_part != &"foot":
+		# Pie en el aire, muslo, rodilla o pecho: la respuesta de esa parte del cuerpo, no un toque de pie.
+		var rel_air: float = (b.linear_velocity - owner.velocity).length()
+		var va: Vector3 = handler.receive.contact_velocity(Vector3.ZERO, b, _recv_part).limit_length(9.0)
+		b.kick(va, Vector3.ZERO, owner)
+		_received(b, rel_air)
+		return
 	var target: Vector3
 	var travel: float
 	var stop: bool = false
@@ -325,13 +451,19 @@ func _touch(i: int, b: Ball) -> void:
 		var end_pos: Vector3 = _origin + drift + f0 * _root_end.x + r0 * _root_end.y
 		var exit_dir: Vector3 = Locomotion.dir_from_yaw(_yaw0 + _turn_end)
 		var desired: Vector3 = handler._desired_dir
-		if desired.length_squared() > 0.01 and KickModel.angle_between_deg(exit_dir, desired) < 35.0:
+		var oriented: bool = false
+		if desired.length_squared() > 0.01 and KickModel.angle_between_deg(exit_dir, desired) < (JsonReceive.TURN_TOL if intent == &"receive" else 35.0):
 			exit_dir = KickModel.flat(desired).normalized()
+			oriented = intent == &"receive"
 		var remain: float = maxf((_length - clip_t) / _speed, 0.0)
 		if intent == &"kick_turn" or handler._pending_action != &"":
 			# Giro para golpear: la pelota queda quieta delante del pie, lista para el golpeo que espera.
 			stop = true
 			target = end_pos + exit_dir * 0.5
+		elif oriented:
+			# Control orientado: la pelota sale hacia el joystick, un paso por delante de donde termina el clip.
+			stop = true
+			target = end_pos + exit_dir * (Tuning.player.settle_gap + 0.6)
 		elif _v_out < 0.8:
 			stop = true
 			target = end_pos + exit_dir * Tuning.player.settle_gap
@@ -344,8 +476,14 @@ func _touch(i: int, b: Ball) -> void:
 		v = to_t.normalized() * Ball.roll_speed_to_stop(to_t.length()) if to_t.length() > 0.02 else Vector3.ZERO
 	else:
 		v = to_t.normalized() * Ball.roll_speed_for(to_t.length(), travel) if to_t.length() > 0.01 else Vector3.ZERO
+	var received: bool = intent == &"receive" and i == 0
+	var rel_in: float = KickModel.flat(b.linear_velocity - owner.velocity).length()
+	if received:
+		v = handler.receive.contact_velocity(v, b, &"foot")
 	v = v.limit_length(9.0)
 	b.kick(v, b.rolling_spin(v), owner)
+	if received:
+		_received(b, rel_in)
 	var foot: int = 1 if int(_touches[i][1]) > 0 else 0
 	stats["touches"] += 1
 	handler.dribble_touch_count += 1
@@ -354,6 +492,18 @@ func _touch(i: int, b: Ball) -> void:
 	handler.last_touch_foot_distance = d
 	handler.last_touch_mode = &"move"
 	handler.touched_ball.emit(&"move")
+
+## Primer contacto de la recepcion hecho: no se vuelve a controlar enseguida, el cuerpo ya no choca con la pelota y se avisa
+## al partido (FIRST_TOUCH con el clip y la parte del cuerpo).
+func _received(b: Ball, rel_in: float) -> void:
+	var owner: Footballer = handler.owner
+	handler.control_cooldown = 0.5
+	handler.receive.stats["contact"] += 1
+	owner.set_ball_ghost(true)
+	owner.ctx.emit_event(GameEvent.make(GameEvent.Type.FIRST_TOUCH, owner.actor_id, owner.team,
+		{"absorb": handler.receive.last_contact.get("absorb", 0.0), "incoming_speed": rel_in, "clip": String(clip), "planned": true, "part": String(_recv_part)}))
+	var foot: int = int(_touches[0][1])
+	handler.last_touch_foot = 1 if foot > 0 else (0 if foot < 0 else -1)
 
 ## Pie al toque: la punta va hasta la pelota real (unos centimetros) en el tramo del toque.
 func _update_ik(clip_t: float, b: Ball) -> void:
@@ -381,6 +531,11 @@ func _update_ik(clip_t: float, b: Ball) -> void:
 	var push: Vector3 = (f0 * vel.x + Vector3(-f0.z, 0.0, f0.x) * vel.y)
 	push = push.normalized() if push.length() > 0.3 else KickModel.flat(bp - toe).normalized()
 	var want: Vector3 = bp - push * (b.radius + 0.03)
+	if intent == &"receive" and idx == 0 and _recv_part != &"foot" and _recv_part != &"foot_air":
+		return   # pecho, muslo o rodilla: sin IK del pie
+	if intent == &"receive" and idx == 0 and _recv_inc != Vector3.ZERO:
+		# Recepcion: el pie va delante de la pelota que llega (la para), no detras empujandola.
+		want = bp - JsonReceive.contact_offset(_recv_inc, b).normalized() * (b.radius + 0.03)
 	want.y = maxf(toe.y, 0.04)
 	if toe != Vector3.ZERO and KickModel.flat(want - toe).length() > IK_MAX:
 		w = 0.0
@@ -393,6 +548,8 @@ func finish() -> void:
 		return
 	active = false
 	stats["done"] += 1
+	if intent == &"receive":
+		handler.receive.ended(_next > 0)
 	_remember()
 	_cooldown = maxf(_cooldown, COOLDOWN)
 	handler.touch_timer = 0.12
@@ -404,6 +561,8 @@ func _abort(reason: String) -> void:
 	active = false
 	stats["aborted"] += 1
 	last["aborted"] = reason
+	if intent == &"receive":
+		handler.receive.ended(_next > 0)
 	_remember()
 	_cooldown = COOLDOWN
 	_release_ik()
@@ -412,6 +571,13 @@ func _abort(reason: String) -> void:
 	var owner: Footballer = handler.owner
 	owner.actions.motion.extra_velocity = Vector3.ZERO
 	owner.actions.stop(reason)
+
+## Fin antes de tiempo sin error (golpeo pedido tras el control): se suelta el clip y sigue el paso normal.
+func _end_early(reason: String) -> void:
+	finish()
+	last["ended"] = reason
+	handler.owner.actions.motion.extra_velocity = Vector3.ZERO
+	handler.owner.actions.stop(reason)
 
 func _remember() -> void:
 	history.append(last)
@@ -422,6 +588,8 @@ func _remember() -> void:
 func cancel() -> void:
 	if active:
 		active = false
+		if intent == &"receive":
+			handler.receive.ended(_next > 0)
 		_cooldown = COOLDOWN
 		_release_ik()
 

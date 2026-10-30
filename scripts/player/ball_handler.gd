@@ -182,6 +182,8 @@ var cross_charge: float = 0.0
 
 ## Modo 4 (Json): giros con pelota, vuelta atras, regates y frenadas con los clips JSON y sus toques (JsonBallMove).
 var json_move: JsonBallMove = null
+## Modo 4 (Json): recepcion de una pelota que llega con un clip cuyo pie la toca en su instante de toque (JsonReceive).
+var receive: JsonReceive = null
 ## Vuelta atras pisando la pelota (DragBack): regate con el boton REGATE y el joystick hacia atras.
 var drag_back: DragBack = null
 ## Giro con toques (joystick hacia atras conduciendo, estilo Dream League Soccer); ver BallTurn.
@@ -193,6 +195,7 @@ func _init(o: Footballer) -> void:
 	drag_back = DragBack.new(self)
 	ball_turn = BallTurn.new(self)
 	json_move = JsonBallMove.new(self)
+	receive = JsonReceive.new(self)
 
 func ball() -> Ball:
 	return owner.ctx.ball if owner.ctx != null else null
@@ -413,6 +416,8 @@ func update(frame: InputFrame, stick_world: Vector3, stick_mag: float, desired_d
 		ball_turn.cancel("bloqueo")
 		return
 	if PackLibrary.json_mode() and json_move.consider(desired_dir, stick_mag, dt):
+		return
+	if PackLibrary.json_mode() and receive.consider(desired_dir, stick_mag, dt):
 		return
 	if drag_back.update(desired_dir, stick_mag, dt):
 		return
@@ -2722,15 +2727,8 @@ func _try_first_touch(desired_dir: Vector3) -> bool:
 		var next_d: float = dist - closing * _dt * 1.1
 		if toe_d > FOOT_CONTACT + 0.06 and next_d > 0.48:
 			return false
-	var loco: Locomotion = owner.locomotion
 	var ratio: float = _sprint_ratio()
-	var absorb: float = t.first_touch_absorb * owner.attributes.factor("ball_control", 0.35)
-	var behind: bool = off.dot(loco.forward()) < -0.25
-	if behind:
-		absorb *= 0.5
-	absorb *= 1.0 - 0.25 * ratio
-	absorb *= lerpf(0.85, 1.0, KickModel.balance_state(owner))
-	absorb = clampf(absorb, 0.15, 0.93)
+	var absorb: float = first_touch_absorb(off)
 	var leftover: Vector3 = rel_v * (1.0 - absorb)
 	# Ruido: peor control = rebote menos predecible.
 	var sigma: float = 20.0 * (1.35 - owner.attributes.norm("ball_control")) * (1.0 + 0.4 * ratio)
@@ -2747,6 +2745,16 @@ func _try_first_touch(desired_dir: Vector3) -> bool:
 		{"absorb": absorb, "incoming_speed": rel_v.length()}))
 	touched_ball.emit(&"first_touch")
 	return true
+
+## Fraccion (0.15-0.93) de la velocidad de la pelota que amortigua el primer toque: control del jugador, pelota por detras
+## (off: pelota respecto al jugador), carrera y equilibrio. La usan el control fisico y la recepcion con clip (JsonReceive).
+func first_touch_absorb(off: Vector3) -> float:
+	var absorb: float = Tuning.player.first_touch_absorb * owner.attributes.factor("ball_control", 0.35)
+	if off.dot(owner.locomotion.forward()) < -0.25:
+		absorb *= 0.5
+	absorb *= 1.0 - 0.25 * _sprint_ratio()
+	absorb *= lerpf(0.85, 1.0, KickModel.balance_state(owner))
+	return clampf(absorb, 0.15, 0.93)
 
 # --- Disputa ----------------------------------------------------------------
 

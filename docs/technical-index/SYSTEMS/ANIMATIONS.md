@@ -230,6 +230,14 @@ Un pack propio de 133 animaciones de Mixamo (esqueleto Y Bot de 65 huesos) cubre
 marcha normal sin salto. El control lateral y la protección reutilizan la mezcla direccional (`Dir`) a través de
 `Locomotion.face_override`.
 
+## Clips de recepción del modo 4 (F3, 2026-10-30)
+
+Los 124 clips de recepción y control tienen un perfil de contacto (`ReceiveProfiles`, generado desde los JSON originales con la
+auditoría de F3): 23 utilizables, 27 con condiciones, 70 pendientes de verificación visual (fuera de la selección automática) y
+4 arranques de conducción (no son recepciones). El primer contacto real puede ser pecho, muslo, rodilla o pie en el aire, y no
+coincide necesariamente con el primer `ball_touches` (toques de pie registrados). Los nombres tienen el lado invertido respecto
+de los datos. Los clips no se modificaron.
+
 ## Historial
 
 Ver [CHANGELOG.md](../CHANGELOG.md): «Futbolista con Tripo3D», «Esqueleto único v1.0».

@@ -273,6 +273,19 @@ func _physics_process(delta: float) -> void:
 				desired_mag = maxf(stick_mag, clampf(to_ball.length() / 2.0, 0.5, 1.0))
 				want_sprint = want_sprint or to_ball.length() > 4.0
 
+	# Recepcion con clip (modo 4): mientras llega la pelota, el receptor se coloca donde un clip de recepcion compatible
+	# encajara con ella (JsonReceive.approach). La persona con el joystick suelto (el joystick manda); la IA siempre.
+	var ap: Vector3 = ball_handler.receive.approach if ball_handler.receive != null else Vector3.INF
+	if ap != Vector3.INF and not frame.press_held and (not is_human_controlled or stick_mag < 0.2):
+		var to_ap: Vector3 = KickModel.flat(ap - global_position)
+		if to_ap.length() > 0.12:
+			desired_dir = to_ap.normalized()
+			desired_mag = clampf(to_ap.length() / 1.2, 0.25, 1.0)
+			want_sprint = to_ap.length() > 1.8
+		else:
+			desired_dir = Vector3.ZERO
+			desired_mag = 0.0
+
 	# Presion defensiva: el boton fija la INTENCION de disputar; el joystick solo ajusta el angulo.
 	is_pressing = false
 	press_info = null
