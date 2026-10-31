@@ -35,6 +35,13 @@ const ROLE_NAMES := {
 	"gk_dive": "Arquero: estiradas", "gk_catch": "Arquero: atajadas", "gk_scoop": "Arquero: recoger", "gk_block": "Arquero: bloqueos",
 	"gk_getup": "Arquero: levantarse", "gk_turn": "Arquero: giros", "gk_loco": "Arquero: desplazamientos", "gk_gesture": "Arquero: gestos",
 	"gk_kick": "Arquero: saque con el pie", "gk_throw": "Arquero: saque con la mano", "gk_roll": "Arquero: saque rodando",
+	"defeat_end": "Lamento final", "dir_back": "Marcha atrás", "dir_back_diag": "Marcha atrás en diagonal", "dir_back_walk": "Caminar hacia atrás",
+	"dir_fwd_diag": "Marcha en diagonal", "dir_fwd_diag_walk": "Caminar en diagonal", "dir_side": "Marcha lateral", "fall_hit": "Caída por golpe",
+	"gk_direct": "Arquero: dirige", "gk_idle": "Arquero: reposo", "gk_idle_ball": "Arquero: con la pelota", "gk_idle_var": "Arquero: espera",
+	"gk_miss": "Arquero: no llega", "gk_place": "Arquero: deja la pelota", "gk_sidestep": "Arquero: paso lateral", "idle_ball_var": "Gesto sin fútbol",
+	"jostle_ball": "Control protegiendo", "jump": "Salto", "lie": "Tendido", "loco_jog": "Trote (variante)", "loco_side": "Lateral (variante)",
+	"loco_sprint": "Sprint (variante)", "loco_walk": "Caminar (variante)", "receive_chest": "Recepción de pecho (gesto)", "receive_foot": "Recepción con el pie",
+	"shove": "Carga", "stumble_light": "Trastabillar leve", "throw_prep": "Giro para sacar de banda", "thumbs_up": "Pulgar arriba", "trip": "Zancadilla sufrida",
 }
 
 var ctx: MatchContext
@@ -183,6 +190,8 @@ func _build_ui() -> void:
 	var jug := Button.new()
 	jug.text = "Malabares"
 	jug.pressed.connect(toggle_juggle)
+	# Sin clips de malabares (el banco JSON del modo 4 no tiene) el boton no se muestra.
+	jug.visible = JuggleController.available()
 	bar.add_child(jug)
 	var back := Button.new()
 	back.text = "Volver"
@@ -238,7 +247,7 @@ func toggle_juggle() -> void:
 		stage.rotation.y = 0.0
 		ball.reset_at(Vector3(_origin.x, 0.11, _origin.z - 0.6))
 		juggler.start()
-		current_clip = &"malabares"
+		current_clip = &"malabares" if juggler.running else &""
 	_update_status()
 
 func _update_status() -> void:

@@ -3,6 +3,10 @@ extends TestCase
 ## llega a la pelota; si la pelota no esta al alcance de ninguna pierna NO hay pase ni tiro ni teletransporte.
 ## Requiere la libreria local del pack (recurso restringido): sin ella la prueba se omite, no se da por buena.
 
+## Sistema del modo 1 (pack de Mixamo / Tripo), descartado como modo de juego pero todavia en el codigo: se prueba en su modo.
+func gameplay_mode() -> int:
+	return 1
+
 const START := Vector3(-10.0, 0.0, 0.0)
 
 func _skip_if_missing() -> bool:

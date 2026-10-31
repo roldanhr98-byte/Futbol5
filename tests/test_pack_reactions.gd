@@ -2,6 +2,10 @@ extends TestCase
 ## Reacciones de presentacion conectadas a eventos reales del partido (gol, primer toque, saque) con los clips del pack
 ## y el respaldo de Tripo. Son SOLO animacion: no bloquean la entrada ni cambian el movimiento.
 
+## Sistema del modo 1 (pack de Mixamo / Tripo), descartado como modo de juego pero todavia en el codigo: se prueba en su modo.
+func gameplay_mode() -> int:
+	return 1
+
 func _skip_if_missing() -> bool:
 	PackLibrary.reload()
 	if not PackLibrary.available():

@@ -788,7 +788,7 @@ func plan_aerial_kick(action: StringName, charge: float) -> Dictionary:
 	if b == null or b.is_held():
 		return {}
 	var t: PlayerTuning = Tuning.player
-	var traj: PackedVector3Array = BallPredictor.trajectory(b.global_position, b.linear_velocity, 1.3, 1.0 / 30.0)
+	var traj: PackedVector3Array = BallPredictor.trajectory(b.global_position, b.linear_velocity, 1.3, 1.0 / 30.0, b.angular_velocity)
 	var adjust_max: float = t.kick_adjust_max + t.kick_adjust_sprint * _sprint_ratio()
 	var best: Dictionary = {}
 	var best_score: float = INF
@@ -2091,6 +2091,16 @@ func _clip_touch_step() -> void:
 func force_dribble_touch(dir: Vector3) -> void:
 	_try_dribble_touch(dir, 0.8)
 
+## Segundos de margen con los que se adelanta el toque cuando el cuerpo alcanza a la pelota (CATCH_CLOSING m/s o mas).
+const CATCH_LEAD := 0.12
+const CATCH_CLOSING := 0.6
+
+## El cuerpo se acerca a la pelota que va delante (mas rapido que ella) y en CATCH_LEAD s la tendra al alcance del pie.
+func _catching_ball(off: Vector3, fwd: Vector3, body_v: Vector3, ball_v: Vector3) -> bool:
+	var ahead: float = off.dot(fwd)
+	var closing: float = (body_v - ball_v).dot(fwd)
+	return ahead > 0.0 and absf(off.dot(Vector3(-fwd.z, 0.0, fwd.x))) < 0.45 and closing > CATCH_CLOSING and ahead < _foot_reach * 0.9 + closing * CATCH_LEAD
+
 func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 	var b: Ball = ball()
 	if b == null or b.is_held() or b.global_position.y > 0.45:
@@ -2151,7 +2161,11 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 		# Modo 4: cambio de rumbo en carrera (diagonal, zigzag) con la pelota al pie: toque de rumbo ya, con el pie que esta
 		# junto a la pelota, en vez de esperar al siguiente paso (la pelota seguia derecho y quedaba al costado).
 		var steer_now: bool = PackLibrary.json_mode() and mode == &"carry" and _steer_touch_ready(b, desired_dir, stick_mag, interval)
-		if touch_timer > interval * 0.45 and not reversal and not steer_now:
+		# El cuerpo acelera y alcanza a la pelota del toque anterior (lanzada para la velocidad de entonces): el toque no
+		# espera a la cadencia, si no el jugador la pisaba (medido: de caminar a correr, cuerpo a 0.07 m de la pelota).
+		# Solo conduciendo: con un golpeo pedido (setup) el toque de preparacion tiene sus reglas (kick_approach_steer).
+		var catching: bool = mode == &"carry" and _catching_ball(off, fwd, body_v, ball_v)
+		if touch_timer > interval * 0.45 and not reversal and not steer_now and not catching:
 			return
 		var close_in: bool = off.dot(fwd) < _foot_reach * 0.9 and (mode == &"carry" or mode == &"setup")
 		strike = _foot_strike(b, mode, close_in)
@@ -2163,7 +2177,7 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 			_foot_wait += get_dt()
 			# En un cambio de rumbo no se puede esperar a la zancada: el toque llega antes (el pie se estira a la pelota).
 			# Si el cuerpo alcanza a la pelota (queda pegada o por detras de la punta del pie) tampoco: el jugador la pisaria.
-			var overrun: bool = off.dot(fwd) < _foot_reach * 0.9 and (mode == &"carry" or mode == &"setup")
+			var overrun: bool = (off.dot(fwd) < _foot_reach * 0.9 or catching) and (mode == &"carry" or mode == &"setup")
 			# Parar la pelota (pisada / amortiguar) tampoco espera a la zancada: con el jugador frenando no hay zancada.
 			var wait_max: float = 0.08 if (mode == &"redirect" or mode == &"lateral" or mode == &"settle" or overrun) else FOOT_WAIT_MAX
 			# Con un golpeo pedido (modo setup) el toque de preparacion no espera a la zancada: el jugador va a la pelota.
@@ -2689,6 +2703,35 @@ func carry_steer(desired_dir: Vector3) -> Vector3:
 	if to_a.length() < 0.15:
 		return Vector3.ZERO
 	return to_a.normalized()
+
+## Tiempo (s) en que el jugador quiere cerrar la distancia de mas con una pelota propia que se adelanto, y margen (m) sobre
+## la distancia de conduccion antes de apurarse.
+const CATCH_UP_TIME := 0.6
+const CATCH_UP_MARGIN := 0.25
+
+## Pelota propia por delante en el rumbo pedido pero mas lejos que la distancia de conduccion (un toque largo, frenar con la
+## pelota rodando): intensidad de carrera (0..1) que hace falta para alcanzarla en CATCH_UP_TIME s; 0 si esta a distancia de
+## conduccion, detras o al costado (de eso se ocupa carry_steer). La pelota no se toca: el jugador se adapta a ella.
+func carry_catch_up_mag(desired_dir: Vector3) -> float:
+	if desired_dir.length_squared() < 0.01 or _kick_action != &"" or not is_dribbling():
+		return 0.0
+	var b: Ball = ball()
+	if b == null or b.is_held() or b.global_position.y > 0.6:
+		return 0.0
+	var want: Vector3 = KickModel.flat(desired_dir).normalized()
+	var off: Vector3 = ball_offset()
+	var ahead: float = off.dot(want)
+	if ahead <= 0.0 or absf(off.dot(Vector3(-want.z, 0.0, want.x))) > 0.55:
+		return 0.0
+	var loco: Locomotion = owner.locomotion
+	var excess: float = ahead - carry_gap(loco.speed, _carry_skill()) - CATCH_UP_MARGIN
+	if excess <= 0.0:
+		return 0.0
+	var need: float = maxf(KickModel.flat(b.linear_velocity).dot(want), 0.0) + excess / CATCH_UP_TIME
+	var m: float = 0.1
+	while m < 1.0 and loco.speed_for_magnitude(m) < need:
+		m += 0.05
+	return minf(m, 1.0)
 
 ## Direccion a la que debe mirar el cuerpo mientras conduce (control lateral o proteccion). Cero = libre.
 func carry_face() -> Vector3:

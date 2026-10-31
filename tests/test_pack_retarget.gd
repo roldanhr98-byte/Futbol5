@@ -2,6 +2,10 @@ extends TestCase
 ## Validacion de los clips del pack de Mixamo ya convertidos al esqueleto de Tripo (assets/animations/pack_clips.res).
 ## La libreria es un recurso restringido que se genera en local: sin ella estas pruebas se OMITEN (no se dan por buenas).
 
+## Sistema del modo 1 (pack de Mixamo / Tripo), descartado como modo de juego pero todavia en el codigo: se prueba en su modo.
+func gameplay_mode() -> int:
+	return 1
+
 const BONES := 23
 
 func _skip_if_missing() -> bool:

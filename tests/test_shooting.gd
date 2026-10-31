@@ -97,12 +97,14 @@ func test_physical_shot_outcomes_include_goals_posts_and_misses() -> void:
 	var goal_count: int = 0
 	var post_shots: int = 0
 	for i in n:
-		goals.clear()
-		frame_hits[0] = 0
 		p.place_at(Vector3(11.5, 0.0, 1.0), Locomotion.yaw_from_dir(Vector3(1, 0, 0)))
 		ctx.pitch.reset_goal_latches()
 		ctx.ball.reset_at(Vector3(12.05, 0.11, 1.0))
 		await physics_frames(6)
+		# Ball.reset_at se aplica en el paso fisico siguiente: con el cerrojo ya reiniciado, la pelota del tiro anterior aun
+		# en la red cuenta un gol fantasma. Se cuenta solo desde aqui.
+		goals.clear()
+		frame_hits[0] = 0
 		p.ball_handler.rng.seed = 7000 + i
 		p.ball_handler.lockout = 0.0
 		# El usuario apunta de forma variada: algunos tiros claramente al arco, otros anchos.

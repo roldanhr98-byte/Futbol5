@@ -109,7 +109,12 @@ func test_skill_spin_protects_the_carrier_and_keeps_the_ball_close() -> void:
 	check(c.ball_handler.has_possession(), "conduce la pelota antes del regate")
 	src.skill()
 	await physics_frames(3)
-	check(c.actions.kind == &"skill", "el regate arranca la ruleta (%s)" % c.actions.kind)
+	# Modo 4: el regate es un clip JSON con sus toques (JsonBallMove, accion ball_move); la ruleta del pack (Soccer_Spin) no
+	# existe en el banco. Fuera del modo 4, la ruleta.
+	if PackLibrary.json_mode():
+		check(c.actions.kind == &"ball_move" and c.ball_handler.json_move.intent == &"skill", "el regate arranca un regate con toques (%s, %s)" % [c.actions.kind, c.ball_handler.json_move.intent])
+	else:
+		check(c.actions.kind == &"skill", "el regate arranca la ruleta (%s)" % c.actions.kind)
 	var worst := 0.0
 	var steps := 0
 	while c.actions.active() and steps < 240:

@@ -81,6 +81,8 @@ const TRAJ_DRIFT := 0.35
 ## Diferencia (m/s) maxima entre la velocidad real de la pelota y la prevista antes del contacto (una pelota que patina frena
 ## mucho mas que la rodadura prevista: se nota antes en la velocidad que en la posicion).
 const TRAJ_DV := 1.0
+## Penalizacion (en la misma escala que el error en metros) de un clip con el contacto solo estimado frente a uno verificado.
+const UNVERIFIED_PENALTY := 0.04
 ## Pasos de fisica entre intentos de planificar y segundos sin planificar tras una recepcion.
 const PLAN_EVERY := 2
 const COOLDOWN := 0.4
@@ -305,7 +307,7 @@ func plan(desired_dir: Vector3, stick_mag: float) -> Dictionary:
 	var loco: Locomotion = owner.locomotion
 	var b: Ball = handler.ball()
 	var pos: Vector3 = KickModel.flat(owner.global_position)
-	var traj: PackedVector3Array = BallPredictor.trajectory(b.global_position, b.linear_velocity, HORIZON, TRAJ_STEP)
+	var traj: PackedVector3Array = BallPredictor.trajectory(b.global_position, b.linear_velocity, HORIZON, TRAJ_STEP, b.angular_velocity)
 	if traj.size() < 3:
 		return {}
 	var has_dir: bool = stick_mag >= MIN_STICK and desired_dir.length_squared() > 0.01
@@ -419,6 +421,9 @@ func plan(desired_dir: Vector3, stick_mag: float) -> Dictionary:
 					continue
 				var score: float = residual + 0.6 * absf(err.y) + 0.25 * corr.length() + 0.12 * (dv + dv_out) + 0.006 * dturn \
 					+ 0.003 * ddir + 0.03 * start_at + handler.rng.randf() * 0.03
+				# Con geometria equivalente, mejor un clip con el contacto visto con la pelota (verificado) que uno estimado.
+				if p["confidence"] != "verified":
+					score += UNVERIFIED_PENALTY
 				if score < best_score:
 					best_score = score
 					var post_t: float = float(p["post_t"])
@@ -439,7 +444,7 @@ func _update_approach(desired_dir: Vector3, stick_mag: float) -> void:
 	var loco: Locomotion = owner.locomotion
 	var b: Ball = handler.ball()
 	var pos: Vector3 = KickModel.flat(owner.global_position)
-	var traj: PackedVector3Array = BallPredictor.trajectory(b.global_position, b.linear_velocity, HORIZON + 1.0, TRAJ_STEP)
+	var traj: PackedVector3Array = BallPredictor.trajectory(b.global_position, b.linear_velocity, HORIZON + 1.0, TRAJ_STEP, b.angular_velocity)
 	var has_dir: bool = stick_mag >= MIN_STICK and desired_dir.length_squared() > 0.01
 	var want: Vector3 = KickModel.flat(desired_dir).normalized() if has_dir else Vector3.ZERO
 	var charging: bool = handler._pass_active or handler._shoot_active or handler._through_active or handler._cross_active

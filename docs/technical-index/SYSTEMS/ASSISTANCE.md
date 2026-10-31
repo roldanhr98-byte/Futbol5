@@ -9,7 +9,7 @@
   - **Modelo de error** (`KickModel`): ruido gaussiano acotado que depende de distancia, potencia, equilibrio, orientación, velocidad, pierna de golpeo y atributos.
 - **Estado:** implementado y probado (sin compañeros reales en la escena de juego: las pruebas los crean).
 - **Última verificación:** <!-- AUTO:verified -->
-2026-10-30
+2026-10-31
 <!-- /AUTO -->
 
 ## Archivos responsables
@@ -149,7 +149,7 @@ Fórmulas tal como están en el código (2026-10-26). `asistencia` = nivel 0–1
   - **Modelo de error** (`KickModel`): ruido gaussiano acotado que depende de distancia, potencia, equilibrio, orientación, velocidad, pierna de golpeo y atributos.
 - **Estado:** implementado y probado (sin compañeros reales en la escena de juego: las pruebas los crean).
 - **Última verificación:** <!-- AUTO:verified -->
-2026-10-30
+2026-10-31
 <!-- /AUTO -->
 
 ## Archivos responsables
@@ -320,13 +320,13 @@ Fórmulas tal como están en el código (2026-10-26). `asistencia` = nivel 0–1
 | `test_charge_controls_power_and_attributes_scale_it_moderately` | 55 |
 | `test_lob_shot_is_higher_than_driven_shot` | 79 |
 | `test_physical_shot_outcomes_include_goals_posts_and_misses` | 88 |
-| `test_far_shots_are_much_harder_than_close_ones` | 121 |
+| `test_far_shots_are_much_harder_than_close_ones` | 123 |
 <!-- /AUTO -->
 
 <!-- AUTO:tests:tests/test_shot_keeper.gd -->
 | Prueba | Línea |
 |---|---|
-| `test_shots_go_at_goal_and_the_keeper_saves_what_he_reaches` | 87 |
+| `test_shots_go_at_goal_and_the_keeper_saves_what_he_reaches` | 89 |
 <!-- /AUTO -->
 
 <!-- AUTO:tests:tests/test_press.gd -->

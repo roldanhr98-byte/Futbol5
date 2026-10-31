@@ -564,7 +564,7 @@ func _air_case(h: float, vh: float, ang: float, seed: int, run: float = 0.0) -> 
 
 ## La parte del cuerpo corresponde a la altura REAL de la pelota en el contacto (la de lanzamiento es aproximada: el plan
 ## usa la trayectoria con arrastre y bote): pie a ras de piso hasta 0.3 m, pie en el aire o rodilla hasta 0.75 m, muslo, pie
-## en el aire o rodilla hasta 1.0 m, pecho por encima.
+## en el aire o rodilla hasta 0.95 m, muslo o pecho hasta 1.10 m (se solapan), pecho por encima.
 func test_body_part_matches_the_ball_height_at_contact() -> void:
 	if _skip_if_missing():
 		return
@@ -577,7 +577,9 @@ func test_body_part_matches_the_ball_height_at_contact() -> void:
 			continue
 		var y: float = float((r["plan"] as Dictionary).get("ball_y", -1.0))
 		var part: String = _part(r)
-		var allowed: Array = ["foot"] if y <= 0.3 else (["foot_air", "knee"] if y <= 0.75 else (["thigh", "foot_air", "knee"] if y <= 1.0 else ["chest"]))
+		# Franjas de la geometria medida (punto de contacto de los clips verificados + tolerancia de altura del plan): muslo hasta
+		# 0.98 + 0.12 m, pecho desde 1.10 - 0.15 m: entre 0.95 y 1.10 m valen los dos.
+		var allowed: Array = ["foot"] if y <= 0.3 else (["foot_air", "knee"] if y <= 0.75 else (["thigh", "foot_air", "knee"] if y <= 0.95 else (["thigh", "chest"] if y <= 1.10 else ["chest"])))
 		var vo: Vector3 = r.get("v_out", Vector3.ZERO)
 		var physical: bool = float(r["final"]) < 1.6 and (part != "foot_air" or vo.y <= 0.45)
 		lines.append("pelota a %.2f m: %s (%s), sale vy %.2f, final a %.2f m" % [y, part, r["clip"], vo.y, r["final"]])
@@ -595,7 +597,8 @@ func test_waist_high_ball_is_controlled_with_the_thigh() -> void:
 	var r: Dictionary = await _air_case(0.7, 8.0, 0.0, 42)
 	var vo: Vector3 = r.get("v_out", Vector3.ZERO)
 	note("pelota a la cintura: clip %s parte %s, pelota a %.2f m, sale %s, final a %.2f m" % [r["clip"], _part(r), float((r["plan"] as Dictionary).get("ball_y", -1.0)), str(vo.snapped(Vector3.ONE * 0.01)), r["final"]])
-	check(r["contact"] >= 0 and _part(r) == "thigh", "muslo (%s)" % _part(r))
+	# Pierna levantada: muslo (punto de contacto de los verificados 0.78-0.98 m) o rodilla (0204 verificado, 0.83-0.88 m).
+	check(r["contact"] >= 0 and ["thigh", "knee"].has(_part(r)), "muslo o rodilla (%s)" % _part(r))
 	check(vo.y > 0.2 and vo.y < 2.5 and KickModel.flat(vo).length() < 2.5, "rebote pequeno hacia arriba (%.2f m/s) y poca velocidad horizontal" % vo.y)
 	check(float(r["final"]) < 1.5, "cae delante del jugador (%.2f m)" % r["final"])
 	_restore()
@@ -603,7 +606,10 @@ func test_waist_high_ball_is_controlled_with_the_thigh() -> void:
 func test_chest_high_ball_is_controlled_with_the_chest() -> void:
 	if _skip_if_missing():
 		return
-	var r: Dictionary = await _air_case(0.85, 7.0, 30.0, 43)
+	# Lanzada para llegar a la altura del pecho (~1.3 m real: el lanzamiento no cuenta el arrastre; con 0.85 llegaba a 1.06 m,
+	# a la cintura, donde el muslo levantado tambien vale).
+	var r: Dictionary = await _air_case(1.4, 7.0, 30.0, 43)
+	check(float((r["plan"] as Dictionary).get("ball_y", 0.0)) > 1.1 or r["contact"] < 0, "la pelota llega por encima de la franja muslo/pecho (%.2f m)" % float((r["plan"] as Dictionary).get("ball_y", 0.0)))
 	var vi: Vector3 = r.get("v_in", Vector3.ZERO)
 	var vo: Vector3 = r.get("v_out", Vector3.ZERO)
 	note("pelota al pecho: clip %s parte %s, pelota a %.2f m, llega a %.1f m/s en el suelo, sale a %.1f m/s, final a %.2f m" % [r["clip"], _part(r), float((r["plan"] as Dictionary).get("ball_y", -1.0)), KickModel.flat(vi).length(), KickModel.flat(vo).length(), r["final"]])

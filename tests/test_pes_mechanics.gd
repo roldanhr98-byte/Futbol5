@@ -183,6 +183,8 @@ func test_placed_shot_is_slower_more_accurate_and_curled() -> void:
 ## Cada clip que antes solo estaba en la galeria tiene ahora un uso en el juego (constante en el codigo de juego) y
 ## existe en las librerias.
 func test_every_former_gallery_clip_is_wired_into_gameplay() -> void:
+	# Clips sueltos del pack de Mixamo (modo 1); en el modo 4: test_bank_integration (nombres que el codigo pide).
+	Tuning.gameplay_mode = 1
 	PackLibrary.reload()
 	if not PackLibrary.available():
 		skip("no existe la libreria del pack")
@@ -207,6 +209,8 @@ func test_every_former_gallery_clip_is_wired_into_gameplay() -> void:
 	check(missing.is_empty(), "todos tienen disparador en el juego (faltan: %s)" % str(missing))
 
 func test_referee_follows_play_with_root_motion_twins() -> void:
+	# Gemelos con raiz del pack (modo 1).
+	Tuning.gameplay_mode = 1
 	PackLibrary.reload()
 	if not PackLibrary.available():
 		skip("no existe la libreria del pack")

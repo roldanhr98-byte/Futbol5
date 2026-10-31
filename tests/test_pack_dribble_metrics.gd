@@ -8,6 +8,10 @@ extends TestCase
 ## de la conduccion ORIGINAL, medidos con este mismo protocolo antes de corregirla, estan en
 ## docs/technical-index/CHANGELOG.md: carrera 36 % / sprint 31 % de tiempo con la pelota a 0.35-1.5 m (64 % / 69 % lejos).
 
+## Sistema del modo 1 (pack de Mixamo / Tripo), descartado como modo de juego pero todavia en el codigo: se prueba en su modo.
+func gameplay_mode() -> int:
+	return 1
+
 const SEEDS := [101, 202, 303, 404]
 const WARMUP := 0.8
 const WINDOW := 2.7

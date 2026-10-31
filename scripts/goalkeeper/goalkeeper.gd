@@ -62,7 +62,36 @@ var _motion := ActionMotion.new()
 var _plan: Dictionary = {}
 var _state_time: float = 0.0
 var _threat_since: float = -1.0
+## Disparo que se esta leyendo: instante en que se vio salir (s de _clock) y error de percepcion (unidades normales: guinada,
+## cabeceo) que se escala con lo que lleva mirandolo (_perceived).
+var _shot_seen_at: float = -1.0
+var _perc_noise: Vector2 = Vector2.ZERO
+## Punto donde la pelota lenta cruzara la linea del arquero: con tiempo de sobra se desplaza hasta alli en vez de comprometerse
+## con una estirada (INF = ninguno).
+var _intercept: Vector3 = Vector3.INF
+## Proximo instante (reloj del arquero) en que puede volver a planificar una atajada mientras lee el disparo: planificar
+## cuesta (KeeperPlanner recorre cientos de clips) y reintentarlo en cada paso daba tirones de mas de 100 ms.
+var _next_plan_at: float = -1.0
+## Segundos entre intentos de planificacion mientras no hay plan (el mismo ritmo que la replanificacion: 0.08 s).
+const PLAN_RETRY := 0.08
+## Segundos hasta el cruce por encima de los cuales una estirada no se decide todavia: primero se coloca en la linea de la pelota.
+const LATE_COMMIT := 0.7
+## Solo los disparos lentos (m/s): a uno fuerte no se llega desplazandose, se ataja con lo que se tenga.
+const SLOW_SHOT_SPEED := 14.0
+## Distancia lateral (m) del cruce estimado a su cuerpo por debajo de la cual no se lanza mientras lee el disparo.
+const CENTER_HOLD := 0.7
+## Por encima de esta altura (m) la pelota pasa sobre el cuerpo: hay que saltar a tiempo, no esperar.
+const CENTER_HOLD_MAX_Y := 1.3
+## Segundos que deben quedar hasta que la pelota llegue, una vez terminada la lectura, para quedarse firme esperando.
+const CENTER_HOLD_TIME := 0.4
 var _evaluated: bool = false
+## Contacto continuo de la atajada: manos y pelota del paso anterior y la menor distancia entre sus recorridos en la ventana.
+var _prev_hands := Vector3.INF
+var _prev_ball := Vector3.INF
+var _eval_min: float = INF
+## Medio ancho (s de clip) de la ventana alrededor del contacto planeado en la que se busca el contacto real: a 19 m/s la
+## pelota avanza 0.32 m por paso, asi que medir en un solo instante fallaba por un paso de desfase.
+const CONTACT_WINDOW := 0.05
 var _anchor: Node3D = null
 var _capsule: CollisionShape3D = null
 var _hold_left: float = 0.0
@@ -260,6 +289,11 @@ func _tick_position(delta: float, preparing: bool = false) -> void:
 	if ctx.dead_ball and ctx.restart_taker != null and ctx.restart_taker.get("team") != team and d < ctx.pitch.config.penalty_mark_distance + 0.5:
 		depth = 0.15
 	var target: Vector3 = g + dir * depth
+	# Disparo lento leido: a la linea de la pelota (mientras dura la amenaza).
+	if _intercept != Vector3.INF and _threat_since >= 0.0 and not preparing:
+		target = Vector3(global_position.x, 0.0, _intercept.z)
+	elif _threat_since < 0.0:
+		_intercept = Vector3.INF
 	var hz: float = ctx.pitch.config.half_goal() + 0.9
 	target.z = clampf(target.z, -hz, hz)
 	var to_t: Vector3 = target - global_position
@@ -313,7 +347,7 @@ func _assess_shot() -> void:
 	if is_human_controlled and _stick_idle < MANUAL_AUTO_SAVE_IDLE:
 		_threat_since = -1.0
 		return
-	var traj: PackedVector3Array = BallPredictor.trajectory(ball.global_position, v, _tune.plan_horizon)
+	var traj: PackedVector3Array = BallPredictor.trajectory(ball.global_position, v, _tune.plan_horizon, 1.0 / 30.0, _perceived_spin())
 	var ci: int = BallPredictor.crossing_x(traj, goal_x(), side)
 	if ci < 0:
 		_threat_since = -1.0
@@ -330,11 +364,25 @@ func _assess_shot() -> void:
 			lead = clampf(_clock - _kick_seen_since, 0.0, KICK_READ_MAX) * lerpf(0.5, 1.0, _norm("reflexes"))
 		_threat_since = _clock - lead
 		stats["shots_faced"] += 1
+		_shot_seen_at = _clock
+		_perc_noise = Vector2(rng.randfn(0.0, 1.0), rng.randfn(0.0, 1.0))
 	var dist_shot: float = absf(ball.global_position.x - goal_x())
 	var react: float = maxf(0.05, _tune.reaction_time * lerpf(1.5, 0.65, _norm("reflexes")) - _tune.anticipation_gain * dist_shot / 10.0)
 	if _clock - _threat_since < react:
 		return
-	var plan: Dictionary = KeeperPlanner.plan_save(_origin_after_stop(), yaw, traj, 1.0 / 30.0, 0.0, v.length(), false)
+	# Planifica con lo que percibe del disparo (direccion con error que se reduce mientras lo mira), no con la exacta.
+	traj = BallPredictor.trajectory(ball.global_position, _perceived(v), _tune.plan_horizon, 1.0 / 30.0, _perceived_spin())
+	# Pelota que viene a su cuerpo y todavia no la termino de leer: se queda firme (lanzarse a un lado con una lectura
+	# imprecisa le deja el hueco por donde entra).
+	var kc: int = BallPredictor.crossing_x(traj, global_position.x, side)
+	# Solo si al terminar de leerla le queda tiempo para bajar las manos (CENTER_HOLD_TIME s): si no, se juega ya.
+	if _perception_uncertain() and kc >= 0 and absf(traj[kc].z - global_position.z) < CENTER_HOLD and traj[kc].y < CENTER_HOLD_MAX_Y \
+			and float(kc) / 30.0 - (_tune.perception_time - (_clock - _shot_seen_at)) > CENTER_HOLD_TIME:
+		return
+	if _clock < _next_plan_at:
+		return
+	_next_plan_at = _clock + PLAN_RETRY
+	var plan: Dictionary = _plan_after_reading(traj, v.length())
 	if plan.is_empty() or float(plan["dist"]) > _tune.effort_radius:
 		# Sin posibilidad de llegar con una atajada: si la pelota va a su derecha y hay tiempo, se estira igual
 		# (estirada desesperada: el contacto se evalua con sus manos reales, casi nunca llega); si no, sigue mirando y el
@@ -350,9 +398,20 @@ func _assess_shot() -> void:
 			stats["desperate"] = int(stats.get("desperate", 0)) + 1
 			state = State.PREPARE
 			return
+		# Todavia leyendo el disparo (su estimacion aun tiene error): sigue mirando y vuelve a intentarlo en el paso siguiente.
+		if _perception_uncertain():
+			return
 		_log_save(&"no_chance", {"dist": plan.get("dist", -1.0), "speed": v.length()})
 		_threat_since = _clock + 5.0
 		return
+	# Pelota lenta con tiempo de sobra y el plan seria estirarse: primero se desplaza a la linea de la pelota (desde ahi la
+	# recogera de pie o con una atajada baja) y se vuelve a planificar en los pasos siguientes.
+	var role: StringName = StringName(String(PackLibrary.meta(plan["clip"]).get("role", "")))
+	var kx: int = BallPredictor.crossing_x(traj, global_position.x, side)
+	if (role == &"gk_dive" or role == &"gk_sidestep") and kx >= 0 and float(plan["arrive"]) > LATE_COMMIT and v.length() < SLOW_SHOT_SPEED:
+		_intercept = traj[kx]
+		return
+	_intercept = Vector3.INF
 	_plan = plan
 	_plan["ball_speed"] = v.length()
 	_plan_clock = _clock
@@ -360,6 +419,56 @@ func _assess_shot() -> void:
 	_state_time = 0.0
 	state = State.PREPARE
 	_threat_since = -1.0
+
+## Velocidad del disparo tal como la percibe el arquero: la real girada por su error de percepcion, que se reduce a cero
+## mientras sigue la pelota (perception_time s; mejores reflejos, menos error). No conoce el resultado del disparo de antemano.
+func _perceived(v: Vector3) -> Vector3:
+	if _shot_seen_at < 0.0:
+		return v
+	var watch: float = _clock - _shot_seen_at
+	var flat_v: Vector3 = Vector3(v.x, 0.0, v.z)
+	var sigma: float = _tune.perception_error_ratio * flat_v.length() * lerpf(1.4, 0.6, _norm("reflexes")) * clampf(1.0 - watch / maxf(_tune.perception_time, 0.05), 0.0, 1.0)
+	if sigma <= 0.0 or flat_v.length() < 0.5:
+		return v
+	var side: Vector3 = Vector3(-flat_v.z, 0.0, flat_v.x).normalized()
+	var out: Vector3 = v + side * (_perc_noise.x * sigma)
+	# Una pelota que rueda se ve rodar: solo la que va por el aire tiene error en la altura.
+	if ctx.ball.global_position.y > 0.25 or absf(v.y) > 1.0:
+		out.y += _perc_noise.y * sigma * 0.6
+	return out
+
+## Plan de atajada que no se lanza antes de terminar de leer el disparo si hay tiempo (como un arquero que espera a ver la
+## pelota antes de comprometerse); si asi no llega, el mejor que se pueda lanzar ya (jugarsela).
+func _plan_after_reading(traj: PackedVector3Array, speed: float) -> Dictionary:
+	var wait: float = maxf(_tune.perception_time - (_clock - _shot_seen_at), 0.0) if _shot_seen_at >= 0.0 else 0.0
+	if wait > 0.0:
+		var patient: Dictionary = KeeperPlanner.plan_save(_origin_after_stop(), yaw, traj, 1.0 / 30.0, wait, speed, false, _clip_speeds(), _hand_limits())
+		if not patient.is_empty() and float(patient["dist"]) <= float(patient["radius"]) * 0.85:
+			return patient
+	return KeeperPlanner.plan_save(_origin_after_stop(), yaw, traj, 1.0 / 30.0, 0.0, speed, false, _clip_speeds(), _hand_limits())
+
+## Velocidades a las que puede reproducir sus clips de atajada: la natural de la captura y un margen de explosividad que
+## crece con los reflejos (KeeperTuning.dive_speed_max con reflejos 50). Mas rapido que eso no lo hace un humano.
+## Limite humano de las manos (KeeperPlanner.plan_save): latencia y velocidad media de las manos hacia el punto de la
+## atajada (KeeperTuning.hand_latency / hand_speed con reflejos 50; mejores reflejos, mas rapido).
+func _hand_limits() -> Vector2:
+	return Vector2(_tune.hand_latency * lerpf(1.2, 0.8, _norm("reflexes")), _tune.hand_speed * lerpf(0.88, 1.12, _norm("reflexes")))
+
+func _clip_speeds() -> Array:
+	return [1.0, maxf(1.0, _tune.dive_speed_max * lerpf(0.94, 1.06, _norm("reflexes")))]
+
+## Efecto de la pelota tal como lo percibe el arquero: la curva no se ve al salir el disparo, se lee mientras la pelota se
+## desvia (spin_read_time s desde el ultimo toque; mejores reflejos, antes). Al principio preve una trayectoria casi recta
+## y la corrige al replanificar (el tiro que se cierra o se abre le gana si la lectura llega tarde).
+func _perceived_spin() -> Vector3:
+	var ball: Ball = ctx.ball
+	var watch: float = float(Engine.get_physics_frames() - ball.last_touch_frame) / float(Engine.physics_ticks_per_second)
+	var read: float = _tune.spin_read_time * lerpf(1.4, 0.6, _norm("reflexes"))
+	return ball.angular_velocity * clampf(watch / maxf(read, 0.05), 0.0, 1.0)
+
+## El arquero todavia no termino de leer el disparo (su estimacion de la direccion aun tiene error).
+func _perception_uncertain() -> bool:
+	return _shot_seen_at >= 0.0 and _clock - _shot_seen_at < _tune.perception_time
 
 ## Donde quedara el arquero si frena desde ahora (los planes se hacen desde ese punto: en la preparacion se planta).
 func _origin_after_stop() -> Vector3:
@@ -376,7 +485,7 @@ func _tick_prepare(delta: float) -> void:
 		# Salida a un centro: pasos de ajuste para que las manos del clip lleguen a la pelota (como el ajuste de
 		# zancada del golpeo): error entre las manos previstas y la pelota en el contacto, repartido en lo que falta.
 		var ball: Ball = ctx.ball
-		var ct: PackedVector3Array = BallPredictor.trajectory(ball.global_position, ball.linear_velocity, 1.4, 1.0 / 30.0)
+		var ct: PackedVector3Array = BallPredictor.trajectory(ball.global_position, ball.linear_velocity, 1.4, 1.0 / 30.0, _perceived_spin())
 		var ia: int = clampi(int(round((float(_plan["arrive"]) - (_clock - _plan_clock)) * 30.0)), 0, ct.size() - 1)
 		var hands: Vector3 = KeeperPlanner.path_world(_plan["clip"], "hands", int(_plan["k"]), global_position, yaw)
 		var err := Vector3(ct[ia].x - hands.x, 0.0, ct[ia].z - hands.z)
@@ -399,8 +508,8 @@ func _replan() -> void:
 		return
 	if _plan.get("claim", false):
 		# Salida a un centro: se ajusta el plan con la trayectoria actual (sin las condiciones de disparo a puerta).
-		var ct: PackedVector3Array = BallPredictor.trajectory(ball.global_position, ball.linear_velocity, 1.4)
-		var cp: Dictionary = KeeperPlanner.plan_save(_origin_after_stop(), yaw, ct, 1.0 / 30.0, 0.0, ball.linear_velocity.length(), false)
+		var ct: PackedVector3Array = BallPredictor.trajectory(ball.global_position, ball.linear_velocity, 1.4, 1.0 / 30.0, _perceived_spin())
+		var cp: Dictionary = KeeperPlanner.plan_save(_origin_after_stop(), yaw, ct, 1.0 / 30.0, 0.0, ball.linear_velocity.length(), false, _clip_speeds(), _hand_limits())
 		if not cp.is_empty() and float(cp["dist"]) <= float(_plan["dist"]) + 0.05:
 			cp["claim"] = true
 			cp["ball_speed"] = ball.linear_velocity.length()
@@ -414,10 +523,12 @@ func _replan() -> void:
 	if v.length() < _tune.shot_min_speed * 0.6 or v.x * float(goal_side()) < 0.5:
 		state = State.POSITION
 		return
-	var traj: PackedVector3Array = BallPredictor.trajectory(ball.global_position, v, _tune.plan_horizon)
-	var plan: Dictionary = KeeperPlanner.plan_save(_origin_after_stop(), yaw, traj, 1.0 / 30.0, 0.0, v.length(), false)
+	var traj: PackedVector3Array = BallPredictor.trajectory(ball.global_position, _perceived(v), _tune.plan_horizon, 1.0 / 30.0, _perceived_spin())
+	var plan: Dictionary = _plan_after_reading(traj, v.length())
 	if plan.is_empty() or float(plan["dist"]) > _tune.effort_radius:
-		state = State.POSITION
+		# Con la estimacion todavia imprecisa mantiene el plan que tenia; ya asentada, si no llega, vuelve a colocarse.
+		if not _perception_uncertain():
+			state = State.POSITION
 		return
 	plan["ball_speed"] = v.length()
 	_plan = plan
@@ -587,6 +698,9 @@ func _begin_action() -> void:
 	state = State.ACTION
 	_state_time = 0.0
 	_evaluated = false
+	_prev_hands = Vector3.INF
+	_prev_ball = Vector3.INF
+	_eval_min = INF
 	var clip: StringName = _plan["clip"]
 	visual.play_pack_clip(clip, float(_plan["speed"]))
 	_motion.start(clip, float(_plan["speed"]))
@@ -604,9 +718,22 @@ func _tick_action(delta: float) -> void:
 	var k: int = int(_motion.t * 30.0)
 	if ctx.ball.holder == self:
 		_anchor.global_position = KeeperPlanner.path_world_at_body(_plan["clip"], "hands", k, global_position, yaw)
-	if not _evaluated and _motion.t >= float(_plan["tau"]):
-		_evaluated = true
-		_evaluate_contact(k)
+	if not _evaluated:
+		var hands_now: Vector3 = KeeperPlanner.path_world_at_body(_plan["clip"], "hands", k, global_position, yaw)
+		var ball_now: Vector3 = ctx.ball.global_position
+		var tau: float = float(_plan["tau"])
+		if _motion.t >= tau - CONTACT_WINDOW:
+			# Distancia minima entre el recorrido de las manos y el de la pelota en este paso (contacto continuo).
+			var d: float = hands_now.distance_to(ball_now)
+			if _prev_hands.x < INF:
+				var cp: PackedVector3Array = Geometry3D.get_closest_points_between_segments(_prev_hands, hands_now, _prev_ball, ball_now)
+				d = minf(d, cp[0].distance_to(cp[1]))
+			_eval_min = minf(_eval_min, d)
+			if _eval_min <= _contact_radius() or _motion.t >= tau + CONTACT_WINDOW or not _motion.active:
+				_evaluated = true
+				_evaluate_contact(k, _eval_min)
+		_prev_hands = hands_now
+		_prev_ball = ball_now
 	if not _motion.active:
 		# Modo 4: si la estirada lo dejo en el suelo, se levanta con un clip que empieza en esa postura (con la pelota en
 		# las manos si la atrapo).
@@ -620,14 +747,20 @@ func _tick_action(delta: float) -> void:
 			_state_time = 0.0
 			velocity = Vector3.ZERO
 
-func _evaluate_contact(k: int) -> void:
+## Radio de contacto de las manos del plan vigente (segun la habilidad de atrapar).
+func _contact_radius() -> float:
+	return float(_plan["radius"]) * lerpf(0.8, 1.25, _norm("catching"))
+
+## Resuelve la atajada con la distancia d (la menor entre los recorridos de manos y pelota en la ventana del contacto).
+func _evaluate_contact(k: int, d: float) -> void:
 	var ball: Ball = ctx.ball
 	var clip: StringName = _plan["clip"]
 	var hands: Vector3 = KeeperPlanner.path_world_at_body(clip, "hands", k, global_position, yaw)
-	var d: float = hands.distance_to(ball.global_position)
 	var speed: float = ball.linear_velocity.length()
-	var radius: float = float(_plan["radius"]) * lerpf(0.8, 1.25, _norm("catching"))
-	var info := {"clip": String(clip), "dist": d, "speed": speed, "radius": radius, "pickup": _plan.get("pickup", false)}
+	var radius: float = _contact_radius()
+	var info := {"clip": String(clip), "dist": d, "speed": speed, "radius": radius, "pickup": _plan.get("pickup", false),
+		"plan_dist": float(_plan.get("dist", -1.0)), "clip_speed": float(_plan.get("speed", 1.0)), "late": (_clock - _plan_clock) - float(_plan.get("arrive", 0.0)),
+		"off": ball.global_position - hands}
 	if ball.is_held() or d > radius:
 		stats["beaten"] += 1
 		_log_save(&"beaten", info)
@@ -1022,8 +1155,8 @@ func _try_smother() -> bool:
 	var his_d: float = lone.ball_handler.ball_distance()
 	if my_d > 2.4 or his_d < 0.75 or my_d > his_d + 1.2:
 		return false
-	var traj: PackedVector3Array = BallPredictor.trajectory(bp, ball.linear_velocity, 1.0)
-	var plan: Dictionary = KeeperPlanner.plan_save(global_position, yaw, traj, 1.0 / 30.0, 0.0, ball.linear_velocity.length(), false)
+	var traj: PackedVector3Array = BallPredictor.trajectory(bp, ball.linear_velocity, 1.0, 1.0 / 30.0, _perceived_spin())
+	var plan: Dictionary = KeeperPlanner.plan_save(global_position, yaw, traj, 1.0 / 30.0, 0.0, ball.linear_velocity.length(), false, _clip_speeds(), _hand_limits())
 	if plan.is_empty() or float(plan["dist"]) > float(plan["radius"]) * 0.85:
 		return false
 	_plan = plan
@@ -1044,7 +1177,7 @@ func _cross_landing() -> Vector3:
 	var v: Vector3 = ball.linear_velocity
 	if v.length() < 4.0 or (v.y < 0.0 and ball.global_position.y < 1.2):
 		return Vector3.INF
-	var traj: PackedVector3Array = BallPredictor.trajectory(ball.global_position, v, 1.6, 1.0 / 15.0)
+	var traj: PackedVector3Array = BallPredictor.trajectory(ball.global_position, v, 1.6, 1.0 / 15.0, _perceived_spin())
 	var apex := false
 	for i in range(1, traj.size()):
 		if traj[i].y < traj[i - 1].y:
@@ -1065,9 +1198,9 @@ func _assess_cross() -> bool:
 		return false
 	if absf(ball.global_position.x - goal_x()) > 16.0:
 		return false
-	var traj: PackedVector3Array = BallPredictor.trajectory(ball.global_position, v, 1.4)
+	var traj: PackedVector3Array = BallPredictor.trajectory(ball.global_position, v, 1.4, 1.0 / 30.0, _perceived_spin())
 	# Se planta y salta desde donde queda al frenar (mismo criterio que en los disparos).
-	var plan: Dictionary = KeeperPlanner.plan_save(_origin_after_stop(), yaw, traj, 1.0 / 30.0, 0.15, v.length(), false)
+	var plan: Dictionary = KeeperPlanner.plan_save(_origin_after_stop(), yaw, traj, 1.0 / 30.0, 0.15, v.length(), false, _clip_speeds(), _hand_limits())
 	if plan.is_empty() or float(plan["dist"]) > float(plan["radius"]) * 0.95:
 		return false
 	var i: int = clampi(int(float(plan["arrive"]) * 30.0), 0, traj.size() - 1)

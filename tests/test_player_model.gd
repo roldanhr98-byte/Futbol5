@@ -1,6 +1,10 @@
 extends TestCase
 ## Modelo del futbolista (Tripo3D): importacion, triangulos, esqueleto, animaciones y kit.
 
+## Sistema del modo 1 (pack de Mixamo / Tripo), descartado como modo de juego pero todavia en el codigo: se prueba en su modo.
+func gameplay_mode() -> int:
+	return 1
+
 const MAX_TRIANGLES := 10000
 
 func _count_tris(root: Node) -> int:

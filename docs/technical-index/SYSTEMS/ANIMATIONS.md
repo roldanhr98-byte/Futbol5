@@ -5,7 +5,7 @@
 - **Responsabilidad exacta:** presentar al futbolista: cargar el modelo de Tripo3D (`player_base.glb`, esqueleto único v1.0 de 23 huesos `mixamorig_*`), recolorearlo por regiones (camiseta, short, medias, botines, piel, pelo), animarlo con un `AnimationTree` (locomoción mezclada por velocidad + acciones de una sola vez) y superponer la patada **procedural** (los clips de Tripo no traen patadas).
 - **Estado:** modelo, locomoción (idle/walk/run), kit y patada procedural **implementados y probados**. **Desde la integración del pack** (ver [ANIMATION_PACK](ANIMATION_PACK.md)) el visual usa, si existe la librería local `pack_clips.res`, los clips de Mixamo para la marcha, la patada con contacto por pie, la recepción y las reacciones de gol; los clips de Tripo y la patada procedural son el **respaldo** (sin la librería, o con `FootballerVisual.prefer_pack = false`). Las 9 acciones (`celebrate_goal`, `dejected`, `frustrated`, `jump`, `turn`, `fall`, `dive`, `keeper_catch_high`, `keeper_scoop_low`) **existen en el árbol pero nada en el juego las dispara todavía** (no hay ningún llamador de `FootballerVisual.play_action` en `scripts/`). El clip `defensive_stance` está en la librería pero **no está conectado** al árbol.
 - **Última verificación:** <!-- AUTO:verified -->
-2026-10-30
+2026-10-31
 <!-- /AUTO -->
 
 ## Archivos responsables
@@ -192,10 +192,10 @@ Todos son presets de Tripo3D retargeteados sobre nuestro rig v1.0 (`docs/tripo/l
 <!-- AUTO:tests:tests/test_player_model.gd -->
 | Prueba | Línea |
 |---|---|
-| `test_model_imports_within_triangle_budget` | 15 |
-| `test_animations_present_loop_and_are_centered` | 27 |
-| `test_kit_recolors_the_material` | 53 |
-| `test_animation_tree_responds_to_speed` | 64 |
+| `test_model_imports_within_triangle_budget` | 19 |
+| `test_animations_present_loop_and_are_centered` | 31 |
+| `test_kit_recolors_the_material` | 57 |
+| `test_animation_tree_responds_to_speed` | 68 |
 <!-- /AUTO -->
 
 <!-- AUTO:tests:tests/test_kick_timing.gd -->

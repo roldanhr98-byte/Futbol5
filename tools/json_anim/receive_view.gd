@@ -404,7 +404,7 @@ func _forced(id: StringName, f: Footballer, ball: Ball, cam: Camera3D, out: Stri
 		if i < wait_frames:
 			_hold(f, home, yaw_hold)
 		if i == wait_frames:
-			var traj_now: PackedVector3Array = BallPredictor.trajectory(ball.global_position, ball.linear_velocity, JsonReceive.HORIZON, JsonReceive.TRAJ_STEP)
+			var traj_now: PackedVector3Array = BallPredictor.trajectory(ball.global_position, ball.linear_velocity, JsonReceive.HORIZON, JsonReceive.TRAJ_STEP, ball.angular_velocity)
 			var plan := {"clip": id, "start_at": 0.0, "inc": KickModel.flat(dir).normalized(), "yaw0": yaw0, "origin": origin,
 				"corr": Vector3.ZERO, "dt1": t1, "residual": 0.0, "dy": 0.0, "turn": rad_to_deg(ActionMotion.heading_rel(hp, dur)),
 				"dv": 0.0, "role": &"", "part": part, "t_contact": t1, "foot": int(cp["foot"]), "cp": cp,

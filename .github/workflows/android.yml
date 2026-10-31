@@ -1,7 +1,9 @@
 name: Android APK
 
-# APK de PRUEBA (arm64, sin Gradle, sin permisos) con las 133 animaciones del pack integradas (assets/animations/pack_clips.res
-# y pack_keeper.res, ya convertidas dentro del juego). Firmada con un keystore de DEPURACION estandar de Android
+# APK de PRUEBA (arm64, sin Gradle, sin permisos). Modo de juego predeterminado: modo 4 (Json), con las 2 022 animaciones
+# JSON convertidas (assets/animations/json_clips.res, json_scenes.res, json_keeper.res); el pack de Mixamo
+# (pack_clips.res y pack_keeper.res) y Tripo quedan como respaldo. La suite headless corre en el modo 4 (las pruebas del
+# pack heredado fijan su modo con TestCase.gameplay_mode()). Firmada con un keystore de DEPURACION estandar de Android
 # (alias androiddebugkey, contrasena android) creado en cada ejecucion: no hay secretos ni clave permanente.
 # Consecuencia: cada APK tiene una firma distinta, asi que hay que desinstalar la anterior antes de instalar la nueva.
 # Se publica como artefacto del workflow y, si se pide al lanzarlo a mano (publish_release), tambien como pre-release de

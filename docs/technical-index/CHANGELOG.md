@@ -11,6 +11,37 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-10-31 — Programa maestro E1-E6: banco completo, conducción, caídas, arquero realista, predicción aérea
+
+Rama `respaldo-f3`. Informe: [`fases/E_programa_maestro_informe.md`](../fases/E_programa_maestro_informe.md).
+
+- **E1 estabilización**: suite por defecto en el modo 4 (`TestCase.gameplay_mode()`, `run_tests.gd` pone el modo y recarga
+  `PackLibrary` por prueba; las pruebas del pack heredado fijan el 1). Franjas de altura de la recepción decididas con la
+  geometría medida (muslo 0.78-0.98 m, pecho desde 1.10 m; rodilla 0.83-0.88 m): `test_receive` 30 / 0.
+  `JsonReceive.UNVERIFIED_PENALTY`; perfil 0204 verificado. `docs/.gdignore` (Godot importaba el CSV como traducción).
+- **E2 banco completo**: `tools/json_anim/analyze_bank.py` → `docs/fases/E2_inventario_banco.csv` (2 024 filas, 2 022
+  archivos: 1 689 útiles, 310 descartados con motivo, 25 pendientes) y `scripts/animation/clip_roles_overlay.gd` (67
+  reclasificaciones, 3 alias) aplicado por `PackLibrary`. `PlayerActions.avoid_tackle` (clips `avoid`).
+  `JuggleController.available()` (sin malabares en el banco: el botón se oculta).
+- **E3 conducción**: `BallHandler.carry_catch_up_mag` (recupera la pelota adelantada), `BallHandler._catching_ball` (toque
+  al alcanzar la pelota al acelerar: «encima» 5 % → 0 % en `test_live_feet`). `test_mode4_dribble` (8).
+- **E4 golpeo**: batería con render `test_live_kicks` en el modo 4: 50 acciones, 49 con contacto, 0 contactos inválidos,
+  0 bloqueos. `Soccer_Spin` no existe en el banco: el regate usa `ball_skill` (55 clips).
+- **E5 caídas y arquero**: `PlayerActions._directed_pick` / `push_dir_local` (caídas y trastabillones según inercia y
+  empujón; `test_falls_direction` 4). Arquero: percepción con error decreciente y efecto leído al desviarse
+  (`perception_error_ratio`, `perception_time`, `spin_read_time`), contacto continuo (`CONTACT_WINDOW`), clips a velocidad
+  humana (`dive_speed_max` 1.15), límite humano de las manos (`hand_latency`, `hand_speed`, `KeeperPlanner.READY_HANDS`),
+  `CENTER_HOLD_TIME`, `LATE_COMMIT`, `DURATION_COST`, `contact_scale`; `plan_save` 42 → 11 ms y `PLAN_RETRY`.
+  `test_shot_keeper`: ataja 66-71 % a los palos, 89 % al arquero, 32-37 % al tirador de 85 (antes, sin goles fantasma,
+  91-96 %).
+- **E6 predicción aérea**: `BallPredictor.trajectory(..., spin)` con arrastre completo en el aire, Magnus y bote con
+  fricción y giro: error 1.4-5.3 m → 0.06-0.19 m (`test_ball_prediction`, 7).
+- **Pruebas corregidas** (no umbrales): goles fantasma en `test_shot_keeper` / `test_shooting` (contadores tomados antes de
+  que `Ball.reset_at` se aplicara); `test_action_arbiter` (los 3 nombres que ahora tienen clip); `test_practice` (malabares
+  omitida sin clips); la comparación «palo del que la aleja −15 puntos» reformulada con la curva medida (0.05-0.17 m).
+- **Workflow** `android.yml`: cabecera actualizada (modo 4 predeterminado); sin otros cambios.
+- Verificación: ver el informe (suite completa, pruebas con render y APK de GitHub Actions).
+
 ## 2026-10-30 — F3 continuación: verificación visual de los 70 pendientes, fallos de F3 y F2, modo 4 predeterminado
 
 Rama `respaldo-f3`, sin commit (pendiente de autorización).

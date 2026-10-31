@@ -12,8 +12,25 @@ extends Resource
 @export var rush_speed: float = 5.6
 
 @export_group("Reaccion")
-## Segundos de reaccion con reflejos 50.
-@export var reaction_time: float = 0.14
+## Segundos de reaccion con reflejos 50 (un arquero real tarda ~0.2 s en empezar a moverse tras ver salir la pelota).
+@export var reaction_time: float = 0.2
+## Error con que el arquero estima la velocidad lateral (y la vertical si va por el aire) del disparo al verlo salir, como
+## fraccion de la velocidad de la pelota (0.05 ~ 2.9 grados; reflejos 50); se reduce a cero mientras sigue la pelota durante
+## perception_time s. El error del punto de llegada crece con el tiempo que falta. Planifica y se lanza con esa estimacion.
+@export var perception_error_ratio: float = 0.05
+@export var perception_time: float = 0.25
+## Segundos (reflejos 50) que tarda en leer el efecto del disparo: la curva se percibe al verla desviarse, no al salir
+## (antes preve la pelota casi recta y corrige al replanificar).
+@export var spin_read_time: float = 0.3
+## Velocidad maxima (reflejos 50) a la que reproduce un clip de atajada respecto a la captura humana (antes 1.4: estiradas
+## un 40 % mas rapidas que una persona, que llegaban al palo antes que cualquier tiro de 11 m).
+@export var dive_speed_max: float = 1.15
+## Escala del radio de contacto de las manos de cada clip (KeeperPlanner.radius_of) para planificar y resolver la atajada.
+@export var contact_scale: float = 1.0
+## Limite humano de las manos (reflejos 50): desde que puede moverse, las manos no llegan a un punto antes de
+## hand_latency + distancia desde la posicion de espera / hand_speed (estirada al palo de futsal, ~1.5 m: ~0.45 s).
+@export var hand_latency: float = 0.12
+@export var hand_speed: float = 4.5
 ## Segundos adicionales por cada 10 m de distancia al disparo (el arquero lee antes los tiros lejanos).
 @export var anticipation_gain: float = 0.05
 ## Velocidad minima de la pelota (m/s) para considerarla un disparo.

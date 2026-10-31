@@ -146,8 +146,9 @@ func test_missing_clip_fails_safely() -> void:
 	var arb: ActionArbiter = p.arbiter
 	check(arb.play(&"gesto", ActionArbiter.Level.GESTURE, &"prueba", &"clip_que_no_existe") == 0, "un clip inexistente se rechaza")
 	check(not p.actions.start(&"fall", &"clip_que_no_existe"), "una accion con clip inexistente no empieza")
-	# Nombres del pack que el codigo pide y no existen en el modo 4 (no hacen nada, sin dejar nada tomado).
-	for missing in [&"Idle_To_Sprint", &"Sprint_Turn", &"Running_Tired", &"Defender_2", &"Soccer_Spin"]:
+	# Nombres del pack que el codigo pide y no tienen clip en el modo 4 (no hacen nada, sin dejar nada tomado). Idle_To_Sprint,
+	# Running_Tired y Defender_2 ya tienen clip del banco (ClipRolesOverlay.ALIAS, test_bank_integration).
+	for missing in [&"Sprint_Turn", &"Soccer_Spin"]:
 		check(arb.play(&"capa", ActionArbiter.Level.OVERLAY, &"prueba", missing) == 0, "'%s' (sin clip JSON) se rechaza" % missing)
 	await physics_frames(1)
 	check(arb.level == ActionArbiter.Level.NONE and arb.token == 0 and p.visual.current_action == &"" and not p.actions.active(), "no queda nada tomado ni sonando")

@@ -140,7 +140,7 @@ func pass_meet_point() -> Vector3:
 	var b: Ball = ctx.ball if ctx != null else null
 	if b == null:
 		return incoming_pass_point
-	var traj: PackedVector3Array = BallPredictor.trajectory(b.global_position, b.linear_velocity, 2.4, 0.1)
+	var traj: PackedVector3Array = BallPredictor.trajectory(b.global_position, b.linear_velocity, 2.4, 0.1, b.angular_velocity)
 	var run: float = maxf(locomotion.max_sprint_speed() * 0.9, 2.0)
 	var me := Vector3(global_position.x, 0.0, global_position.z)
 	for i in range(2, traj.size()):
@@ -343,6 +343,10 @@ func _physics_process(delta: float) -> void:
 			var away: float = KickModel.flat(ctx.ball.linear_velocity).dot(steer)
 			desired_mag = maxf(desired_mag, 1.0) if away > 1.0 else minf(desired_mag, 0.75)
 			want_sprint = want_sprint or away > 3.5
+		else:
+			# Pelota propia que se adelanto en el rumbo pedido: se corre lo necesario para alcanzarla aunque el joystick pida
+			# poca velocidad (al frenar con la pelota rodando o tras un toque largo); al llegar manda de nuevo el joystick.
+			desired_mag = maxf(desired_mag, ball_handler.carry_catch_up_mag(desired_dir))
 
 	# Golpeo pedido con la pelota propia por delante fuera del alcance del pie: se ajusta la carrera y se va a por ella
 	# (la direccion del golpeo sigue siendo la del joystick; solo cambia hacia donde corre el cuerpo).
@@ -571,7 +575,9 @@ func _gait_overlays(desired_dir: Vector3, want_sprint: bool, stick_mag: float, s
 	if PackLibrary.json_mode():
 		_json_idle(stick_mag, delta)
 	if _tired_cd <= 0.0 and locomotion.exhausted and locomotion.speed < 0.4 and speed_before < 0.6 and PackLibrary.has_clip(TIRED_STOP):
-		if arbiter.play(&"tired_stop", ActionArbiter.Level.OVERLAY, &"Footballer", TIRED_STOP, 1.0, TIRED_STOP_FROM, 2.6, true) != 0:
+		# Modo 4: el clip JSON (manos en la cintura) empieza en su principio; el del pack, en su tramo de recuperar el aliento.
+		var tired_from: float = 0.0 if PackLibrary.json_mode() else TIRED_STOP_FROM
+		if arbiter.play(&"tired_stop", ActionArbiter.Level.OVERLAY, &"Footballer", TIRED_STOP, 1.0, tired_from, 2.6, true) != 0:
 			_tired_cd = 7.0
 		return
 	if _overlay_cd > 0.0:

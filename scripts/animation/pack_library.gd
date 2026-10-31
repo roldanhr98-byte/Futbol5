@@ -68,6 +68,10 @@ static func _ensure() -> void:
 				continue
 			for id in lib.get_animation_list():
 				var m: Dictionary = lib.get_animation(id).get_meta("pack", {})
+				# Reasignaciones de la auditoria del banco (ClipRolesOverlay, generado): el clip (y su espejo) entra en otro rol.
+				var base_id: StringName = StringName(String(id).trim_suffix("_mirror"))
+				if ClipRolesOverlay.ROLE.has(base_id):
+					m["role"] = String(ClipRolesOverlay.ROLE[base_id])
 				var role: StringName = StringName(String(m.get("role", "")))
 				if not _roles.has(role):
 					_roles[role] = []
@@ -77,6 +81,10 @@ static func _ensure() -> void:
 					for a in m.get("alias", []):
 						if not _alias.has(StringName(a)):
 							_alias[StringName(a)] = id
+		# Transiciones que el codigo pide por su nombre del pack y no tenian clip (ClipRolesOverlay.ALIAS).
+		for a in ClipRolesOverlay.ALIAS:
+			if not _alias.has(a) and _field != null and _field.has_animation(ClipRolesOverlay.ALIAS[a]):
+				_alias[a] = ClipRolesOverlay.ALIAS[a]
 		return
 	if ResourceLoader.exists(FIELD_PATH):
 		_field = load(FIELD_PATH) as AnimationLibrary

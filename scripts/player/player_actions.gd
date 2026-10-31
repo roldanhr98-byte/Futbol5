@@ -394,10 +394,20 @@ func shoulder_charge(carrier: Footballer) -> bool:
 	return won
 
 ## Trastabilla con el clip con raiz (pierde el equilibrio a la carrera y se recupera sin caer).
-func stumble_root(_from_dir: Vector3 = Vector3.ZERO) -> void:
+func stumble_root(from_dir: Vector3 = Vector3.ZERO) -> void:
 	if not _can_play() or not can_start(&"stumble"):
 		return
-	if start(&"stumble", STUMBLE_ROOT, 1.15, 0.9):
+	var clip: StringName = STUMBLE_ROOT
+	if PackLibrary.json_mode() and from_dir != Vector3.ZERO:
+		# Modo 4: un trastabillon convertido que va hacia donde lo llevan la inercia y el empujon (sin caer).
+		var pool: Array[StringName] = []
+		for id in PackLibrary.by_role(&"stumble"):
+			if not String(id).ends_with("_mirror"):
+				pool.append(id)
+		var js: StringName = _directed_pick(pool, from_dir)
+		if js != &"":
+			clip = js
+	if start(&"stumble", clip, 1.15, 0.9):
 		stats["stumbles"] = int(stats.get("stumbles", 0)) + 1
 
 ## Falta del defensor sobre el portador: el portador cae y el partido la sanciona (tiro libre o penal).
@@ -426,12 +436,42 @@ func _resolve_slide() -> void:
 		_commit_foul(carrier, true)
 	else:
 		ctx.emit_event(GameEvent.make(GameEvent.Type.TACKLE_FAILED, owner.actor_id, owner.team, {"victim": carrier.actor_id if is_instance_valid(carrier) else -1, "slide": true, "miss": true}))
+		# La barrida paso cerca sin tocarlo: el portador la salta (clip de esquivar, modo 4).
+		if is_instance_valid(carrier) and d_body <= AVOID_RADIUS:
+			carrier.actions.avoid_tackle(KickModel.flat(carrier.global_position - owner.global_position))
 	if won:
 		stats["slide_wins"] += 1
 		# Un robo con barrida a veces derriba al portador.
 		if rng.randf() < 0.35:
 			carrier.actions.suffer_contact(&"hit", KickModel.flat(carrier.global_position - owner.global_position))
 	owner.tackled.emit(won)
+
+## Distancia (m) entre el pie de la barrida fallida y el portador por debajo de la cual el portador la salta.
+const AVOID_RADIUS := 1.2
+
+## Modo 4: esquivar una barrida que no llego (clips «avoid»: saltos por encima de una entrada o de la pelota). Nivel de cuerpo
+## (corta un movimiento con pelota; la pelota sigue su camino y el jugador la retoma al caer). El clip con la carrera de
+## entrada mas parecida; el espejo si la barrida viene por la izquierda. false si no hay clip o no puede.
+func avoid_tackle(from_dir: Vector3) -> bool:
+	if not PackLibrary.json_mode() or not _can_play() or not can_start(&"stumble"):
+		return false
+	var best: StringName = &""
+	var best_dv: float = INF
+	for id in PackLibrary.by_role(&"avoid"):
+		if String(id).ends_with("_mirror"):
+			continue
+		var dv: float = absf(float(PackLibrary.meta(id).get("v_in", 0.0)) - owner.locomotion.speed) + rng.randf() * 0.2
+		if dv < best_dv:
+			best_dv = dv
+			best = id
+	if best == &"":
+		return false
+	if from_dir.dot(owner.locomotion.right()) < 0.0 and PackLibrary.has_clip(StringName(String(best) + "_mirror")):
+		best = StringName(String(best) + "_mirror")
+	if not start(&"stumble", best, 1.0, -1.0):
+		return false
+	stats["avoids"] = int(stats.get("avoids", 0)) + 1
+	return true
 
 # --- Recibir un contacto (caidas) --------------------------------------------------------------------------
 
@@ -460,13 +500,16 @@ func suffer_contact(k: StringName, from_dir: Vector3) -> void:
 			shove = true
 		else:
 			clip = [&"Falling_Down", &"Sweep_Fall"][rng.randi() % 2]
+	var directed: bool = false
 	if PackLibrary.json_mode() and not shove:
-		# Modo 4: cualquiera de las caidas convertidas, segun la carrera y el sitio que hay por delante.
-		var jf: StringName = _json_fall(owner.locomotion.speed)
+		# Modo 4: una caida convertida segun la carrera, el sitio por delante y hacia donde empujan la inercia y el contacto
+		# (ya decide tambien el espejo).
+		var jf: StringName = _json_fall(owner.locomotion.speed, from_dir)
 		if jf != &"":
 			clip = jf
+			directed = true
 	var side: float = from_dir.dot(owner.locomotion.right())
-	if side < 0.0 and PackLibrary.has_clip(StringName(String(clip) + "_mirror")):
+	if not directed and side < 0.0 and PackLibrary.has_clip(StringName(String(clip) + "_mirror")):
 		clip = StringName(String(clip) + "_mirror")
 	var getup: StringName = GET_UP[rng.randi() % GET_UP.size()]
 	var lie_ok: bool = true
@@ -488,9 +531,10 @@ func suffer_contact(k: StringName, from_dir: Vector3) -> void:
 		stats["falls"] += 1
 		owner.ctx.emit_event(GameEvent.make(GameEvent.Type.TURNOVER, owner.actor_id, owner.team, {"reason": String(k)}))
 
-## Modo 4: una caida convertida al azar con un recorrido acorde a la carrera (a sprint resbala; parado, cae en el sitio) y
-## que entra en el sitio libre por delante. &"" si no hay.
-func _json_fall(speed: float) -> StringName:
+## Modo 4: una caida convertida con un recorrido acorde a la carrera (a sprint resbala; parado, cae en el sitio), que entra
+## en el sitio libre por delante y que va hacia donde la llevan la inercia y el contacto (`from_dir`: del rival al jugador).
+## Devuelve el clip ya con el espejo que corresponda; &"" si no hay.
+func _json_fall(speed: float, from_dir: Vector3 = Vector3.ZERO) -> StringName:
 	var room: float = _room_ahead()
 	var lo: float = 1.5 if speed >= FALL_SPRINT_MIN_SPEED else 0.0
 	var hi: float = minf(1.3 if speed < 3.0 else 4.0, room - 0.5) if speed < FALL_SPRINT_MIN_SPEED else minf(8.0, room - 0.5)
@@ -503,7 +547,61 @@ func _json_fall(speed: float) -> StringName:
 			var travel: float = (m.get("root_total", Vector2.ZERO) as Vector2).length()
 			if travel >= lo and travel <= maxf(hi, 0.4) and m.has("lie"):
 				pool.append(id)
-	return pool[rng.randi() % pool.size()] if not pool.is_empty() else &""
+	return _directed_pick(pool, from_dir)
+
+## Peso (m/s equivalentes) del empujon del contacto frente a la inercia del cuerpo al decidir hacia donde cae o trastabilla.
+const PUSH_WEIGHT := 3.0
+## Coseno minimo entre el recorrido del clip y el sentido esperado para que el clip valga (~60 grados).
+const DIRECTED_MIN_COS := 0.5
+## Recorrido (m) por debajo del cual el clip se considera en el sitio (vale para cualquier sentido).
+const DIRECTED_IN_PLACE := 0.35
+## Fraccion lateral del sentido esperado a partir de la cual el lado de la caida tiene que coincidir con el del empujon.
+const LATERAL_CLEAR := 0.25
+
+## Sentido esperado de una caida o un trastabillon en el marco del jugador (x = adelante, y = derecha, como root_total):
+## la velocidad del cuerpo mas el empujon del contacto (PUSH_WEIGHT).
+func push_dir_local(from_dir: Vector3) -> Vector2:
+	var f: Vector3 = owner.locomotion.forward()
+	var r: Vector3 = owner.locomotion.right()
+	var v: Vector3 = owner.locomotion.velocity
+	var push: Vector3 = KickModel.flat(from_dir).normalized() * PUSH_WEIGHT
+	var d: Vector3 = v + push
+	return Vector2(d.dot(f), d.dot(r))
+
+## Elige del pool (clips sin espejo) uno cuyo recorrido (o el de su espejo) vaya en el sentido esperado; los clips en el
+## sitio valen para cualquier sentido (su espejo se decide por el lado del contacto). Si ninguno va en ese sentido, el mas
+## alineado. Devuelve el clip con el espejo resuelto.
+func _directed_pick(pool: Array[StringName], from_dir: Vector3) -> StringName:
+	if pool.is_empty():
+		return &""
+	var want: Vector2 = push_dir_local(from_dir)
+	var side: float = KickModel.flat(from_dir).dot(owner.locomotion.right())
+	var ok: Array[StringName] = []
+	var best: StringName = &""
+	var best_cos: float = -2.0
+	for id in pool:
+		var rt: Vector2 = PackLibrary.meta(id).get("root_total", Vector2.ZERO)
+		var mid: StringName = StringName(String(id) + "_mirror")
+		var has_mirror: bool = PackLibrary.has_clip(mid)
+		if rt.length() < DIRECTED_IN_PLACE or want.length() < 0.3:
+			ok.append(mid if side < 0.0 and has_mirror else id)
+			continue
+		var options: Array = [[id, rt]]
+		if has_mirror:
+			options.append([mid, Vector2(rt.x, -rt.y)])
+		for o in options:
+			var ov: Vector2 = o[1]
+			var c: float = ov.normalized().dot(want.normalized())
+			# Con un empujon lateral claro, el clip no puede irse hacia el lado del rival (aunque vaya casi recto).
+			var wrong_side: bool = absf(want.y) > LATERAL_CLEAR * want.length() and ov.y * want.y < 0.0 and absf(ov.y) > DIRECTED_IN_PLACE
+			if c >= DIRECTED_MIN_COS and not wrong_side:
+				ok.append(o[0])
+			if c > best_cos:
+				best_cos = c
+				best = o[0]
+	if not ok.is_empty():
+		return ok[rng.randi() % ok.size()]
+	return best
 
 ## Modo 4: un levantarse convertido que empieza en la postura `lie` (cualquiera si no hay de esa postura).
 func _json_getup(lie: String) -> StringName:

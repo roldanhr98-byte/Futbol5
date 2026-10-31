@@ -55,8 +55,10 @@ func test_pack_names_resolve_to_json_clips() -> void:
 	check(not PackLibrary.has_clip(&"Soccer_Spin"), "lo que no tiene sustituto no existe en el modo 4")
 	var cel: Dictionary = AnimationCatalog.resolve(&"celebrate_scorer", true)
 	check(String(cel.get("clip", "")) != "" and cel.get("source", &"") == &"pack", "festejo del goleador con clip JSON (%s)" % str(cel))
-	_restore(prev)
+	# Fuera del modo 4 (el juego ya arranca en el 4: se pasa al 1 a proposito).
+	_restore(1)
 	check(not PackLibrary.has_clip(&"jn_idle_0520"), "fuera del modo 4 los clips JSON no estan en la libreria")
+	_restore(prev)
 
 func test_retarget_reaches_the_data() -> void:
 	# Cada tobillo, muñeca y punta cae en el dato (la IK de dos huesos los alcanza) y el pecho y la cabeza a pocos cm.

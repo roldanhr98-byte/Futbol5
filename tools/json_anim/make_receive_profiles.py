@@ -41,6 +41,7 @@ VERIFIED = {
 	580: "visor: pelota a 0.88 m, la pelota toca el muslo levantado y cae delante (tira de imagenes)",
 	588: "visor: pelota a 1.02 m, la pelota toca el pecho y cae delante (tira de imagenes)",
 	574: "visor: pelota rasante, punta del pie a 0.00 m en el contacto; el pase posterior lo da el sistema de pase",
+	204: "visor (CLIP=jn_receive_0204): rodilla levantada (muslo 92 grados) a la pelota de 0.85 m, cae delante (0.91 m)",
 }
 
 # Verificacion visual de los 70 pendientes (continuacion de F3): CLIP=<id> en tools/json_anim/receive_view.tscn, pelota

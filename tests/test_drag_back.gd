@@ -4,6 +4,10 @@ extends TestCase
 ## (sin el boton, el joystick atras hace el giro con toques: test_ball_turn). La fisica se mide en headless; con render
 ## (xvfb-run --rendering-driver opengl3) tambien que la suela este de verdad sobre la pelota.
 
+## Vuelta pisando la pelota procedural (DragBack) del modo 1; en el modo 4 la hace JsonBallMove con clips (test_mode4_dribble).
+func gameplay_mode() -> int:
+	return 1
+
 func _skip_if_missing() -> bool:
 	PackLibrary.reload()
 	if not PackLibrary.available():

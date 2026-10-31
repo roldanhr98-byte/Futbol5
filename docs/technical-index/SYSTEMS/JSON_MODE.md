@@ -15,6 +15,17 @@
   cada grupo». Conducción con toques dados con el pie, giros con pelota / vuelta pisando la pelota / regates con los clips y sus
   toques, golpeo girando hacia un destino al costado o detrás.
 
+## Auditoría del banco completo (E2, 2026-10-31)
+
+`tools/json_anim/analyze_bank.py` mide la cinemática de los 2 022 JSON originales (sin modificarlos) y genera el inventario
+`docs/fases/E2_inventario_banco.csv` (una fila por clip con clase anterior/nueva, función, útil, sistema y motivo) y
+`scripts/animation/clip_roles_overlay.gd` (`ClipRolesOverlay.ROLE` con 67 reclasificaciones y `ALIAS` para
+`Idle_To_Sprint`, `Running_Tired`, `Defender_2`), que `PackLibrary` aplica al cargar el modo 4. Resultado: 1 689 útiles,
+310 descartados con motivo, 25 pendientes (recepciones sin verificación visual). Detalle:
+[`fases/E2_auditoria_banco.md`](../../fases/E2_auditoria_banco.md). Sin equivalente en el banco: `Sprint_Turn`,
+`Soccer_Spin` (ruleta) y malabares (el botón de la práctica se oculta).
+
+
 ## Datos de origen y esqueleto canónico
 
 - Las articulaciones vienen centradas en la pelvis (la trayectoria va aparte en `root`: adelante −Z del juego) y giran con el

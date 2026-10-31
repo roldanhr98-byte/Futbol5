@@ -5,6 +5,10 @@ extends TestCase
 ## tienen un contacto valido (pie bajo, por delante del cuerpo, dentro del clip).
 ## Con la variable AUDIT_OUT escribe el informe en markdown (docs/technical-index/ANIMATION_CONTACT_AUDIT.md).
 
+## Sistema del modo 1 (pack de Mixamo / Tripo), descartado como modo de juego pero todavia en el codigo: se prueba en su modo.
+func gameplay_mode() -> int:
+	return 1
+
 const BALL_ROLES := ["pase_tiro", "volea", "cabezazo", "practica", "recepcion", "marcha_con_balon", "malabares", "habilidad", "entrada"]
 
 func _ids() -> Array:

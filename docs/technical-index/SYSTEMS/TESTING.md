@@ -5,7 +5,7 @@
 - **Responsabilidad exacta:** verificar la simulación (física de la pelota, locomoción, conducción, pases, tiros, presión, patada sincronizada, reglas de partido, controles táctiles, modelo) **sin pantalla ni dependencias externas**, con un marco propio de ~150 líneas. Cada método `test_*` de una subclase de `TestCase` es una prueba.
 - **Estado:** operativo. **Última ejecución completa (2026-10-26):** headless con las librerías del pack: **121 pruebas, 0 fallidas, 2 omitidas (necesitan render), 686 comprobaciones, 0 `SCRIPT ERROR`, ~92 s**. Con render (`xvfb-run`, por filtro): `gameplay_feel` 10/33, `control_and_keeper` 7/26, `goalkeeper` 5/25, `pack_motion` 2/24, `player_actions` 4/13, `practice` 4/37, todas 0 fallidas y 0 omitidas. La suite completa con render **no se terminó**: `test_ai_match` simula partidos de 120 s con 10 personajes animados y con `llvmpipe` tarda decenas de minutos. **Sin** las librerías del pack: las pruebas del pack, arquero, práctica, sensación de juego e IA se omiten.
 - **Última verificación:** <!-- AUTO:verified -->
-2026-10-30
+2026-10-31
 <!-- /AUTO -->
 
 ## Archivos responsables
@@ -96,3 +96,19 @@ Comando por sistema: `tools/run_tests.sh pack_kick`, `pack_dribble`, `pack_react
 ## Historial
 
 Ver [CHANGELOG.md](../CHANGELOG.md): evolución 9/24 → 40/113 → 44/140 → 54/188 → 57/209 → 57/212 (reproducida commit a commit el 2026-10-26).
+
+## Modo de cada prueba y suite en el modo 4 (2026-10-31)
+
+- `TestCase.gameplay_mode()` (0 = el predeterminado, `TEST_GAMEPLAY_MODE` o `Tuning.DEFAULT_GAMEPLAY_MODE` = 4): el
+  ejecutor (`run_tests.gd`) pone ese modo y recarga `PackLibrary` antes de cada prueba. Las pruebas del pack de Mixamo
+  heredado fijan el modo 1 (`test_animation_contact_audit`, `test_animation_inventory`, `test_pack_kick`,
+  `test_pack_locomotion`, `test_pack_reactions`, `test_pack_retarget`, `test_player_model`, `test_pack_dribble_metrics`,
+  `test_drag_back`).
+- Nuevas: `test_bank_integration`, `test_mode4_dribble`, `test_ball_prediction`, `test_falls_direction`.
+- Goles fantasma en `test_shot_keeper` y `test_shooting`: `Ball.reset_at` se aplica en el paso físico siguiente y, con el
+  cerrojo del arco ya reiniciado, la pelota del gol anterior aún en la red contaba otro gol para el tiro siguiente. Los
+  contadores se toman ahora con la pelota ya recolocada (el partido no tiene el problema: `MatchManager._on_goal` solo cuenta
+  en juego).
+- Con render (xvfb, no en headless): `test_live_kicks` (batería de 50 golpeos: 49 con contacto, 0 inválidos),
+  `test_live_feet`, `test_pack_motion`, `test_json_mode`.
+

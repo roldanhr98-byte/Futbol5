@@ -5,7 +5,7 @@
 - **Responsabilidad exacta:** controlar el coste de renderizado según el dispositivo (escala 3D, MSAA, sombras, elementos ambientales) y mostrar en pantalla lo que **realmente se mide** (FPS, tiempos de fotograma/proceso/física, llamadas de dibujo, nodos, memoria, errores).
 - **Estado:** implementado a nivel de código. **No hay ninguna medición en un dispositivo Android real**: los valores por perfil son heurísticos y no están validados contra FPS reales.
 - **Última verificación:** <!-- AUTO:verified -->
-2026-10-30
+2026-10-31
 <!-- /AUTO -->
 
 ## Archivos responsables
@@ -121,3 +121,12 @@ const PROFILES: Dictionary = {
 ## Historial
 
 Ver [CHANGELOG.md](../CHANGELOG.md): «Partido jugable».
+
+## Medición del 2026-10-31 (programa maestro, modo 4)
+
+Partido 4+1 contra 4+1 con IA, 60 s (3 600 pasos) headless en el contenedor de desarrollo (4 núcleos), con una prueba
+temporal: media 3.1 ms por paso, p99 16.7 ms, 35 pasos por encima de 16.7 ms. Los picos coinciden con la planificación del
+arquero durante un disparo (20-56 ms) y con acciones de giro, balón parado y movimiento con pelota (17-30 ms).
+`KeeperPlanner.plan_save` bajó de 42 a 11 ms por llamada (ver GOALKEEPER). `BallPredictor.trajectory` (2 s, paso 1/30, con
+giro): 0.2 ms. Sin medición en Android (la CPU de un teléfono es más lenta: los picos serían mayores).
+

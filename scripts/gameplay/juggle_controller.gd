@@ -70,7 +70,17 @@ func _point_at(d: Dictionary, tau: float) -> Vector3:
 	var f: Vector3 = Locomotion.dir_from_yaw(stage.rotation.y)
 	return p + f * (0.08 if d["knee"] else 0.03) + Vector3.UP * (BALL_RADIUS + 0.04)
 
+## Hay clips de malabares en la libreria actual (el pack de Mixamo los trae; el banco JSON del modo 4 no tiene malabares).
+static func available() -> bool:
+	for c in POOL:
+		if PackLibrary.has_clip(c):
+			return true
+	return false
+
 func start() -> void:
+	if not PackLibrary.has_clip(FIRST) or not available():
+		running = false
+		return
 	running = true
 	count = 0
 	_now = 0.0
@@ -118,6 +128,9 @@ func tick(delta: float) -> void:
 ## Golpea (o suelta) la pelota hacia el punto de llegada del siguiente clip.
 func _release() -> void:
 	var next: StringName = _choose_next()
+	if next == &"":
+		stop()
+		return
 	var nd: Dictionary = _describe(next)
 	var flight: float = clampf(float(nd["arrive"]) + 0.1, FLIGHT_MIN, FLIGHT_MAX)
 	nd["skip"] = maxf(0.0, float(nd["arrive"]) + 0.1 - flight)
@@ -138,4 +151,4 @@ func _release() -> void:
 
 func _choose_next() -> StringName:
 	var options: Array = POOL.filter(func(c: StringName) -> bool: return PackLibrary.has_clip(c) and c != _last_clip and c != _step["clip"])
-	return options[rng.randi() % options.size()]
+	return options[rng.randi() % options.size()] if not options.is_empty() else &""

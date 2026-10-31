@@ -446,7 +446,7 @@ const RECEIVER_STEP := 0.1
 ## trayectoria predicha de la pelota a ras de piso o a la altura de la cabeza. Si nadie llega a tiempo, el mas cercano a
 ## donde se detiene la pelota. Devuelve [Footballer, punto de encuentro] o [] si no hay companeros.
 func pass_receiver(passer: Footballer) -> Array:
-	var traj: PackedVector3Array = BallPredictor.trajectory(ball.global_position, ball.linear_velocity, RECEIVER_HORIZON, RECEIVER_STEP)
+	var traj: PackedVector3Array = BallPredictor.trajectory(ball.global_position, ball.linear_velocity, RECEIVER_HORIZON, RECEIVER_STEP, ball.angular_velocity)
 	var best: Footballer = null
 	var best_t: float = INF
 	var best_p := Vector3.ZERO

@@ -50,9 +50,15 @@ func _run() -> void:
 				methods.append(mname)
 		methods.sort()
 		for mname in methods:
-			if OS.get_environment("TEST_GAMEPLAY_MODE") != "":
-				Tuning.gameplay_mode = int(OS.get_environment("TEST_GAMEPLAY_MODE"))
 			var t: TestCase = script.new()
+			# Cada prueba empieza en su modo: el del juego (4) salvo que la prueba declare otro (sistemas de modos descartados)
+			# o TEST_GAMEPLAY_MODE lo cambie.
+			var mode: int = t.gameplay_mode()
+			if mode == 0:
+				mode = int(OS.get_environment("TEST_GAMEPLAY_MODE")) if OS.get_environment("TEST_GAMEPLAY_MODE") != "" else Tuning.DEFAULT_GAMEPLAY_MODE
+			if Tuning.gameplay_mode != mode:
+				Tuning.gameplay_mode = mode
+				PackLibrary.reload()
 			t.tree = get_tree()
 			total_tests += 1
 			var t0: int = Time.get_ticks_msec()
