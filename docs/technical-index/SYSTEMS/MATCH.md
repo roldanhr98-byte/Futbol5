@@ -325,3 +325,10 @@ cercano a una pelota suelta era el controlado, nadie iba: medido en el entrenami
 25 s con la pelota quieta 7.3 s (`test_pass_receiver_control::test_ai_teams_still_play_without_a_human` falló así en
 GitHub Actions); tras el arreglo, 0 de 20.
 
+## Carrera del saque sin choques (2026-10-31)
+
+`SetPiece._ghost_run(true)` al arrancar la carrera de un saque con el pie: el ejecutor no choca con los demás jugadores
+mientras el clip lo lleva a la pelota; `_ghost_run(false)` al resolver el golpe (o sin clip, o al terminar la acción). Un
+jugador en la línea de la carrera lo desviaba y el pie quedaba a 0.48-0.97 m de la pelota (tiro libre, clips de carrera
+larga); con la excepción, 0 de 38 clips de balón parado fallan en el tiro libre.
+

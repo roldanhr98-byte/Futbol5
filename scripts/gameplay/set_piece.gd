@@ -145,7 +145,24 @@ func tick(frame: InputFrame, delta: float) -> bool:
 	if not taker.actions.active():
 		stage = &"done"
 		taker.set_ball_ghost(false)
+		_ghost_run(false)
 	return false
+
+## Carrera del saque: el ejecutor no choca con los demas jugadores mientras el clip lo lleva a la pelota (un jugador
+## parado en la linea de la carrera lo desviaba y el pie no llegaba: medido, pie a 0.48-0.97 m de la pelota en un tiro
+## libre). Se quita al resolver el golpe.
+var _ghosted: Array = []
+func _ghost_run(on: bool) -> void:
+	if on:
+		for f in ctx.footballers:
+			if f != taker and is_instance_valid(f) and not _ghosted.has(f):
+				taker.add_collision_exception_with(f)
+				_ghosted.append(f)
+		return
+	for f in _ghosted:
+		if is_instance_valid(f) and is_instance_valid(taker):
+			taker.remove_collision_exception_with(f)
+	_ghosted.clear()
 
 func _hold_still() -> void:
 	taker.velocity = Vector3.ZERO
@@ -285,6 +302,7 @@ func execute(act: StringName, ch: float, lb: bool, dir: Vector3, cu: float = 0.0
 	var start2: Vector3 = spot - f2 * (toe.x - root0.x) - r2 * (toe.z - root0.y)
 	taker.place_at(start2, yaw)
 	taker.set_ball_ghost(true)
+	_ghost_run(true)
 	if not taker.actions.start(&"set_piece", clip, KICK_SPEED, contact_t - start_t + 0.45, [], start_t):
 		_resolve_without_clip()
 
@@ -303,6 +321,7 @@ func force() -> void:
 
 ## Sin libreria del pack (o sin modelo) no hay clip que mueva el cuerpo: el saque se hace en el sitio, junto a la pelota.
 func _resolve_without_clip() -> void:
+	_ghost_run(false)
 	resolved = true
 	stage = &"done"
 	taker.set_ball_ghost(false)
@@ -370,6 +389,7 @@ func _resolve() -> void:
 		result = &"thrown"
 		ctx.emit_event(GameEvent.make(GameEvent.Type.PASS, taker.actor_id, team, {"set_piece": "throw_in", "speed": v.length(), "kind": "throw_in"}))
 		return
+	_ghost_run(false)
 	var k: int = int(round(taker.actions.motion.t * 30.0))
 	var toe: Vector3 = KeeperPlanner.path_world_at_body(clip, foot_key, k, taker.global_position, taker.locomotion.yaw)
 	var d: float = Vector2(toe.x - ball.global_position.x, toe.z - ball.global_position.z).length()

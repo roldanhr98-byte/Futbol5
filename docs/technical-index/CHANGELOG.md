@@ -46,6 +46,10 @@ Rama `respaldo-f3`. Informe: [`fases/E_programa_maestro_informe.md`](../fases/E_
   clip, pasan a `setpiece_miss` (`analyze_bank.SETPIECE_MISS`); `PackLibrary` redirige el alias que apuntaba a uno
   (`soccer_penalty_kick`). `test_set_pieces` 6 de 6 (antes corner ~1/9 y banda ~2/6 fallaban).
   `test_bank_integration::test_set_piece_clips_that_miss_the_ball_are_never_chosen`.
+- **Carrera del saque sin choques** (`SetPiece._ghost_run`): mientras el clip lleva al ejecutor a la pelota no choca con
+  los demás jugadores (excepción de colisión que se quita al resolver). Un jugador parado en la línea de la carrera lo
+  desviaba: en el tiro libre, el pie quedaba a 0.48-0.97 m de la pelota con 2 de 38 clips; ahora 0 de 38. Los 5 excluidos
+  siguen fallando sin obstáculos (el defecto es del clip).
 - **Caídas junto a la banda** (`PlayerActions._lands_inside`, `LAND_MARGIN`): la caída dirigida y el esquive descartan
   los clips cuyo recorrido terminaría fuera de la cancha (sin el filtro 17 de 40 elecciones junto a la banda; con él 0).
   Probable causa del fallo «nadie se sale de la cancha más de 1 m» de `test_ai_match` en GitHub Actions.
