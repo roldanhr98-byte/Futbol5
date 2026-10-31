@@ -68,6 +68,7 @@ variante del árbitro, gesto sin función y pisada sin toques. Sin equivalente e
 | El corner fallaba ~1 de 9 veces y el saque de banda ~2 de 6 (`test_set_pieces`, tomado por no determinista) | 5 clips de balón parado cuyo pie nunca llega a la pelota y 2 saques de banda sin lanzamiento, elegidos al azar por `vary_aliases` | excluidos (`setpiece_miss`) y alias redirigido: 6 de 6 |
 | Tiro libre que no se ejecutaba a tiempo (falló en GitHub Actions) | un jugador parado en la carrera del ejecutor lo desviaba y el pie no llegaba (0.48-0.97 m) | sin choques durante la carrera del saque (`SetPiece._ghost_run`): 0 de 38 clips fallan |
 | Una caída dirigida junto a la banda podía sacar al jugador de la cancha | la elección solo miraba el sitio por delante | `_lands_inside`: 0 de 40 (sin filtro 17 de 40); probable causa de un fallo de `test_ai_match` en GitHub Actions |
+| `test_training_mode` «hay pases» fallaba con muchos goles | contaba sobre 150 s; cada gol quita repetición + festejo + saque (en juego quedan 81-96 s) | pases por minuto en juego (2/min, el mismo listón) |
 | `test_action_arbiter`, `test_practice` (malabares) | nombres que ya tienen clip; banco sin malabares | lista actualizada; prueba omitida con motivo |
 | Godot importaba el inventario CSV como traducción | CSV dentro de `docs/` | `docs/.gdignore` |
 

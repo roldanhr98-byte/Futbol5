@@ -50,6 +50,8 @@ Rama `respaldo-f3`. Informe: [`fases/E_programa_maestro_informe.md`](../fases/E_
   los demás jugadores (excepción de colisión que se quita al resolver). Un jugador parado en la línea de la carrera lo
   desviaba: en el tiro libre, el pie quedaba a 0.48-0.97 m de la pelota con 2 de 38 clips; ahora 0 de 38. Los 5 excluidos
   siguen fallando sin obstáculos (el defecto es del clip).
+- `test_training_mode::…has_only…`: pases por minuto en juego (2/min, lo mismo que 5 en 150 s) en vez de sobre los 150 s:
+  cada gol se lleva repetición, festejo y saque (en juego quedan 81-96 s) y con el arquero realista hay más goles.
 - **Caídas junto a la banda** (`PlayerActions._lands_inside`, `LAND_MARGIN`): la caída dirigida y el esquive descartan
   los clips cuyo recorrido terminaría fuera de la cancha (sin el filtro 17 de 40 elecciones junto a la banda; con él 0).
   Probable causa del fallo «nadie se sale de la cancha más de 1 m» de `test_ai_match` en GitHub Actions.
