@@ -602,7 +602,7 @@ func _chaser(f: Footballer, ctx: MatchContext) -> Footballer:
 			continue
 		# El jugador que maneja la persona decide por si mismo: la IA nunca cuenta con el para ir a buscar la pelota
 		# (si no, el equipo se queda parado esperando a un companero que quiza no se mueve).
-		if p.is_human_controlled:
+		if TeamBrain.person_drives(p):
 			continue
 		var t: float = Vector2(p.global_position.x - target.x, p.global_position.z - target.z).length() / maxf(p.locomotion.max_run_speed(), 1.0)
 		# El cierre solo sale si la pelota esta en su mitad o muy cerca.

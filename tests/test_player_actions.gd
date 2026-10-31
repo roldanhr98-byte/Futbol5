@@ -27,8 +27,13 @@ func test_fall_moves_the_body_with_the_clip_root_and_gets_up_without_input() -> 
 	var start: Vector3 = c.global_position
 	c.actions.suffer_contact(&"trip", Vector3(-1, 0, 0))
 	check(c.actions.active(), "la zancadilla inicia una accion")
+	# La caida se comprueba al empezar (no en un instante fijo): las caidas del banco duran de 0.67 a 1.85 s y a los 0.5 s
+	# una corta ya puede estar encadenada al levantarse.
+	var fall_kind: StringName = c.actions.kind
+	await physics_frames(2)
+	var fall_pose: StringName = c.visual.current_action
+	check(fall_kind == &"fall" and c.visual.is_action_playing() and fall_pose != &"", "cae con el clip del pack (%s)" % fall_pose)
 	await wait_seconds(0.5)
-	check(c.actions.kind == &"fall" and c.visual.is_action_playing(), "cae con el clip del pack (%s)" % c.visual.current_action)
 	var moved: float = c.global_position.distance_to(start)
 	await wait_seconds(7.0)
 	check(not c.actions.active() and c.actions.kind == &"", "termina de levantarse sola y recupera el control")

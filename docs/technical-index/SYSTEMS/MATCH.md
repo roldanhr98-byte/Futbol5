@@ -315,3 +315,13 @@ al partido» lo quita). Tu equipo (4 + arquero) contra el arquero rival solo: si
 termine, saques siempre para tu equipo salvo el saque de arco del arquero rival (`MatchManager.training`), y tras un
 gol vuelve a sacar tu equipo. Sirve para probar conducción, pases y tiros al arco/arquero. Prueba:
 `test_training_mode` (150 s con la IA: pases, llegadas al arco, atajadas, sin atascos).
+
+## IA sin persona: el «controlado» también recibe órdenes (2026-10-31)
+
+`TeamBrain.person_drives(f)`: un jugador lo maneja una persona solo si es el controlado **y** su entrada no es un
+`AIInput`. Sin persona (`ctx.human_team == -1`), el control lo lleva un `AIInput` y el cerebro ahora le da órdenes de pelota
+suelta y de presión (`TeamBrain._loose`, `_defend`) y `AIInput` lo cuenta como candidato a ir a buscarla. Antes, si el más
+cercano a una pelota suelta era el controlado, nadie iba: medido en el entrenamiento sin persona, 1 de cada 14 partidos de
+25 s con la pelota quieta 7.3 s (`test_pass_receiver_control::test_ai_teams_still_play_without_a_human` falló así en
+GitHub Actions); tras el arreglo, 0 de 20.
+

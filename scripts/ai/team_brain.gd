@@ -321,7 +321,7 @@ func _defend(ctx: MatchContext, carrier: Footballer, mates: Array[Footballer]) -
 	# Presionador: el que llega antes. Si es el que maneja la persona, la presion es suya: la IA no manda a otro.
 	var by_time: Array[Footballer] = mates.duplicate()
 	by_time.sort_custom(func(a: Footballer, b: Footballer) -> bool: return _time_to(a, intercept) < _time_to(b, intercept))
-	var human_first: bool = by_time[0].is_human_controlled
+	var human_first: bool = person_drives(by_time[0])
 	presser = by_time[0]
 	# Cobertura: no el segundo mas cercano al portador (estaria a su lado y amontonaria), sino el que llega antes al
 	# punto de cobertura, entre la pelota y el arco propio.
@@ -392,6 +392,11 @@ func _spread_defense(ctx: MatchContext, cp: Vector3) -> void:
 
 # --- Pelota suelta ---------------------------------------------------------------------------------------------
 
+## El jugador lo maneja una persona (no basta con ser el «controlado»: sin persona, el control lo lleva un AIInput y la IA
+## tiene que darle ordenes; si no, una pelota suelta junto a el se quedaba quieta: medido 7.3 s en entrenamiento).
+static func person_drives(f: Footballer) -> bool:
+	return f.is_human_controlled and not (f.input_source is AIInput)
+
 func _loose(ctx: MatchContext, mates: Array[Footballer]) -> void:
 	var ball: Ball = ctx.ball
 	# Dentro de la cancha: una pelota que sale no arrastra al perseguidor detras del arco.
@@ -404,7 +409,7 @@ func _loose(ctx: MatchContext, mates: Array[Footballer]) -> void:
 	var lt: Footballer = ball.last_toucher as Footballer
 	if lt != null and mates.has(lt) and _flat(lt.global_position).distance_to(_flat(ball.global_position)) < 3.0:
 		chaser = lt
-	if not chaser.is_human_controlled:
+	if not person_drives(chaser):
 		orders[chaser] = {"role": &"chase", "target": bp, "press": true, "sprint": _flat(chaser.global_position).distance_to(bp) > 3.0}
 	# Los demas: si la ultima fase fue nuestra, mantienen sus puestos de ataque; si no, se ordenan en defensa respecto a
 	# la pelota (un rival la tomara enseguida).

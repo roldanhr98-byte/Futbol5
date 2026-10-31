@@ -39,6 +39,11 @@ Rama `respaldo-f3`. Informe: [`fases/E_programa_maestro_informe.md`](../fases/E_
 - **Pruebas corregidas** (no umbrales): goles fantasma en `test_shot_keeper` / `test_shooting` (contadores tomados antes de
   que `Ball.reset_at` se aplicara); `test_action_arbiter` (los 3 nombres que ahora tienen clip); `test_practice` (malabares
   omitida sin clips); la comparación «palo del que la aleja −15 puntos» reformulada con la curva medida (0.05-0.17 m).
+- **IA sin persona** (`TeamBrain.person_drives`, `team_brain.gd`, `ai_input.gd`): el controlado sin persona (con
+  `AIInput`) recibe órdenes de pelota suelta y presión; antes la pelota podía quedarse quieta 7-9 s (falló en GitHub
+  Actions; reproducido 1 de 14, tras el arreglo 0 de 20).
+- `test_player_actions::test_fall…`: la caída se comprueba al empezar, no a los 0.5 s (las caídas del banco duran
+  0.67-1.85 s).
 - **Workflow** `android.yml`: cabecera actualizada (modo 4 predeterminado); sin otros cambios.
 - Verificación: ver el informe (suite completa, pruebas con render y APK de GitHub Actions).
 

@@ -62,6 +62,8 @@ variante del árbitro, gesto sin función y pisada sin toques. Sin equivalente e
 | Al frenar la pelota quedaba a 1.79 m | nada pedía alcanzarla | `carry_catch_up_mag`: ~0.7 m |
 | Caídas al azar (golpeado de frente caía hacia el rival) | el clip no dependía del contacto | caída dirigida |
 | `KeeperPlanner.plan_save` 42 ms por llamada y hasta 2 por paso | recorrido completo de 362 clips; reintento en cada paso | cajas por muestra y segmento (mismo plan), caché de roles, `PLAN_RETRY`: 11 ms |
+| Sin persona, la IA dejaba la pelota suelta quieta 7-9 s junto al jugador «controlado» | el cerebro no daba órdenes al controlado aunque lo llevara un `AIInput` | `TeamBrain.person_drives`: 0 de 20 (antes 1 de 14); lo destapó GitHub Actions |
+| `test_player_actions::test_fall…` fallaba a veces | comprobaba la caída a los 0.5 s; las del banco duran 0.67-1.85 s | se comprueba al empezar |
 | `test_action_arbiter`, `test_practice` (malabares) | nombres que ya tienen clip; banco sin malabares | lista actualizada; prueba omitida con motivo |
 | Godot importaba el inventario CSV como traducción | CSV dentro de `docs/` | `docs/.gdignore` |
 
