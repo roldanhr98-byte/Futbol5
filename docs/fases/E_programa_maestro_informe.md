@@ -129,10 +129,10 @@ repositorio.
 
 | | |
 |---|---|
-| Ejecución correcta | #42, commit `edb5d84` — https://github.com/roldanhr98-byte/Futbol5/actions/runs/41206108434 |
-| Pruebas en el runner | headless 279 / 0 fallos (25 omitidas); con render: `live_feet` 7 / 0, `live_kicks` 4 / 0 (50 golpeos: 49 con contacto, 0 inválidos), `pack_motion` 2 / 0, `json_mode` 9 / 0 (1 omitida) |
-| APK | `futbol5-v0.1.42.apk` — paquete `com.webmaletin.futbol5`, versionCode 42, versionName 0.1.42, `arm64-v8a`, sin permisos, firma v2 verificada (`apksigner verify`) |
-| Artefacto descargable | `futbol5-apk` (57.8 MB comprimido) — https://github.com/roldanhr98-byte/Futbol5/actions/runs/41206108434/artifacts/13044910931 (caduca el 2026-11-14) |
+| Ejecución correcta | #43, commit `30eeec2` — https://github.com/roldanhr98-byte/Futbol5/actions/runs/41209278077 (la #42, `edb5d84`, también fue correcta, antes de la zona libre del saque) |
+| Pruebas en el runner | headless 280 / 0 fallos (en la #42, 279 / 0) (25 omitidas); con render: `live_feet` 7 / 0, `live_kicks` 4 / 0 (50 golpeos: 49 con contacto, 0 inválidos), `pack_motion` 2 / 0, `json_mode` 9 / 0 (1 omitida) |
+| APK | `futbol5-v0.1.43.apk` — paquete `com.webmaletin.futbol5`, versionCode 43, versionName 0.1.43, `arm64-v8a`, sin permisos, firma v2 verificada (`apksigner verify`) |
+| Artefacto descargable | `futbol5-apk` (57.8 MB comprimido) — https://github.com/roldanhr98-byte/Futbol5/actions/runs/41209278077/artifacts/13046316355 (caduca el 2026-11-14) |
 | Firma | de depuración, distinta en cada ejecución: hay que desinstalar la versión anterior antes de instalar esta |
 
 Ejecuciones previas que fallaron y por qué (cada una destapó un fallo real que se corrigió, salvo donde se dice):

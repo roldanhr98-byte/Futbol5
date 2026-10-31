@@ -61,7 +61,7 @@ Rama `respaldo-f3`. Informe: [`fases/E_programa_maestro_informe.md`](../fases/E_
   0.67-1.85 s).
 - **Workflow** `android.yml`: cabecera actualizada (modo 4 predeterminado); sin otros cambios.
 - Verificación: suite headless 279 / 0 (local y en GitHub Actions); con render `live_feet` 7/0, `live_kicks` 4/0,
-  `pack_motion` 2/0, `json_mode` 9/0; APK `futbol5-v0.1.42.apk` de GitHub Actions #42 (firma v2 verificada, arm64-v8a),
+  `pack_motion` 2/0, `json_mode` 9/0; APK `futbol5-v0.1.43.apk` de GitHub Actions #43 (firma v2 verificada, arm64-v8a),
   artefacto `futbol5-apk`. Detalle en el informe.
 
 ## 2026-10-30 — F3 continuación: verificación visual de los 70 pendientes, fallos de F3 y F2, modo 4 predeterminado

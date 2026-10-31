@@ -74,8 +74,8 @@ prueba elige su modo con `TestCase.gameplay_mode()`; las del pack heredado fijan
 
 | Suite | Resultado | Fallos y clasificación |
 |---|---|---|
-| `tools/run_tests.sh` | **279 pruebas, 0 fallos**, 25 omitidas, 1 653 comprobaciones, 0 SCRIPT ERROR (local y en GitHub Actions #42) | |
-| APK | `futbol5-v0.1.42.apk` de GitHub Actions #42 (artefacto `futbol5-apk`), ver el informe §9 | |
+| `tools/run_tests.sh` | **280 pruebas, 0 fallos**, 25 omitidas, 1 663 comprobaciones, 0 SCRIPT ERROR (local y en GitHub Actions #43) | |
+| APK | `futbol5-v0.1.43.apk` de GitHub Actions #43 (artefacto `futbol5-apk`), ver el informe §9 | |
 | Con render (xvfb), modo 4 | `live_kicks` 4 / 0 (batería de 50 golpeos: 49 con contacto, 0 inválidos), `live_feet` 7 / 0, `pack_motion` 2 / 0, `json_mode` 9 / 0 (1 omitida) | |
 | `test_shot_keeper` (80 tiros por caso) | 1 / 0 | palo derecho ataja 69 %, izquierdo 76 %, al arquero 84 %, rival encima 0 goles, tirador de 85 ataja 32-36 % |
 | No deterministas conocidas | `test_training_mode` (pases y compañeros), `test_ai_match`, `test_shot_keeper` (comparaciones entre casos). Ya no: `test_set_pieces` (eran clips de balón parado que no llegaban a la pelota, excluidos), `test_player_actions::test_fall…` (comprobaba un instante fijo) | |
