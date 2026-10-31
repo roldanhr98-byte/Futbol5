@@ -825,7 +825,7 @@
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer.capture_state",
-          "line": 701,
+          "line": 707,
           "kind": "func"
         }
       ],
@@ -2828,7 +2828,7 @@
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud.show_message",
-          "line": 307,
+          "line": 309,
           "kind": "func"
         },
         {
@@ -2840,19 +2840,19 @@
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud._cycle_assist",
-          "line": 257,
+          "line": 259,
           "kind": "func"
         },
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud._cycle_graphics",
-          "line": 253,
+          "line": 255,
           "kind": "func"
         },
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud._toggle_diagnostics",
-          "line": 265,
+          "line": 267,
           "kind": "func"
         },
         {
@@ -3046,25 +3046,25 @@
         {
           "file": "scripts/gameplay/tuning.gd",
           "name": "Tuning.reload",
-          "line": 49,
+          "line": 54,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/tuning.gd",
           "name": "Tuning.load_user_settings",
-          "line": 58,
+          "line": 63,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/tuning.gd",
           "name": "Tuning.save_user_settings",
-          "line": 75,
+          "line": 82,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/tuning.gd",
           "name": "Tuning._load_or_default",
-          "line": 91,
+          "line": 98,
           "kind": "func"
         },
         {
@@ -3537,7 +3537,7 @@
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer._on_match_event",
-          "line": 598,
+          "line": 604,
           "kind": "func"
         }
       ],
@@ -4010,37 +4010,37 @@
         {
           "file": "scripts/player/action_arbiter.gd",
           "name": "ActionArbiter.release",
-          "line": 124,
+          "line": 135,
           "kind": "func"
         },
         {
           "file": "scripts/player/action_arbiter.gd",
           "name": "ActionArbiter.handover",
-          "line": 113,
+          "line": 124,
           "kind": "func"
         },
         {
           "file": "scripts/player/action_arbiter.gd",
           "name": "ActionArbiter.relevel",
-          "line": 136,
+          "line": 147,
           "kind": "func"
         },
         {
           "file": "scripts/player/action_arbiter.gd",
           "name": "ActionArbiter.cut_pose",
-          "line": 144,
+          "line": 155,
           "kind": "func"
         },
         {
           "file": "scripts/player/action_arbiter.gd",
           "name": "ActionArbiter.reset",
-          "line": 153,
+          "line": 164,
           "kind": "func"
         },
         {
           "file": "scripts/player/action_arbiter.gd",
           "name": "ActionArbiter.holds_pose",
-          "line": 164,
+          "line": 175,
           "kind": "func"
         },
         {
@@ -4058,7 +4058,7 @@
         {
           "file": "scripts/player/action_arbiter.gd",
           "name": "ActionArbiter.fits_in_place",
-          "line": 168,
+          "line": 179,
           "kind": "func"
         }
       ],
@@ -4111,55 +4111,55 @@
         {
           "file": "scripts/player/json_receive.gd",
           "name": "JsonReceive.consider",
-          "line": 239,
+          "line": 242,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_receive.gd",
           "name": "JsonReceive.plan",
-          "line": 300,
+          "line": 303,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_receive.gd",
           "name": "JsonReceive.profile",
-          "line": 108,
+          "line": 111,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_receive.gd",
           "name": "JsonReceive.selectable",
-          "line": 123,
+          "line": 126,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_receive.gd",
           "name": "JsonReceive.contact_point",
-          "line": 161,
+          "line": 164,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_receive.gd",
           "name": "JsonReceive.path_point",
-          "line": 226,
+          "line": 229,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_receive.gd",
           "name": "JsonReceive.contact_velocity",
-          "line": 548,
+          "line": 553,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_receive.gd",
           "name": "JsonReceive.contact_offset",
-          "line": 536,
+          "line": 540,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_receive.gd",
           "name": "JsonReceive.ended",
-          "line": 590,
+          "line": 606,
           "kind": "func"
         },
         {
@@ -4971,7 +4971,7 @@
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer._skill_is_drag_back",
-          "line": 521,
+          "line": 527,
           "kind": "func"
         }
       ],
@@ -5364,13 +5364,13 @@
         {
           "file": "scripts/gameplay/tuning.gd",
           "name": "Tuning.gameplay_mode",
-          "line": 40,
+          "line": 45,
           "kind": "var"
         },
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud._cycle_gameplay_mode",
-          "line": 230,
+          "line": 232,
           "kind": "func"
         },
         {
@@ -5561,7 +5561,7 @@
         {
           "file": "scripts/gameplay/tuning.gd",
           "name": "Tuning.GAMEPLAY_MODES",
-          "line": 38,
+          "line": 40,
           "kind": "const"
         },
         {
@@ -5657,13 +5657,13 @@
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer._json_turn_move",
-          "line": 466,
+          "line": 472,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer._json_idle",
-          "line": 444,
+          "line": 450,
           "kind": "func"
         },
         {

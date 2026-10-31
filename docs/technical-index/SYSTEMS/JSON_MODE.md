@@ -233,4 +233,6 @@ tras un reinicio. Las situaciones de presentación que no tienen clip JSON ya no
 La recepción deja de ser un gesto después del toque y ya no depende de `ball_touches[0]`: perfiles de contacto por clip,
 trayectoria 3D, anticipación del receptor, contacto cuando la pelota llega a la parte del cuerpo animada y respuesta física por
 parte (pie, pie en el aire, muslo, rodilla, pecho). Medido en `tests/test_receive.gd` y visto en
-`tools/json_anim/receive_view.tscn` (tiras por familia).
+`tools/json_anim/receive_view.tscn` (tiras por familia). Verificación visual de los 70 clips pendientes con `CLIP=<id>`
+(2026-10-30): 45 confirmados, 25 siguen pendientes ([`fases/F3_verificacion_visual_70.md`](../../fases/F3_verificacion_visual_70.md)).
+Desde esa fecha el modo 4 es el predeterminado y el único que ofrece el menú (`Tuning.PLAYABLE_MODES`).

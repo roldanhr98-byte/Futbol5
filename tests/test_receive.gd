@@ -527,7 +527,8 @@ func test_profiles_follow_the_audit_and_resolve_the_mirrored_sides() -> void:
 		var st: String = ReceiveProfiles.PROFILES[id]["status"]
 		counts[st] = int(counts.get(st, 0)) + 1
 	note("perfiles: %s; verificados en el visor: %d" % [str(counts), ReceiveProfiles.PROFILES.values().filter(func(p: Dictionary) -> bool: return p["confidence"] == "verified").size()])
-	check(counts.get("usable", 0) == 23 and counts.get("conditional", 0) == 27 and counts.get("pending", 0) == 70 and counts.get("not_reception", 0) == 4, "la clasificacion es la de la auditoria (23 / 27 / 70 / 4)")
+	# Auditoria de F3 (23 / 27 / 70 / 4) mas la verificacion visual de los 70 pendientes (45 confirmados, 25 siguen pendientes).
+	check(counts.get("usable", 0) == 50 and counts.get("conditional", 0) == 45 and counts.get("pending", 0) == 25 and counts.get("not_reception", 0) == 4, "la clasificacion es la de la auditoria y la verificacion visual (50 / 45 / 25 / 4)")
 	var leaked: int = 0
 	for id in ReceiveProfiles.PROFILES:
 		var p: Dictionary = ReceiveProfiles.PROFILES[id]
@@ -712,8 +713,10 @@ func test_reception_with_a_pass_in_the_clip_uses_the_real_pass_once() -> void:
 			r["contact"] = i
 			src.release_pass()
 			released = true
-		var v: Vector3 = (s["ctx"] as MatchContext).ball.linear_velocity
-		if released and i > int(r["contact"]) + 1 and (v - prev).length() > 3.0:
+		var b: Ball = (s["ctx"] as MatchContext).ball
+		var v: Vector3 = b.linear_velocity
+		# Solo los impulsos del receptor: el control del companero que recibe el pase no es un segundo pase.
+		if released and i > int(r["contact"]) + 1 and (v - prev).length() > 3.0 and b.last_toucher == p:
 			jumps_after += 1
 		prev = v
 	var conds: Array = JsonReceive.profile(r["clip"]).get("conds", []) if r["clip"] != &"" else []

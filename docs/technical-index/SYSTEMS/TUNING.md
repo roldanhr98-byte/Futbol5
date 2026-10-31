@@ -2,7 +2,7 @@
 
 ## Identificación
 
-- **Responsabilidad exacta:** el autoload `Tuning` es el **único punto de acceso** a los parámetros de balance (`Tuning.ball`, `Tuning.player`, `Tuning.assist`, `Tuning.keeper`, `Tuning.pitch`) y a las preferencias del usuario (niveles de asistencia, diagnóstico, duración, botones táctiles, zoom de cámara `camera_zoom`, sonido `sound_on` y modo de jugabilidad `gameplay_mode`: 1 pack actual, 2 mocap de fútbol con el modelo Newton, 3 solo Tripo). Intenta cargar un `.tres` por clase desde `resources/tuning/`; **si no existe, usa los valores por defecto escritos en la propia clase**.
+- **Responsabilidad exacta:** el autoload `Tuning` es el **único punto de acceso** a los parámetros de balance (`Tuning.ball`, `Tuning.player`, `Tuning.assist`, `Tuning.keeper`, `Tuning.pitch`) y a las preferencias del usuario (niveles de asistencia, diagnóstico, duración, botones táctiles, zoom de cámara `camera_zoom`, sonido `sound_on` y modo de jugabilidad `gameplay_mode`: 1 pack actual, 2 mocap de fútbol con el modelo Newton, 3 solo Tripo, 4 Json). **Desde el 2026-10-30 el modo 4 es el predeterminado (`DEFAULT_GAMEPLAY_MODE`) y el único jugable (`PLAYABLE_MODES = [4]`)**: una instalación nueva arranca en el 4 y unas preferencias guardadas con 1-3 (el 1 era el predeterminado y se guardaba con cualquier ajuste) pasan al 4 conservando el resto de la configuración. Los modos 1-3 siguen en el código (pruebas y sistemas compartidos) hasta que se autorice quitarlos. Intenta cargar un `.tres` por clase desde `resources/tuning/`; **si no existe, usa los valores por defecto escritos en la propia clase**.
 - **Estado:** implementado. **`resources/tuning/` existe pero está vacío**: hoy el balance vive en los valores por defecto de las clases.
 - **Última verificación:** <!-- AUTO:verified -->
 2026-10-30
@@ -35,8 +35,10 @@
 | `Tuning.MATCH_MINUTES` | `[3, 5, 7, 10]` | 24 | Duracion del partido elegida (minutos): 3, 5, 7 o 10. |
 | `Tuning.CAMERA_ZOOMS` | `[0.55, 0.7, 0.85, 1.0]` | 29 | Zoom de la camara del partido: factor sobre la distancia de MatchCamera (menor = mas cerca). Niveles del menu: muy cerca, cerca (por defecto: la camara a 0.7 de la distancia de la transmision lejana), media y lejos (la transmision de antes). |
 | `Tuning.CAMERA_ZOOM_NAMES` | `["Muy cerca", "Cerca", "Media", "Lejos"]` | 30 |  |
-| `Tuning.GAMEPLAY_MODES` | `[1, 2, 3, 4]` | 38 | Modo de jugabilidad: 1 = animaciones del pack actual; 2 = «Mocap Pack 05 Soccer» (capturas de movimiento de futbol: pase de interior, tiro potente, penal y festejos; ver AnimationCatalog.mocap_mode); 3 = solo Tripo3D (el modelo y sus animaciones prefijadas, patada procedural; FootballerVisual.build); 4 = Json (las animaciones de animaciones_futbol5_JSON sobre el esqueleto canonico JsonRig, con el humanoide propio json_human.scn). Se elige en el menu de pausa (reinicia el partido). |
-| `Tuning.GAMEPLAY_MODE_NAMES` | `{1: "1 · Pack actual", 2: "2 · Mocap fútbol", 3: "3 · Tripo", 4: "4 · Json"}` | 39 |  |
+| `Tuning.GAMEPLAY_MODES` | `[1, 2, 3, 4]` | 40 | Modo de jugabilidad: 1 = animaciones del pack actual; 2 = «Mocap Pack 05 Soccer» (capturas de movimiento de futbol: pase de interior, tiro potente, penal y festejos; ver AnimationCatalog.mocap_mode); 3 = solo Tripo3D (el modelo y sus animaciones prefijadas, patada procedural; FootballerVisual.build); 4 = Json (las animaciones de animaciones_futbol5_JSON sobre el esqueleto canonico JsonRig, con el humanoide propio json_human.scn). Solo el 4 se conserva en la version final: el juego arranca en el 4 y el menu de pausa no ofrece los descartados (1-3 siguen en el codigo para las pruebas y los sistemas compartidos hasta que se autorice quitarlos). |
+| `Tuning.GAMEPLAY_MODE_NAMES` | `{1: "1 · Pack actual", 2: "2 · Mocap fútbol", 3: "3 · Tripo", 4: "4 · Json"}` | 41 |  |
+| `Tuning.PLAYABLE_MODES` | `[4]` | 43 | Modos que se ofrecen en el menu y que se aceptan de las preferencias guardadas, y el de una instalacion nueva. |
+| `Tuning.DEFAULT_GAMEPLAY_MODE` | `4` | 44 |  |
 <!-- /AUTO -->
 
 Rutas esperadas de los `.tres` (**ninguna existe hoy**): las constantes `BALL_PATH`, `PLAYER_PATH`, `ASSIST_PATH`, `KEEPER_PATH` y `PITCH_PATH` de arriba, todas dentro de `resources/tuning/`. Un `.tres` cuyo script no coincide con la clase se ignora con un aviso.
@@ -57,19 +59,19 @@ Preferencias del usuario (`user://settings.cfg`, `Tuning.save_user_settings`): s
 <!-- AUTO:funcs:scripts/gameplay/tuning.gd -->
 | Función | Línea | Qué hace |
 |---|---|---|
-| `Tuning._init()` | 42 |  |
-| `Tuning._ready()` | 45 |  |
-| `Tuning.reload()` | 49 | Recarga todos los parametros desde disco (util al ajustar valores en el laboratorio). |
-| `Tuning.load_user_settings()` | 58 | Aplica las preferencias del usuario (niveles de asistencia, diagnostico) sobre los parametros. |
-| `Tuning.save_user_settings()` | 75 |  |
-| `Tuning._load_or_default(path: String, script: GDScript)` | 91 |  |
+| `Tuning._init()` | 47 |  |
+| `Tuning._ready()` | 50 |  |
+| `Tuning.reload()` | 54 | Recarga todos los parametros desde disco (util al ajustar valores en el laboratorio). |
+| `Tuning.load_user_settings(path: String = USER_SETTINGS_PATH)` | 63 | Aplica las preferencias del usuario (niveles de asistencia, diagnostico) sobre los parametros. path: otro archivo (pruebas). |
+| `Tuning.save_user_settings()` | 82 |  |
+| `Tuning._load_or_default(path: String, script: GDScript)` | 98 |  |
 <!-- /AUTO -->
 
 ## Recorrido de ejecución
 
 1. `Tuning._init` → `reload` → carga cada recurso (o `script.new()`) → `load_user_settings`.
 2. El resto del código lee `Tuning.<grupo>.<parámetro>` en el momento de uso, salvo `Ball.apply_tuning` (copia a propiedades físicas al crear la pelota).
-3. `Hud._cycle_assist`, `Hud._toggle_diagnostics`, `Hud._cycle_camera_zoom`, `Hud._toggle_sound` y `Hud._cycle_gameplay_mode` modifican `Tuning.assist`/`show_diagnostics`/`camera_zoom`/`sound_on`/`gameplay_mode` y llaman `save_user_settings`.
+3. `Hud._cycle_assist`, `Hud._toggle_diagnostics`, `Hud._cycle_camera_zoom`, `Hud._toggle_sound` y `Hud._cycle_gameplay_mode` (solo entre `PLAYABLE_MODES`; con un único modo su botón no se muestra) modifican `Tuning.assist`/`show_diagnostics`/`camera_zoom`/`sound_on`/`gameplay_mode` y llaman `save_user_settings`.
 
 ## Pruebas
 

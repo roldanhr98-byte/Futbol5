@@ -193,6 +193,8 @@ func _refresh_menu_labels() -> void:
 	(_pause_buttons["camera_zoom"] as Button).text = "Zoom de cámara: %s" % Tuning.CAMERA_ZOOM_NAMES[_nearest_index(Tuning.CAMERA_ZOOMS, Tuning.camera_zoom)]
 	(_pause_buttons["sound"] as Button).text = "Sonido: %s" % ("Sí" if Tuning.sound_on else "No")
 	(_pause_buttons["gameplay_mode"] as Button).text = "Modo de juego: %s" % Tuning.GAMEPLAY_MODE_NAMES.get(Tuning.gameplay_mode, str(Tuning.gameplay_mode))
+	# Con un solo modo jugable no hay nada que elegir: el boton no se muestra (no ofrece los modos descartados).
+	(_pause_buttons["gameplay_mode"] as Button).visible = Tuning.PLAYABLE_MODES.size() > 1
 	(_pause_buttons["training"] as Button).text = "Volver al partido" if MatchScene.training_mode else "Entrenamiento sin rivales"
 	(_pause_buttons["diagnostics"] as Button).text = "Diagnóstico: %s" % ("ACTIVADO" if Tuning.show_diagnostics else "desactivado")
 
@@ -225,10 +227,10 @@ func _cycle_camera_zoom() -> void:
 	Tuning.save_user_settings()
 	_refresh_menu_labels()
 
-## Modo de jugabilidad (1 pack actual / 2 mocap de futbol / 3 Tripo): se guarda y el partido se vuelve a montar (cada
-## modo tiene sus modelos y clips).
+## Modo de jugabilidad entre los jugables (Tuning.PLAYABLE_MODES; hoy solo el 4, y el boton no se muestra): se guarda y el
+## partido se vuelve a montar (cada modo tiene sus modelos y clips).
 func _cycle_gameplay_mode() -> void:
-	var opts: Array = Tuning.GAMEPLAY_MODES
+	var opts: Array = Tuning.PLAYABLE_MODES
 	Tuning.gameplay_mode = opts[(opts.find(Tuning.gameplay_mode) + 1) % opts.size()]
 	Tuning.save_user_settings()
 	_refresh_menu_labels()

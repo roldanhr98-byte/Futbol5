@@ -103,11 +103,22 @@ func play_situation(situation: StringName, lv: int, src: StringName, pick: int =
 	if owner.visual == null:
 		return 0
 	var r: Dictionary = AnimationCatalog.resolve(situation, owner.visual.uses_pack, pick)
-	if r.is_empty() or r.get("source", &"") != &"pack":
+	if r.is_empty():
 		stats["rechazadas"] += 1
-		_note("RECHAZADA %s (%s, nivel %d): sin clip JSON" % [situation, src, lv])
+		_note("RECHAZADA %s (%s, nivel %d): sin clip" % [situation, src, lv])
 		return 0
-	return play(situation, lv, src, r["clip"], speed, 0.0, play_for, true)
+	if r.get("source", &"") == &"pack":
+		return play(situation, lv, src, r["clip"], speed, 0.0, play_for, true)
+	# Clip de Tripo (solo fuera del modo 4: en el modo 4 AnimationCatalog.resolve no los devuelve): misma solicitud al
+	# arbitro, reproducido en su ranura de Tripo (FootballerVisual.play_action).
+	var c: StringName = r["clip"]
+	var t: int = request(situation, lv, src, c, true)
+	if t == 0:
+		return 0
+	if owner.visual.play_action(c, speed) <= 0.0:
+		release(t, "sin reproduccion")
+		return 0
+	return t
 
 ## Encadenado de la misma accion (caer -> tendido -> levantarse): cambia tipo y clip sin volver a arbitrar.
 func handover(t: int, k: StringName, c: StringName) -> bool:

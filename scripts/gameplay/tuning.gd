@@ -34,10 +34,15 @@ var sound_on: bool = true
 ## Modo de jugabilidad: 1 = animaciones del pack actual; 2 = «Mocap Pack 05 Soccer» (capturas de movimiento de futbol:
 ## pase de interior, tiro potente, penal y festejos; ver AnimationCatalog.mocap_mode); 3 = solo Tripo3D (el modelo y sus
 ## animaciones prefijadas, patada procedural; FootballerVisual.build); 4 = Json (las animaciones de animaciones_futbol5_JSON
-## sobre el esqueleto canonico JsonRig, con el humanoide propio json_human.scn). Se elige en el menu de pausa (reinicia el partido).
+## sobre el esqueleto canonico JsonRig, con el humanoide propio json_human.scn). Solo el 4 se conserva en la version final:
+## el juego arranca en el 4 y el menu de pausa no ofrece los descartados (1-3 siguen en el codigo para las pruebas y los
+## sistemas compartidos hasta que se autorice quitarlos).
 const GAMEPLAY_MODES := [1, 2, 3, 4]
 const GAMEPLAY_MODE_NAMES := {1: "1 · Pack actual", 2: "2 · Mocap fútbol", 3: "3 · Tripo", 4: "4 · Json"}
-var gameplay_mode: int = 1
+## Modos que se ofrecen en el menu y que se aceptan de las preferencias guardadas, y el de una instalacion nueva.
+const PLAYABLE_MODES := [4]
+const DEFAULT_GAMEPLAY_MODE := 4
+var gameplay_mode: int = DEFAULT_GAMEPLAY_MODE
 
 func _init() -> void:
 	reload()
@@ -54,10 +59,10 @@ func reload() -> void:
 	pitch = _load_or_default(PITCH_PATH, PitchConfig) as PitchConfig
 	load_user_settings()
 
-## Aplica las preferencias del usuario (niveles de asistencia, diagnostico) sobre los parametros.
-func load_user_settings() -> void:
+## Aplica las preferencias del usuario (niveles de asistencia, diagnostico) sobre los parametros. path: otro archivo (pruebas).
+func load_user_settings(path: String = USER_SETTINGS_PATH) -> void:
 	var cfg := ConfigFile.new()
-	if cfg.load(USER_SETTINGS_PATH) != OK:
+	if cfg.load(path) != OK:
 		return
 	assist.pass_assist = clampf(float(cfg.get_value("assist", "pass", assist.pass_assist)), 0.0, 1.0)
 	assist.shot_assist = clampf(float(cfg.get_value("assist", "shot", assist.shot_assist)), 0.0, 1.0)
@@ -69,8 +74,10 @@ func load_user_settings() -> void:
 	match_minutes = mm if MATCH_MINUTES.has(mm) else 5
 	camera_zoom = clampf(float(cfg.get_value("ui", "camera_zoom", 0.7)), 0.4, 1.2)
 	sound_on = bool(cfg.get_value("ui", "sound_on", true))
-	var gm: int = int(cfg.get_value("match", "gameplay_mode", 1))
-	gameplay_mode = gm if GAMEPLAY_MODES.has(gm) else 1
+	var gm: int = int(cfg.get_value("match", "gameplay_mode", DEFAULT_GAMEPLAY_MODE))
+	# Preferencias de versiones anteriores con un modo descartado (1-3; el 1 era el predeterminado y se guardaba con cualquier
+	# ajuste): pasan al 4 y el resto de la configuracion se conserva.
+	gameplay_mode = gm if PLAYABLE_MODES.has(gm) else DEFAULT_GAMEPLAY_MODE
 
 func save_user_settings() -> void:
 	var cfg := ConfigFile.new()

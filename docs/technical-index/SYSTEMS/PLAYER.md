@@ -79,7 +79,7 @@
 | `kick_turn_scale` | `0.35` | float | `scripts/player/player_tuning.gd:102` | `scripts/player/ball_handler.gd:607`, `scripts/player/ball_handler.gd:611`, `scripts/player/ball_handler.gd:1105` | Fraccion de la velocidad de giro que se conserva mientras el pie se prepara (el pie de apoyo fija la direccion). (Patada con animacion del pack) |
 | `kick_follow_through` | `0.30` | float | `scripts/player/player_tuning.gd:104` | `scripts/player/ball_handler.gd:1087`, `scripts/player/ball_handler.gd:1116` | Segundos de continuacion del clip tras el golpeo antes de devolver el cuerpo a la marcha. (Patada con animacion del pack) |
 | `first_touch_absorb` | `0.65` | float | `scripts/player/player_tuning.gd:108` | `scripts/player/ball_handler.gd:2752` | Fraccion de energia que absorbe el control orientado (0 = rebote total). (Contacto con balon) |
-| `receive_contact` | `{` | Dictionary | `scripts/player/player_tuning.gd:112` | `scripts/player/json_receive.gd:560` | Recepcion con clip (modo 4, JsonReceive.contact_velocity), por parte del cuerpo: Vector3(restitucion, conservacion a lo largo de la superficie, empuje hacia delante en m/s). Los dos primeros se escalan con lo que el jugador no amortigua (first_touch_absorb): un buen control deja la pelota muerta. Valores iniciales para ajustar en el juego, no medidos. (Contacto con balon) |
+| `receive_contact` | `{` | Dictionary | `scripts/player/player_tuning.gd:112` | `scripts/player/json_receive.gd:576` | Recepcion con clip (modo 4, JsonReceive.contact_velocity), por parte del cuerpo: Vector3(restitucion, conservacion a lo largo de la superficie, empuje hacia delante en m/s). Los dos primeros se escalan con lo que el jugador no amortigua (first_touch_absorb): un buen control deja la pelota muerta. Valores iniciales para ajustar en el juego, no medidos. (Contacto con balon) |
 | `body_mass` | `75.0` | float | `scripts/player/player_tuning.gd:118` | **sin uso** |  (Contacto con balon) |
 | `capsule_radius` | `0.3` | float | `scripts/player/player_tuning.gd:119` | `scripts/player/ball_handler.gd:1487`, `scripts/player/ball_handler.gd:1497`, `scripts/player/footballer.gd:87` |  (Contacto con balon) |
 | `capsule_height` | `1.75` | float | `scripts/player/player_tuning.gd:120` | `scripts/player/ball_handler.gd:1487`, `scripts/player/footballer.gd:88`, `scripts/player/footballer.gd:90` |  (Contacto con balon) |
@@ -122,21 +122,21 @@ Ver la tabla «Valores fijos» de [ARCHITECTURE.md](../ARCHITECTURE.md) (carga d
 | `Footballer.reset_motion()` | 174 |  |
 | `Footballer.place_at(pos: Vector3, yaw: float)` | 185 |  |
 | `Footballer._physics_process(delta: float)` | 198 |  |
-| `Footballer._json_idle(stick_mag: float, delta: float)` | 444 |  |
-| `Footballer._json_turn_move(desired_dir: Vector3, desired_mag: float, delta: float)` | 466 |  |
-| `Footballer._keep_inside(dir: Vector3)` | 499 | Quita la componente que saca al jugador mas alla de las lineas (con medio metro de margen). |
-| `Footballer._ai_commits_tackle(carrier: Footballer)` | 512 | La IA no disputa en cada ocasion: contiene (jockey) y entra cuando la pelota queda expuesta (toque largo del portador, pelota suelta) o, con |
-| `Footballer._skill_is_drag_back(frame: InputFrame)` | 521 | El boton REGATE pide la vuelta pisando la pelota cuando el joystick apunta hacia atras (>= DragBack.MIN_ANGLE grados del frente) con la pelo |
-| `Footballer._json_clip_slides(cur: StringName, delta: float)` | 534 |  |
-| `Footballer._gait_overlays(desired_dir: Vector3, want_sprint: bool, stick_mag: float, speed_before: float, delta: float)` | 545 |  |
-| `Footballer._cancel_reaction()` | 587 |  |
-| `Footballer._on_match_event(e: GameEvent)` | 598 | Reacciones de presentacion a eventos del partido: - Gol: el goleador, el asistente, el resto del equipo y el rival reaccionan distinto (un a |
-| `Footballer._try_block_jump(e: GameEvent)` | 640 |  |
-| `Footballer.rng_delay()` | 655 |  |
-| `Footballer._set_reaction(situation: StringName, wait: float, cut: float)` | 658 |  |
-| `Footballer._update_reaction(delta: float)` | 665 | La reaccion a un gol arranca cuando el jugador casi se ha detenido (o tras REACTION_MAX_WAIT) para no animar un clip en el sitio sobre un cu |
-| `Footballer._check_player_collisions()` | 679 | Un choque a velocidad con otro jugador provoca un tropiezo (presentacion) o, si es fuerte, un golpe de hombro y caida. |
-| `Footballer.capture_state()` | 701 | Datos replicables del jugador (para snapshots de red / pruebas). |
+| `Footballer._json_idle(stick_mag: float, delta: float)` | 450 |  |
+| `Footballer._json_turn_move(desired_dir: Vector3, desired_mag: float, delta: float)` | 472 |  |
+| `Footballer._keep_inside(dir: Vector3)` | 505 | Quita la componente que saca al jugador mas alla de las lineas (con medio metro de margen). |
+| `Footballer._ai_commits_tackle(carrier: Footballer)` | 518 | La IA no disputa en cada ocasion: contiene (jockey) y entra cuando la pelota queda expuesta (toque largo del portador, pelota suelta) o, con |
+| `Footballer._skill_is_drag_back(frame: InputFrame)` | 527 | El boton REGATE pide la vuelta pisando la pelota cuando el joystick apunta hacia atras (>= DragBack.MIN_ANGLE grados del frente) con la pelo |
+| `Footballer._json_clip_slides(cur: StringName, delta: float)` | 540 |  |
+| `Footballer._gait_overlays(desired_dir: Vector3, want_sprint: bool, stick_mag: float, speed_before: float, delta: float)` | 551 |  |
+| `Footballer._cancel_reaction()` | 593 |  |
+| `Footballer._on_match_event(e: GameEvent)` | 604 | Reacciones de presentacion a eventos del partido: - Gol: el goleador, el asistente, el resto del equipo y el rival reaccionan distinto (un a |
+| `Footballer._try_block_jump(e: GameEvent)` | 646 |  |
+| `Footballer.rng_delay()` | 661 |  |
+| `Footballer._set_reaction(situation: StringName, wait: float, cut: float)` | 664 |  |
+| `Footballer._update_reaction(delta: float)` | 671 | La reaccion a un gol arranca cuando el jugador casi se ha detenido (o tras REACTION_MAX_WAIT) para no animar un clip en el sitio sobre un cu |
+| `Footballer._check_player_collisions()` | 685 | Un choque a velocidad con otro jugador provoca un tropiezo (presentacion) o, si es fuerte, un golpe de hombro y caida. |
+| `Footballer.capture_state()` | 707 | Datos replicables del jugador (para snapshots de red / pruebas). |
 <!-- /AUTO -->
 
 <!-- AUTO:funcs:scripts/player/locomotion.gd -->
@@ -472,11 +472,17 @@ por nombre los controles aéreos (auditoría de los 124 clips).
 
 - **Perfiles de contacto** (`ReceiveProfiles`, generado por `tools/json_anim/make_receive_profiles.py` desde los JSON
   originales): por clip, parte del cuerpo del primer contacto real (pie, pie en el aire, muslo, rodilla, pecho; `leg` si no se
-  distingue), instante estimado (pico de la pierna o inclinación del tronco; no `ball_touches` ni `key_frame`), estado de la
-  auditoría (23 `usable`, 27 `conditional`, 70 `pending`, 4 `not_reception`), condiciones (giro o salida con joystick, rival,
-  pase posterior, salto), instante del pase o golpeo posterior, dirección de llegada del nombre y confianza (`estimated`,
-  `verified`: contacto visto con la pelota en el visor; hoy 1330, 3068, 0584, 0580, 0588, 0574). Solo `usable` y `conditional`
-  (con sus condiciones cumplidas) entran en la selección; los `pending` esperan su verificación visual.
+  distingue), instante estimado (pico de la pierna o inclinación del tronco; no `ball_touches` ni `key_frame`), estado
+  (auditoría: 23 `usable`, 27 `conditional`, 70 `pending`, 4 `not_reception`; tras la verificación visual de los 70 pendientes:
+  **50 `usable`, 45 `conditional`, 25 `pending`, 4 `not_reception`**), condiciones (giro o salida con joystick, rival, pase
+  posterior, salto), instante del pase o golpeo posterior, dirección de llegada del nombre y confianza (`estimated`,
+  `verified`: contacto visto con la pelota en el visor: los 6 de F3 y los 45 confirmados en la verificación visual). Solo
+  `usable` y `conditional` (con sus condiciones cumplidas) entran en la selección; los `pending` no.
+- **Verificación visual** (2026-10-30, [`fases/F3_verificacion_visual_70.md`](../../fases/F3_verificacion_visual_70.md)):
+  `receive_view.tscn` con `CLIP=<id>` reproduce un clip excluido de la selección y lanza la pelota (física real, calibrada) a
+  la parte supuesta en el instante supuesto; tiras antes/durante/después del contacto y medida del esqueleto vivo. Resultado:
+  45 confirmados (19 muslo, 15 pecho, 7 pie en el aire, 4 pie; 12 de ellos con otra parte que la supuesta por la cinemática: 7 pie en el aire, 4 pie, 1 pecho) y 25 sin
+  confirmar (11 con el instante estimado al final del clip). Los veredictos viven en `VISUAL` / `VISUAL_NOT` del generador.
 - **Lados:** los datos están en espejo respecto de los nombres (verificado en el modelo: «R_THIGH», «R_FOOT», «FROM_R_…»
   mueven la pierna izquierda del modelo). La geometría sale de los datos; la dirección de llegada del nombre se invierte
   («FROM_R_45» = +45°, por la izquierda) y el espejo cambia el signo.
@@ -490,7 +496,9 @@ por nombre los controles aéreos (auditoría de los 124 clips).
   tiro solo entran los clips con pase posterior. Sin clip compatible: anticipación o control físico.
 - **Anticipación** (`JsonReceive.approach`, usada por `Footballer`): dónde tendría que estar el cuerpo para que un clip
   compatible encaje con la pelota más adelante (≤ 2.5 m, alcanzable a tiempo, sin cambiar la carrera del jugador); el receptor
-  va hacia allí (la persona solo con el joystick suelto).
+  va hacia allí (la persona solo con el joystick suelto) **conservando la orientación con la que se calculó el sitio**
+  (`approach_face` → `Locomotion.face_override`: se desplaza de lado o hacia atrás). Antes se giraba hacia donde caminaba, el
+  objetivo cambiaba en cada cálculo, al llegar ningún clip encajaba y la pelota quedaba para el control físico.
 - **Contacto** (`JsonBallMove.step`, intención `receive`): cuando la pelota y la parte del cuerpo animada (posición y rumbo
   reales del cuerpo + su trayectoria en el clip) se encuentran dentro de la ventana (−0.12 / +0.25 s del instante estimado), no
   en un instante fijo; si no se encuentran, el toque se pierde y queda el control físico. Antes del contacto, si la pelota
@@ -498,20 +506,23 @@ por nombre los controles aéreos (auditoría de los 124 clips).
   para que actúe el control físico a tiempo. En la ventana el cuerpo es fantasma
   (la cápsula de 0.3 m es más ancha que las piernas); antes no.
 - **Respuesta física** (`JsonReceive.contact_velocity`, ajustable en `PlayerTuning.receive_contact`): pie a ras de piso = la del
-  clip más el rebote no amortiguado; pie en el aire, muslo, rodilla y pecho = choque con la normal de esa parte (restitución y
+  clip más el rebote no amortiguado, **reflejado por la cara del pie** (que mira entre la llegada y la salida): de frente vuelve
+  hacia donde vino, como antes; en un control orientado sigue hacia la salida (antes siempre volvía hacia el pasador y anulaba
+  la salida: con el joystick a 120° la pelota salía a 0.37 m/s); pie en el aire, muslo, rodilla y pecho = choque con la normal de esa parte (restitución y
   conservación tangencial escaladas por lo que el jugador no amortigua, más un empuje hacia delante): el pie en el aire deja la
   pelota abajo, el muslo y la rodilla la levantan un poco, el pecho le quita casi toda la velocidad horizontal; la pelota cae
   delante del jugador.
 - **Después:** toques de pie posteriores del clip solo si la pelota está ahí (si no, `segundo contacto no llega`: el clip se
   corta y el jugador va a por ella); un pase o golpeo del clip no se reproduce como impulso: el clip se corta antes y el golpeo
   lo da el sistema de pase/tiro (destino real) si hay orden. Árbitro: acción `ball_move`, nivel `BALL_MOVE` (sin cambios de F2).
-- **Medido** (`tests/test_receive.gd`, modo 4): parado, 42 de 42 pases rasos recibidos con clip y controlados (domina
-  `control_stand_1330`); parte acorde a la altura real (0.70–0.76 m pie en el aire, 0.92 m muslo,
-  1.00–1.06 m pecho; pelota a 0.23–0.90 m al final); con render, punta del pie animado a −0.02/0.05 m de la pelota en el contacto.
-- **Limitaciones:** sin clip de recepción a ras de piso para trote o carrera (todos empiezan a ≤ 1 m/s; ahí control físico); un
-  globo en carrera sin clip compatible no lo controla el control físico (> 0.7 m): la pelota se pierde (prueba en rojo); el giro
-  hacia un joystick a 120° orienta el cuerpo pero la pelota apenas sale hacia allí (prueba en rojo); la cabeza no tiene clip
-  verificado; 70 clips pendientes de verificación visual.
+- **Medido** (`tests/test_receive.gd`, modo 4, 2026-10-30 tras la verificación visual): 30 pruebas, 27 pasan (con render
+  también `test_live_foot_meets_the_ball`); parado, 42 de 42 pases rasos recibidos con clip y controlados; globo en carrera
+  recibido con el pecho (el receptor frena hasta un clip casi parado); control orientado con el joystick a 120°: la pelota
+  avanza 1.63 m hacia allí (antes 0.13 m).
+- **Limitaciones:** 3 pruebas en rojo por la parte elegida (1.06 m → muslo de 3162 en vez de pecho; 0.91 m → rodilla de 0204
+  en vez de muslo; pelota controlada en todos): decisión de diseño pendiente; sin clip de recepción aérea en carrera que se
+  elija a esa velocidad; 25 clips siguen pendientes; rodilla y cabeza sin clip verificado; `BallPredictor` subestima el
+  arrastre en el aire (vuelos de ~1 s llegan 10–20 cm más bajos).
 
 ## Historial
 

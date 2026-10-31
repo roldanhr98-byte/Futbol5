@@ -11,6 +11,49 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-10-30 — F3 continuación: verificación visual de los 70 pendientes, fallos de F3 y F2, modo 4 predeterminado
+
+Rama `respaldo-f3`, sin commit (pendiente de autorización).
+
+- **Herramienta** `tools/json_anim/receive_view.gd`: `CLIP=<id>` (con `PART`, `T`, `ANGLE`, `SPEED`, `DIST`, `VIEW`, `COLS`,
+  `DEBUG`) reproduce un clip excluido de la selección automática y lanza la pelota con la física real (tiros de calibración con
+  el jugador apartado) a la parte del cuerpo supuesta en el instante supuesto; el jugador no se mueve ni gira antes del clip.
+  Tira antes/durante/después del contacto con trayectoria prevista y punto de contacto, rótulo por fotograma, y por consola
+  la parte del esqueleto vivo más cercana, el primer paso a < 0.12 m de cada parte, la geometría de la pierna y el desvío del
+  cuerpo. No toca la mecánica.
+- **Verificación visual** de los 70 `pending` (informe [`fases/F3_verificacion_visual_70.md`](../fases/F3_verificacion_visual_70.md)):
+  45 confirmados (19 muslo, 15 pecho, 7 pie en el aire, 4 pie; 12 con una parte distinta de la supuesta por la cinemática) y 25 sin
+  confirmar (11 con el instante estimado al final del clip o después). Generador `make_receive_profiles.py`: tablas `VISUAL`
+  y `VISUAL_NOT`; perfiles regenerados con el zip de JSON originales (sin editar a mano): 50 / 45 / 25 / 4 (antes 23 / 27 / 70
+  / 4); solo cambian las 70 entradas pendientes.
+- **Regresión de F2** (`test_pack_reactions::test_tripo_fallback…`, pasaba en F0 `9980f2b`, fallaba desde F2 `3e035b4`):
+  `ActionArbiter.play_situation` rechazaba toda situación cuya fuente no fuera `pack`; antes de F2 `FootballerVisual.play_situation`
+  reproducía los clips de Tripo con `play_action`. Ahora el árbitro hace la misma solicitud (nivel, testigo, en el sitio) y los
+  reproduce en la ranura de Tripo. No afecta al modo 4 (`AnimationCatalog.resolve` no devuelve clips de Tripo en el modo 4).
+- **F3 `test_lob_received_while_running`**: el receptor en carrera (2.3 m/s) no tenía clip (todos los utilizables entraban a
+  ≤ 1.1 m/s). Con los clips verificados la anticipación lo lleva a un control de pecho (frena y lo usa casi parado). Pasa.
+- **F3 `test_turn_reception_follows_the_stick`**: el clip se elegía bien, pero en el contacto el rebote no amortiguado del pie
+  (`JsonReceive.contact_velocity`) siempre volvía hacia el pasador y anulaba la salida orientada (0.37 m/s). Ahora se refleja
+  por la cara del pie, orientada entre la llegada y la salida: de frente igual que antes; orientado, sigue la salida (la pelota
+  avanza 1.63 m hacia el joystick). Pasa.
+- **Anticipación** (`Footballer`, `JsonReceive.approach_face`): al colocarse para una recepción el receptor conserva la
+  orientación con la que se calculó el sitio (`Locomotion.face_override`). Antes se giraba hacia donde caminaba, el objetivo
+  cambiaba y ningún clip encajaba (con los clips nuevos, la pelota a 0.70 m desde −20° quedaba sin clip; ahora muslo, 3162).
+- **Modo 4 predeterminado** (cambio aparte, hecho después de presentar la verificación): `Tuning.DEFAULT_GAMEPLAY_MODE = 4`,
+  `PLAYABLE_MODES = [4]`; preferencias guardadas con 1-3 pasan al 4 conservando el resto; el menú de pausa no muestra «Modo de
+  juego»; `load_user_settings(path)` admite otra ruta (pruebas). Modos 1-3 siguen en el código. Prueba nueva
+  `tests/test_gameplay_mode_default.gd` (3/3). Arranque real verificado con Xvfb: instalación limpia y preferencias antiguas
+  con modo 1 → modo 4, los 8 jugadores con modelo y clips JSON.
+- **Pruebas corregidas (declarado):** `test_receive::test_reception_with_a_pass_in_the_clip_uses_the_real_pass_once` contaba
+  como segundo pase el control del compañero que recibe el pase (ahora solo impulsos del receptor);
+  `test_profiles_follow_the_audit…` fija la clasificación nueva (50 / 45 / 25 / 4).
+- **Verificación:** ver «Resultados» en [`ESTADO_Y_METODOLOGIA.md`](../ESTADO_Y_METODOLOGIA.md) §6 (cifras reales de esta
+  sesión). Sin prueba en Android. Sin APK.
+- **Pendiente / decisión del usuario:** 3 pruebas de `test_receive` fallan porque el clip elegido usa otra parte que la que la
+  prueba asocia a la altura (1.06 m → muslo 3162 en vez de pecho; 0.91 m → rodilla 0204 en vez de muslo), con la pelota
+  controlada en los tres casos; `BallPredictor` usa la mitad del arrastre en el aire (la pelota real llega más baja y más
+  tarde en vuelos largos).
+
 ## 2026-10-30 — F3 corregido: recepción por perfiles de contacto, trayectoria 3D y partes del cuerpo
 
 - **Error corregido:** la recepción tomaba el primer `ball_touches` como primer contacto y descartaba por nombre los controles

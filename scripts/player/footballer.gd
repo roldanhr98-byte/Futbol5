@@ -276,7 +276,9 @@ func _physics_process(delta: float) -> void:
 	# Recepcion con clip (modo 4): mientras llega la pelota, el receptor se coloca donde un clip de recepcion compatible
 	# encajara con ella (JsonReceive.approach). La persona con el joystick suelto (el joystick manda); la IA siempre.
 	var ap: Vector3 = ball_handler.receive.approach if ball_handler.receive != null else Vector3.INF
+	var receive_face: Vector3 = Vector3.ZERO
 	if ap != Vector3.INF and not frame.press_held and (not is_human_controlled or stick_mag < 0.2):
+		receive_face = ball_handler.receive.approach_face
 		var to_ap: Vector3 = KickModel.flat(ap - global_position)
 		if to_ap.length() > 0.12:
 			desired_dir = to_ap.normalized()
@@ -368,6 +370,10 @@ func _physics_process(delta: float) -> void:
 		var to_c: Vector3 = KickModel.flat(press_info.carrier.global_position - global_position)
 		if to_c.length() < JOCKEY_RANGE and to_c.length() > 0.5:
 			locomotion.face_override = to_c.normalized()
+	elif receive_face != Vector3.ZERO and not kicking:
+		# Colocandose para una recepcion con clip: el cuerpo sigue mirando como cuando se calculo el sitio (se desplaza de lado
+		# o hacia atras sin darse la vuelta); si se girara hacia donde camina, al llegar el clip ya no encajaria.
+		locomotion.face_override = receive_face
 	elif not kicking:
 		var carry_face: Vector3 = ball_handler.plan_carry(desired_dir, desired_mag, delta)
 		if carry_face.length_squared() > 0.01:

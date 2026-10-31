@@ -59,7 +59,9 @@ python3 tools/docs_index.py sync && python3 tools/docs_index.py check   # 5. doc
 | Perfiles gráficos, FPS | `scripts/diagnostics/graphics_settings.gd`, `diagnostics_overlay.gd` |
 | APK / CI / firma | `.github/workflows/android.yml`, `export_presets.cfg`, `tools/android/` |
 
-## 3. Los 4 modos de jugabilidad (`Tuning.gameplay_mode`, menú Pausa → «Modo de juego»; cambiar recarga el partido)
+## 3. Los 4 modos de jugabilidad (`Tuning.gameplay_mode`)
+
+> **Desde el 2026-10-30 el juego arranca siempre en el modo 4 (Json)**, el único que se conserva: `Tuning.DEFAULT_GAMEPLAY_MODE = 4`, `PLAYABLE_MODES = [4]` (preferencias antiguas con 1-3 pasan al 4) y el menú de pausa ya no muestra «Modo de juego». Los modos 1-3 siguen en el código para las pruebas y los sistemas compartidos; no se usan ni se borran sin autorización.
 
 | Modo | Qué es | Dónde |
 |---|---|---|

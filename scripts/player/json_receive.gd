@@ -96,6 +96,9 @@ var rejects: Dictionary = {}
 ## Donde deberia estar el cuerpo para que un clip compatible encaje con la pelota mas adelante (Vector3.INF = ninguno), y
 ## pasos de fisica que le quedan de validez. Lo usa Footballer para llevar al receptor (anticipacion).
 var approach: Vector3 = Vector3.INF
+## Frente del cuerpo con el que se calculo `approach`: el sitio solo vale si el receptor llega mirando igual (Footballer lo
+## mantiene mientras se coloca).
+var approach_face: Vector3 = Vector3.ZERO
 var _approach_ttl: int = 0
 
 func _init(h: BallHandler) -> void:
@@ -493,6 +496,7 @@ func _update_approach(desired_dir: Vector3, stick_mag: float) -> void:
 					best_d = d
 					best = need
 	approach = best
+	approach_face = Locomotion.dir_from_yaw(loco.yaw)
 	_approach_ttl = APPROACH_EVERY * PLAN_EVERY + 2
 
 ## Punto del cuerpo en el marco del inicio del clip (x adelante, y arriba, z derecha), como `ball_touches`: raiz del clip mas
@@ -540,7 +544,8 @@ static func contact_offset(inc: Vector3, b: Ball) -> Vector3:
 
 ## Velocidad de la pelota tras el contacto de recepcion. Amortiguar depende del control del jugador, del equilibrio y de la
 ## carrera (BallHandler.first_touch_absorb), y una pelota fuerte deja mas velocidad:
-##  - pie a ras de piso: la del clip (nominal: al siguiente toque o a la salida) mas el rebote de lo que el pie no amortigua;
+##  - pie a ras de piso: la del clip (nominal: al siguiente toque o a la salida) mas el rebote de lo que el pie no amortigua,
+##    reflejado por la cara del pie (entre la llegada y la salida): de frente vuelve hacia donde vino; orientado, sigue la salida;
 ##  - pie en el aire, muslo, rodilla, pecho: choque con la normal de esa parte (PlayerTuning.receive_contact: restitucion,
 ##    cuanto conserva de la velocidad a lo largo de la superficie y empuje hacia delante): la pelota pierde casi toda la
 ##    velocidad hacia el cuerpo, rebota poco (el muslo y la rodilla algo hacia arriba) y cae delante del jugador.
@@ -554,7 +559,18 @@ func contact_velocity(nominal: Vector3, b: Ball, part: StringName = &"foot") -> 
 	var rel: Vector3 = b.linear_velocity - owner.velocity
 	if part == &"foot":
 		var rel_h: Vector3 = KickModel.flat(rel)
-		var leftover: Vector3 = (-rel_h * (1.0 - absorb) * REBOUND).rotated(Vector3.UP, noise)
+		# Lo que el pie no amortigua sale reflejado por la cara del pie, que mira entre la llegada y la salida (nominal): de
+		# frente rebota hacia donde vino; en un control orientado sigue hacia la salida en vez de anularla.
+		var back: Vector3 = -rel_h
+		var out_dir: Vector3 = KickModel.flat(nominal)
+		if out_dir.length() > 0.3 and rel_h.length() > 0.1:
+			var n: Vector3 = out_dir.normalized() - rel_h.normalized()
+			if n.length() > 0.2:
+				n = n.normalized()
+				back = rel_h - 2.0 * rel_h.dot(n) * n
+			else:
+				back = rel_h   # la salida sigue a la llegada: la pelota no vuelve hacia atras
+		var leftover: Vector3 = (back * (1.0 - absorb) * REBOUND).rotated(Vector3.UP, noise)
 		v = nominal + leftover
 	else:
 		var c: Vector3 = Tuning.player.receive_contact.get(String(part), Vector3(0.2, 0.3, 0.6))
