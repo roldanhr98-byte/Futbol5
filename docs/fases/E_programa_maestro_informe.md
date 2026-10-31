@@ -120,4 +120,30 @@ arquero durante un disparo (20-56 ms) y acciones de giro, balón parado y movimi
 
 ## 9. APK (GitHub Actions)
 
-Ver el final de este documento (se completa con la ejecución real del workflow).
+Construida **solo** en GitHub Actions (workflow `.github/workflows/android.yml`, lanzado a mano sobre `respaldo-f3`), sin
+compilación local. El workflow instala Godot 4.7.2 y su plantilla Android (con verificación SHA-512), Android SDK
+(cmdline-tools, `platforms;android-35`, `build-tools;35.0.1`), Java 21, ejecuta la suite headless y las pruebas con render
+(Xvfb), exporta, firma con un keystore de depuración creado en la propia ejecución (sin secretos en el repositorio) y
+verifica firma, paquete, arquitectura, permisos y que las librerías de animación dentro de la APK sean idénticas a las del
+repositorio.
+
+| | |
+|---|---|
+| Ejecución correcta | #42, commit `edb5d84` — https://github.com/roldanhr98-byte/Futbol5/actions/runs/41206108434 |
+| Pruebas en el runner | headless 279 / 0 fallos (25 omitidas); con render: `live_feet` 7 / 0, `live_kicks` 4 / 0 (50 golpeos: 49 con contacto, 0 inválidos), `pack_motion` 2 / 0, `json_mode` 9 / 0 (1 omitida) |
+| APK | `futbol5-v0.1.42.apk` — paquete `com.webmaletin.futbol5`, versionCode 42, versionName 0.1.42, `arm64-v8a`, sin permisos, firma v2 verificada (`apksigner verify`) |
+| Artefacto descargable | `futbol5-apk` (57.8 MB comprimido) — https://github.com/roldanhr98-byte/Futbol5/actions/runs/41206108434/artifacts/13044910931 (caduca el 2026-11-14) |
+| Firma | de depuración, distinta en cada ejecución: hay que desinstalar la versión anterior antes de instalar esta |
+
+Ejecuciones previas que fallaron y por qué (cada una destapó un fallo real que se corrigió, salvo donde se dice):
+
+| Ejecución | Fallo | Qué se hizo |
+|---|---|---|
+| #36 (intento 1) | `test_ai_match`: pocos tiros en 120 s | aleatorio; se relanzó |
+| #36 (intento 2) | IA sin persona con la pelota quieta 8.8 s; caída comprobada en instante fijo; jugador 1 m fuera | `TeamBrain.person_drives`; prueba de caída; `_lands_inside` |
+| #37 | corner con un clip que no llega a la pelota | 7 clips de balón parado excluidos por medición |
+| #40 | tiro libre: un jugador en la carrera desviaba al ejecutor | `SetPiece._ghost_run` |
+| #41 | `test_training_mode` «hay pases» contado sobre 150 s con muchos goles | pases por minuto en juego |
+
+Subir `respaldo-f3` a GitHub fue necesario para ejecutar el workflow (es la única subida remota; la rama principal
+`ccr-a6c53cd2-uoxpk0` no se tocó).
