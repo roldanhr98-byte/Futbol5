@@ -37,8 +37,16 @@ func test_fall_moves_the_body_with_the_clip_root_and_gets_up_without_input() -> 
 	var moved: float = c.global_position.distance_to(start)
 	await wait_seconds(7.0)
 	check(not c.actions.active() and c.actions.kind == &"", "termina de levantarse sola y recupera el control")
-	note("la caida desplazo al jugador %.2f m con la raiz del clip" % c.global_position.distance_to(start))
-	check(moved > 0.1 or c.global_position.distance_to(start) > 0.3, "el cuerpo se mueve con la raiz del clip")
+	# El recorrido esperado es el de la raiz del propio clip: en el modo 4 la caida se elige por el empujon y, parado y
+	# golpeado de frente, puede ser una caida en el sitio (raiz ~0 m), que no tiene que desplazarlo.
+	var rt: float = (PackLibrary.meta(StringName(String(fall_pose).trim_suffix("_mirror"))).get("root_total", Vector2.ZERO) as Vector2).length()
+	var total: float = c.global_position.distance_to(start)
+	note("la caida (%s, raiz del clip %.2f m) desplazo al jugador %.2f m en la caida y %.2f m con el levantarse" % [fall_pose, rt, moved, total])
+	if rt >= 0.3:
+		check(moved > 0.1 or total > 0.3, "el cuerpo se mueve con la raiz del clip")
+	else:
+		# Solo la fase de caida: luego el levantarse mueve el cuerpo con su propia raiz.
+		check(moved < 0.5, "caida en el sitio: el cuerpo no resbala al caer (%.2f m)" % moved)
 
 func test_slide_tackle_resolves_by_where_the_foot_actually_is() -> void:
 	if _skip_if_missing():

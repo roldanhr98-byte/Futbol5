@@ -3,7 +3,8 @@ extends RefCounted
 ## GENERADO por tools/json_anim/analyze_bank.py (no editar a mano): reasignaciones de la auditoria del banco completo
 ## (docs/fases/E2_inventario_banco.csv). PackLibrary las aplica al cargar las librerias JSON: los datos (.res, JSON) no cambian.
 
-## Clip -> rol nuevo (el juego ya usa ese rol: el clip entra en su seleccion).
+## Clip -> rol nuevo (el juego ya usa ese rol: el clip entra en su seleccion; setpiece_miss no lo usa nadie: saca de
+## la seleccion del balon parado los clips cuyo pie no llega a la pelota).
 const ROLE := {
 	&"jn_ball_dribble_0196": &"ball_skill",
 	&"jn_ball_dribble_0198": &"ball_skill",
@@ -39,9 +40,16 @@ const ROLE := {
 	&"jn_ball_dribble_3192": &"ball_skill",
 	&"jn_gk_idle_3548": &"gk_idle_var",
 	&"jn_gk_idle_3552": &"gk_idle_var",
+	&"jn_setpiece_pass_3330": &"setpiece_miss",
+	&"jn_setpiece_pass_3342": &"setpiece_miss",
+	&"jn_setpiece_pass_3346": &"setpiece_miss",
+	&"jn_setpiece_shot_3354": &"setpiece_miss",
+	&"jn_setpiece_shot_3856": &"setpiece_miss",
 	&"jn_start_2064": &"turn_start",
 	&"jn_start_3038": &"turn_start",
 	&"jn_step_stand_0498": &"turn_start",
+	&"jn_throw_in_2280": &"setpiece_miss",
+	&"jn_throw_in_2506": &"setpiece_miss",
 	&"jn_turn_stand_0134": &"turn_start",
 	&"jn_turn_stand_0472": &"turn_start",
 	&"jn_turn_stand_0476": &"turn_start",

@@ -108,6 +108,18 @@ def has(name, *toks):
 
 # Nuevos destinos (rol que el juego ya usa o que se conecta en este cambio) para los clips de roles sin uso, decididos con la
 # cinematica (giro, carrera, toques) y no solo con el nombre.
+# Clips de balon parado que, medidos en el juego, no sirven: el pie nunca llega a la pelota (corner o penal forzando el
+# clip, 2 de 2 intentos fallan; los demas de su rol conectan siempre) o el saque de banda no tiene lanzamiento (suelta
+# medida en t = 0 s a menos de 0.5 m/s: la pelota sale de las manos a 0.87 m). Se sacan de la seleccion con un rol que
+# nadie usa.
+_FOOT = "medido en el juego: en el %s, forzando este clip, el pie no llega a la pelota (2 de 2 intentos; los demas de su rol conectan)"
+_THROW = "medido: la suelta del saque de banda queda en t = 0 s a %.2f m/s (no hay lanzamiento); la pelota salia de las manos a 0.87 m"
+SETPIECE_MISS = {
+	"jn_setpiece_pass_3330": _FOOT % "corner", "jn_setpiece_pass_3342": _FOOT % "corner", "jn_setpiece_pass_3346": _FOOT % "corner",
+	"jn_setpiece_shot_3354": _FOOT % "penal", "jn_setpiece_shot_3856": _FOOT % "penal",
+	"jn_throw_in_2280": _THROW % 0.16, "jn_throw_in_2506": _THROW % 0.47,
+}
+
 def reclassify(e, name, meta, k):
 	role = e["role"]
 	turn = float(meta.get("yaw_end", 0.0)) - float(meta.get("yaw_start", 0.0))
@@ -157,7 +169,10 @@ def main():
 			referenced = used[role] or bool(e.get("alias")) or bool(re.search(r'[&"]%s(_mirror)?"' % re.escape(e["id"]), code))
 			turn = float(meta.get("yaw_end", 0.0)) - float(meta.get("yaw_start", 0.0))
 			new = role; useful = "si"; system = ROLE_INFO.get(role, ("", ""))[1]; func = ROLE_INFO.get(role, ("", ""))[0]; why = "rol que el juego usa"
-			if e["id"] in rstat:
+			if e["id"] in SETPIECE_MISS:
+				new = "setpiece_miss"; useful = "no"; system = "-"; overlay_role[e["id"]] = "setpiece_miss"
+				why = SETPIECE_MISS[e["id"]] + "; fuera de la seleccion del balon parado"
+			elif e["id"] in rstat:
 				st = rstat[e["id"]]
 				if st == "pending":
 					useful = "pendiente"; why = "recepcion sin contacto confirmado en la verificacion visual (F3_verificacion_visual_70.md)"
@@ -233,7 +248,8 @@ def main():
 	lines = ["class_name ClipRolesOverlay", "extends RefCounted",
 		"## GENERADO por tools/json_anim/analyze_bank.py (no editar a mano): reasignaciones de la auditoria del banco completo",
 		"## (docs/fases/E2_inventario_banco.csv). PackLibrary las aplica al cargar las librerias JSON: los datos (.res, JSON) no cambian.", "",
-		"## Clip -> rol nuevo (el juego ya usa ese rol: el clip entra en su seleccion).", "const ROLE := {"]
+		"## Clip -> rol nuevo (el juego ya usa ese rol: el clip entra en su seleccion; setpiece_miss no lo usa nadie: saca de",
+		"## la seleccion del balon parado los clips cuyo pie no llega a la pelota).", "const ROLE := {"]
 	for cid in sorted(overlay_role):
 		lines.append('\t&"%s": &"%s",' % (cid, overlay_role[cid]))
 	lines += ["}", "", "## Nombre del pack -> clip (transiciones que el codigo pide y no tenian clip).", "const ALIAS := {"]

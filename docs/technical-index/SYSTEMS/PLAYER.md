@@ -540,7 +540,9 @@ por nombre los controles aéreos (auditoría de los 124 clips).
   `DIRECTED_MIN_COS`, `DIRECTED_IN_PLACE`, `LATERAL_CLEAR`): en el modo 4 la caída (y el trastabillón de `stumble_root`) se
   elige por el recorrido de su raíz frente a la inercia del cuerpo más el empujón del contacto: golpeado de frente y parado
   cae hacia atrás o en el sitio, por detrás a la carrera cae hacia adelante, de costado se desvía al lado contrario al
-  rival. Antes era un clip al azar. `test_falls_direction`.
+  rival. Antes era un clip al azar. Junto a una línea se descartan las caídas y esquives cuyo recorrido terminaría fuera
+  de la cancha (`_lands_inside`, `LAND_MARGIN` 0.5 m; sin el filtro, 17 de 40 caídas elegidas junto a la banda terminaban
+  fuera). `test_falls_direction` (5).
 - **Recepción**: penalización `JsonReceive.UNVERIFIED_PENALTY` a perfiles sin verificar; franjas de altura medidas
   (muslo 0.78-0.98 m, pecho desde 1.10 m) en `test_receive`.
 

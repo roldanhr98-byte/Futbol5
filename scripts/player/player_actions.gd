@@ -457,17 +457,19 @@ func avoid_tackle(from_dir: Vector3) -> bool:
 		return false
 	var best: StringName = &""
 	var best_dv: float = INF
+	var mirror: bool = from_dir.dot(owner.locomotion.right()) < 0.0
 	for id in PackLibrary.by_role(&"avoid"):
 		if String(id).ends_with("_mirror"):
+			continue
+		var cid: StringName = StringName(String(id) + "_mirror") if mirror and PackLibrary.has_clip(StringName(String(id) + "_mirror")) else id
+		if not _lands_inside(cid):
 			continue
 		var dv: float = absf(float(PackLibrary.meta(id).get("v_in", 0.0)) - owner.locomotion.speed) + rng.randf() * 0.2
 		if dv < best_dv:
 			best_dv = dv
-			best = id
+			best = cid
 	if best == &"":
 		return false
-	if from_dir.dot(owner.locomotion.right()) < 0.0 and PackLibrary.has_clip(StringName(String(best) + "_mirror")):
-		best = StringName(String(best) + "_mirror")
 	if not start(&"stumble", best, 1.0, -1.0):
 		return false
 	stats["avoids"] = int(stats.get("avoids", 0)) + 1
@@ -590,6 +592,8 @@ func _directed_pick(pool: Array[StringName], from_dir: Vector3) -> StringName:
 		if has_mirror:
 			options.append([mid, Vector2(rt.x, -rt.y)])
 		for o in options:
+			if not _lands_inside(o[0]):
+				continue
 			var ov: Vector2 = o[1]
 			var c: float = ov.normalized().dot(want.normalized())
 			# Con un empujon lateral claro, el clip no puede irse hacia el lado del rival (aunque vaya casi recto).
@@ -614,6 +618,22 @@ func _json_getup(lie: String) -> StringName:
 			same.append(id)
 	var pool: Array[StringName] = same if not same.is_empty() else all
 	return pool[rng.randi() % pool.size()] if not pool.is_empty() else &""
+
+## Margen (m) mas alla de las lineas en el que todavia puede terminar el recorrido de una caida o un esquive.
+const LAND_MARGIN := 0.5
+
+## El recorrido de la raiz del clip (x = adelante, y = derecha) termina dentro de la cancha (+ LAND_MARGIN): una caida de
+## costado junto a la banda no saca al jugador del campo (_room_ahead solo mira hacia adelante).
+func _lands_inside(id: StringName) -> bool:
+	var ctx: MatchContext = owner.ctx
+	if ctx == null or ctx.pitch == null:
+		return true
+	var base: StringName = StringName(String(id).trim_suffix("_mirror"))
+	var rt: Vector2 = PackLibrary.meta(base).get("root_total", Vector2.ZERO)
+	if String(id).ends_with("_mirror"):
+		rt.y = -rt.y
+	var end: Vector3 = owner.global_position + owner.locomotion.forward() * rt.x + owner.locomotion.right() * rt.y
+	return ctx.pitch.contains_xz(end, -LAND_MARGIN)
 
 ## Metros libres por delante del jugador hasta el borde del area de juego (lineas + area exterior).
 func _room_ahead() -> float:

@@ -3489,19 +3489,19 @@
         {
           "file": "scripts/animation/pack_library.gd",
           "name": "PackLibrary.available",
-          "line": 139,
+          "line": 151,
           "kind": "func"
         },
         {
           "file": "scripts/animation/pack_library.gd",
           "name": "PackLibrary.clip",
-          "line": 153,
+          "line": 165,
           "kind": "func"
         },
         {
           "file": "scripts/animation/pack_library.gd",
           "name": "PackLibrary.meta",
-          "line": 180,
+          "line": 192,
           "kind": "func"
         },
         {
@@ -3903,19 +3903,19 @@
         {
           "file": "scripts/player/player_actions.gd",
           "name": "PlayerActions.suffer_contact",
-          "line": 479,
+          "line": 481,
           "kind": "func"
         },
         {
           "file": "scripts/player/player_actions.gd",
           "name": "PlayerActions.try_skill",
-          "line": 642,
+          "line": 662,
           "kind": "func"
         },
         {
           "file": "scripts/player/player_actions.gd",
           "name": "PlayerActions.stumble",
-          "line": 658,
+          "line": 678,
           "kind": "func"
         },
         {
@@ -5551,13 +5551,13 @@
         {
           "file": "scripts/animation/pack_library.gd",
           "name": "PackLibrary.resolve",
-          "line": 110,
+          "line": 122,
           "kind": "func"
         },
         {
           "file": "scripts/animation/pack_library.gd",
           "name": "PackLibrary.by_role",
-          "line": 185,
+          "line": 197,
           "kind": "func"
         },
         {
@@ -5641,7 +5641,7 @@
         {
           "file": "scripts/animation/pack_library.gd",
           "name": "PackLibrary.vary_aliases",
-          "line": 202,
+          "line": 214,
           "kind": "func"
         },
         {

@@ -31,7 +31,7 @@ const ROLE_NAMES := {
 	"idle_fidget": "Espera (gestos)", "idle_ready": "Listo para el saque", "wall": "Barrera", "jostle": "Forcejeo",
 	"nis_walk": "Escenas: caminar", "nis_idle": "Escenas: espera", "nis_sit": "Escenas: sentado", "nis_misc": "Escenas: varias",
 	"manager": "Técnico", "mascot": "Mascota", "crowd": "Público", "referee": "Árbitro", "throw_in": "Saque de banda",
-	"setpiece_pass": "Balón parado: pase", "setpiece_shot": "Balón parado: tiro", "setpiece_lob": "Balón parado: vaselina",
+	"setpiece_pass": "Balón parado: pase", "setpiece_shot": "Balón parado: tiro", "setpiece_lob": "Balón parado: vaselina", "setpiece_miss": "Balón parado descartado (no llega a la pelota)",
 	"gk_dive": "Arquero: estiradas", "gk_catch": "Arquero: atajadas", "gk_scoop": "Arquero: recoger", "gk_block": "Arquero: bloqueos",
 	"gk_getup": "Arquero: levantarse", "gk_turn": "Arquero: giros", "gk_loco": "Arquero: desplazamientos", "gk_gesture": "Arquero: gestos",
 	"gk_kick": "Arquero: saque con el pie", "gk_throw": "Arquero: saque con la mano", "gk_roll": "Arquero: saque rodando",

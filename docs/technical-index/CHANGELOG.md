@@ -20,8 +20,8 @@ Rama `respaldo-f3`. Informe: [`fases/E_programa_maestro_informe.md`](../fases/E_
   geometría medida (muslo 0.78-0.98 m, pecho desde 1.10 m; rodilla 0.83-0.88 m): `test_receive` 30 / 0.
   `JsonReceive.UNVERIFIED_PENALTY`; perfil 0204 verificado. `docs/.gdignore` (Godot importaba el CSV como traducción).
 - **E2 banco completo**: `tools/json_anim/analyze_bank.py` → `docs/fases/E2_inventario_banco.csv` (2 024 filas, 2 022
-  archivos: 1 689 útiles, 310 descartados con motivo, 25 pendientes) y `scripts/animation/clip_roles_overlay.gd` (67
-  reclasificaciones, 3 alias) aplicado por `PackLibrary`. `PlayerActions.avoid_tackle` (clips `avoid`).
+  archivos: 1 682 útiles, 317 descartados con motivo, 25 pendientes) y `scripts/animation/clip_roles_overlay.gd` (67
+  reclasificaciones, 7 exclusiones medidas de balón parado, 3 alias) aplicado por `PackLibrary`. `PlayerActions.avoid_tackle` (clips `avoid`).
   `JuggleController.available()` (sin malabares en el banco: el botón se oculta).
 - **E3 conducción**: `BallHandler.carry_catch_up_mag` (recupera la pelota adelantada), `BallHandler._catching_ball` (toque
   al alcanzar la pelota al acelerar: «encima» 5 % → 0 % en `test_live_feet`). `test_mode4_dribble` (8).
@@ -42,6 +42,13 @@ Rama `respaldo-f3`. Informe: [`fases/E_programa_maestro_informe.md`](../fases/E_
 - **IA sin persona** (`TeamBrain.person_drives`, `team_brain.gd`, `ai_input.gd`): el controlado sin persona (con
   `AIInput`) recibe órdenes de pelota suelta y presión; antes la pelota podía quedarse quieta 7-9 s (falló en GitHub
   Actions; reproducido 1 de 14, tras el arreglo 0 de 20).
+- **Balón parado**: 5 clips cuyo pie nunca llega a la pelota y 2 saques de banda sin lanzamiento, medidos forzando cada
+  clip, pasan a `setpiece_miss` (`analyze_bank.SETPIECE_MISS`); `PackLibrary` redirige el alias que apuntaba a uno
+  (`soccer_penalty_kick`). `test_set_pieces` 6 de 6 (antes corner ~1/9 y banda ~2/6 fallaban).
+  `test_bank_integration::test_set_piece_clips_that_miss_the_ball_are_never_chosen`.
+- **Caídas junto a la banda** (`PlayerActions._lands_inside`, `LAND_MARGIN`): la caída dirigida y el esquive descartan
+  los clips cuyo recorrido terminaría fuera de la cancha (sin el filtro 17 de 40 elecciones junto a la banda; con él 0).
+  Probable causa del fallo «nadie se sale de la cancha más de 1 m» de `test_ai_match` en GitHub Actions.
 - `test_player_actions::test_fall…`: la caída se comprueba al empezar, no a los 0.5 s (las caídas del banco duran
   0.67-1.85 s).
 - **Workflow** `android.yml`: cabecera actualizada (modo 4 predeterminado); sin otros cambios.

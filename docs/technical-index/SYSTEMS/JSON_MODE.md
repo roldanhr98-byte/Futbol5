@@ -19,9 +19,9 @@
 
 `tools/json_anim/analyze_bank.py` mide la cinemática de los 2 022 JSON originales (sin modificarlos) y genera el inventario
 `docs/fases/E2_inventario_banco.csv` (una fila por clip con clase anterior/nueva, función, útil, sistema y motivo) y
-`scripts/animation/clip_roles_overlay.gd` (`ClipRolesOverlay.ROLE` con 67 reclasificaciones y `ALIAS` para
-`Idle_To_Sprint`, `Running_Tired`, `Defender_2`), que `PackLibrary` aplica al cargar el modo 4. Resultado: 1 689 útiles,
-310 descartados con motivo, 25 pendientes (recepciones sin verificación visual). Detalle:
+`scripts/animation/clip_roles_overlay.gd` (`ClipRolesOverlay.ROLE` con 67 reclasificaciones y 7 exclusiones medidas de balón parado —rol `setpiece_miss`— y `ALIAS` para
+`Idle_To_Sprint`, `Running_Tired`, `Defender_2`), que `PackLibrary` aplica al cargar el modo 4. Resultado: 1 682 útiles,
+317 descartados con motivo, 25 pendientes (recepciones sin verificación visual). Detalle:
 [`fases/E2_auditoria_banco.md`](../../fases/E2_auditoria_banco.md). Sin equivalente en el banco: `Sprint_Turn`,
 `Soccer_Spin` (ruleta) y malabares (el botón de la práctica se oculta).
 

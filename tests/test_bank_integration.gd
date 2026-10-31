@@ -125,3 +125,29 @@ func test_gait_transitions_play_in_mode_4() -> void:
 	check(PackLibrary.has_clip(Footballer.BLOCK_CLIP), "el salto de bloqueo (Defender_2) tiene clip")
 	cleanup()
 	_restore()
+
+## Los clips de balon parado cuyo pie no llega a la pelota o sin lanzamiento (medido) quedan fuera de la seleccion del saque, y ningun nombre
+## del pack (ni el de su alias original, ni los repartos de vary_aliases) los elige.
+func test_set_piece_clips_that_miss_the_ball_are_never_chosen() -> void:
+	if _skip_if_missing():
+		return
+	_mode4()
+	var missing: Array = []
+	for id in ClipRolesOverlay.ROLE:
+		if ClipRolesOverlay.ROLE[id] != &"setpiece_miss":
+			continue
+		missing.append(id)
+		for role in [&"setpiece_pass", &"setpiece_shot", &"setpiece_lob", &"throw_in"]:
+			check(not PackLibrary.by_role(role).has(id), "%s fuera de %s" % [id, role])
+	var chosen := {}
+	# Antes de cualquier reparto: el alias original (soccer_penalty_kick era un clip excluido) ya apunta a otro del rol.
+	for a in [&"strike_foward_jog", &"soccer_penalty_kick", &"Chip", &"throw_in"]:
+		chosen[PackLibrary.resolve(a)] = true
+	for i in 30:
+		PackLibrary.vary_aliases()
+		for a in [&"strike_foward_jog", &"soccer_penalty_kick", &"Chip", &"throw_in"]:
+			chosen[PackLibrary.resolve(a)] = true
+	var bad: Array = chosen.keys().filter(func(c: StringName) -> bool: return missing.has(c))
+	note("excluidos %s; elegidos en 30 repartos: %d clips" % [str(missing), chosen.size()])
+	check(missing.size() == 7 and bad.is_empty(), "ningun saque usa un clip excluido (%s)" % str(bad))
+	_restore()

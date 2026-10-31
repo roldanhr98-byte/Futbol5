@@ -77,7 +77,7 @@ prueba elige su modo con `TestCase.gameplay_mode()`; las del pack heredado fijan
 | `tools/run_tests.sh` | **277 pruebas, 1 fallo**, 25 omitidas, 1 622 comprobaciones, 0 SCRIPT ERROR | `test_training_mode::test_training_has_only…` «hay pases (4)»: no determinista (partido sin semilla; al repetirla 11 y 12 pases, pasa 2 de 2) |
 | Con render (xvfb), modo 4 | `live_kicks` 4 / 0 (batería de 50 golpeos: 49 con contacto, 0 inválidos), `live_feet` 7 / 0, `pack_motion` 2 / 0, `json_mode` 9 / 0 (1 omitida) | |
 | `test_shot_keeper` (80 tiros por caso) | 1 / 0 | palo derecho ataja 69 %, izquierdo 76 %, al arquero 84 %, rival encima 0 goles, tirador de 85 ataja 32-36 % |
-| No deterministas conocidas | `test_training_mode` (pases y compañeros), `test_ai_match`, `test_player_actions::test_fall…`, `test_shot_keeper` (comparaciones entre casos), `test_set_pieces::…throw_in…` | |
+| No deterministas conocidas | `test_training_mode` (pases y compañeros), `test_ai_match`, `test_shot_keeper` (comparaciones entre casos). Ya no: `test_set_pieces` (eran clips de balón parado que no llegaban a la pelota, excluidos), `test_player_actions::test_fall…` (comprobaba un instante fijo) | |
 
 Comandos: ver [`START_HERE.md`](START_HERE.md). Render: `TEST_GAMEPLAY_MODE=4 xvfb-run -a godot --rendering-driver opengl3
 --fixed-fps 60 --path . res://tests/run_tests.tscn -- --filter <archivo>`; visor de recepción: `ANGLE=0 SPEED=12 [ARRIVE_Y=0.6]

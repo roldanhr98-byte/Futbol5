@@ -8,7 +8,7 @@ Rama `respaldo-f3`. Modo de juego único: 4 (Json). Todas las cifras de este inf
 | Etapa | Estado | Qué se hizo |
 |---|---|---|
 | E1 Estabilización | hecha | Suite por defecto en el modo 4 (modo por prueba); franjas de altura de la recepción decididas con la geometría medida (1.06 m → muslo o pecho; 0.91 m → muslo, rodilla o pie en el aire); 0204 verificado; penalización a perfiles sin verificar; `docs/.gdignore` |
-| E2 Banco completo | hecha | 2 022 JSON analizados (2 024 clips), inventario con motivo por clip, 67 reclasificaciones y 3 alias integrados en la selección real, esquivar barridas |
+| E2 Banco completo | hecha | 2 022 JSON analizados (2 024 clips), inventario con motivo por clip, 67 reclasificaciones, 7 clips de balón parado excluidos por medición y 3 alias integrados en la selección real, esquivar barridas |
 | E3 Conducción | hecha | Recuperar la pelota adelantada (`carry_catch_up_mag`), toque al alcanzarla al acelerar (`_catching_ball`), 8 pruebas de conducción del modo 4 (incluido el giro a la derecha) |
 | E4 Pases, remates, regates | hecha | Batería de 50 golpeos con el esqueleto animado en el modo 4 (49 con contacto, 0 inválidos); `Soccer_Spin` investigado: no existe en el banco, el regate usa los 55 `ball_skill` |
 | E5 Defensa, arquero, caídas | hecha | Caídas y trastabillones dirigidos por inercia y empujón; arquero con tasa de atajada realista usando solo la información de cada momento; planificador 4× más barato |
@@ -35,11 +35,12 @@ Detalle por clip en [`E2_inventario_banco.csv`](E2_inventario_banco.csv); resume
 | | clips |
 |---|---:|
 | Examinados (2 022 archivos JSON originales, sin modificar) | 2 024 |
-| Útiles e integrados en un sistema del juego | 1 689 |
+| Útiles e integrados en un sistema del juego | 1 682 |
 | — reclasificados a otro rol (regates 32, giros desde parado 31, giros en carrera 2, espera del arquero 2) | 67 |
 | — integrados con funcionalidad nueva (esquivar barrida) | 12 |
 | — alias para nombres que el código pedía y no existían (`Idle_To_Sprint`, `Running_Tired`, `Defender_2`) | 3 |
-| Descartados, con motivo | 310 |
+| Descartados, con motivo | 317 |
+| — de ellos, balón parado que no llega a la pelota o sin lanzamiento (medido en el juego) | 7 |
 | Pendientes (recepciones sin verificación visual de F3) | 25 |
 
 Motivos de descarte: 139 secuencias de presentación (`nis_*`, el juego no tiene escenas de presentación); 111 personajes
@@ -64,6 +65,8 @@ variante del árbitro, gesto sin función y pisada sin toques. Sin equivalente e
 | `KeeperPlanner.plan_save` 42 ms por llamada y hasta 2 por paso | recorrido completo de 362 clips; reintento en cada paso | cajas por muestra y segmento (mismo plan), caché de roles, `PLAN_RETRY`: 11 ms |
 | Sin persona, la IA dejaba la pelota suelta quieta 7-9 s junto al jugador «controlado» | el cerebro no daba órdenes al controlado aunque lo llevara un `AIInput` | `TeamBrain.person_drives`: 0 de 20 (antes 1 de 14); lo destapó GitHub Actions |
 | `test_player_actions::test_fall…` fallaba a veces | comprobaba la caída a los 0.5 s; las del banco duran 0.67-1.85 s | se comprueba al empezar |
+| El corner fallaba ~1 de 9 veces y el saque de banda ~2 de 6 (`test_set_pieces`, tomado por no determinista) | 5 clips de balón parado cuyo pie nunca llega a la pelota y 2 saques de banda sin lanzamiento, elegidos al azar por `vary_aliases` | excluidos (`setpiece_miss`) y alias redirigido: 6 de 6 |
+| Una caída dirigida junto a la banda podía sacar al jugador de la cancha | la elección solo miraba el sitio por delante | `_lands_inside`: 0 de 40 (sin filtro 17 de 40); probable causa de un fallo de `test_ai_match` en GitHub Actions |
 | `test_action_arbiter`, `test_practice` (malabares) | nombres que ya tienen clip; banco sin malabares | lista actualizada; prueba omitida con motivo |
 | Godot importaba el inventario CSV como traducción | CSV dentro de `docs/` | `docs/.gdignore` |
 
@@ -77,10 +80,11 @@ variante del árbitro, gesto sin función y pisada sin toques. Sin equivalente e
 | `test_shot_keeper` (80 tiros por caso, arquero de 60) | palos 66-71 % atajado, al arquero 89 %, con rival encima 0 goles, 18 m potente 96 %, tirador de 85: 32-37 % |
 | `test_goalkeeper` | por velocidad: 9 m/s 100 %, 15 m/s 67 %, 24 m/s 57 % |
 
-No deterministas (partidos sin semilla fija): `test_set_pieces::test_byline_by_defender…` (el saque de esquina usa un
-clip al azar del rol, `PackLibrary.vary_aliases`; una vez tocó `strike_foward_jog`, que no llegó a la pelota; pasa en 7 de
-8 ejecuciones), `test_training_mode::…has_only…` (falló una vez con 4 pases; repetida 2 de
-2), `test_ai_match`, `test_player_actions::test_fall…`, comparaciones entre casos de `test_shot_keeper`.
+No deterministas (partidos de IA sin semilla fija): `test_ai_match` (en GitHub Actions falló una vez por pocos tiros y
+otra por un jugador 1 m fuera de la cancha en una muestra; pasa en las ejecuciones locales), `test_training_mode`
+(pases), comparaciones entre casos de `test_shot_keeper`. Dos que parecían no deterministas eran fallos reales y se
+corrigieron: `test_set_pieces` (clips de balón parado que no llegaban a la pelota) y
+`test_pass_receiver_control::test_ai_teams_still_play_without_a_human` (la IA no daba órdenes al controlado sin persona).
 
 ## 6. Rendimiento (medido, headless, 4 núcleos)
 

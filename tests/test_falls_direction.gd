@@ -111,3 +111,32 @@ func test_directed_pick_follows_the_expected_direction() -> void:
 	note("trastabillones disponibles: %d" % pool.size())
 	check(pool.size() > 0 and misaligned == 0, "el trastabillon elegido va en el sentido del empujon (%d desalineados de 32)" % misaligned)
 	cleanup()
+
+## Junto a la banda, un golpe que empuja hacia fuera no elige una caida cuyo recorrido terminaria fuera de la cancha
+## (+ PlayerActions.LAND_MARGIN): _room_ahead solo mira hacia adelante. (En la cancha de prueba el borde frena al cuerpo,
+## asi que se comprueba la eleccion: hay candidatas que terminarian fuera y ninguna sale elegida.)
+func test_fall_next_to_the_sideline_never_picks_a_clip_that_ends_outside() -> void:
+	if _skip_if_missing():
+		return
+	var ctx: MatchContext = await make_match(Vector3(15.0, 0.11, -9.0))
+	var hw: float = ctx.pitch.config.half_width()
+	var p: Footballer = add_player(ctx, 0, Vector3(-12.0, 0.0, hw - 0.6), 60, ScriptedInput.new(), true)
+	p.locomotion.yaw = Locomotion.yaw_from_dir(Vector3(1, 0, 0))
+	await physics_frames(3)
+	var pool: Array[StringName] = []
+	var outside: int = 0
+	for role in [&"fall", &"fall_hit", &"trip"]:
+		for id in PackLibrary.by_role(role):
+			if String(id).ends_with("_mirror"):
+				continue
+			pool.append(id)
+			if not p.actions._lands_inside(id) or not p.actions._lands_inside(StringName(String(id) + "_mirror")):
+				outside += 1
+	var bad: int = 0
+	for k in 40:
+		var c: StringName = p.actions._directed_pick(pool, Vector3(0, 0, 1))
+		if c != &"" and not p.actions._lands_inside(c):
+			bad += 1
+	note("junto a la banda: %d caidas, %d terminarian fuera en alguna version; elegidas fuera %d de 40" % [pool.size(), outside, bad])
+	check(outside > 0 and bad == 0, "nunca elige una caida que termine fuera de la cancha (%d de 40)" % bad)
+	cleanup()
