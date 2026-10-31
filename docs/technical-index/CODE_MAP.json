@@ -4393,19 +4393,19 @@
         {
           "file": "scripts/gameplay/set_piece.gd",
           "name": "SetPiece.execute",
-          "line": 260,
+          "line": 249,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/set_piece.gd",
           "name": "SetPiece.ai_execute",
-          "line": 207,
+          "line": 196,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/set_piece.gd",
           "name": "SetPiece.force",
-          "line": 310,
+          "line": 298,
           "kind": "func"
         },
         {
@@ -5358,7 +5358,7 @@
         {
           "file": "scripts/gameplay/set_piece.gd",
           "name": "SetPiece._kick_clip",
-          "line": 366,
+          "line": 353,
           "kind": "func"
         },
         {

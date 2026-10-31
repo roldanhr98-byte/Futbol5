@@ -63,7 +63,7 @@
 | `driven_pass_extra` | `1.25` | float | `scripts/ball/ball_tuning.gd:64` | `scripts/assistance/pass_assist.gd:116` |  (Pase) |
 | `shot_speed_min` | `12.0` | float | `scripts/ball/ball_tuning.gd:68` | `scripts/assistance/shot_assist.gd:117`, `scripts/assistance/shot_assist.gd:119` | Tiro flojo / a carga maxima (m/s). prueba03: «shootar se siente horrible, necesita mas potencia» (antes 9 y 27). (Tiro) |
 | `shot_speed_max` | `30.0` | float | `scripts/ball/ball_tuning.gd:69` | `scripts/assistance/shot_assist.gd:117`, `scripts/assistance/shot_assist.gd:119`, `scripts/assistance/shot_assist.gd:124` |  (Tiro) |
-| `shot_charge_time` | `0.9` | float | `scripts/ball/ball_tuning.gd:71` | `scripts/ai/ai_input.gd:471`, `scripts/player/ball_handler.gd:456` | Segundos para cargar el tiro al maximo. (Tiro) |
+| `shot_charge_time` | `0.9` | float | `scripts/ball/ball_tuning.gd:71` | `scripts/ai/ai_input.gd:499`, `scripts/player/ball_handler.gd:456` | Segundos para cargar el tiro al maximo. (Tiro) |
 | `shot_loft_low_deg` | `4.0` | float | `scripts/ball/ball_tuning.gd:72` | `scripts/assistance/shot_assist.gd:158`, `scripts/assistance/shot_assist.gd:163`, `scripts/assistance/shot_assist.gd:164`, `scripts/assistance/shot_assist.gd:224` |  (Tiro) |
 | `shot_loft_high_deg` | `22.0` | float | `scripts/ball/ball_tuning.gd:73` | `scripts/assistance/shot_assist.gd:163`, `scripts/assistance/shot_assist.gd:164` |  (Tiro) |
 | `shot_spin_factor` | `14.0` | float | `scripts/ball/ball_tuning.gd:75` | `scripts/assistance/shot_assist.gd:183` | Factor de efecto (spin) aplicado segun la desviacion lateral del golpeo. (Tiro) |

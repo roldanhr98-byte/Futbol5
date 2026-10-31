@@ -31,6 +31,12 @@ const MOCAP_THROW_RELEASE := 6.68
 const MOCAP_THROW_START := 5.4
 const MOCAP_THROW_HANDS := Vector3(0.45, 1.52, 0.0)
 const KICK_SPEED := 1.0
+## Carrerilla maxima (m de raiz del clip) antes del golpe.
+const RUNUP_MAX := 2.6
+## Radio (m) alrededor de la pelota en el que no puede haber nadie mas que el ejecutor mientras dura el saque: carrerilla
+## maxima (RUNUP_MAX) + contacto a un costado del cuerpo (hasta ~0.7 m) + medio cuerpo y margen. Los rivales, ademas,
+## a la distancia reglamentaria (MatchScene.SET_PIECE_DISTANCE).
+const CLEAR_RADIUS := 4.0
 ## Distancia maxima (m) entre la punta del pie del clip y la pelota en el instante de golpeo para que cuente.
 const CONTACT_RADIUS := 0.45
 ## Segundos que espera la IA antes de sacar, y maximo que espera a la persona antes de sacar por ella.
@@ -145,24 +151,7 @@ func tick(frame: InputFrame, delta: float) -> bool:
 	if not taker.actions.active():
 		stage = &"done"
 		taker.set_ball_ghost(false)
-		_ghost_run(false)
 	return false
-
-## Carrera del saque: el ejecutor no choca con los demas jugadores mientras el clip lo lleva a la pelota (un jugador
-## parado en la linea de la carrera lo desviaba y el pie no llegaba: medido, pie a 0.48-0.97 m de la pelota en un tiro
-## libre). Se quita al resolver el golpe.
-var _ghosted: Array = []
-func _ghost_run(on: bool) -> void:
-	if on:
-		for f in ctx.footballers:
-			if f != taker and is_instance_valid(f) and not _ghosted.has(f):
-				taker.add_collision_exception_with(f)
-				_ghosted.append(f)
-		return
-	for f in _ghosted:
-		if is_instance_valid(f) and is_instance_valid(taker):
-			taker.remove_collision_exception_with(f)
-	_ghosted.clear()
 
 func _hold_still() -> void:
 	taker.velocity = Vector3.ZERO
@@ -293,7 +282,7 @@ func execute(act: StringName, ch: float, lb: bool, dir: Vector3, cu: float = 0.0
 	foot_key = "toe_r" if int(c.get("foot", 1)) > 0 else "toe_l"
 	contact_t = float(c.get("time", 0.4))
 	# Inicio del clip: la carrera completa si cabe, o recortada para no empezar a mas de 3 m de la pelota.
-	var start_t: float = _start_for_runup(clip, contact_t, 2.6)
+	var start_t: float = _start_for_runup(clip, contact_t, RUNUP_MAX)
 	var toe: Vector3 = _toe_at(clip, foot_key, contact_t)
 	var root0: Vector2 = ActionMotion.offset_between(clip, 0.0, start_t)
 	var f2: Vector3 = Locomotion.dir_from_yaw(yaw)
@@ -302,7 +291,6 @@ func execute(act: StringName, ch: float, lb: bool, dir: Vector3, cu: float = 0.0
 	var start2: Vector3 = spot - f2 * (toe.x - root0.x) - r2 * (toe.z - root0.y)
 	taker.place_at(start2, yaw)
 	taker.set_ball_ghost(true)
-	_ghost_run(true)
 	if not taker.actions.start(&"set_piece", clip, KICK_SPEED, contact_t - start_t + 0.45, [], start_t):
 		_resolve_without_clip()
 
@@ -321,7 +309,6 @@ func force() -> void:
 
 ## Sin libreria del pack (o sin modelo) no hay clip que mueva el cuerpo: el saque se hace en el sitio, junto a la pelota.
 func _resolve_without_clip() -> void:
-	_ghost_run(false)
 	resolved = true
 	stage = &"done"
 	taker.set_ball_ghost(false)
@@ -389,7 +376,6 @@ func _resolve() -> void:
 		result = &"thrown"
 		ctx.emit_event(GameEvent.make(GameEvent.Type.PASS, taker.actor_id, team, {"set_piece": "throw_in", "speed": v.length(), "kind": "throw_in"}))
 		return
-	_ghost_run(false)
 	var k: int = int(round(taker.actions.motion.t * 30.0))
 	var toe: Vector3 = KeeperPlanner.path_world_at_body(clip, foot_key, k, taker.global_position, taker.locomotion.yaw)
 	var d: float = Vector2(toe.x - ball.global_position.x, toe.z - ball.global_position.z).length()

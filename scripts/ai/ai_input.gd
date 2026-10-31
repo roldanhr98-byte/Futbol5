@@ -432,14 +432,42 @@ func _decide_dead_ball(f: Footballer, ctx: MatchContext, atk: Vector3, pos: Vect
 	var target: Vector3
 	if taker_team == f.team:
 		target = _support_spot(f, taker as Footballer, atk) if taker is Footballer else _anchor(f, true)
+		# Nadie salvo el ejecutor dentro de la carrerilla: el apoyo corto se ofrece desde fuera de SetPiece.CLEAR_RADIUS
+		# (antes el companero se acercaba a 1.9 m de la pelota y se metia en la carrera del ejecutor).
+		var off: Vector3 = target - bpos
+		var mine: Vector3 = pos - bpos
+		if mine.length() < SetPiece.CLEAR_RADIUS + 1.0:
+			# Ya esta cerca: sale en linea recta alejandose de la pelota (ir a un apoyo del otro lado cruzaria la carrerilla).
+			target = bpos + (mine.normalized() if mine.length() > 0.1 else -atk) * (SetPiece.CLEAR_RADIUS + 1.0)
+		elif off.length() < SetPiece.CLEAR_RADIUS + 0.3:
+			target = bpos + (off.normalized() if off.length() > 0.1 else mine.normalized()) * (SetPiece.CLEAR_RADIUS + 0.3)
 	else:
 		var mark: Vector3 = _mark_spot(f, ctx, atk)
 		target = mark if mark.length_squared() > 0.01 else _anchor(f, false)
 		var away: Vector3 = target - bpos
 		if away.length() < 5.2:
 			target = bpos + (away.normalized() if away.length() > 0.1 else -atk) * 5.2
+		var mine_r: Vector3 = pos - bpos
+		if mine_r.length() < 5.0:
+			# Dentro de la distancia: sale en linea recta alejandose de la pelota.
+			target = bpos + (mine_r.normalized() if mine_r.length() > 0.1 else -atk) * 5.4
+	# Con la pelota muerta nadie cruza la zona de la pelota para llegar a su sitio: la rodea (antes un rival atravesaba
+	# la carrerilla a 2.7 m de la pelota camino de su marca).
+	var keep: float = (SetPiece.CLEAR_RADIUS + 0.3) if taker_team == f.team else 5.2
+	target = _around_ball(pos, target, bpos, keep)
 	target = ctx.pitch.clamp_to_pitch(target, 0.6)
 	_move_to(f, target, 0.7)
+
+## Si el camino recto de pos a target pasa a menos de `radius` de la pelota, devuelve un punto intermedio sobre el
+## circulo de ese radio, avanzando alrededor de la pelota hacia el lado del objetivo (como mucho ~50 grados por decision).
+func _around_ball(pos: Vector3, target: Vector3, bpos: Vector3, radius: float) -> Vector3:
+	var c: Vector3 = Geometry3D.get_closest_point_to_segment(bpos, pos, target)
+	if KickModel.flat(c - bpos).length() >= radius - 0.05:
+		return target
+	var a0: float = atan2(pos.z - bpos.z, pos.x - bpos.x)
+	var a1: float = atan2(target.z - bpos.z, target.x - bpos.x)
+	var a: float = a0 + clampf(wrapf(a1 - a0, -PI, PI), -0.9, 0.9)
+	return bpos + Vector3(cos(a), 0.0, sin(a)) * (radius + 0.2)
 
 func _decide_with_ball(f: Footballer, ctx: MatchContext, atk: Vector3) -> void:
 	var pos: Vector3 = _flat(f.global_position)

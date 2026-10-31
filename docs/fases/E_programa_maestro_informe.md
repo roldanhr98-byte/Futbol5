@@ -66,7 +66,7 @@ variante del árbitro, gesto sin función y pisada sin toques. Sin equivalente e
 | Sin persona, la IA dejaba la pelota suelta quieta 7-9 s junto al jugador «controlado» | el cerebro no daba órdenes al controlado aunque lo llevara un `AIInput` | `TeamBrain.person_drives`: 0 de 20 (antes 1 de 14); lo destapó GitHub Actions |
 | `test_player_actions::test_fall…` fallaba a veces | comprobaba la caída a los 0.5 s; las del banco duran 0.67-1.85 s | se comprueba al empezar |
 | El corner fallaba ~1 de 9 veces y el saque de banda ~2 de 6 (`test_set_pieces`, tomado por no determinista) | 5 clips de balón parado cuyo pie nunca llega a la pelota y 2 saques de banda sin lanzamiento, elegidos al azar por `vary_aliases` | excluidos (`setpiece_miss`) y alias redirigido: 6 de 6 |
-| Tiro libre que no se ejecutaba a tiempo (falló en GitHub Actions) | un jugador parado en la carrera del ejecutor lo desviaba y el pie no llegaba (0.48-0.97 m) | sin choques durante la carrera del saque (`SetPiece._ghost_run`): 0 de 38 clips fallan |
+| Tiro libre que no se ejecutaba a tiempo (falló en GitHub Actions) | un compañero de la IA se metía en la carrerilla (apoyo corto sin distancia mínima e inercia durante la preparación) y un rival la cruzaba camino de su marca; el ejecutor se desviaba y el pie no llegaba | zona libre de 4 m alrededor de la pelota para todos salvo el ejecutor, y nadie la atraviesa: 0 de 38 clips fallan, sin atajos |
 | Una caída dirigida junto a la banda podía sacar al jugador de la cancha | la elección solo miraba el sitio por delante | `_lands_inside`: 0 de 40 (sin filtro 17 de 40); probable causa de un fallo de `test_ai_match` en GitHub Actions |
 | `test_training_mode` «hay pases» fallaba con muchos goles | contaba sobre 150 s; cada gol quita repetición + festejo + saque (en juego quedan 81-96 s) | pases por minuto en juego (2/min, el mismo listón) |
 | `test_action_arbiter`, `test_practice` (malabares) | nombres que ya tienen clip; banco sin malabares | lista actualizada; prueba omitida con motivo |
@@ -142,7 +142,7 @@ Ejecuciones previas que fallaron y por qué (cada una destapó un fallo real que
 | #36 (intento 1) | `test_ai_match`: pocos tiros en 120 s | aleatorio; se relanzó |
 | #36 (intento 2) | IA sin persona con la pelota quieta 8.8 s; caída comprobada en instante fijo; jugador 1 m fuera | `TeamBrain.person_drives`; prueba de caída; `_lands_inside` |
 | #37 | corner con un clip que no llega a la pelota | 7 clips de balón parado excluidos por medición |
-| #40 | tiro libre: un jugador en la carrera desviaba al ejecutor | `SetPiece._ghost_run` |
+| #40 | tiro libre: un jugador en la carrera desviaba al ejecutor | zona libre del saque (primero se probó quitar las colisiones del ejecutor; se retiró porque escondía el error) |
 | #41 | `test_training_mode` «hay pases» contado sobre 150 s con muchos goles | pases por minuto en juego |
 
 Subir `respaldo-f3` a GitHub fue necesario para ejecutar el workflow (es la única subida remota; la rama principal

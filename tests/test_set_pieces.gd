@@ -141,3 +141,40 @@ func test_foul_outside_the_area_is_a_free_kick_and_opponents_keep_distance() -> 
 		min_d = minf(min_d, Vector2(f.global_position.x + 2.0, f.global_position.z - 3.0).length())
 	check(min_d >= 4.5, "los rivales a distancia del tiro libre (%.1f m)" % min_d)
 	check(await _wait_resume(m, 6.0), "el tiro libre se ejecuta y el juego sigue")
+
+## Durante todo el saque (colocacion, espera y carrera) nadie salvo el ejecutor entra en la zona de la carrerilla
+## (SetPiece.CLEAR_RADIUS alrededor de la pelota): ni companeros ofreciendose ni rivales. Antes el apoyo corto de la IA se
+## acercaba a 1.9 m de la pelota y se metia en la carrera del ejecutor, que se desviaba y no llegaba a la pelota.
+func test_nobody_but_the_taker_enters_the_run_up_zone() -> void:
+	var cases := [["tiro libre en el medio", "fk", Vector2(-2.0, 3.0)], ["tiro libre cerca del area", "fk", Vector2(10.5, -2.0)],
+		["corner", "corner", Vector2.ZERO]]
+	for c in cases:
+		var m: MatchScene = await _scene()
+		var hl: float = m.pitch.config.half_length()
+		if c[1] == "fk":
+			m.ctx.emit_event(GameEvent.make(GameEvent.Type.FOUL, m.away[2].actor_id, 1, {"victim": m.home[2].actor_id, "pos": [c[2].x, c[2].y]}))
+		else:
+			await _send_out(m, Vector3(hl + 0.4, 0.11, -6.0), m.away[0])
+		await physics_frames(1)
+		var sp: SetPiece = m.manager.active_set_piece
+		check(sp != null, "%s: hay ejecutor" % c[0])
+		if sp == null:
+			cleanup()
+			continue
+		var closest: float = INF
+		var who: String = ""
+		for k in 8 * 60:
+			if m.manager.state == MatchManager.State.PLAYING or sp.resolved:
+				break
+			for f in m.ctx.footballers:
+				if f == sp.taker:
+					continue
+				var d: float = Vector2(f.global_position.x - sp.spot.x, f.global_position.z - sp.spot.z).length()
+				if d < closest:
+					closest = d
+					who = "%s (%s)" % [f.name, "companero" if f.team == sp.team else "rival"]
+			await tree.physics_frame
+		note("%s: el mas cercano a la pelota durante el saque, %s a %.2f m; resultado %s" % [c[0], who, closest, sp.result])
+		check(closest >= SetPiece.CLEAR_RADIUS - 0.15, "%s: nadie en la carrerilla (%s a %.2f m)" % [c[0], who, closest])
+		check(sp.result == &"contact", "%s: el pie del ejecutor llega a la pelota (%s)" % [c[0], sp.result])
+		cleanup()

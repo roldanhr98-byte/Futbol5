@@ -46,10 +46,12 @@ Rama `respaldo-f3`. Informe: [`fases/E_programa_maestro_informe.md`](../fases/E_
   clip, pasan a `setpiece_miss` (`analyze_bank.SETPIECE_MISS`); `PackLibrary` redirige el alias que apuntaba a uno
   (`soccer_penalty_kick`). `test_set_pieces` 6 de 6 (antes corner ~1/9 y banda ~2/6 fallaban).
   `test_bank_integration::test_set_piece_clips_that_miss_the_ball_are_never_chosen`.
-- **Carrera del saque sin choques** (`SetPiece._ghost_run`): mientras el clip lleva al ejecutor a la pelota no choca con
-  los demás jugadores (excepción de colisión que se quita al resolver). Un jugador parado en la línea de la carrera lo
-  desviaba: en el tiro libre, el pie quedaba a 0.48-0.97 m de la pelota con 2 de 38 clips; ahora 0 de 38. Los 5 excluidos
-  siguen fallando sin obstáculos (el defecto es del clip).
+- **Zona libre del saque** (`SetPiece.CLEAR_RADIUS` 4 m, `AIInput._decide_dead_ball` / `_around_ball`,
+  `MatchScene._on_set_piece_requested` / `_clear_zone`): nadie salvo el ejecutor entra en la carrerilla. Antes un compañero
+  de la IA se acercaba a 1.8 m de la pelota (apoyo corto sin distancia mínima, inercia durante la preparación) y un rival
+  cruzaba la zona camino de su marca: el ejecutor se desviaba y el pie no llegaba (tiro libre, 2 de 38 clips). Ahora 0 de
+  38 sin atajos (una primera versión quitaba las colisiones del ejecutor durante la carrera; se retiró: escondía el
+  problema). `test_set_pieces::test_nobody_but_the_taker_enters_the_run_up_zone`.
 - `test_training_mode::…has_only…`: pases por minuto en juego (2/min, lo mismo que 5 en 150 s) en vez de sobre los 150 s:
   cada gol se lleva repetición, festejo y saque (en juego quedan 81-96 s) y con el arquero realista hay más goles.
 - **Caídas junto a la banda** (`PlayerActions._lands_inside`, `LAND_MARGIN`): la caída dirigida y el esquive descartan
