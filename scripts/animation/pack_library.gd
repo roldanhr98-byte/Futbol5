@@ -117,6 +117,7 @@ static func _reset_caches() -> void:
 	BallHandler.reset_caches()
 	KeeperPlanner.reset_caches()
 	JsonCatalog.reset_caches()
+	JsonReceive.reset_caches()
 
 ## Id real de un clip pedido por su nombre del pack de Mixamo (modo 4); fuera de ese modo, el mismo id.
 static func resolve(id: StringName) -> StringName:

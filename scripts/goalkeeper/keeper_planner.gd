@@ -126,11 +126,70 @@ static func style_penalty(id: StringName) -> float:
 static var _bbox_cache: Dictionary = {}
 ## Rol de cada clip (se consulta en el bucle interno de plan_save).
 static var _role_cache: Dictionary = {}
+## Datos de cada candidato que no dependen de la jugada (plan_save): antes se buscaban meta, rol y radio y se comparaban
+## nombres por clip en cada llamada.
+static var _cand_cache: Array = []
+static var _cand_cache_json: int = -1
 
 ## Vacia los datos calculados con la libreria de clips (cambian al cambiar de modo).
 static func reset_caches() -> void:
 	_bbox_cache = {}
 	_role_cache = {}
+	_cand_cache = []
+	_cand_cache_json = -1
+
+## Calcula ya los datos fijos de los candidatos (MatchScene al cargar el partido).
+static func warm_cache() -> void:
+	_candidate_data()
+
+## Candidatos con sus datos fijos: [id, manos, raiz, radio sin escala, caja de manos (min, max), estilo, duracion, es de
+## recogida, es scoop del pack].
+static func _candidate_data() -> Array:
+	var js: int = 1 if PackLibrary.json_mode() else 0
+	if _cand_cache_json == js:
+		return _cand_cache
+	_cand_cache = []
+	_cand_cache_json = js
+	var scale: float = Tuning.keeper.contact_scale if Tuning.keeper != null else 1.0
+	for id in candidates():
+		var meta: Dictionary = PackLibrary.meta(id)
+		var hp: PackedVector3Array = meta.get("paths", {}).get("hands", PackedVector3Array())
+		var bb: Array = _bbox(id, hp) if not hp.is_empty() else [Vector3.ZERO, Vector3.ZERO]
+		# Cajas de las manos por grupos de K_BLOCK muestras (k = 6, 8, ...): se salta un grupo entero si ninguna mano suya puede
+		# servir (mismo criterio que mano a mano).
+		var klo := PackedVector3Array()
+		var khi := PackedVector3Array()
+		var kk: int = 6
+		while kk < hp.size():
+			var lo_k: Vector3 = hp[kk]
+			var hi_k: Vector3 = hp[kk]
+			var j: int = kk + 2
+			while j < mini(kk + 2 * K_BLOCK, hp.size()):
+				lo_k = Vector3(minf(lo_k.x, hp[j].x), minf(lo_k.y, hp[j].y), minf(lo_k.z, hp[j].z))
+				hi_k = Vector3(maxf(hi_k.x, hp[j].x), maxf(hi_k.y, hp[j].y), maxf(hi_k.z, hp[j].z))
+				j += 2
+			klo.append(lo_k)
+			khi.append(hi_k)
+			kk += 2 * K_BLOCK
+		# Por muestra: recorrido de la raiz y distancia de las manos a la posicion de espera (limite humano).
+		var rp: PackedVector2Array = meta.get("root_path", PackedVector2Array())
+		var trav := PackedFloat32Array()
+		var ready_d := PackedFloat32Array()
+		trav.resize(hp.size())
+		ready_d.resize(hp.size())
+		for k in hp.size():
+			trav[k] = rp[mini(k, rp.size() - 1)].length() if rp.size() > 0 else 0.0
+			ready_d[k] = (hp[k] - READY_HANDS).length()
+		_cand_cache.append([id, hp, rp, radius_of(id) / maxf(scale, 1e-6), bb[0], bb[1],
+			style_penalty(id), float(meta.get("duration", 1.0)), PICKUP_CLIPS.has(StringName(String(id).trim_suffix("_mirror"))),
+			String(id).begins_with("goalkeeper_scoop"), klo, khi, trav, ready_d])
+	return _cand_cache
+
+## Tramos de la trayectoria agrupados de a SEG_BLOCK con su caja: plan_save descarta un grupo entero cuando ni su caja
+## queda dentro del radio ni puede mejorar la mejor distancia (mismo resultado que mirando tramo a tramo).
+const SEG_BLOCK := 8
+## Muestras de manos por grupo (de a dos imagenes: k = 6, 8, ...).
+const K_BLOCK := 6
 
 ## Caja (min, max) de la trayectoria de manos de un clip en el marco del cuerpo (adelante, arriba, derecha).
 static func _bbox(id: StringName, hp: PackedVector3Array) -> Array:
@@ -152,6 +211,13 @@ static func _bbox(id: StringName, hp: PackedVector3Array) -> Array:
 ## Devuelve {} o {clip, speed, k, tau, delay, arrive, dist, radius, travel}.
 static func plan_save(origin: Vector3, yaw: float, traj: PackedVector3Array, step: float, min_delay: float,
 		_ball_speed: float, pickup: bool, speeds: Array = [1.0, 1.4], human: Vector2 = Vector2.ZERO) -> Dictionary:
+	Prof.begin(&"arquero (plan de atajada)")
+	var plan: Dictionary = _plan_save(origin, yaw, traj, step, min_delay, pickup, speeds, human)
+	Prof.end(&"arquero (plan de atajada)")
+	return plan
+
+static func _plan_save(origin: Vector3, yaw: float, traj: PackedVector3Array, step: float, min_delay: float, pickup: bool,
+		speeds: Array, human: Vector2) -> Dictionary:
 	var best: Dictionary = {}
 	var best_score: float = INF
 	var best_dist: float = INF
@@ -191,44 +257,93 @@ static func plan_save(origin: Vector3, yaw: float, traj: PackedVector3Array, ste
 		var a1: Vector3 = local[i + 1]
 		seg_lo[i] = Vector3(minf(a0.x, a1.x), minf(a0.y, a1.y), minf(a0.z, a1.z))
 		seg_hi_box[i] = Vector3(maxf(a0.x, a1.x), maxf(a0.y, a1.y), maxf(a0.z, a1.z))
-	for id in candidates():
-		var is_pickup_clip: bool = PICKUP_CLIPS.has(StringName(String(id).trim_suffix("_mirror")))
-		if pickup != is_pickup_clip and (pickup or String(id).begins_with("goalkeeper_scoop")):
+	var nblk: int = (seg_hi - first) / SEG_BLOCK + 1 if seg_hi >= first else 0
+	var blk_lo := PackedVector3Array()
+	var blk_hi := PackedVector3Array()
+	blk_lo.resize(nblk)
+	blk_hi.resize(nblk)
+	for bi in nblk:
+		var i0: int = first + bi * SEG_BLOCK
+		var lo_b: Vector3 = seg_lo[i0]
+		var hi_b: Vector3 = seg_hi_box[i0]
+		for i in range(i0 + 1, mini(i0 + SEG_BLOCK, seg_hi + 1)):
+			lo_b = Vector3(minf(lo_b.x, seg_lo[i].x), minf(lo_b.y, seg_lo[i].y), minf(lo_b.z, seg_lo[i].z))
+			hi_b = Vector3(maxf(hi_b.x, seg_hi_box[i].x), maxf(hi_b.y, seg_hi_box[i].y), maxf(hi_b.z, seg_hi_box[i].z))
+		blk_lo[bi] = lo_b
+		blk_hi[bi] = hi_b
+	var scale: float = Tuning.keeper.contact_scale if Tuning.keeper != null else 1.0
+	for cd in _candidate_data():
+		var id: StringName = cd[0]
+		var is_pickup_clip: bool = cd[8]
+		if pickup != is_pickup_clip and (pickup or bool(cd[9])):
 			continue
-		var meta: Dictionary = PackLibrary.meta(id)
-		var hp: PackedVector3Array = meta.get("paths", {}).get("hands", PackedVector3Array())
+		var hp: PackedVector3Array = cd[1]
 		if hp.is_empty():
 			continue
-		var rad: float = radius_of(id)
-		var bb: Array = _bbox(id, hp)
-		var lo: Vector3 = bb[0] - Vector3.ONE * (rad + 0.9)
-		var hi: Vector3 = bb[1] + Vector3.ONE * (rad + 0.9)
+		var rad: float = float(cd[3]) * scale
+		var lo: Vector3 = (cd[4] as Vector3) - Vector3.ONE * (rad + 0.9)
+		var hi: Vector3 = (cd[5] as Vector3) + Vector3.ONE * (rad + 0.9)
 		if whi.x < lo.x or wlo.x > hi.x or whi.y < lo.y or wlo.y > hi.y or whi.z < lo.z or wlo.z > hi.z:
 			continue
-		var rp: PackedVector2Array = meta.get("root_path", PackedVector2Array())
+		var rp: PackedVector2Array = cd[2]
+		var style: float = cd[6]
+		var duration: float = cd[7]
+		var klo: PackedVector3Array = cd[10]
+		var khi: PackedVector3Array = cd[11]
+		var trav: PackedFloat32Array = cd[12]
+		var ready_d: PackedFloat32Array = cd[13]
+		var n_hp: int = hp.size()
 		for sp in speeds:
+			# Cota inferior del puntaje de este clip a esta velocidad (distancia y recorrido 0). Con un plan valido ya elegido
+			# (puntaje < 5: los validos nunca llegan a 5) que no se puede mejorar, no se mira: mismo resultado.
+			var base_score: float = style + (0.05 if sp > 1.0 else 0.0) + DURATION_COST * duration / sp
+			if best_score < 5.0 and base_score >= best_score:
+				continue
 			var k: int = 6
-			while k < hp.size():
+			while k < n_hp:
+				# Al empezar un grupo de muestras: si la caja de sus manos esta fuera de la que barre la pelota (+ radio) y no
+				# puede mejorar best_dist, ninguna de sus manos sirve.
+				if (k - 6) % (2 * K_BLOCK) == 0:
+					var ci: int = (k - 6) / (2 * K_BLOCK)
+					var cl: Vector3 = klo[ci]
+					var ch: Vector3 = khi[ci]
+					var rc: float = maxf(rad, best_dist)
+					if wlo.x - ch.x > rc or cl.x - whi.x > rc or wlo.y - ch.y > rc or cl.y - whi.y > rc or wlo.z - ch.z > rc or cl.z - whi.z > rc:
+						k += 2 * K_BLOCK
+						continue
 				var h: Vector3 = hp[k]
 				if pickup and h.y > PICKUP_MAX_HANDS_Y:
 					k += 2
 					continue
 				# Manos fuera de la caja que barre la pelota (+ radio): ningun segmento puede quedar mas cerca que
 				# best_dist ni dentro del radio (mismo resultado, sin recorrer la trayectoria).
-				var gap: float = maxf(maxf(wlo.x - h.x, h.x - whi.x), maxf(maxf(wlo.y - h.y, h.y - whi.y), maxf(wlo.z - h.z, h.z - whi.z)))
-				if gap > rad and gap > best_dist:
+				var rk: float = maxf(rad, best_dist)
+				if wlo.x - h.x > rk or h.x - whi.x > rk or wlo.y - h.y > rk or h.y - whi.y > rk or wlo.z - h.z > rk or h.z - whi.z > rk:
+					k += 2
+					continue
+				var travel_k: float = trav[k]
+				if best_score < 5.0 and base_score + 0.03 * travel_k >= best_score:
 					k += 2
 					continue
 				var tau: float = float(k) / 30.0
 				var earliest: float = min_delay + tau / sp
 				if human.y > 0.0:
-					earliest = maxf(earliest, min_delay + human.x + (h - READY_HANDS).length() / human.y)
+					earliest = maxf(earliest, min_delay + human.x + ready_d[k] / human.y)
 				var i: int = maxi(first, int(floor(earliest / step)))
 				while i <= seg_hi:
+					# Al empezar un grupo de tramos: si su caja no puede dar nada, se salta el grupo entero.
+					if (i - first) % SEG_BLOCK == 0 or i == maxi(first, int(floor(earliest / step))):
+						var bi: int = (i - first) / SEG_BLOCK
+						var bl: Vector3 = blk_lo[bi]
+						var bh: Vector3 = blk_hi[bi]
+						var rb: float = maxf(rad, best_dist)
+						if bl.x - h.x > rb or h.x - bh.x > rb or bl.y - h.y > rb or h.y - bh.y > rb or bl.z - h.z > rb or h.z - bh.z > rb:
+							i = first + (bi + 1) * SEG_BLOCK
+							continue
 					var sl: Vector3 = seg_lo[i]
 					var sh: Vector3 = seg_hi_box[i]
-					var sgap: float = maxf(maxf(sl.x - h.x, h.x - sh.x), maxf(maxf(sl.y - h.y, h.y - sh.y), maxf(sl.z - h.z, h.z - sh.z)))
-					if sgap > rad and sgap > best_dist:
+					var rs: float = maxf(rad, best_dist)
+					if sl.x - h.x > rs or h.x - sh.x > rs or sl.y - h.y > rs or h.y - sh.y > rs or sl.z - h.z > rs or h.z - sh.z > rs:
 						i += 1
 						continue
 					var a: Vector3 = local[i]
@@ -240,14 +355,14 @@ static func plan_save(origin: Vector3, yaw: float, traj: PackedVector3Array, ste
 						var dist: float = (a + ab * u - h).length()
 						if dist < rad * 0.85 or dist < best_dist:
 							best_dist = minf(best_dist, dist)
-							var travel: float = rp[mini(k, rp.size() - 1)].length() if rp.size() > 0 else 0.0
+							var travel: float = travel_k
 							# Valido = las manos llegan con holgura (85 % del radio): se elige el estilo mas natural.
 							# Si ninguno llega con holgura, gana el que queda mas cerca (puntaje alto = intento forzado).
 							var score: float
 							if dist <= rad * 0.85:
 								# Entre los que llegan, los cortos (se recupera antes: no se tira al suelo por una pelota mansa).
-								score = style_penalty(id) + 0.03 * travel + (0.05 if sp > 1.0 else 0.0) + 0.2 * dist / rad \
-									+ DURATION_COST * float(meta.get("duration", 1.0)) / sp
+								score = style + 0.03 * travel + (0.05 if sp > 1.0 else 0.0) + 0.2 * dist / rad \
+									+ DURATION_COST * duration / sp
 							else:
 								score = 5.0 + dist
 							if score < best_score:

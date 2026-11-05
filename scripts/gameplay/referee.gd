@@ -73,6 +73,11 @@ func _queue(situation: StringName, delay: float, cut: float) -> void:
 	visual.stop_current_action()
 
 func _physics_process(delta: float) -> void:
+	Prof.begin(&"arbitro")
+	_referee_step(delta)
+	Prof.end(&"arbitro")
+
+func _referee_step(delta: float) -> void:
 	if visual == null:
 		return
 	if _pending != &"":

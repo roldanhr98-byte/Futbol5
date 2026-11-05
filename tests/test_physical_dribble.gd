@@ -123,12 +123,14 @@ func _pass_behind(stick: Vector2) -> Dictionary:
 	var mate: Footballer = add_player(ctx, 0, Vector3(-18.0, 0.0, 1.5), 60, null, false)
 	ctx.ball.register_touch(p)
 	await physics_frames(20)
-	var st := {"fwd": Vector3.ZERO, "t": -1.0, "clip": ""}
+	var st := {"fwd": Vector3.ZERO, "t": -1.0, "clip": "", "mate": mate.global_position}
 	var frames := [0]
 	ctx.event_emitted.connect(func(e: GameEvent) -> void:
 		if e.type == GameEvent.Type.PASS and float(st["t"]) < 0.0:
 			st["fwd"] = p.locomotion.forward()
 			st["clip"] = String(e.data.get("clip", ""))
+			# Donde estaba el companero al salir el pase (despues se mueve: va a buscar la pelota que le llega).
+			st["mate"] = mate.global_position
 			st["t"] = frames[0] / 60.0)
 	src.move = stick
 	src.hold_pass()
@@ -140,7 +142,11 @@ func _pass_behind(stick: Vector2) -> Dictionary:
 		frames[0] += 1
 		if float(st["t"]) >= 0.0 and ball_dir == Vector3.ZERO and frames[0] > int(float(st["t"]) * 60.0) + 3:
 			ball_dir = KickModel.flat(ctx.ball.linear_velocity).normalized()
-	var to_mate: Vector3 = KickModel.flat(mate.global_position - p.global_position).normalized()
+			st["ball_at"] = ctx.ball.global_position
+	# Direccion de la pelota frente a la direccion de la pelota al companero en ese momento (antes se media desde la posicion
+	# final de los dos jugadores, que se mueven despues del pase: el que pasa corre con el joystick y el companero va a
+	# buscar la pelota que le llega).
+	var to_mate: Vector3 = KickModel.flat((st["mate"] as Vector3) - (st.get("ball_at", p.global_position) as Vector3)).normalized()
 	var out := {"kicked": float(st["t"]) >= 0.0, "t": st["t"], "body_vs_ball": KickModel.angle_between_deg(st["fwd"], ball_dir) if ball_dir != Vector3.ZERO else 999.0,
 		"ball_vs_mate": KickModel.angle_between_deg(ball_dir, to_mate) if ball_dir != Vector3.ZERO else 999.0, "stats": p.ball_handler.kick_stats.duplicate(),
 		"clip": st["clip"], "role": String(PackLibrary.meta(StringName(st["clip"])).get("role", "")) if String(st["clip"]) != "" else ""}
@@ -161,3 +167,74 @@ func test_pass_to_a_mate_behind_uses_a_back_kick_or_turns() -> void:
 		if (cfg[1] as Vector2).length() > 0.2:
 			check(float(r["ball_vs_mate"]) < 25.0, "%s: la pelota va al companero (%.0f grados)" % [cfg[0], r["ball_vs_mate"]])
 
+
+## Joystick suelto con la pelota al alcance pero fuera del pie (al costado, detras o rodando despacio): el jugador va a la
+## pelota (gira, da los pasos y la para con el pie); la pelota no se mueve sola hacia el frente del cuerpo. Video del usuario
+## (05-11 04:42:20): parado, la pelota se iba acercando al pie sin ningun toque visible («la pelota se acomoda al jugador
+## en vez del jugador a la pelota»).
+## `off` y `vel`: posicion y velocidad de la pelota en el marco del jugador (x adelante, z derecha).
+func _settle_probe(name: String, off: Vector2, vel: Vector2, total_s: float) -> Dictionary:
+	var p0 := Vector3(-10.0, 0.0, 0.0)
+	var fwd := Vector3(1, 0, 0)
+	var right := Vector3(-fwd.z, 0.0, fwd.x)
+	var ball0: Vector3 = p0 + fwd * off.x + right * off.y + Vector3(0, 0.11, 0)
+	# Se arranca con la pelota quieta delante (nada que acomodar) y despues se la pone en la posicion de la prueba: si no,
+	# el jugador ya se acomodaba durante la espera inicial.
+	var ctx: MatchContext = await make_match(p0 + fwd * 0.45 + Vector3(0, 0.11, 0))
+	var src := ScriptedInput.new()
+	var p: Footballer = add_player(ctx, 0, p0, 60, src, true)
+	p.is_human_controlled = true
+	p.locomotion.yaw = Locomotion.yaw_from_dir(fwd)
+	ctx.ball.register_touch(p)
+	await physics_frames(12)
+	p.place_at(p0, Locomotion.yaw_from_dir(fwd))
+	ctx.ball.reset_at(ball0)
+	# reset_at coloca la pelota en el paso de fisica siguiente (y la deja quieta): la velocidad se da despues.
+	await physics_frames(1)
+	var v0: Vector3 = fwd * vel.x + right * vel.y
+	ctx.ball.linear_velocity = v0
+	ctx.ball.angular_velocity = ctx.ball.rolling_spin(v0)
+	var bh: BallHandler = p.ball_handler
+	var touches: Array = []
+	bh.touched_ball.connect(func(kind: StringName) -> void:
+		var o: Vector3 = KickModel.flat(ctx.ball.global_position - p.global_position)
+		touches.append({"kind": String(kind), "foot": bh.last_touch_foot, "foot_d": bh.last_touch_foot_distance, "body_d": o.length()}))
+	var start_p: Vector3 = KickModel.flat(p.global_position)
+	var start_yaw: float = p.locomotion.yaw
+	var front_at: float = -1.0
+	var t := 0.0
+	for i in int(total_s * 60.0):
+		await tree.physics_frame
+		t += 1.0 / 60.0
+		var o: Vector3 = KickModel.flat(ctx.ball.global_position - p.global_position)
+		var ahead: float = o.dot(p.locomotion.forward())
+		var lat: float = absf(o.dot(p.locomotion.right()))
+		if front_at < 0.0 and ahead > 0.08 and ahead < 0.8 and lat < 0.35 and KickModel.flat(ctx.ball.linear_velocity).length() < 0.4:
+			front_at = t
+	var remote := 0
+	var lines: PackedStringArray = []
+	for e in touches:
+		var far: bool = String(e["kind"]) != "clip" and String(e["kind"]) != "body" and (int(e["foot"]) < 0 or float(e["foot_d"]) > 0.32)
+		if far:
+			remote += 1
+		lines.append("%s pie=%d d_pie=%.2f d_cuerpo=%.2f%s" % [e["kind"], e["foot"], e["foot_d"], e["body_d"], " <-- SIN PIE" if far else ""])
+	var moved: float = KickModel.flat(p.global_position).distance_to(start_p)
+	var turned: float = absf(rad_to_deg(wrapf(p.locomotion.yaw - start_yaw, -PI, PI)))
+	var o_end: Vector3 = KickModel.flat(ctx.ball.global_position - p.global_position)
+	note("%s: %d toques, %d sin pie, jugador se movio %.2f m y giro %.0f grados, pelota delante y quieta a los %s, al final adelante %.2f lado %.2f" % [
+		name, touches.size(), remote, moved, turned, ("%.2f s" % front_at) if front_at >= 0.0 else "nunca", o_end.dot(p.locomotion.forward()), o_end.dot(p.locomotion.right())])
+	for l in lines:
+		note("   " + l)
+	cleanup()
+	return {"remote": remote, "moved": moved, "turned": turned, "front_at": front_at, "touches": touches.size()}
+
+func test_released_stick_player_goes_to_the_ball() -> void:
+	if _needs_render():
+		return
+	for cfg in [["al costado, quieta", Vector2(0.1, 0.55), Vector2.ZERO], ["al costado, rodando hacia afuera", Vector2(0.1, 0.5), Vector2(0.0, 0.7)],
+			["detras, rodando hacia atras", Vector2(-0.3, 0.15), Vector2(-0.6, 0.0)], ["delante, rodando despacio", Vector2(0.5, 0.0), Vector2(1.0, 0.0)]]:
+		var r: Dictionary = await _settle_probe(cfg[0], cfg[1], cfg[2], 3.0)
+		check(int(r["remote"]) == 0, "%s: ningun toque sin pie (%d)" % [cfg[0], r["remote"]])
+		check(float(r["front_at"]) >= 0.0, "%s: la pelota termina quieta delante del jugador" % cfg[0])
+		# El que se acomoda es el jugador: da pasos o se gira hacia la pelota (con la pelota a la espalda basta girar en el sitio).
+		check(float(r["moved"]) > 0.1 or float(r["turned"]) > 30.0 or int(r["touches"]) == 0, "%s: el que se acomoda es el jugador (se movio %.2f m, giro %.0f grados)" % [cfg[0], r["moved"], r["turned"]])

@@ -203,6 +203,11 @@ func _norm(key: String) -> float:
 # --- Bucle ---------------------------------------------------------------------------------------
 
 func _physics_process(delta: float) -> void:
+	Prof.begin(&"arqueros")
+	_keeper_step(delta)
+	Prof.end(&"arqueros")
+
+func _keeper_step(delta: float) -> void:
 	if ctx == null or ctx.ball == null or ctx.pitch == null:
 		return
 	_clock += delta

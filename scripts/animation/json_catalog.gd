@@ -130,7 +130,11 @@ static func kick_candidates(kind: StringName, charge: float) -> Array:
 			# Solo golpeos limpios (contacto medido al convertir): pie bajo delante del cuerpo, apoyo en el suelo, hacia delante.
 			if not bool(m["contact"].get("clean", true)) and r != &"kick_cross":
 				continue
-			out.append({"clip": id, "foot": m["contact"]["foot"], "contact": m["contact"], "role": r})
+			var c := {"clip": id, "foot": m["contact"]["foot"], "contact": m["contact"], "role": r, "mocap": bool(m.get("mocap", false))}
+			# Carrera de entrada del clip (BallHandler.plan_clip_kick la compara con la del jugador en cada plan).
+			if m.has("v_in"):
+				c["v_in"] = float(m["v_in"])
+			out.append(c)
 	_kick_cache[key] = out
 	return out
 

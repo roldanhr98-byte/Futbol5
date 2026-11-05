@@ -39,6 +39,12 @@ const RESOLUTION_STEPS: Array[float] = [1.0, 0.85, 0.7, 0.55]
 var profile: int = Profile.MEDIUM
 ## Multiplicador manual de resolucion 3D (0.5 - 1.0) aplicado encima del perfil.
 var resolution_override: float = 1.0
+## Tope de imagenes por segundo en el telefono (boton «Imagenes por segundo»): 60, o 30 estables para un telefono que no llega
+## a 60 (mejor 30 parejas que 40 a tirones; la fisica sigue a 60 Hz).
+const FPS_CAPS: Array[int] = [60, 30]
+var fps_cap: int = 60
+## Sombras (boton «Sombras»): -1 = las del perfil, 0 = no, 1 = si.
+var shadows_mode: int = -1
 
 func _ready() -> void:
 	load_settings()
@@ -82,7 +88,19 @@ func profile_name() -> String:
 	return PROFILE_NAMES[profile]
 
 func shadows_enabled() -> bool:
-	return get_params()["shadows"]
+	return bool(get_params()["shadows"]) if shadows_mode < 0 else shadows_mode == 1
+
+## Pasa al siguiente tope de FPS_CAPS.
+func cycle_fps_cap() -> void:
+	fps_cap = FPS_CAPS[(FPS_CAPS.find(fps_cap) + 1) % FPS_CAPS.size()]
+	apply()
+	save_settings()
+
+## Sombras: las del perfil -> no -> si -> las del perfil.
+func cycle_shadows() -> void:
+	shadows_mode = [0, 1, -1][shadows_mode + 1]
+	apply()
+	save_settings()
 
 func ambient_props_enabled() -> bool:
 	return get_params()["ambient_props"]
@@ -97,15 +115,17 @@ func apply() -> void:
 		RenderingServer.directional_shadow_atlas_set_size(params["shadow_size"], false)
 		# Tope de 60 imagenes por segundo en el telefono: sin el, en pantallas de 90/120 Hz el juego calcula imagenes de mas
 		# (y se calienta) sin que la fisica, que va a 60 Hz, se vea mas fluida. En PC (y en las pruebas) sin tope.
-		Engine.max_fps = int(params["target_fps"]) if OS.has_feature("mobile") else 0
+		Engine.max_fps = mini(int(params["target_fps"]), fps_cap) if OS.has_feature("mobile") else 0
 		for light in get_tree().get_nodes_in_group("sun_light"):
 			if light is Light3D:
-				light.shadow_enabled = params["shadows"]
+				light.shadow_enabled = shadows_enabled()
 
 func save_settings() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("graphics", "profile", profile)
 	cfg.set_value("graphics", "resolution_override", resolution_override)
+	cfg.set_value("graphics", "fps_cap", fps_cap)
+	cfg.set_value("graphics", "shadows_mode", shadows_mode)
 	var err: int = cfg.save(SETTINGS_PATH)
 	if err != OK:
 		push_warning("No se pudo guardar %s (error %d)" % [SETTINGS_PATH, err])
@@ -116,6 +136,10 @@ func load_settings() -> void:
 		return
 	profile = clampi(int(cfg.get_value("graphics", "profile", profile)), Profile.VERY_LOW, Profile.HIGH)
 	resolution_override = clampf(float(cfg.get_value("graphics", "resolution_override", 1.0)), 0.5, 1.0)
+	fps_cap = int(cfg.get_value("graphics", "fps_cap", 60))
+	if not FPS_CAPS.has(fps_cap):
+		fps_cap = 60
+	shadows_mode = clampi(int(cfg.get_value("graphics", "shadows_mode", -1)), -1, 1)
 
 func _has_saved_settings() -> bool:
 	return FileAccess.file_exists(SETTINGS_PATH)

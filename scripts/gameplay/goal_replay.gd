@@ -60,6 +60,11 @@ func setup(context: MatchContext, tracked: Array[Node3D], match_camera: Camera3D
 
 ## Graba una muestra cada 1/RATE s de tiempo de juego.
 func _physics_process(delta: float) -> void:
+	Prof.begin(&"repeticion")
+	_replay_step(delta)
+	Prof.end(&"repeticion")
+
+func _replay_step(delta: float) -> void:
 	if ctx == null:
 		return
 	if playing:

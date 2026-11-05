@@ -75,6 +75,11 @@ func snap_to_target() -> void:
 	_initialized = true
 
 func _process(delta: float) -> void:
+	Prof.begin(&"camara")
+	_camera_step(delta)
+	Prof.end(&"camara")
+
+func _camera_step(delta: float) -> void:
 	if ball == null:
 		return
 	if not _initialized:

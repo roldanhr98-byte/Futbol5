@@ -126,6 +126,10 @@ func _ready() -> void:
 	Sfx.crowd(true)
 	camera.watch_shots(ball)
 	GraphicsSettings.apply()
+	# Datos fijos de los clips de recepcion (modo 4) y de atajada calculados ahora y no en la primera pelota que llega (tirones).
+	if PackLibrary.json_mode():
+		JsonReceive.warm_cache()
+	KeeperPlanner.warm_cache()
 	manager.start_match()
 
 ## Rol tactico (0 cierre, 1 ala izquierda, 2 ala derecha, 3 pivote) segun el puesto en la formacion de saque.
@@ -563,6 +567,11 @@ func _update_rings() -> void:
 	pass_ring.follow(target)
 
 func _physics_process(delta: float) -> void:
+	Prof.begin(&"escena (marcadores, cambio)")
+	_scene_step(delta)
+	Prof.end(&"escena (marcadores, cambio)")
+
+func _scene_step(delta: float) -> void:
 	if marker != null:
 		marker.follow(human_actor(), delta)
 		next_marker.follow(switch_candidate() if (controlled != null and home.size() > 1) else null, delta)

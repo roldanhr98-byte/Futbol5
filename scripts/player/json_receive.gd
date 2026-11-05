@@ -131,6 +131,7 @@ static func selectable(p: Dictionary) -> bool:
 
 static var _rest: Array[Transform3D] = []
 static var _point_cache: Dictionary = {}
+static var _track_map: Dictionary = {}
 
 ## Huesos del clip en el instante t (transformaciones globales del esqueleto canonico, unidades del modelo).
 static func _pose(a: Animation, t: float) -> Array[Transform3D]:
@@ -141,8 +142,17 @@ static func _pose(a: Animation, t: float) -> Array[Transform3D]:
 		sk.free()
 	var n: int = JsonRig.BONES.size()
 	var local: Array[Transform3D] = _rest.duplicate()
+	# Hueso de cada pista: se busca una vez por clip (antes, una busqueda de texto por pista en cada pose).
+	var key: int = a.get_instance_id()
+	var tm: PackedInt32Array = _track_map.get(key, PackedInt32Array())
+	if tm.size() != a.get_track_count():
+		tm = PackedInt32Array()
+		tm.resize(a.get_track_count())
+		for i in a.get_track_count():
+			tm[i] = JsonRig.BONES.find(String(a.track_get_path(i)).get_slice(":", 1))
+		_track_map[key] = tm
 	for i in a.get_track_count():
-		var bi: int = JsonRig.BONES.find(String(a.track_get_path(i)).get_slice(":", 1))
+		var bi: int = tm[i]
 		if bi < 0:
 			continue
 		if a.track_get_type(i) == Animation.TYPE_ROTATION_3D:
@@ -238,6 +248,93 @@ static func path_point(cp: Dictionary, clip_t: float) -> Vector3:
 	var i: int = mini(int(x), path.size() - 2)
 	return path[i].lerp(path[i + 1], x - float(i))
 
+# --- Candidatos (cache) -----------------------------------------------------------------------------------------------
+
+## Clips de recepcion seleccionables con todo lo que no depende de la jugada (perfil, meta, punto y trayectoria del
+## contacto, raiz y rumbo del clip), en el orden de ROLES y de la libreria: el mismo en que los recorria plan, porque el
+## desempate aleatorio del puntaje consume el generador en ese orden (la eleccion no cambia). Antes plan buscaba perfil y
+## meta y copiaba el perfil de cada espejo en CADA paso para ~190 clips y para cada jugador que veia venir la pelota, y el
+## primer uso de cada clip calculaba su pose: 10-60 ms en una sola imagen en un pase disputado (tools/perf_probe,
+## 2026-11-05). Se calcula una vez por libreria (warm_cache al cargar el partido; reset_caches al cambiar de modo).
+static var _cands: Array = []
+static var _cands_built: bool = false
+## Distancia horizontal maxima (m) del cuerpo al empezar el clip al punto de contacto, entre todos los candidatos y los
+## inicios START_OFFSETS (plan), y del cuerpo al contacto sin el inicio (anticipacion): si la pelota prevista no pasa a esa
+## distancia (mas la correccion del paso y la holgura) en la ventana de contacto, ningun clip llega y no se recorre ninguno.
+static var _reach_bound: float = 0.0
+static var _approach_bound: float = 0.0
+## Guardar los motivos de descarte (rejects) solo para la vista de depuracion (tools/json_anim/receive_view).
+static var record_rejects: bool = false
+
+static func reset_caches() -> void:
+	_cands = []
+	_cands_built = false
+	_reach_bound = 0.0
+	_approach_bound = 0.0
+	_point_cache = {}
+	_track_map = {}
+
+## Calcula los candidatos (y la pose del contacto de cada clip) si aun no estan. MatchScene la llama al cargar el partido.
+static func warm_cache() -> void:
+	if _cands_built:
+		return
+	_cands_built = true
+	_cands = []
+	_reach_bound = 0.0
+	_approach_bound = 0.0
+	for role in ROLES:
+		for id in PackLibrary.by_role(role):
+			var p: Dictionary = profile(id)
+			if p.is_empty() or not selectable(p):
+				continue
+			var part: StringName = StringName(p["part"])
+			var cp: Dictionary = contact_point(id, part, float(p["t"]))
+			if cp.is_empty():
+				continue
+			var m: Dictionary = PackLibrary.meta(id)
+			var conds: Array = p["conds"]
+			var t1: float = float(cp["t"])
+			var lp: Vector3 = cp["point"]
+			# El cuerpo solo gira con el rumbo del clip si el juego se lo aplica (ActionMotion: heading_mode «turn»).
+			var hp: PackedFloat32Array = m.get("heading_path", PackedFloat32Array()) if String(m.get("heading_mode", "")) == "turn" else PackedFloat32Array()
+			var rp: PackedVector2Array = m.get("root_path", PackedVector2Array())
+			var rc: Vector2 = ActionMotion._at(rp, t1) if rp.size() >= 2 else Vector2.ZERO
+			var hd: float = ActionMotion.heading_rel(hp, t1)
+			var hs := PackedFloat32Array()
+			var rs := PackedVector2Array()
+			var lp_h: float = Vector2(lp.x, lp.z).length()
+			var reach: float = 0.0
+			for start_at in START_OFFSETS:
+				hs.append(ActionMotion.heading_rel(hp, start_at))
+				var r_s: Vector2 = ActionMotion._at(rp, start_at) if rp.size() >= 2 else Vector2.ZERO
+				rs.append(r_s)
+				reach = maxf(reach, (rc - r_s).length())
+			_reach_bound = maxf(_reach_bound, reach + lp_h)
+			_approach_bound = maxf(_approach_bound, rc.length() + lp_h)
+			_cands.append({"id": id, "role": role, "p": p, "part": part, "cp": cp, "t1": t1, "lp": lp, "hp": hp, "rp": rp,
+				"rc": rc, "hd": hd, "hs": hs, "rs": rs,
+				"rival": conds.has("rival"), "post_action": conds.has("post_action"),
+				"stick": conds.has("stick_turn") or conds.has("stick_out"),
+				"v_in": float(m.get("v_in", 0.0)), "v_out": float(m.get("v_out", 0.0)),
+				"turn_end": ActionMotion.heading_rel(hp, float(m.get("duration", 1.0))),
+				"slack": float(PART_SLACK[part]), "vtol": float(PART_VTOL[part]),
+				"contact_local": _local_point(rc, hd, lp)})
+
+## Distancia horizontal minima (m) de `pos` a la trayectoria prevista entre `t_from` y `t_to` s (tramos interpolados como _at).
+static func _min_dist(traj: PackedVector3Array, pos: Vector3, t_from: float, t_to: float) -> float:
+	var last: int = traj.size() - 1
+	var i0: int = clampi(int(floor(t_from / TRAJ_STEP)), 0, last)
+	var i1: int = clampi(int(ceil(t_to / TRAJ_STEP)), 0, last)
+	var p := Vector2(pos.x, pos.z)
+	var best: float = INF
+	for i in range(i0, maxi(i1, i0 + 1)):
+		var a := Vector2(traj[i].x, traj[i].z)
+		var bb := Vector2(traj[mini(i + 1, last)].x, traj[mini(i + 1, last)].z)
+		var ab: Vector2 = bb - a
+		var k: float = clampf((p - a).dot(ab) / ab.length_squared(), 0.0, 1.0) if ab.length_squared() > 1e-8 else 0.0
+		best = minf(best, p.distance_to(a + ab * k))
+	return best
+
 # --- Decision ---------------------------------------------------------------------------------------------------------
 
 ## Paso de fisica (BallHandler.update, modo 4): si llega una pelota y algun clip la recibe, empieza la recepcion.
@@ -316,124 +413,123 @@ func plan(desired_dir: Vector3, stick_mag: float) -> Dictionary:
 	var rival_near: bool = _rival_within(JOSTLE_RIVAL)
 	var best: Dictionary = {}
 	var best_score: float = INF
-	for role in ROLES:
-		for id in PackLibrary.by_role(role):
-			var p: Dictionary = profile(id)
-			if p.is_empty() or not selectable(p):
+	warm_cache()
+	# Ningun clip llega si la pelota no pasa cerca en la ventana de contacto (cota de warm_cache): mismo resultado, sin recorrido.
+	if _min_dist(traj, pos, MIN_LEAD, MAX_LEAD) > _reach_bound + b.radius + 0.02 + JsonBallMove.CORR_MAX + 0.15:
+		_reject("pelota lejos en la ventana de contacto")
+		return {}
+	for c in _cands:
+		var p: Dictionary = c["p"]
+		var id: StringName = c["id"]
+		var role: StringName = c["role"]
+		if c["rival"] and not rival_near:
+			_reject("sin rival para el control protegiendo")
+			continue
+		if c["post_action"] and not charging:
+			_reject("accion posterior sin orden de golpeo")
+			continue
+		if charging and not c["post_action"]:
+			_reject("cargando un golpeo: de primera o recepcion con accion posterior")
+			continue
+		if c["stick"] and not has_dir:
+			_reject("giro o salida sin joystick")
+			continue
+		var dv: float = absf(float(c["v_in"]) - loco.speed)
+		if dv > MAX_DV:
+			_reject("carrera de entrada")
+			continue
+		var v_out: float = float(c["v_out"])
+		var dv_out: float = absf(v_out - loco.speed) if has_dir else 0.0
+		if has_dir and loco.speed > 1.0 and v_out < loco.speed - MAX_DV:
+			_reject("carrera de salida")
+			continue
+		if not has_dir and v_out > STILL_OUT:
+			_reject("sale andando sin joystick")
+			continue
+		var part: StringName = c["part"]
+		var cp: Dictionary = c["cp"]
+		var t1: float = float(c["t1"])
+		var lp: Vector3 = c["lp"]
+		var rp: PackedVector2Array = c["rp"]
+		var turn_end: float = float(c["turn_end"])
+		var rc: Vector2 = c["rc"]
+		var hd: float = float(c["hd"])
+		var hs: PackedFloat32Array = c["hs"]
+		var rss: PackedVector2Array = c["rs"]
+		for si in START_OFFSETS.size():
+			var start_at: float = START_OFFSETS[si]
+			var dt1: float = t1 - start_at
+			if dt1 < MIN_LEAD:
+				break
+			if dt1 > MAX_LEAD:
+				_reject("contacto lejano")
 				continue
-			var conds: Array = p["conds"]
-			if conds.has("rival") and not rival_near:
-				_reject("sin rival para el control protegiendo")
+			var yaw0: float = loco.yaw - hs[si]
+			var exit_dir: Vector3 = Locomotion.dir_from_yaw(yaw0 + turn_end)
+			var dturn: float = KickModel.angle_between_deg(exit_dir, want) if has_dir else absf(rad_to_deg(turn_end))
+			if (has_dir and dturn > TURN_TOL) or (not has_dir and dturn > STILL_TURN):
+				_reject("orientacion")
 				continue
-			if conds.has("post_action") and not charging:
-				_reject("accion posterior sin orden de golpeo")
+			var f0: Vector3 = Locomotion.dir_from_yaw(yaw0)
+			var r0 := Vector3(-f0.z, 0.0, f0.x)
+			var rs: Vector2 = rss[si]
+			var origin: Vector3 = pos - f0 * rs.x - r0 * rs.y
+			var fc: Vector3 = Locomotion.dir_from_yaw(yaw0 + hd)
+			var rcv := Vector3(-fc.z, 0.0, fc.x)
+			var body_c: Vector3 = origin + f0 * rc.x + r0 * rc.y
+			var contact: Vector3 = body_c + fc * lp.x + rcv * lp.z + Vector3(0.0, lp.y, 0.0)
+			var bp: Vector3 = _at(traj, dt1)
+			var bv: Vector3 = (bp - _at(traj, maxf(dt1 - TRAJ_STEP, 0.0))) / TRAJ_STEP
+			if bv.length() < 0.3:
+				_reject("pelota casi quieta en el contacto")
 				continue
-			if charging and not conds.has("post_action"):
-				_reject("cargando un golpeo: de primera o recepcion con accion posterior")
+			var inc: Vector3 = bv.normalized()
+			var center: Vector3 = contact + contact_offset(inc, b)
+			var err: Vector3 = bp - center
+			var err_h := Vector3(err.x, 0.0, err.z)
+			var corr: Vector3 = err_h.limit_length(minf(JsonBallMove.CORR_MAX, JsonBallMove.CORR_SPEED * dt1))
+			var residual: float = (err_h - corr).length()
+			if residual > float(c["slack"]):
+				_reject("parte del cuerpo lejos de la pelota")
 				continue
-			if (conds.has("stick_turn") or conds.has("stick_out")) and not has_dir:
-				_reject("giro o salida sin joystick")
+			if absf(err.y) > float(c["vtol"]):
+				_reject("altura de la pelota distinta de la del contacto")
 				continue
-			var m: Dictionary = PackLibrary.meta(id)
-			var dv: float = absf(float(m.get("v_in", 0.0)) - loco.speed)
-			if dv > MAX_DV:
-				_reject("carrera de entrada")
-				continue
-			var v_out: float = float(m.get("v_out", 0.0))
-			var dv_out: float = absf(v_out - loco.speed) if has_dir else 0.0
-			if has_dir and loco.speed > 1.0 and v_out < loco.speed - MAX_DV:
-				_reject("carrera de salida")
-				continue
-			if not has_dir and v_out > STILL_OUT:
-				_reject("sale andando sin joystick")
-				continue
-			var part: StringName = StringName(p["part"])
-			var t1: float = float(p["t"])
-			var cp: Dictionary = contact_point(id, part, t1)
-			if cp.is_empty():
-				continue
-			t1 = float(cp["t"])
-			var lp: Vector3 = cp["point"]
-			# El cuerpo solo gira con el rumbo del clip si el juego se lo aplica (ActionMotion: heading_mode «turn»).
-			var hp: PackedFloat32Array = m.get("heading_path", PackedFloat32Array()) if String(m.get("heading_mode", "")) == "turn" else PackedFloat32Array()
-			var rp: PackedVector2Array = m.get("root_path", PackedVector2Array())
-			var dur: float = float(m.get("duration", 1.0))
-			var turn_end: float = ActionMotion.heading_rel(hp, dur)
-			var rc: Vector2 = ActionMotion._at(rp, t1) if rp.size() >= 2 else Vector2.ZERO
-			var hd: float = ActionMotion.heading_rel(hp, t1)
-			for start_at in START_OFFSETS:
-				var dt1: float = t1 - start_at
-				if dt1 < MIN_LEAD:
-					break
-				if dt1 > MAX_LEAD:
-					_reject("contacto lejano")
+			# Direccion de llegada (+ izquierda) respecto al frente al empezar, frente a la del nombre del clip.
+			var inc_h: Vector3 = KickModel.flat(inc).normalized()
+			var from_deg: float = rad_to_deg(f0.signed_angle_to(-inc_h, Vector3.UP)) if inc_h != Vector3.ZERO else 0.0
+			var ddir: float = 0.0
+			if p["from_deg"] != null:
+				ddir = absf(rad_to_deg(wrapf(deg_to_rad(from_deg - float(p["from_deg"])), -PI, PI)))
+				if ddir > DIR_TOL:
+					_reject("direccion de llegada distinta de la del clip")
 					continue
-				var yaw0: float = loco.yaw - ActionMotion.heading_rel(hp, start_at)
-				var exit_dir: Vector3 = Locomotion.dir_from_yaw(yaw0 + turn_end)
-				var dturn: float = KickModel.angle_between_deg(exit_dir, want) if has_dir else absf(rad_to_deg(turn_end))
-				if (has_dir and dturn > TURN_TOL) or (not has_dir and dturn > STILL_TURN):
-					_reject("orientacion")
+			var to_contact: Vector3 = KickModel.flat(contact - body_c)
+			if part == &"foot" or part == &"foot_air":
+				if inc_h != Vector3.ZERO and to_contact.length() > 0.05 and KickModel.angle_between_deg(-inc_h, to_contact) > MAX_APPROACH:
+					_reject("pie de espaldas a la pelota")
 					continue
-				var f0: Vector3 = Locomotion.dir_from_yaw(yaw0)
-				var r0 := Vector3(-f0.z, 0.0, f0.x)
-				var rs: Vector2 = ActionMotion._at(rp, start_at) if rp.size() >= 2 else Vector2.ZERO
-				var origin: Vector3 = pos - f0 * rs.x - r0 * rs.y
-				var fc: Vector3 = Locomotion.dir_from_yaw(yaw0 + hd)
-				var rcv := Vector3(-fc.z, 0.0, fc.x)
-				var body_c: Vector3 = origin + f0 * rc.x + r0 * rc.y
-				var contact: Vector3 = body_c + fc * lp.x + rcv * lp.z + Vector3(0.0, lp.y, 0.0)
-				var bp: Vector3 = _at(traj, dt1)
-				var bv: Vector3 = (bp - _at(traj, maxf(dt1 - TRAJ_STEP, 0.0))) / TRAJ_STEP
-				if bv.length() < 0.3:
-					_reject("pelota casi quieta en el contacto")
-					continue
-				var inc: Vector3 = bv.normalized()
-				var center: Vector3 = contact + contact_offset(inc, b)
-				var err: Vector3 = bp - center
-				var err_h := Vector3(err.x, 0.0, err.z)
-				var corr: Vector3 = err_h.limit_length(minf(JsonBallMove.CORR_MAX, JsonBallMove.CORR_SPEED * dt1))
-				var residual: float = (err_h - corr).length()
-				if residual > float(PART_SLACK[part]):
-					_reject("parte del cuerpo lejos de la pelota")
-					continue
-				if absf(err.y) > float(PART_VTOL[part]):
-					_reject("altura de la pelota distinta de la del contacto")
-					continue
-				# Direccion de llegada (+ izquierda) respecto al frente al empezar, frente a la del nombre del clip.
-				var inc_h: Vector3 = KickModel.flat(inc).normalized()
-				var from_deg: float = rad_to_deg(f0.signed_angle_to(-inc_h, Vector3.UP)) if inc_h != Vector3.ZERO else 0.0
-				var ddir: float = 0.0
-				if p["from_deg"] != null:
-					ddir = absf(rad_to_deg(wrapf(deg_to_rad(from_deg - float(p["from_deg"])), -PI, PI)))
-					if ddir > DIR_TOL:
-						_reject("direccion de llegada distinta de la del clip")
-						continue
-				var to_contact: Vector3 = KickModel.flat(contact - body_c)
-				if part == &"foot" or part == &"foot_air":
-					if inc_h != Vector3.ZERO and to_contact.length() > 0.05 and KickModel.angle_between_deg(-inc_h, to_contact) > MAX_APPROACH:
-						_reject("pie de espaldas a la pelota")
-						continue
-				elif absf(from_deg) > MAX_FRONT:
-					_reject("pelota por detras para pecho, muslo o rodilla")
-					continue
-				if not _path_clear(traj, origin, f0, r0, rp, start_at, dt1, corr, part):
-					_reject("pelota cruza el cuerpo")
-					continue
-				var score: float = residual + 0.6 * absf(err.y) + 0.25 * corr.length() + 0.12 * (dv + dv_out) + 0.006 * dturn \
-					+ 0.003 * ddir + 0.03 * start_at + handler.rng.randf() * 0.03
-				# Con geometria equivalente, mejor un clip con el contacto visto con la pelota (verificado) que uno estimado.
-				if p["confidence"] != "verified":
-					score += UNVERIFIED_PENALTY
-				if score < best_score:
-					best_score = score
-					var post_t: float = float(p["post_t"])
-					best = {"clip": id, "start_at": start_at, "inc": inc_h, "yaw0": yaw0, "origin": origin, "corr": corr, "dt1": dt1,
-						"residual": residual, "dy": err.y, "turn": rad_to_deg(turn_end), "dv": dv, "role": role, "part": part,
-						"t_contact": t1, "foot": int(cp["foot"]), "cp": cp, "confidence": p["confidence"], "post_t": post_t,
-						"from_deg": from_deg, "touches_after": p["touches_after"],
-						"contact_local": _local_point(rc, hd, lp),
-						"incoming_speed": (bv - owner.velocity).length(), "ball_y": bp.y, "pred_ball": bp, "pred_contact": contact + corr,
-						"traj": traj, "frame": Engine.get_physics_frames()}
+			elif absf(from_deg) > MAX_FRONT:
+				_reject("pelota por detras para pecho, muslo o rodilla")
+				continue
+			if not _path_clear(traj, origin, f0, r0, rp, start_at, dt1, corr, part):
+				_reject("pelota cruza el cuerpo")
+				continue
+			var score: float = residual + 0.6 * absf(err.y) + 0.25 * corr.length() + 0.12 * (dv + dv_out) + 0.006 * dturn \
+				+ 0.003 * ddir + 0.03 * start_at + handler.rng.randf() * 0.03
+			# Con geometria equivalente, mejor un clip con el contacto visto con la pelota (verificado) que uno estimado.
+			if p["confidence"] != "verified":
+				score += UNVERIFIED_PENALTY
+			if score < best_score:
+				best_score = score
+				var post_t: float = float(p["post_t"])
+				best = {"clip": id, "start_at": start_at, "inc": inc_h, "yaw0": yaw0, "origin": origin, "corr": corr, "dt1": dt1,
+					"residual": residual, "dy": err.y, "turn": rad_to_deg(turn_end), "dv": dv, "role": role, "part": part,
+					"t_contact": t1, "foot": int(cp["foot"]), "cp": cp, "confidence": p["confidence"], "post_t": post_t,
+					"from_deg": from_deg, "touches_after": p["touches_after"],
+					"contact_local": c["contact_local"],
+					"incoming_speed": (bv - owner.velocity).length(), "ball_y": bp.y, "pred_ball": bp, "pred_contact": contact + corr,
+					"traj": traj, "frame": Engine.get_physics_frames()}
 	return best
 
 ## Anticipacion: entre los clips que se podrian usar ahora (mismas condiciones que plan), donde tendria que estar el cuerpo
@@ -451,55 +547,47 @@ func _update_approach(desired_dir: Vector3, stick_mag: float) -> void:
 	var rival_near: bool = _rival_within(JOSTLE_RIVAL)
 	var best: Vector3 = Vector3.INF
 	var best_d: float = INF
-	for role in ROLES:
-		for id in PackLibrary.by_role(role):
-			var p: Dictionary = profile(id)
-			if p.is_empty() or not selectable(p):
+	warm_cache()
+	# Cota de warm_cache: el sitio buscado esta a menos de APPROACH_MAX del jugador, asi que la pelota tiene que pasar a menos
+	# de eso mas el alcance del clip; si no, ningun clip da sitio (mismo resultado, sin recorrido).
+	var far: bool = _min_dist(traj, pos, 0.0, HORIZON + 1.0) > APPROACH_MAX + _approach_bound + b.radius + 0.05
+	for c in ([] if far else _cands):
+		if (c["rival"] and not rival_near) or (c["post_action"] and not charging) or (c["stick"] and not has_dir):
+			continue
+		# Sin frenar a nadie para recibir: la carrera de entrada del clip es la del jugador.
+		if absf(float(c["v_in"]) - loco.speed) > MAX_DV or (not has_dir and float(c["v_out"]) > STILL_OUT):
+			continue
+		var part: StringName = c["part"]
+		var t1: float = float(c["t1"])
+		var lp: Vector3 = c["lp"]
+		var turn_end: float = float(c["turn_end"])
+		var exit_dir: Vector3 = Locomotion.dir_from_yaw(loco.yaw + turn_end)
+		if (has_dir and KickModel.angle_between_deg(exit_dir, want) > TURN_TOL) or (not has_dir and absf(rad_to_deg(turn_end)) > STILL_TURN):
+			continue
+		var rc: Vector2 = c["rc"]
+		var hd: float = float(c["hd"])
+		var f0: Vector3 = Locomotion.dir_from_yaw(loco.yaw)
+		var r0 := Vector3(-f0.z, 0.0, f0.x)
+		var fc: Vector3 = Locomotion.dir_from_yaw(loco.yaw + hd)
+		var rcv := Vector3(-fc.z, 0.0, fc.x)
+		# Del cuerpo al empezar hasta el punto de contacto (en el suelo) y su altura.
+		var rel: Vector3 = f0 * rc.x + r0 * rc.y + fc * lp.x + rcv * lp.z
+		var vtol: float = float(c["vtol"])
+		for t0 in APPROACH_STARTS:
+			var tc: float = t0 + t1
+			var bp: Vector3 = _at(traj, tc)
+			var bv: Vector3 = (bp - _at(traj, maxf(tc - TRAJ_STEP, 0.0))) / TRAJ_STEP
+			if bv.length() < 0.3:
 				continue
-			var conds: Array = p["conds"]
-			if (conds.has("rival") and not rival_near) or (conds.has("post_action") and not charging) \
-					or ((conds.has("stick_turn") or conds.has("stick_out")) and not has_dir):
+			if absf(bp.y - lp.y) > vtol:
 				continue
-			var m: Dictionary = PackLibrary.meta(id)
-			# Sin frenar a nadie para recibir: la carrera de entrada del clip es la del jugador.
-			if absf(float(m.get("v_in", 0.0)) - loco.speed) > MAX_DV or (not has_dir and float(m.get("v_out", 0.0)) > STILL_OUT):
+			var need: Vector3 = KickModel.flat(bp - contact_offset(bv.normalized(), b)) - rel
+			var d: float = need.distance_to(pos)
+			if d > APPROACH_MAX or d > APPROACH_SPEED * t0 + JsonBallMove.CORR_MAX:
 				continue
-			var part: StringName = StringName(p["part"])
-			var t1: float = float(p["t"])
-			var cp: Dictionary = contact_point(id, part, t1)
-			if cp.is_empty():
-				continue
-			t1 = float(cp["t"])
-			var lp: Vector3 = cp["point"]
-			var hp: PackedFloat32Array = m.get("heading_path", PackedFloat32Array()) if String(m.get("heading_mode", "")) == "turn" else PackedFloat32Array()
-			var rp: PackedVector2Array = m.get("root_path", PackedVector2Array())
-			var turn_end: float = ActionMotion.heading_rel(hp, float(m.get("duration", 1.0)))
-			var exit_dir: Vector3 = Locomotion.dir_from_yaw(loco.yaw + turn_end)
-			if (has_dir and KickModel.angle_between_deg(exit_dir, want) > TURN_TOL) or (not has_dir and absf(rad_to_deg(turn_end)) > STILL_TURN):
-				continue
-			var rc: Vector2 = ActionMotion._at(rp, t1) if rp.size() >= 2 else Vector2.ZERO
-			var hd: float = ActionMotion.heading_rel(hp, t1)
-			var f0: Vector3 = Locomotion.dir_from_yaw(loco.yaw)
-			var r0 := Vector3(-f0.z, 0.0, f0.x)
-			var fc: Vector3 = Locomotion.dir_from_yaw(loco.yaw + hd)
-			var rcv := Vector3(-fc.z, 0.0, fc.x)
-			# Del cuerpo al empezar hasta el punto de contacto (en el suelo) y su altura.
-			var rel: Vector3 = f0 * rc.x + r0 * rc.y + fc * lp.x + rcv * lp.z
-			for t0 in APPROACH_STARTS:
-				var tc: float = t0 + t1
-				var bp: Vector3 = _at(traj, tc)
-				var bv: Vector3 = (bp - _at(traj, maxf(tc - TRAJ_STEP, 0.0))) / TRAJ_STEP
-				if bv.length() < 0.3:
-					continue
-				if absf(bp.y - lp.y) > float(PART_VTOL[part]):
-					continue
-				var need: Vector3 = KickModel.flat(bp - contact_offset(bv.normalized(), b)) - rel
-				var d: float = need.distance_to(pos)
-				if d > APPROACH_MAX or d > APPROACH_SPEED * t0 + JsonBallMove.CORR_MAX:
-					continue
-				if d < best_d:
-					best_d = d
-					best = need
+			if d < best_d:
+				best_d = d
+				best = need
 	approach = best
 	approach_face = Locomotion.dir_from_yaw(loco.yaw)
 	_approach_ttl = APPROACH_EVERY * PLAN_EVERY + 2
@@ -538,7 +626,8 @@ func _rival_within(r: float) -> bool:
 	return false
 
 func _reject(why: String) -> void:
-	rejects[why] = int(rejects.get(why, 0)) + 1
+	if record_rejects:
+		rejects[why] = int(rejects.get(why, 0)) + 1
 
 ## Del punto de contacto al centro de la pelota: la pelota viene por `inc` y la parte del cuerpo se pone delante de ella,
 ## asi que su centro queda un radio (y una holgura) antes, del lado por donde llega.

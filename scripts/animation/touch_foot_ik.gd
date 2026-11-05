@@ -54,6 +54,11 @@ func applied_shift(foot: int) -> Vector3:
 	return _shift[foot] * _weight[foot] if foot >= 0 and foot <= 1 else Vector3.ZERO
 
 func _process_modification_with_delta(_delta: float) -> void:
+	Prof.begin(&"IK de pie")
+	_ik_step(_delta)
+	Prof.end(&"IK de pie")
+
+func _ik_step(_delta: float) -> void:
 	var sk: Skeleton3D = get_skeleton()
 	if sk == null or (_weight[0] < 0.001 and _weight[1] < 0.001 and _abs_weight[0] < 0.001 and _abs_weight[1] < 0.001):
 		return

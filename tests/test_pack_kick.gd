@@ -23,6 +23,12 @@ func _setup(ball_pos: Vector3) -> Dictionary:
 	var p: Footballer = add_player(ctx, 0, START, 50, src, true)
 	p.locomotion.yaw = Locomotion.yaw_from_dir(Vector3(1, 0, 0))
 	await physics_frames(10)
+	# La pelota se vuelve a poner en su sitio al final de la espera, justo antes del pedido: con el joystick suelto el
+	# jugador se acomoda a una pelota al alcance que no tiene delante (BallHandler.settle_steer, 2026-11-05) y la pelota de
+	# la prueba (detras, algo lejos del pie) ya no estaba ahi al pedir el golpeo.
+	p.place_at(START, Locomotion.yaw_from_dir(Vector3(1, 0, 0)))
+	ctx.ball.reset_at(ball_pos)
+	await physics_frames(1)
 	var events: Array = []
 	ctx.event_emitted.connect(func(e: GameEvent) -> void: events.append(e))
 	return {"ctx": ctx, "src": src, "p": p, "events": events}
@@ -117,6 +123,8 @@ func test_ball_out_of_reach_gives_no_kick_and_no_teleport() -> void:
 	var p: Footballer = s["p"]
 	var src: ScriptedInput = s["src"]
 	var ctx: MatchContext = s["ctx"]
+	# La pelota recien colocada se asienta (1 cm) en los primeros pasos.
+	await physics_frames(3)
 	var before: Vector3 = ctx.ball.global_position
 	src.hold_pass()
 	await physics_frames(3)

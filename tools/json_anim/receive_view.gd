@@ -35,6 +35,8 @@ func _env(k: String, d: String) -> String:
 func _ready() -> void:
 	Tuning.gameplay_mode = 4
 	PackLibrary.reload()
+	# La vista imprime los motivos de descarte del plan (en el juego no se guardan).
+	JsonReceive.record_rejects = true
 	var out: String = _env("OUT", "/tmp/receive.png")
 	var ang: float = float(_env("ANGLE", "0"))
 	var spd: float = float(_env("SPEED", "9"))

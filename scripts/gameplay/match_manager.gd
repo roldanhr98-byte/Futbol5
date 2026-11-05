@@ -116,6 +116,11 @@ func _begin_kickoff(team: int, intro: bool = false) -> void:
 	ctx.emit_event(GameEvent.make(GameEvent.Type.KICKOFF, -1, team, {"intro": with_intro, "seconds": _state_timer}))
 
 func _physics_process(delta: float) -> void:
+	Prof.begin(&"partido (MatchManager)")
+	_manager_step(delta)
+	Prof.end(&"partido (MatchManager)")
+
+func _manager_step(delta: float) -> void:
 	if state == State.PAUSED:
 		return
 	ctx.tick += 1

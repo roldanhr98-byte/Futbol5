@@ -117,3 +117,20 @@ Ver [CHANGELOG.md](../CHANGELOG.md): evolución 9/24 → 40/113 → 44/140 → 5
 - Con render (xvfb, no en headless): `test_live_kicks` (batería de 50 golpeos: 49 con contacto, 0 inválidos),
   `test_live_feet`, `test_pack_motion`, `test_json_mode`.
 
+## Rendimiento y joystick suelto (2026-11-05)
+
+- **`test_physical_dribble::test_released_stick_player_goes_to_the_ball`** (render, nueva): joystick suelto con la pelota
+  al costado (quieta o rodando hacia afuera), detrás rodando hacia atrás y delante rodando despacio; pide 0 toques sin pie,
+  la pelota quieta delante al final y que el que se acomoda sea el jugador (pasos o giro). Con el código anterior fallaba
+  en los cuatro casos (jugador 0.00 m, pelota llevada delante con toques sin pie).
+- **`test_physical_dribble::test_pass_to_a_mate_behind_uses_a_back_kick_or_turns`, medida corregida (dicho, no ocultado):**
+  la dirección al compañero se medía desde la posición **final** de los dos jugadores (el que pasa sigue corriendo con el
+  joystick y, con el cambio de arriba, el compañero va a buscar la pelota que le llega). Ahora: dirección de la pelota al
+  salir frente a la de la pelota al compañero en ese momento. Con el código anterior y el nuevo la pelota sale
+  exactamente igual (comprobado imprimiendo su velocidad); medido así, 5° (antes 11-25° según dónde terminaran).
+- **`tools/perf_probe.tscn`** (herramienta, no prueba): costo de CPU por sistema en un partido IA contra IA. Ver
+  [PERFORMANCE](PERFORMANCE.md#tirones-de-cpu-y-opciones-de-rendimiento-2026-11-05).
+- `test_live_kicks::test_kick_battery_fifty_varied_actions` no es determinista y falla a veces en «pase bajo presión en
+  carrera» (punta del pie a 0.42-0.43 m en la imagen del golpe). Medido repitiendo ese caso 16 veces con cada versión: el
+  pie queda a más de 0.3 m en **9 de 16 con el código anterior y 9 de 16 con el nuevo**. Defecto previo (el golpeo bajo
+  presión a la carrera), no causado por este cambio; pendiente.

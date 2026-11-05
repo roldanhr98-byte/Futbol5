@@ -129,6 +129,11 @@ func displacement_at(index: int, local_point: Vector3) -> float:
 	return p.disp[p.node_index(i, j)]
 
 func _physics_process(delta: float) -> void:
+	Prof.begin(&"red del arco")
+	_net_step(delta)
+	Prof.end(&"red del arco")
+
+func _net_step(delta: float) -> void:
 	var touching: bool = _ball_contact(delta)
 	if not active and not touching:
 		return

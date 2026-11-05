@@ -406,6 +406,7 @@ func _setup_animation_tree() -> void:
 	tree_root.connect_node(&"output", 0, previous)
 	anim_tree = AnimationTree.new()
 	anim_tree.name = "AnimationTree"
+	_param_last = {}
 	model_root.add_child(anim_tree)
 	anim_tree.tree_root = tree_root
 	anim_tree.anim_player = anim_tree.get_path_to(anim_player)
@@ -417,7 +418,7 @@ func play_touch(id: StringName, foot: int, speed: float) -> bool:
 	if anim_tree == null or not uses_pack or foot < 0 or foot > 1 or _touch_nodes[foot] == null or not PackLibrary.has_clip(id):
 		return false
 	(_touch_nodes[foot] as AnimationNodeAnimation).animation = PackLibrary.anim_path(id)
-	anim_tree.set("parameters/TouchScale%d/scale" % foot, maxf(speed, 0.05))
+	_set_param(P_TOUCH_SCALE[foot], maxf(speed, 0.05))
 	anim_tree.set("parameters/TouchShot%d/request" % foot, AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
 	return true
 
@@ -619,6 +620,26 @@ func is_action_playing() -> bool:
 	return current_action != &""
 
 ## Llamado cada paso de fisica por el futbolista.
+## Parametros del AnimationTree que se fijan en cada imagen (drive_motion): nombres ya convertidos y valor escrito por ultima
+## vez. Escribir un parametro por su texto en cada imagen costaba ~0.05 ms por jugador (tools/perf_probe); ahora solo se
+## escribe cuando cambia (el AnimationTree conserva el ultimo valor).
+const P_LOCO := &"parameters/Locomotion/blend_position"
+const P_LOCO_SCALE := &"parameters/LocoScale/scale"
+const P_CARRY_MIX := &"parameters/CarryMix/blend_amount"
+const P_CARRY := &"parameters/Carry/blend_position"
+const P_CARRY_SCALE := &"parameters/CarryScale/scale"
+const P_TOUCH_SCALE: Array[StringName] = [&"parameters/TouchScale0/scale", &"parameters/TouchScale1/scale"]
+const P_MODE_MIX := &"parameters/ModeMix/blend_amount"
+const P_DIR := &"parameters/Dir/blend_position"
+const P_DIR_SCALE := &"parameters/DirScale/scale"
+var _param_last: Dictionary = {}
+
+func _set_param(path: StringName, value: Variant) -> void:
+	if _param_last.get(path) == value:
+		return
+	_param_last[path] = value
+	anim_tree.set(path, value)
+
 func update_motion(f: Footballer, delta: float) -> void:
 	drive_motion(f.locomotion.speed, f.locomotion.turn_rate, delta)
 
@@ -643,7 +664,7 @@ func drive_motion(speed: float, turn_rate: float, delta: float) -> void:
 			current_action = &""
 			_active_tripo_clip = &""
 			action_finished.emit(finished)
-	anim_tree.set("parameters/Locomotion/blend_position", speed)
+	_set_param(P_LOCO, speed)
 	# Evita que los pies patinen: la cadencia sigue a la velocidad real respecto al ciclo dominante.
 	var scale_factor: float = 1.0
 	if uses_pack:
@@ -652,20 +673,20 @@ func drive_motion(speed: float, turn_rate: float, delta: float) -> void:
 	elif speed > 0.15:
 		var natural: float = lerpf(NATURAL_SPEED["walk"], NATURAL_SPEED["run"], clampf((speed - 0.9) / 1.5, 0.0, 1.0))
 		scale_factor = clampf(speed / natural, MIN_TIME_SCALE, MAX_TIME_SCALE)
-	anim_tree.set("parameters/LocoScale/scale", scale_factor)
+	_set_param(P_LOCO_SCALE, scale_factor)
 	if _has_carry:
 		_carry_weight = move_toward(_carry_weight, 1.0 if carrying else 0.0, CARRY_BLEND_RATE * delta)
-		anim_tree.set("parameters/CarryMix/blend_amount", _carry_weight)
+		_set_param(P_CARRY_MIX, _carry_weight)
 		if _carry_weight > 0.0:
-			anim_tree.set("parameters/Carry/blend_position", speed)
-			anim_tree.set("parameters/CarryScale/scale", carry_scale_for(speed))
+			_set_param(P_CARRY, speed)
+			_set_param(P_CARRY_SCALE, carry_scale_for(speed))
 			# El toque en curso avanza al mismo ritmo que la marcha con pelota (sigue en fase con su ciclo base).
 			for f in 2:
 				if _touch_nodes[f] != null:
-					anim_tree.set("parameters/TouchScale%d/scale" % f, maxf(carry_scale_for(speed), 0.05))
+					_set_param(P_TOUCH_SCALE[f], maxf(carry_scale_for(speed), 0.05))
 	if uses_pack:
 		_dir_weight = move_toward(_dir_weight, 1.0 if directional else 0.0, 7.0 * delta)
-		anim_tree.set("parameters/ModeMix/blend_amount", _dir_weight)
+		_set_param(P_MODE_MIX, _dir_weight)
 		if _dir_weight > 0.0:
 			var ds: float = dir_velocity.length()
 			var p := Vector2(dir_velocity.y, dir_velocity.x) / _dir_ref
@@ -676,8 +697,8 @@ func drive_motion(speed: float, turn_rate: float, delta: float) -> void:
 			var ref: float = _dir_ref if json_mode else lerpf(DIR_REF_SPEED, STRAFE_FAST_SPEED, clampf((p.x - 1.0) / (DIR_MAX - 1.0), 0.0, 1.0))
 			if dir_scale_override > 0.0:
 				p = dir_blend_override
-			anim_tree.set("parameters/Dir/blend_position", p)
-			anim_tree.set("parameters/DirScale/scale", dir_scale_override if dir_scale_override > 0.0 else (clampf(ds / ref, 0.6, 2.2) if ds > 0.2 else 1.0))
+			_set_param(P_DIR, p)
+			_set_param(P_DIR_SCALE, dir_scale_override if dir_scale_override > 0.0 else (clampf(ds / ref, 0.6, 2.2) if ds > 0.2 else 1.0))
 	# Inclinacion del cuerpo (como en el video de referencia de conduccion): hacia delante con la velocidad y al
 	# acelerar, hacia atras al frenar, y hacia dentro en las curvas como pide la fisica (tan = v * giro / g), algo menos.
 	var accel: float = 0.0

@@ -271,6 +271,11 @@ var visual_spin_step_deg: float = 0.0
 var visual_spin_blur_deg: float = 0.0
 
 func _process(delta: float) -> void:
+	Prof.begin(&"pelota (visual)")
+	_visual_step(delta)
+	Prof.end(&"pelota (visual)")
+
+func _visual_step(delta: float) -> void:
 	if _visual == null:
 		return
 	var w: Vector3 = angular_velocity
@@ -295,6 +300,11 @@ func _process(delta: float) -> void:
 # --- Fisica ----------------------------------------------------------------
 
 func _physics_process(_delta: float) -> void:
+	Prof.begin(&"pelota (script fisica)")
+	_ball_step(_delta)
+	Prof.end(&"pelota (script fisica)")
+
+func _ball_step(_delta: float) -> void:
 	if holder != null and _hold_anchor != null and is_instance_valid(_hold_anchor):
 		global_position = _hold_anchor.global_position
 	_update_trail(_delta)
@@ -337,6 +347,11 @@ func _update_trail(delta: float) -> void:
 	_trail_mesh.surface_end()
 
 func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
+	Prof.begin(&"pelota (integrate_forces)")
+	_integrate_step(state)
+	Prof.end(&"pelota (integrate_forces)")
+
+func _integrate_step(state: PhysicsDirectBodyState3D) -> void:
 	if _pending_teleport:
 		_pending_teleport = false
 		state.transform = Transform3D(Basis.IDENTITY, _teleport_pos)

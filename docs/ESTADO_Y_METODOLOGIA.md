@@ -49,6 +49,7 @@ traspaso (`a977fb3`), F3 corregido (`ff6124b`), F3 en curso (`895b3f8`), F2 árb
 | F3 recepción y control | hecha (`7c3a622`; franjas de altura decididas en E1) | [`fases/F3_auditoria_124_clips.md`](fases/F3_auditoria_124_clips.md), [`fases/F3_verificacion_visual_70.md`](fases/F3_verificacion_visual_70.md) |
 | Programa maestro E1-E6 (sustituye a F4-F8, autorizado en un solo mensaje del usuario) | hecho | [`fases/E_programa_maestro_informe.md`](fases/E_programa_maestro_informe.md), [`fases/E2_auditoria_banco.md`](fases/E2_auditoria_banco.md), inventario [`fases/E2_inventario_banco.csv`](fases/E2_inventario_banco.csv) |
 | Corrección 2026-11-05 (conducción física sin «hilo», golpeos en todas direcciones con el banco, cancha de fútbol 7, 60 fps) | hecha | CHANGELOG 2026-11-05, [`technical-index/SYSTEMS/PLAYER.md`](technical-index/SYSTEMS/PLAYER.md), [`technical-index/SYSTEMS/JSON_MODE.md`](technical-index/SYSTEMS/JSON_MODE.md) |
+| Rendimiento (tirones de CPU de la recepción y del arquero, opciones de rendimiento, diagnóstico por sistema) y joystick suelto: el jugador va a la pelota (2026-11-05, segunda entrega) | hecha; **sin medir en un teléfono** | CHANGELOG «Tirones de CPU…», [`technical-index/SYSTEMS/PERFORMANCE.md`](technical-index/SYSTEMS/PERFORMANCE.md), [`fases/joystick_suelto_antes_despues.jpg`](fases/joystick_suelto_antes_despues.jpg) |
 
 ## 4. Lo que queda abierto
 
@@ -75,9 +76,9 @@ prueba elige su modo con `TestCase.gameplay_mode()`; las del pack heredado fijan
 
 | Suite | Resultado | Fallos y clasificación |
 |---|---|---|
-| `tools/run_tests.sh` | **288 pruebas, 0 fallos**, 31 omitidas, 1 690 comprobaciones, 0 SCRIPT ERROR (local, 2026-11-05, `481ded7`; antes 280 / 0 en GitHub Actions #43) | |
+| `tools/run_tests.sh` | **289 pruebas, 2 fallos intermitentes**, 32 omitidas, 1 691 comprobaciones, 0 SCRIPT ERROR (local, 2026-11-05, entrega de rendimiento y joystick suelto; antes 288 / 0 con `481ded7`) | `test_json_mode::test_ai_match_in_json_mode` (0 tiros en un partido IA de 90 s) y `test_training_mode::test_teammates_do_not_crowd_the_dribbler` (19 de 368 muestras): repetidas 3 veces cada una, pasan 3 de 3. Tiros por partido IA de 90 s: 0-4 (media 2.0, 7 corridas) con el código nuevo y 1-5 (media 3.0, 6 corridas) con el anterior: no concluyente, a vigilar |
 | APK | `futbol5-v0.1.43.apk` de GitHub Actions #43 (artefacto `futbol5-apk`), ver el informe §9 | |
-| Con render (xvfb), modo 4 | `live_kicks` 4 / 0 (batería de 50 golpeos: 50 con contacto), `live_feet` 7 / 0, `pack_motion` 2 / 0, `json_mode` 9 / 0 (1 omitida), `physical_dribble` 4 / 0, `directional_kicks` 3 / 0 (2026-11-05) | |
+| Con render (xvfb), modo 4 | `physical_dribble` 5 / 0, `live_feet` 7 / 0, `pack_motion` 2 / 0, `json_mode` 10 / 0 (1 omitida), `directional_kicks` 3 / 0, `ball_turn` 4 / 0, `drag_back` 4 / 0, `dribble_reference` 2 / 0, `kick_reach` 2 / 0, `mode4_dribble` 8 / 0, `receive` 34 / 0, `pack_dribble_metrics` 2 / 0 (2026-11-05, segunda entrega) | `live_kicks` 3 / 1 en 2 de 4 corridas: «pase bajo presión en carrera» con el pie a 0.42 m; repetido 16 veces, 9 de 16 a más de 0.3 m con el código anterior y con el nuevo (defecto previo, pendiente) |
 | `test_shot_keeper` (80 tiros por caso) | 1 / 0 | palo derecho ataja 69 %, izquierdo 76 %, al arquero 84 %, rival encima 0 goles, tirador de 85 ataja 32-36 % |
 | No deterministas conocidas | `test_training_mode` (pases y compañeros), `test_ai_match`, `test_shot_keeper` (comparaciones entre casos). Ya no: `test_set_pieces` (eran clips de balón parado que no llegaban a la pelota, excluidos), `test_player_actions::test_fall…` (comprobaba un instante fijo) | |
 

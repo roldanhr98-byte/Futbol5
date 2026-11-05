@@ -272,3 +272,19 @@ orientación del tirador) a 0, 45, 90, 135 y 180 grados del frente, parado y al 
   candidatos del centro (`JsonCatalog.kick_candidates`) aunque no sean «limpios» (contacto a 0.59–0.68 m al costado): el
   planificador solo los usa si el pie llega a la pelota. En la prueba desde la banda (3 centros) se eligieron pases de empeine
   (`kick_pass`) y los 3 cayeron en el área: los `kick_cross` necesitan la pelota a 0.6 m del costado, que conduciendo no pasa.
+
+## Recepción sin tirones: candidatos precalculados (2026-11-05)
+
+`JsonReceive.consider` era el mayor tirón del partido (10-60 ms en una sola imagen en el contenedor, cada 2 pasos, en cada
+jugador al que le llega la pelota: ~120-300 ms en un teléfono). Cambios exactos (`scripts/player/json_receive.gd`):
+
+- `warm_cache` (al cargar el partido, `MatchScene._ready`; 51 ms) calcula una vez los 189 candidatos de `ROLES` con todo
+  lo fijo: perfil (con el espejo ya aplicado), condiciones, `v_in`/`v_out`, punto y trayectoria del contacto, raíz y rumbo
+  del clip en el contacto y en cada inicio de `START_OFFSETS`. Se recorren en el mismo orden que antes (el desempate
+  aleatorio del puntaje consume el generador en ese orden). `reset_caches` (desde `PackLibrary._reset_caches`) los vacía.
+- Cota del alcance (`_reach_bound`, `_approach_bound`): si la pelota prevista no pasa a esa distancia (más la corrección del
+  paso y la holgura) en la ventana de contacto, ningún clip llega y `plan` / `_update_approach` no recorren nada.
+- `_pose`: hueso de cada pista resuelto una vez por clip (`_track_map`); antes, una búsqueda de texto por pista en cada pose.
+- `rejects` solo se llena con `record_rejects` (la vista `tools/json_anim/receive_view.gd` lo activa).
+- Verificación: la salida completa de las 34 pruebas de `test_receive` es idéntica con el código anterior y el nuevo (la
+  única línea distinta, un partido IA contra el arquero, también cambia entre dos corridas del mismo código).

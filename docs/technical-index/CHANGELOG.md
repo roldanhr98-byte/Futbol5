@@ -11,6 +11,56 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-11-05 — Tirones de CPU (recepción, arquero), opciones de rendimiento y joystick suelto: el jugador va a la pelota
+
+Rama `respaldo-f3`. Pedido del usuario con dos videos (05-11 04:42:20 del juego y la referencia): «se traba mucho, mucho
+lag, dame más opciones de optimización» y «la pelota se acomoda al jugador en vez del jugador a la pelota». Detalle:
+[PERFORMANCE](SYSTEMS/PERFORMANCE.md#tirones-de-cpu-y-opciones-de-rendimiento-2026-11-05) ·
+[PLAYER](SYSTEMS/PLAYER.md#joystick-suelto-el-jugador-va-a-la-pelota-2026-11-05) ·
+[GOALKEEPER](SYSTEMS/GOALKEEPER.md#planificador-de-atajadas-mas-rapido-mismo-plan-2026-11-05) ·
+[JSON_MODE](SYSTEMS/JSON_MODE.md#recepción-sin-tirones-candidatos-precalculados-2026-11-05) · [TESTING](SYSTEMS/TESTING.md#rendimiento-y-joystick-suelto-2026-11-05).
+
+- **Medición:** `Prof` (nuevo, `scripts/diagnostics/prof.gd`) en cada sistema y `tools/perf_probe.tscn` (partido IA
+  contra IA, tiempo real de cada imagen). Tirones encontrados: `JsonReceive.consider` 10-60 ms en una imagen, el arquero
+  (`KeeperPlanner.plan_save`) 25 ms de media por llamada y picos de 47 ms, la IA preparando pases hasta 20 ms.
+- **Arreglos exactos (mismo resultado):** candidatos de recepción precalculados al cargar el partido y cota de alcance
+  (salida de las 34 pruebas de `test_receive` idéntica); planificador del arquero con caché, grupos con caja y cota del
+  puntaje (116 llamadas reales grabadas dan el mismo plan; 2-2.5 veces más rápido); carrera de entrada en la caché de
+  golpeos; parámetros de animación escritos solo si cambian.
+- **Resultado** (partido IA de 90 s, dos corridas por versión): imágenes de más de 12 ms 108-118 → 14; peor imagen 42-87
+  → 18-24 ms; p95 8.4-8.9 → 6.8-7.4 ms; media igual (~4 ms). **No medido en un teléfono.**
+- **Opciones nuevas:** «Imágenes por segundo: 60 / 30 (estables)», «Sombras: según gráficos / no / sí», menú de pausa con
+  desplazamiento; «Diagnóstico» muestra el costo de cada sistema (ms por paso) en el dispositivo; como mucho 3 pasos de
+  física por imagen (`project.godot`: sin cascada de imágenes lentas tras un tirón).
+- **Joystick suelto:** el jugador se gira y da los pasos hacia la pelota (o gira en el sitio si está pegada), la sigue si
+  rueda y la para con un pie que llega de verdad, dejándola quieta; ya no se mueve sola al frente del cuerpo. Prueba nueva
+  `physical_dribble::released_stick` (con el código anterior: jugador 0.00 m y toques sin pie en los 4 casos; ahora 0
+  toques sin pie y la pelota queda quieta delante en 0.08-0.62 s).
+- Prueba con medida corregida (dicho, no ocultado): `physical_dribble::pass_to_a_mate_behind` medía la dirección al
+  compañero desde la posición final de los dos jugadores; ahora desde la pelota al salir. La pelota sale igual con el código
+  anterior y el nuevo.
+- Archivos: `scripts/player/json_receive.gd`, `ball_handler.gd`, `footballer.gd`, `footballer_visual.gd`,
+  `scripts/goalkeeper/keeper_planner.gd`, `goalkeeper.gd`, `scripts/animation/json_catalog.gd`, `pack_library.gd`,
+  `procedural_pose.gd`, `touch_foot_ik.gd`, `scripts/gameplay/match_scene.gd` (y etiquetas `Prof` en `ball.gd`, `referee.gd`,
+  `match_manager.gd`, `goal_replay.gd`, `match_camera.gd`, `goal.gd`, `goal_net.gd`), `scripts/diagnostics/prof.gd`,
+  `graphics_settings.gd`, `diagnostics_overlay.gd`, `scripts/ui/hud.gd`, `project.godot`, `tools/perf_probe.*`,
+  `tools/json_anim/receive_view.gd`, `tests/test_physical_dribble.gd`.
+- Verificación (render, modo 4): `physical_dribble` 5/0, `live_feet` 7/0, `pack_motion` 2/0, `json_mode` 10/0 (1 omitida),
+  `directional_kicks` 3/0, `ball_turn` 4/0, `drag_back` 4/0, `dribble_reference` 2/0, `kick_reach` 2/0, `receive` 34/0
+  (1 omitida), `mode4_dribble` 8/0, `pack_dribble_metrics` 2/0, `audio` 3/0; `live_kicks` 3/1 en dos de cuatro corridas
+  (batería de 50 golpeos, «pase bajo presión en carrera» con la punta a 0.42-0.43 m): repetido 16 veces, el pie queda a más
+  de 0.3 m en 9 de 16 con el código anterior y 9 de 16 con el nuevo (defecto previo, pendiente).
+- Suite headless completa: **289 pruebas, 2 fallos intermitentes** (`test_json_mode::test_ai_match_in_json_mode`, 0 tiros
+  en 90 s; `test_training_mode::test_teammates_do_not_crowd_the_dribbler`), 32 omitidas, 1 691 comprobaciones, 0 SCRIPT
+  ERROR; repetidas 3 veces cada una, pasan 3 de 3. Tiros por partido IA de 90 s: media 2.0 (7 corridas) con el código
+  nuevo y 3.0 (6) con el anterior, con mucha variación (0-5): no concluyente, a vigilar.
+- Pruebas ajustadas (dicho, no ocultado): `test_pack_kick` coloca la pelota al final de la espera inicial, justo antes del
+  pedido (con el joystick suelto el jugador ahora se acomoda a una pelota al alcance que no tiene delante, y la pelota
+  «detrás» o «algo lejos del pie» ya no estaba ahí); el acomodo no actúa con un golpeo pedido o cargándose.
+- Pendiente: picos de la IA al preparar pases (hasta 13-20 ms), peor caso del arquero (16-20 ms), imágenes ocasionales de
+  50-85 ms cerca de las repeticiones de gol, costo medio de los jugadores; medir en un teléfono; pase bajo presión a la
+  carrera con el pie lejos de la pelota (9 de 16).
+
 ## 2026-11-05 — Conducción física sin «hilo», golpeos en todas direcciones con el banco, cancha de fútbol 7 y 60 fps
 
 Rama `respaldo-f3` (corrección del trabajo pedida por el usuario; continúa el programa maestro). Detalle:

@@ -196,9 +196,16 @@ func place_at(pos: Vector3, yaw: float) -> void:
 	velocity = Vector3.ZERO
 
 func _physics_process(delta: float) -> void:
+	Prof.begin(&"jugadores (total)")
+	_player_step(delta)
+	Prof.end(&"jugadores (total)")
+
+func _player_step(delta: float) -> void:
 	if ctx == null or locomotion == null:
 		return
+	Prof.begin(&"posesion (update_possession)")
 	ctx.update_possession()
+	Prof.end(&"posesion (update_possession)")
 	incoming_pass_time = maxf(incoming_pass_time - delta, 0.0)
 	give_and_go_time = maxf(give_and_go_time - delta, 0.0)
 	if incoming_pass_time > 0.0 and ctx.ball != null and ctx.ball.last_toucher != null and ctx.ball.last_toucher.get("team") != team:
@@ -207,7 +214,9 @@ func _physics_process(delta: float) -> void:
 	# receptor seguia corriendo al punto del pase y se metia encima del companero que conducia (video del usuario).
 	if incoming_pass_time > 0.0 and ctx.possessor != null and ctx.possessor != self and ctx.possessor != incoming_pass_from:
 		incoming_pass_time = 0.0
+	Prof.begin(&"entrada (IA)")
 	var frame: InputFrame = input_source.poll(self) if (input_source != null and ctx.input_enabled) else InputFrame.new()
+	Prof.end(&"entrada (IA)")
 	last_frame = frame
 	if set_piece != null:
 		if set_piece.tick(frame, delta):
@@ -330,14 +339,25 @@ func _physics_process(delta: float) -> void:
 	# Pelota propia atras o al costado tras un giro: primero se va a por ella (BallHandler.carry_steer). Los toques
 	# siguen usando el rumbo pedido (intent_dir): al llegar a la pelota, el toque la lleva hacia alli.
 	var intent_dir: Vector3 = desired_dir
+	# Joystick suelto con la pelota al alcance pero fuera del pie (al costado, detras, yendose): el jugador va a ella
+	# (BallHandler.settle_steer); en ese caso no la sigue follow_steer ni se pone de costado (control lateral).
+	var settling_close: bool = false
+	var settle_face: Vector3 = Vector3.ZERO
 	if not is_pressing and stick_mag < 0.18 and desired_dir.length_squared() < 0.01:
+		# Con un boton de golpeo apretado en este paso no hay acomodo cercano (lo decide la preparacion del golpeo; los
+		# estados de carga de BallHandler se actualizan despues, en ball_handler.update).
+		ball_handler.kick_button_now = frame.pass_held or frame.shoot_held or frame.through_held or frame.cross_held \
+			or frame.pass_pressed or frame.shoot_pressed or frame.through_pressed or frame.cross_pressed
 		var settle: Array = ball_handler.settle_steer()
 		if not settle.is_empty():
 			desired_dir = settle[0]
 			desired_mag = settle[1]
+			settling_close = ball_handler.settle_close_now
+			if settling_close and settle.size() > 2:
+				settle_face = settle[2]
 	# Conduccion fisica: el que conduce sigue a su pelota (BallHandler.follow_steer) y la acomoda al alcanzarla; el
 	# joystick decide hacia donde la llevara el proximo toque.
-	if not is_pressing:
+	if not is_pressing and not settling_close:
 		var follow: Array = ball_handler.follow_steer(desired_dir, desired_mag, want_sprint)
 		if not follow.is_empty():
 			desired_dir = follow[0]
@@ -385,9 +405,12 @@ func _physics_process(delta: float) -> void:
 		# o hacia atras sin darse la vuelta); si se girara hacia donde camina, al llegar el clip ya no encajaria.
 		locomotion.face_override = receive_face
 	elif not kicking:
-		var carry_face: Vector3 = ball_handler.plan_carry(desired_dir, desired_mag, delta)
+		var carry_face: Vector3 = ball_handler.plan_carry(desired_dir, stick_mag if settling_close else desired_mag, delta)
 		if carry_face.length_squared() > 0.01:
 			locomotion.face_override = carry_face
+		elif settle_face.length_squared() > 0.01:
+			# Acomodandose a la pelota (joystick suelto): de frente a ella, girando en el sitio si esta pegada.
+			locomotion.face_override = settle_face
 
 	# Conduciendo la pelota se corre algo mas lento (y menos con peor conduccion).
 	var cap: float = -1.0
@@ -423,13 +446,19 @@ func _physics_process(delta: float) -> void:
 		velocity.y = -0.5
 	else:
 		velocity.y -= 9.81 * delta
+	Prof.begin(&"cuerpo (move_and_slide)")
 	move_and_slide()
+	Prof.end(&"cuerpo (move_and_slide)")
+	Prof.begin(&"choques entre jugadores")
 	_check_player_collisions()
+	Prof.end(&"choques entre jugadores")
 	# Las colisiones (paredes, otros jugadores) corrigen la velocidad real.
 	locomotion.velocity = Vector3(velocity.x - nudge_velocity.x, 0.0, velocity.z - nudge_velocity.z)
 	rotation.y = locomotion.yaw
 
+	Prof.begin(&"pelota (BallHandler)")
 	ball_handler.update(frame, stick_world, stick_mag, intent_dir, delta)
+	Prof.end(&"pelota (BallHandler)")
 	if incoming_pass_time > 0.0 and ball_handler.has_possession():
 		incoming_pass_time = 0.0
 	if visual != null:
@@ -437,7 +466,9 @@ func _physics_process(delta: float) -> void:
 		visual.directional = locomotion.jockeying
 		visual.carrying = ball_handler.is_dribbling()
 		visual.dir_velocity = Vector2(locomotion.forward_speed, locomotion.lateral_speed)
+		Prof.begin(&"visual (update_motion)")
 		visual.update_motion(self, delta)
+		Prof.end(&"visual (update_motion)")
 
 # --- Transiciones de marcha con clips del pack ----------------------------------------------------------------
 

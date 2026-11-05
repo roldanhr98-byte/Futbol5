@@ -26,12 +26,12 @@ No hay recursos de parámetros. Constantes y valores fijos reales:
 | Constante / enum / uniform | Valor | Línea | Descripción |
 |---|---|---|---|
 | `Hud.LEVEL_NAMES` | `["Desactivada", "Baja", "Media", "Alta"]` | 15 |  |
-| `Hud.TOUCH_SCALES` | `[0.85, 1.0, 1.2]` | 204 | Tamano de la botonera y sensibilidad del joystick (preferencias tactiles; se guardan con las demas). |
-| `Hud.JOY_SENS` | `[0.8, 1.0, 1.3]` | 205 |  |
-| `Hud.THREE_NAMES` | `["Bajo", "Normal", "Alto"]` | 206 |  |
+| `Hud.TOUCH_SCALES` | `[0.85, 1.0, 1.2]` | 214 | Tamano de la botonera y sensibilidad del joystick (preferencias tactiles; se guardan con las demas). |
+| `Hud.JOY_SENS` | `[0.8, 1.0, 1.3]` | 215 |  |
+| `Hud.THREE_NAMES` | `["Bajo", "Normal", "Alto"]` | 216 |  |
 <!-- /AUTO -->
 
-- Tamaños de fuente: marcador y reloj 30, mensaje central 68 (color `(1, 0.95, 0.4)` con contorno), pista inferior 18 (`set_hint`), título de pausa 38; botones del menú de 56 px de alto mínimo y fuente 22; panel de pausa de 760 px de ancho (2 columnas).
+- Tamaños de fuente: marcador y reloj 30, mensaje central 68 (color `(1, 0.95, 0.4)` con contorno), pista inferior 18 (`set_hint`), título de pausa 38; botones del menú de 56 px de alto mínimo y fuente 22; panel de pausa de 760 px de ancho (2 columnas). Desde el 2026-11-05 la cuadrícula va dentro de un `ScrollContainer` de 540 px de alto (se desplaza con el dedo): con «Imágenes por segundo» y «Sombras» (ver [PERFORMANCE](PERFORMANCE.md#tirones-de-cpu-y-opciones-de-rendimiento-2026-11-05)) los botones ya no cabían en 720 de alto.
 - Visibilidad de los controles táctiles (`Hud.should_show_touch_controls`): variable de entorno `FUTBOL5_TOUCH=1`, o plataforma `android`/`ios`, o `DisplayServer.is_touchscreen_available()`.
 - Etiquetas de nivel (`LEVEL_NAMES`): Desactivada, Baja, Media, Alta; valores en `AssistTuning.LEVEL_VALUES`.
 
@@ -56,27 +56,27 @@ No hay recursos de parámetros. Constantes y valores fijos reales:
 | `Hud._build_scoreboard(root: Control)` | 85 |  |
 | `Hud._build_message(root: Control)` | 102 |  |
 | `Hud._build_pause_menu(root: Control)` | 125 |  |
-| `Hud._add_menu_button(parent: Container, key: String, text: String, action: Callable)` | 165 |  |
-| `Hud._level_index(v: float)` | 176 |  |
-| `Hud._refresh_menu_labels()` | 186 |  |
-| `Hud._nearest_index(values: Array, v: float)` | 208 |  |
-| `Hud._cycle_touch(kind: StringName)` | 215 |  |
-| `Hud._cycle_camera_zoom()` | 226 | Zoom de la camara (se aplica en el acto, con el suavizado de la camara, y se guarda). |
-| `Hud._cycle_gameplay_mode()` | 234 | Modo de jugabilidad entre los jugables (Tuning.PLAYABLE_MODES; hoy solo el 4, y el boton no se muestra): se guarda y el partido se vuelve a  |
-| `Hud._toggle_sound()` | 242 | Sonido del partido: se apaga o enciende en el acto (publico incluido) y se guarda. |
-| `Hud._cycle_minutes()` | 249 | Duracion del partido: se guarda y se aplica al reiniciar el partido (el reloj del partido en curso no cambia). |
-| `Hud._cycle_graphics()` | 257 |  |
-| `Hud._cycle_assist(kind: String)` | 261 |  |
-| `Hud._toggle_diagnostics()` | 269 |  |
-| `Hud._close_pause()` | 275 |  |
-| `Hud._on_pause_pressed()` | 279 |  |
-| `Hud.show_replay(on: bool)` | 283 |  |
-| `Hud._input(event: InputEvent)` | 291 |  |
-| `Hud._unhandled_input(event: InputEvent)` | 297 |  |
-| `Hud._on_state_changed(s: int)` | 302 |  |
-| `Hud._on_score(home: int, away: int)` | 308 |  |
-| `Hud.show_message(text: String, seconds: float)` | 311 |  |
-| `Hud.set_hint(text: String)` | 320 |  |
+| `Hud._add_menu_button(parent: Container, key: String, text: String, action: Callable)` | 173 |  |
+| `Hud._level_index(v: float)` | 184 |  |
+| `Hud._refresh_menu_labels()` | 194 |  |
+| `Hud._nearest_index(values: Array, v: float)` | 218 |  |
+| `Hud._cycle_touch(kind: StringName)` | 225 |  |
+| `Hud._cycle_camera_zoom()` | 236 | Zoom de la camara (se aplica en el acto, con el suavizado de la camara, y se guarda). |
+| `Hud._cycle_gameplay_mode()` | 244 | Modo de jugabilidad entre los jugables (Tuning.PLAYABLE_MODES; hoy solo el 4, y el boton no se muestra): se guarda y el partido se vuelve a  |
+| `Hud._toggle_sound()` | 252 | Sonido del partido: se apaga o enciende en el acto (publico incluido) y se guarda. |
+| `Hud._cycle_minutes()` | 259 | Duracion del partido: se guarda y se aplica al reiniciar el partido (el reloj del partido en curso no cambia). |
+| `Hud._cycle_graphics()` | 267 |  |
+| `Hud._cycle_assist(kind: String)` | 271 |  |
+| `Hud._toggle_diagnostics()` | 279 |  |
+| `Hud._close_pause()` | 285 |  |
+| `Hud._on_pause_pressed()` | 289 |  |
+| `Hud.show_replay(on: bool)` | 293 |  |
+| `Hud._input(event: InputEvent)` | 301 |  |
+| `Hud._unhandled_input(event: InputEvent)` | 307 |  |
+| `Hud._on_state_changed(s: int)` | 312 |  |
+| `Hud._on_score(home: int, away: int)` | 318 |  |
+| `Hud.show_message(text: String, seconds: float)` | 321 |  |
+| `Hud.set_hint(text: String)` | 330 |  |
 <!-- /AUTO -->
 
 <!-- AUTO:signals:scripts/ui/hud.gd -->
