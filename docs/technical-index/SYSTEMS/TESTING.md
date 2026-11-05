@@ -137,3 +137,9 @@ Ver [CHANGELOG.md](../CHANGELOG.md): evolución 9/24 → 40/113 → 44/140 → 5
 - `test_full_match::test_three_minute_match_is_played_to_the_final_whistle_with_goal_replays` pide ≥ 2 tiros en un partido
   de IA de 3 min: con mucho azar (5 corridas: 3-10 tiros con `0baf375`, 4-8 con el código nuevo; casos aislados de 1-2).
   Falló una vez en GitHub Actions #47 con 1 tiro.
+- **Pruebas de partidos de IA inestables, medido con el código anterior (`0baf375`, 4 corridas cada una):**
+  `test_json_mode::test_ai_match_in_json_mode` falla 1 de 4 («Humanoide: nadie se sale de la cancha»; tiros 1, 1, 2, 1) y
+  `test_training_mode::test_teammates_do_not_crowd_the_dribbler` falla 1 de 4 (34 de 399 muestras a < 2 m). Con el código
+  nuevo, 1 de 4 cada una (tiros 2, 2, 7, 3). Junto con `test_ai_match` (arqueros que enfrentan tiros, jugador fuera de la
+  cancha) y el partido de 3 min (≥ 2 tiros), la suite completa falla a menudo por azar de la IA aunque nada cambie:
+  GitHub Actions #47 (reintento) y #48 fallaron así. Pendiente: semillas fijas para la IA en esas pruebas.

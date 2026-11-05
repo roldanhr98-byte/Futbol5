@@ -1384,7 +1384,7 @@ func _foot_strike(b: Ball, mode: StringName, close_in: bool = false) -> int:
 	var push_dir: Vector3 = fwd if (mode == &"carry" or mode == &"setup") else KickModel.flat(b.global_position - owner.global_position).normalized()
 	# Parar la pelota (settle sin rival): el pie tiene que llegar de verdad (antes 1.4 veces: tocaba a 0.38 m del centro de la
 	# pelota sin que el jugador se acercara). Llevarla de costado, girar o protegerla: un paso llega mas lejos.
-	var settle_plain: bool = mode == &"settle" and _shield_dir(KickModel.flat(b.global_position - owner.global_position).length()).length_squared() < 0.01
+	var settle_plain: bool = mode == &"settle" and owner.is_human_controlled and _shield_dir(KickModel.flat(b.global_position - owner.global_position).length()).length_squared() < 0.01
 	var radius: float = FOOT_CONTACT * (SETTLE_STRIKE_SCALE if settle_plain else (1.4 if mode == &"settle" or mode == &"lateral" or mode == &"redirect" or close_in else 1.0))
 	if close_in:
 		# Pelota pegada al cuerpo: la toca el pie que este encima, sin exigir que vaya hacia delante (la empuja o la arrastra).
@@ -1447,8 +1447,8 @@ func _ball_at_foot(off: Vector3, fwd: Vector3, mode: StringName) -> bool:
 	var ahead: float = off.dot(fwd)
 	var lat: float = absf(off.dot(Vector3(-fwd.z, 0.0, fwd.x)))
 	var reach_fwd: float = FOOT_ZONE_FWD + 0.14 * _sprint_ratio()
-	if mode == &"settle" and _shield_dir(off.length()).length_squared() < 0.01:
-		# Parar la pelota (joystick suelto, sin rival encima): solo la que esta delante del cuerpo, al alcance de un paso. Al
+	if mode == &"settle" and owner.is_human_controlled and _shield_dir(off.length()).length_squared() < 0.01:
+		# Parar la pelota (joystick suelto, sin rival encima; jugador de la persona): solo la que esta delante del cuerpo, al alcance de un paso. Al
 		# costado o detras no se la trae: el jugador va a ella (settle_steer) y la para el pie que llega. Antes esta zona
 		# llegaba a 0.62 m al costado y 0.35 m detras y la pelota se movia sola hasta delante del cuerpo (video del usuario
 		# 05-11 04:42:20, prueba physical_dribble::released_stick: jugador quieto 0.00 m, pelota llevada a 0.38 m delante).
@@ -2258,7 +2258,7 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 			var no_foot_ok: bool = overrun or ((mode != &"carry" or leaving) and at_foot)
 			# Parando la pelota (joystick suelto, sin rival) el toque lo da un pie que llega: sin pie solo si el cuerpo se le
 			# viene encima. Si no, la pelota iba sola al pie (prueba physical_dribble::released_stick).
-			if mode == &"settle" and not overrun and _shield_dir(dist).length_squared() < 0.01:
+			if mode == &"settle" and owner.is_human_controlled and not overrun and _shield_dir(dist).length_squared() < 0.01:
 				no_foot_ok = false
 			if not no_foot_ok or _foot_wait <= wait_max:
 				return
@@ -2296,7 +2296,7 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 			# detener el cuerpo (con la rodadura proporcional una pelota que llega ahi rodando se pasaba: quedaba a 0.9 m).
 			# Parado o caminando, igual: el pie la deja quieta (pisada) donde la para, no la manda hacia delante del cuerpo
 			# (con una velocidad de llegada seguia rodando y el jugador la perseguia toque tras toque).
-			if shield.length_squared() < 0.01:
+			if shield.length_squared() < 0.01 and (owner.is_human_controlled or loco.speed > t.walk_speed):
 				var stop_dist: float = loco.speed * loco.speed / (2.0 * maxf(t.decel * owner.attributes.factor("acceleration", 0.16), 1.0))
 				settle_stop = KickModel.flat(owner.global_position) + KickModel.flat(body_v).normalized() * stop_dist + touch_dir * t.settle_gap
 				settle_to_stop = true
@@ -2638,10 +2638,12 @@ func settle_steer() -> Array:
 		if _pending_action != &"" or _pass_active or _shoot_active or _through_active or _cross_active or kick_button_now:
 			_settle_adjust = false
 			return []
-		# Solo el jugador de la persona: la IA siempre decide hacia donde ir (con la pelota conduce con el joystick a fondo) y
-		# su joystick queda suelto solo al llegar a su sitio. Acomodando a la IA cambiaba el partido (sigue la pelota fuera de
-		# la cancha, sin el filtro _keep_inside; menos tiros): fallos en GitHub Actions #46-#47 que con el codigo anterior no
-		# aparecian. Las reglas del toque (solo con el pie, sin imán) valen para todos.
+		# Solo el jugador de la persona (como las reglas nuevas del toque de parada: zona del pie delante, pie que llega de
+		# verdad, pelota quieta): la IA siempre decide hacia donde ir y su joystick queda suelto solo un instante (al llegar a su
+		# sitio, tras recibir). Con las reglas nuevas tambien para la IA el partido cambiaba (seguia la pelota fuera de la
+		# cancha sin _keep_inside; tras recibir, la pelota se le escapaba hasta su siguiente decision: menos tiros, companeros
+		# encima del portador): fallos de pruebas de partidos de IA en GitHub Actions #46-#48 que con el codigo anterior no
+		# aparecian. La IA conserva el toque de parada de antes; pendiente darle una orden en ese instante.
 		if not owner.is_human_controlled:
 			_settle_adjust = false
 			return []

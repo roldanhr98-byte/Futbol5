@@ -1083,13 +1083,13 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._try_first_touch",
-          "line": 2966,
+          "line": 2968,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.attempt_tackle",
-          "line": 3029,
+          "line": 3031,
           "kind": "func"
         },
         {
@@ -4224,7 +4224,7 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.first_touch_absorb",
-          "line": 3017,
+          "line": 3019,
           "kind": "func"
         }
       ],
@@ -4834,7 +4834,7 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._curve_turn_scale",
-          "line": 2802,
+          "line": 2804,
           "kind": "func"
         },
         {
@@ -4994,7 +4994,7 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.carry_steer",
-          "line": 2841,
+          "line": 2843,
           "kind": "func"
         },
         {

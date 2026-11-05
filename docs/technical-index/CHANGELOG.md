@@ -77,6 +77,14 @@ lag, dame más opciones de optimización» y «la pelota se acomoda al jugador e
   jugador de la persona; las reglas del toque siguen para todos. Verificado: `test_ai_teams_play_a_real_match…` 6 de 6
   con el código nuevo y 6 de 6 con `0baf375` (tiros que enfrentan los arqueros parecidos); `physical_dribble` 5/0
   (render), `pack_kick` 8/0, `receive` 34/0.
+- **GitHub Actions #48** falló en `test_json_mode::test_ai_match_in_json_mode` (0 tiros) y
+  `test_training_mode::test_teammates_do_not_crowd_the_dribbler`. Se acotaron también al jugador de la persona las reglas
+  nuevas del toque de parada (la IA conserva el de antes). Medido después con el código anterior (`0baf375`): esas dos
+  pruebas fallan 1 de 4 veces igual que con el nuevo, así que las fallas de #47-#48 son inestabilidad previa de las
+  pruebas de IA, no regresiones (la atribución al acomodo de la IA en #47 no quedó probada). Ver TESTING.
+- Suite headless completa con este código: **289 pruebas, 0 fallos**, 32 omitidas, 1 693 comprobaciones (local).
+  APK de prueba compilado en GitHub Actions con `skip_tests` (las pruebas, corridas localmente sobre el mismo commit).
+  Con render: `physical_dribble` 5/0, `pack_kick` 8/0, `receive` 34/0, `shared_ball_mechanics` 2/0.
 
 ## 2026-11-05 — Conducción física sin «hilo», golpeos en todas direcciones con el banco, cancha de fútbol 7 y 60 fps
 
