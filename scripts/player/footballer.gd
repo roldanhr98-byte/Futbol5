@@ -335,14 +335,14 @@ func _physics_process(delta: float) -> void:
 		if not settle.is_empty():
 			desired_dir = settle[0]
 			desired_mag = settle[1]
+	# Conduccion fisica: el que conduce sigue a su pelota (BallHandler.follow_steer) y la acomoda al alcanzarla; el
+	# joystick decide hacia donde la llevara el proximo toque.
 	if not is_pressing:
-		var steer: Vector3 = ball_handler.carry_steer(desired_dir)
-		if steer.length_squared() > 0.01:
-			desired_dir = steer
-			# Pelota que se aleja: a por ella a fondo (si no, nunca se la alcanza); quieta o cerca, con pasos cortos.
-			var away: float = KickModel.flat(ctx.ball.linear_velocity).dot(steer)
-			desired_mag = maxf(desired_mag, 1.0) if away > 1.0 else minf(desired_mag, 0.75)
-			want_sprint = want_sprint or away > 3.5
+		var follow: Array = ball_handler.follow_steer(desired_dir, desired_mag, want_sprint)
+		if not follow.is_empty():
+			desired_dir = follow[0]
+			desired_mag = follow[1]
+			want_sprint = follow[2]
 		else:
 			# Pelota propia que se adelanto en el rumbo pedido: se corre lo necesario para alcanzarla aunque el joystick pida
 			# poca velocidad (al frenar con la pelota rodando o tras un toque largo); al llegar manda de nuevo el joystick.

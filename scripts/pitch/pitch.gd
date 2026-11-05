@@ -17,8 +17,8 @@ var _sun: DirectionalLight3D
 var _ambient_root: Node3D
 
 func _ready() -> void:
-	if config == null:
-		build(Tuning.pitch)
+	# Con una configuracion asignada antes de entrar al arbol (pruebas: futsal) se construye esa; si no, la del juego.
+	build(config if config != null else Tuning.pitch)
 
 func build(cfg: PitchConfig) -> void:
 	config = cfg

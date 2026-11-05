@@ -247,3 +247,28 @@ parte (pie, pie en el aire, muslo, rodilla, pecho). Medido en `tests/test_receiv
 `tools/json_anim/receive_view.tscn` (tiras por familia). Verificación visual de los 70 clips pendientes con `CLIP=<id>`
 (2026-10-30): 45 confirmados, 25 siguen pendientes ([`fases/F3_verificacion_visual_70.md`](../../fases/F3_verificacion_visual_70.md)).
 Desde esa fecha el modo 4 es el predeterminado y el único que ofrece el menú (`Tuning.PLAYABLE_MODES`).
+
+## Golpeos hacia cualquier dirección con el banco (2026-11-05)
+
+Medido con render (`tests/test_directional_kicks.gd`, modo 4): el destino (compañero a 9 m, o el arco a 12 m girando la
+orientación del tirador) a 0, 45, 90, 135 y 180 grados del frente, parado y al trote. Clip que ejecuta el golpeo:
+
+| Destino | Pase parado | Pase al trote | Tiro parado | Tiro al trote |
+|---|---|---|---|---|
+| 0° | `kick_pass` | `kick_pass` | `kick_shot` | `kick_shot` |
+| 45° | `kick_pass_soft` | `kick_pass` | `kick_shot` | `kick_shot` |
+| 90° | `kick_turn` (golpeo girando) | `kick_turn` | `kick_turn` | `kick_shot` |
+| 135° | `kick_turn` | `kick_turn` | giro con pelota `ball_turn` + `kick_turn` | giro con pelota + `kick_turn` |
+| 180° | **`kick_back` (taco)** | giro con pelota + `kick_turn` | giro con pelota + `kick_turn` | a veces sin tiro en 4 s (ver abajo) |
+
+- Pases: 10 de 10 salen hacia el compañero (error ≤ 5°) con el pie en la pelota; los de 180° parado son el taco
+  `kick_back` (p. ej. `jn_kick_back_3308`, `jn_kick_back_1622`), sin girar antes. Tiros: 9 de 10.
+- **Corregido:** tras `JsonBallMove.turn_for_kick` la orden de golpeo caducaba a los 0.5 s con el clip de giro todavía en
+  curso (pase a 180° al trote, sin golpeo); ahora espera al final del giro (`BallHandler.update`, `turning_for_kick`).
+- **Pendiente:** tiro a 180° al trote a veces encadena tres giros con pelota sin llegar a tirar en 4 s (en la línea base de
+  `respaldo-f3` salió a los 3.08 s tras dos giros). No hay en el banco un tiro fuerte que salga a más de ~110° del frente
+  (los `kick_turn` con pelota a ≥ 7 m/s no llegan): el tiro hacia atrás es giro + golpeo, no un taco.
+- **Centros:** los dos clips `kick_cross` del banco (`JOG_TO_L_45_CROSS`, `…_CROSS_LOW`, y sus espejos) entran ahora en los
+  candidatos del centro (`JsonCatalog.kick_candidates`) aunque no sean «limpios» (contacto a 0.59–0.68 m al costado): el
+  planificador solo los usa si el pie llega a la pelota. En la prueba desde la banda (3 centros) se eligieron pases de empeine
+  (`kick_pass`) y los 3 cayeron en el área: los `kick_cross` necesitan la pelota a 0.6 m del costado, que conduciendo no pasa.

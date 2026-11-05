@@ -15,7 +15,7 @@
 - **Git:** trabajar en la rama que indique la sesión; **no abrir PR** salvo que lo pidan. Mensajes de commit con las líneas de atribución de la sesión.
 - **La pelota solo cambia de velocidad por impulsos** (`Ball.kick`) y su física; nunca se fija su posición para «conducirla».
 - Texto de interfaz y comentarios `##` en **español**; identificadores en **inglés**; sangría con **tabuladores**; tipado explícito; `class_name` en clases reutilizables.
-- Ejes: **X = largo (arcos en x = ±20)**, Z = ancho, Y = arriba. Equipo 0 ataca +X. `yaw = 0` mira a −Z.
+- Ejes: **X = largo (arcos en x = ±25: cancha de fútbol 7 de 50 × 30 con arcos de 5 × 2; las pruebas de mecánica usan la de futsal 40 × 20, arcos en ±20)**, Z = ancho, Y = arriba. Equipo 0 ataca +X. `yaw = 0` mira a −Z.
 
 ## 1. Flujo de trabajo en 6 pasos (ahorra tokens)
 

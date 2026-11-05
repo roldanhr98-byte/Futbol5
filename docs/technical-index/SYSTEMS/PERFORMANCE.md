@@ -5,7 +5,7 @@
 - **Responsabilidad exacta:** controlar el coste de renderizado según el dispositivo (escala 3D, MSAA, sombras, elementos ambientales) y mostrar en pantalla lo que **realmente se mide** (FPS, tiempos de fotograma/proceso/física, llamadas de dibujo, nodos, memoria, errores).
 - **Estado:** implementado a nivel de código. **No hay ninguna medición en un dispositivo Android real**: los valores por perfil son heurísticos y no están validados contra FPS reales.
 - **Última verificación:** <!-- AUTO:verified -->
-2026-10-31
+2026-11-05
 <!-- /AUTO -->
 
 ## Archivos responsables
@@ -27,19 +27,19 @@
 ```gdscript
 const PROFILES: Dictionary = {
 	Profile.VERY_LOW: {
-		"scale_3d": 0.6, "msaa": Viewport.MSAA_DISABLED, "shadows": false,
-		"shadow_size": 1024, "ambient_props": false, "target_fps": 30,
+		"scale_3d": 0.5, "msaa": Viewport.MSAA_DISABLED, "shadows": false,
+		"shadow_size": 1024, "ambient_props": false, "target_fps": 60,
 	},
 	Profile.LOW: {
-		"scale_3d": 0.75, "msaa": Viewport.MSAA_DISABLED, "shadows": false,
-		"shadow_size": 1024, "ambient_props": true, "target_fps": 30,
+		"scale_3d": 0.6, "msaa": Viewport.MSAA_DISABLED, "shadows": false,
+		"shadow_size": 1024, "ambient_props": true, "target_fps": 60,
 	},
 	Profile.MEDIUM: {
-		"scale_3d": 0.9, "msaa": Viewport.MSAA_DISABLED, "shadows": true,
+		"scale_3d": 0.72, "msaa": Viewport.MSAA_DISABLED, "shadows": true,
 		"shadow_size": 1024, "ambient_props": true, "target_fps": 60,
 	},
 	Profile.HIGH: {
-		"scale_3d": 1.0, "msaa": Viewport.MSAA_2X, "shadows": true,
+		"scale_3d": 0.9, "msaa": Viewport.MSAA_2X, "shadows": true,
 		"shadow_size": 2048, "ambient_props": true, "target_fps": 60,
 	},
 }
@@ -50,6 +50,13 @@ const PROFILES: Dictionary = {
 |---|---|
 | Valor por defecto | `detect_default_profile`: en `android`/`ios` según núcleos (`≤ 4` → Muy bajo, `≤ 6` → Bajo, resto → Medio); en escritorio, Alto. Solo si no hay `user://graphics.cfg`. |
 | Cambio manual | Menú de pausa → «Gráficos» (cicla los 4 perfiles y guarda). |
+
+**60 imágenes por segundo (2026-11-05):** escalas 3D más bajas (muy bajo 0.5, bajo 0.6, medio 0.72, alto 0.9), todos
+los perfiles con `target_fps` 60 y en el teléfono `Engine.max_fps` = 60 (en PC y en las pruebas, sin tope: el tope
+cambiaba el reparto de imágenes por paso de física de la red de tela en las pruebas headless). El teléfono arranca en
+**Bajo** salvo con ≤ 4 núcleos (Muy bajo). Botón **«Resolución: 100/85/70/55 %»** en la pausa
+(`GraphicsSettings.cycle_resolution`, `RESOLUTION_STEPS`) que multiplica la escala del perfil. **No medido en un
+teléfono real** (no hay dispositivo en el entorno).
 
 ### Riesgos al modificar
 
@@ -67,18 +74,19 @@ const PROFILES: Dictionary = {
 <!-- AUTO:funcs:scripts/diagnostics/graphics_settings.gd -->
 | Función | Línea | Qué hace |
 |---|---|---|
-| `GraphicsSettings._ready()` | 42 |  |
-| `GraphicsSettings.detect_default_profile()` | 49 | Heuristica de perfil inicial segun la plataforma y el hardware. No sustituye a medir. |
+| `GraphicsSettings._ready()` | 43 |  |
+| `GraphicsSettings.detect_default_profile()` | 50 | Heuristica de perfil inicial segun la plataforma y el hardware. No sustituye a medir. |
 | `GraphicsSettings.set_profile(new_profile: int)` | 59 |  |
-| `GraphicsSettings.set_resolution_override(value: float)` | 65 |  |
-| `GraphicsSettings.get_params()` | 70 |  |
-| `GraphicsSettings.profile_name()` | 73 |  |
-| `GraphicsSettings.shadows_enabled()` | 76 |  |
-| `GraphicsSettings.ambient_props_enabled()` | 79 |  |
-| `GraphicsSettings.apply()` | 83 | Aplica el perfil al viewport principal y a las luces registradas en el grupo "sun_light". |
-| `GraphicsSettings.save_settings()` | 95 |  |
-| `GraphicsSettings.load_settings()` | 103 |  |
-| `GraphicsSettings._has_saved_settings()` | 110 |  |
+| `GraphicsSettings.cycle_resolution()` | 66 | Pasa al siguiente escalon de RESOLUTION_STEPS (boton «Resolucion» del menu de pausa). |
+| `GraphicsSettings.set_resolution_override(value: float)` | 73 |  |
+| `GraphicsSettings.get_params()` | 78 |  |
+| `GraphicsSettings.profile_name()` | 81 |  |
+| `GraphicsSettings.shadows_enabled()` | 84 |  |
+| `GraphicsSettings.ambient_props_enabled()` | 87 |  |
+| `GraphicsSettings.apply()` | 91 | Aplica el perfil al viewport principal y a las luces registradas en el grupo "sun_light". |
+| `GraphicsSettings.save_settings()` | 105 |  |
+| `GraphicsSettings.load_settings()` | 113 |  |
+| `GraphicsSettings._has_saved_settings()` | 120 |  |
 <!-- /AUTO -->
 
 <!-- AUTO:signals:scripts/diagnostics/graphics_settings.gd -->

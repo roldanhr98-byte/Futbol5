@@ -148,6 +148,7 @@ func _build_pause_menu(root: Control) -> void:
 	_add_menu_button(grid, "training", "", func() -> void: _close_pause(); training_toggle_requested.emit())
 	_add_menu_button(grid, "practice", "Práctica de animaciones", func() -> void: _close_pause(); practice_requested.emit())
 	_add_menu_button(grid, "graphics", "", func() -> void: _cycle_graphics())
+	_add_menu_button(grid, "resolution", "", func() -> void: GraphicsSettings.cycle_resolution(); _refresh_menu_labels())
 	_add_menu_button(grid, "diagnostics", "", func() -> void: _toggle_diagnostics())
 	_add_menu_button(grid, "assist_pass", "", func() -> void: _cycle_assist("pass"))
 	_add_menu_button(grid, "assist_shot", "", func() -> void: _cycle_assist("shot"))
@@ -184,6 +185,7 @@ func _level_index(v: float) -> int:
 
 func _refresh_menu_labels() -> void:
 	(_pause_buttons["graphics"] as Button).text = "Gráficos: %s (res. 3D %d %%)" % [GraphicsSettings.profile_name(), int(round(get_tree().root.scaling_3d_scale * 100.0))]
+	(_pause_buttons["resolution"] as Button).text = "Resolución: %d %%" % int(round(GraphicsSettings.resolution_override * 100.0))
 	(_pause_buttons["assist_pass"] as Button).text = "Asistencia de pase: %s" % LEVEL_NAMES[_level_index(Tuning.assist.pass_assist)]
 	(_pause_buttons["assist_shot"] as Button).text = "Asistencia de tiro: %s" % LEVEL_NAMES[_level_index(Tuning.assist.shot_assist)]
 	(_pause_buttons["assist_press"] as Button).text = "Asistencia de presión: %s" % LEVEL_NAMES[_level_index(Tuning.assist.press_assist)]

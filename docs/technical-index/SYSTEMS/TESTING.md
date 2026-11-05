@@ -5,7 +5,7 @@
 - **Responsabilidad exacta:** verificar la simulación (física de la pelota, locomoción, conducción, pases, tiros, presión, patada sincronizada, reglas de partido, controles táctiles, modelo) **sin pantalla ni dependencias externas**, con un marco propio de ~150 líneas. Cada método `test_*` de una subclase de `TestCase` es una prueba.
 - **Estado:** operativo. **Última ejecución completa (2026-10-26):** headless con las librerías del pack: **121 pruebas, 0 fallidas, 2 omitidas (necesitan render), 686 comprobaciones, 0 `SCRIPT ERROR`, ~92 s**. Con render (`xvfb-run`, por filtro): `gameplay_feel` 10/33, `control_and_keeper` 7/26, `goalkeeper` 5/25, `pack_motion` 2/24, `player_actions` 4/13, `practice` 4/37, todas 0 fallidas y 0 omitidas. La suite completa con render **no se terminó**: `test_ai_match` simula partidos de 120 s con 10 personajes animados y con `llvmpipe` tarda decenas de minutos. **Sin** las librerías del pack: las pruebas del pack, arquero, práctica, sensación de juego e IA se omiten.
 - **Última verificación:** <!-- AUTO:verified -->
-2026-10-31
+2026-11-05
 <!-- /AUTO -->
 
 ## Archivos responsables
@@ -20,6 +20,11 @@
 
 - **Pruebas omitidas** (`TestCase.skip(motivo)`): se muestran como `[SKIP]` y se cuentan aparte; **no cuentan como aprobadas ni como comprobaciones**. Se usan cuando falta un recurso restringido que no se versiona (la librería local del pack, ver [ANIMATION_PACK](ANIMATION_PACK.md)) o cuando hace falta render (`DisplayServer` = headless no anima el esqueleto). `TestCase.cleanup()` restaura los interruptores globales (`FootballerVisual.prefer_pack`, `BallHandler.clip_kicks_enabled`).
 - **Con render:** `xvfb-run -a godot --rendering-driver opengl3 --fixed-fps 60 --path . res://tests/run_tests.tscn -- --filter <nombre>` (la suite completa tarda ~4 min por `llvmpipe`); `tests/test_pack_motion.gd` mide el esqueleto realmente animado.
+- **Cancha de las pruebas** (desde 2026-11-05): el juego usa la de fútbol 7 (50 × 30, arcos de 5 m) pero las pruebas
+  se escribieron con posiciones fijas para la de futsal (40 × 20, arcos de 3 m). `run_tests.gd` llama
+  `TestCase.begin()` antes de cada prueba (pone `Tuning.pitch = PitchConfig.futsal()`) y `end()` después (devuelve la
+  del juego); una prueba que quiere la cancha real llama `use_game_pitch()` (p. ej.
+  `test_ai_match::test_ai_match_on_the_game_pitch`).
 - Las lambdas de GDScript capturan las variables **por valor**: para que una señal escriba en una variable local se usa un `Dictionary`/`Array`.
 - Una prueba que ejecuta **0 comprobaciones se considera FALLIDA** (`run_tests.gd`).
 - Un error de script **a mitad** de una prueba aborta su cuerpo pero el ejecutor la cuenta como correcta si ya hizo ≥ 1 comprobación. Por eso `tools/run_tests.sh` busca `SCRIPT ERROR` en la salida y devuelve 1. **Si se ejecuta Godot directamente (sin el script), esa protección no existe.** (Corrección del 2026-10-26: `test_animation_tree_responds_to_speed` lanzaba un `SCRIPT ERROR` por leer `parameters/TimeScale/scale` — el nodo real se llama `LocoScale` — y figuraba como correcta con 1 comprobación.)

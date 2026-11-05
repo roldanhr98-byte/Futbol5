@@ -113,7 +113,9 @@ static func kick_candidates(kind: StringName, charge: float) -> Array:
 		&"lob":
 			roles = [&"kick_lob"]
 		&"cross":
-			roles = [&"kick_lob", &"kick_pass"]
+			# Los dos centros del banco (JOG_TO_L_45_CROSS y su version baja) tienen el contacto a 0.6 m al costado: no son
+			# «limpios» pero el planificador solo los elige si el pie llega a la pelota (residuo del plan).
+			roles = [&"kick_cross", &"kick_lob", &"kick_pass"]
 		_:
 			roles = [&"kick_pass_soft", &"kick_pass"] if charge < 0.35 else ([&"kick_pass", &"kick_shot"] if charge >= 0.8 else [&"kick_pass"])
 	var key: String = String(kind) + ("+" if charge >= 0.45 else "-") + ("s" if charge < 0.35 else ("h" if charge >= 0.8 else "m"))
@@ -126,7 +128,7 @@ static func kick_candidates(kind: StringName, charge: float) -> Array:
 			if not m.has("contact"):
 				continue
 			# Solo golpeos limpios (contacto medido al convertir): pie bajo delante del cuerpo, apoyo en el suelo, hacia delante.
-			if not bool(m["contact"].get("clean", true)):
+			if not bool(m["contact"].get("clean", true)) and r != &"kick_cross":
 				continue
 			out.append({"clip": id, "foot": m["contact"]["foot"], "contact": m["contact"], "role": r})
 	_kick_cache[key] = out

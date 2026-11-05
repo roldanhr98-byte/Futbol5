@@ -48,6 +48,7 @@ traspaso (`a977fb3`), F3 corregido (`ff6124b`), F3 en curso (`895b3f8`), F2 árb
 | F2 árbitro de acciones | hecha (commit `3e035b4`) | [`technical-index/SYSTEMS/PLAYER.md`](technical-index/SYSTEMS/PLAYER.md) (sección «Árbitro de acciones») |
 | F3 recepción y control | hecha (`7c3a622`; franjas de altura decididas en E1) | [`fases/F3_auditoria_124_clips.md`](fases/F3_auditoria_124_clips.md), [`fases/F3_verificacion_visual_70.md`](fases/F3_verificacion_visual_70.md) |
 | Programa maestro E1-E6 (sustituye a F4-F8, autorizado en un solo mensaje del usuario) | hecho | [`fases/E_programa_maestro_informe.md`](fases/E_programa_maestro_informe.md), [`fases/E2_auditoria_banco.md`](fases/E2_auditoria_banco.md), inventario [`fases/E2_inventario_banco.csv`](fases/E2_inventario_banco.csv) |
+| Corrección 2026-11-05 (conducción física sin «hilo», golpeos en todas direcciones con el banco, cancha de fútbol 7, 60 fps) | hecha | CHANGELOG 2026-11-05, [`technical-index/SYSTEMS/PLAYER.md`](technical-index/SYSTEMS/PLAYER.md), [`technical-index/SYSTEMS/JSON_MODE.md`](technical-index/SYSTEMS/JSON_MODE.md) |
 
 ## 4. Lo que queda abierto
 

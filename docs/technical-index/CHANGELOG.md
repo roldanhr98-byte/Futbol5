@@ -11,6 +11,44 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-11-05 — Conducción física sin «hilo», golpeos en todas direcciones con el banco, cancha de fútbol 7 y 60 fps
+
+Rama `respaldo-f3` (corrección del trabajo pedida por el usuario; continúa el programa maestro). Detalle:
+[PLAYER](SYSTEMS/PLAYER.md#conducción-física-y-golpeos-en-todas-direcciones-2026-11-05) ·
+[JSON_MODE](SYSTEMS/JSON_MODE.md#golpeos-hacia-cualquier-dirección-con-el-banco-2026-11-05) · [PERFORMANCE](SYSTEMS/PERFORMANCE.md) ·
+[TESTING](SYSTEMS/TESTING.md).
+
+- **Conducción física** (`BallHandler`): toque solo con el pie en la pelota (zona del pie, sin toques a distancia), giro
+  máximo por toque (`touch_turn_max_deg`: 150° caminando, 110° al trote, 70° a sprint; los giros mayores, con los giros con
+  pelota del banco como antes), la pelota sale recta y el jugador la **sigue** (`follow_steer`). Medido con la sonda en el
+  código anterior (render): a sprint la mitad de los toques eran sin pie, uno a 1.28 m del cuerpo, jugador hasta 71°
+  apartado de su pelota; ahora pelota ≤ 1.0 m y jugador ≤ 25° en la misma diagonal.
+- **Golpeos en todas direcciones con el banco** (`tests/test_directional_kicks.gd`, nuevo): pases a 0/45/90/135/180°
+  parado y al trote 10 de 10, con `kick_pass`, `kick_turn` (golpeo girando), **`kick_back` (taco) a 180° parado** y giro con
+  pelota + golpeo; tiros 9 de 10. **Corregido:** tras un giro con pelota para golpear (`turn_for_kick`) la orden caducaba
+  a los 0.5 s con el giro en curso (pase a 180° al trote sin golpeo); ahora espera al final del giro.
+- **Centros:** los 2 clips `kick_cross` del banco (y espejos) entran en los candidatos del centro; el planificador los usa
+  solo si el pie llega (en la prueba, los 3 centros salieron con `kick_pass` y cayeron en el área).
+- **Cancha de fútbol 7** (`PitchConfig`): 50 × 30 m, arcos 5 × 2, círculo 6 m, área y penal a 8 m; `PitchConfig.futsal()`
+  conserva la de 40 × 20 para las pruebas de mecánica (`TestCase.begin/end/use_game_pitch`, `run_tests.gd`).
+- **60 fps**: escalas 3D más bajas por perfil, tope de 60 imágenes en el teléfono, el teléfono arranca en «Bajo», botón
+  «Resolución 100/85/70/55 %» en la pausa. **No medido en un teléfono.**
+- Pisada pedida con REGATE (`DragBack.REQUEST_HOLD`) 0.3 → 0.6 s: a la carrera la pelota va ~1 m por delante.
+- Pruebas ajustadas por el cambio de mecánica (dicho, no ocultado): `test_live_feet` a sprint pide ≥ 40 % de toques con la
+  punta medida (medido 4–7 de 9–10; antes 8 de 9: sin toques a distancia el cuerpo alcanza la pelota empujada);
+  `test_pack_kick` (pelota a 1.3 m: el jugador camina hasta ella en vez del toque a distancia);
+  `test_pack_dribble_metrics` (pegada < 5 % al trote); nuevas `test_physical_dribble` (render) y
+  `test_ai_match::test_ai_match_on_the_game_pitch`.
+- Archivos: `scripts/player/ball_handler.gd`, `footballer.gd`, `player_tuning.gd`, `drag_back.gd`,
+  `scripts/animation/json_catalog.gd`, `scripts/pitch/pitch_config.gd`, `pitch.gd`, `scripts/diagnostics/graphics_settings.gd`,
+  `scripts/ui/hud.gd`, `tests/*` (arriba), `.github/workflows/android.yml` (render: `physical_dribble`).
+- Verificación (con render, modo 4): `live_feet` 7/0, `live_kicks` 4/0 (50 de 50 golpeos con contacto), `json_mode` 10/0
+  (1 omitida), `pack_motion` 2/0, `physical_dribble` 4/0, `directional_kicks` 3/0, `ball_turn` 4/0, `drag_back` 4/0;
+  headless `test_mode4_dribble` 8/0, `test_ai_match` (incluida la cancha de fútbol 7) y `test_pack_kick` 8/0. Suite
+  headless completa: en curso al hacer este commit (resultado en el commit siguiente).
+- Pendiente: tiro a 180° al trote a veces sin tiro en 4 s (encadena giros); medir 60 fps en Android; los `kick_cross`
+  necesitan la pelota al costado (no se usan conduciendo).
+
 ## 2026-10-31 — Programa maestro E1-E6: banco completo, conducción, caídas, arquero realista, predicción aérea
 
 Rama `respaldo-f3`. Informe: [`fases/E_programa_maestro_informe.md`](../fases/E_programa_maestro_informe.md).

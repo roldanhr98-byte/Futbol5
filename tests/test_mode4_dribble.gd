@@ -180,7 +180,8 @@ func test_ball_that_runs_ahead_is_recovered() -> void:
 		var d: float = KickModel.flat(b.global_position - p.global_position).length()
 		away = maxf(away, d)
 		# Recuperada: despues de alejarse, el jugador la alcanza y la vuelve a tocar.
-		if recovered < 0 and away > 2.0 and d < 1.2 and p.ball_handler.dribble_touch_count + p.ball_handler.foot_touches > touches0:
+		# (Con la conduccion fisica el jugador la sigue de cerca: se aleja ~1.9 m; antes, mas de 2 m.)
+		if recovered < 0 and away > 1.5 and d < 1.2 and p.ball_handler.dribble_touch_count + p.ball_handler.foot_touches > touches0:
 			recovered = i
 	note("pelota adelantada a 10.5 m/s: se alejo hasta %.2f m, recuperada en el paso %d, distancia final %.2f m" % [away, recovered, KickModel.flat(b.global_position - p.global_position).length()])
 	check(recovered >= 0 and recovered < 200, "la alcanza y vuelve a tocarla (paso %d)" % recovered)

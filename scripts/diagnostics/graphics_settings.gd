@@ -18,23 +18,24 @@ const PROFILE_NAMES: Dictionary = {
 ## Parametros por perfil.
 const PROFILES: Dictionary = {
 	Profile.VERY_LOW: {
-		"scale_3d": 0.6, "msaa": Viewport.MSAA_DISABLED, "shadows": false,
-		"shadow_size": 1024, "ambient_props": false, "target_fps": 30,
+		"scale_3d": 0.5, "msaa": Viewport.MSAA_DISABLED, "shadows": false,
+		"shadow_size": 1024, "ambient_props": false, "target_fps": 60,
 	},
 	Profile.LOW: {
-		"scale_3d": 0.75, "msaa": Viewport.MSAA_DISABLED, "shadows": false,
-		"shadow_size": 1024, "ambient_props": true, "target_fps": 30,
+		"scale_3d": 0.6, "msaa": Viewport.MSAA_DISABLED, "shadows": false,
+		"shadow_size": 1024, "ambient_props": true, "target_fps": 60,
 	},
 	Profile.MEDIUM: {
-		"scale_3d": 0.9, "msaa": Viewport.MSAA_DISABLED, "shadows": true,
+		"scale_3d": 0.72, "msaa": Viewport.MSAA_DISABLED, "shadows": true,
 		"shadow_size": 1024, "ambient_props": true, "target_fps": 60,
 	},
 	Profile.HIGH: {
-		"scale_3d": 1.0, "msaa": Viewport.MSAA_2X, "shadows": true,
+		"scale_3d": 0.9, "msaa": Viewport.MSAA_2X, "shadows": true,
 		"shadow_size": 2048, "ambient_props": true, "target_fps": 60,
 	},
 }
-
+## Escalones del boton «Resolucion» del menu de pausa (multiplican la escala 3D del perfil).
+const RESOLUTION_STEPS: Array[float] = [1.0, 0.85, 0.7, 0.55]
 var profile: int = Profile.MEDIUM
 ## Multiplicador manual de resolucion 3D (0.5 - 1.0) aplicado encima del perfil.
 var resolution_override: float = 1.0
@@ -51,9 +52,8 @@ func detect_default_profile() -> int:
 		var cores: int = OS.get_processor_count()
 		if cores <= 4:
 			return Profile.VERY_LOW
-		if cores <= 6:
-			return Profile.LOW
-		return Profile.MEDIUM
+		# En el telefono se empieza en Bajo (escala 3D 0.6): prioridad a las 60 imagenes por segundo.
+		return Profile.LOW
 	return Profile.HIGH
 
 func set_profile(new_profile: int) -> void:
@@ -61,6 +61,14 @@ func set_profile(new_profile: int) -> void:
 	apply()
 	save_settings()
 	profile_changed.emit(profile)
+
+## Pasa al siguiente escalon de RESOLUTION_STEPS (boton «Resolucion» del menu de pausa).
+func cycle_resolution() -> void:
+	var best := 0
+	for i in RESOLUTION_STEPS.size():
+		if absf(RESOLUTION_STEPS[i] - resolution_override) < absf(RESOLUTION_STEPS[best] - resolution_override):
+			best = i
+	set_resolution_override(RESOLUTION_STEPS[(best + 1) % RESOLUTION_STEPS.size()])
 
 func set_resolution_override(value: float) -> void:
 	resolution_override = clampf(value, 0.5, 1.0)
@@ -87,7 +95,9 @@ func apply() -> void:
 		root.scaling_3d_scale = clampf(params["scale_3d"] * resolution_override, 0.4, 1.0)
 		root.msaa_3d = params["msaa"]
 		RenderingServer.directional_shadow_atlas_set_size(params["shadow_size"], false)
-		Engine.max_fps = 0
+		# Tope de 60 imagenes por segundo en el telefono: sin el, en pantallas de 90/120 Hz el juego calcula imagenes de mas
+		# (y se calienta) sin que la fisica, que va a 60 Hz, se vea mas fluida. En PC (y en las pruebas) sin tope.
+		Engine.max_fps = int(params["target_fps"]) if OS.has_feature("mobile") else 0
 		for light in get_tree().get_nodes_in_group("sun_light"):
 			if light is Light3D:
 				light.shadow_enabled = params["shadows"]

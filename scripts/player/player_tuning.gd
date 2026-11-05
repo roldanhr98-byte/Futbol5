@@ -67,6 +67,12 @@ extends Resource
 ## Error extra por sprint (multiplicador) y por giro brusco.
 @export var touch_error_sprint: float = 2.0
 @export var touch_error_turn: float = 1.9
+## Giro maximo (grados) que un toque de conduccion le da a la pelota caminando, al trote y a sprint (BallHandler
+## .touch_turn_max_deg): entre toques la pelota rueda recta y el jugador la sigue; un cambio de rumbo mayor lleva varios
+## toques, como en FTS / Ultimate Clash.
+@export var touch_turn_walk_deg: float = 150.0
+@export var touch_turn_jog_deg: float = 110.0
+@export var touch_turn_sprint_deg: float = 70.0
 ## Segundos de bloqueo despues de un pase/tiro antes de poder volver a tocar la pelota.
 @export var kick_lockout: float = 0.35
 @export var possession_radius: float = 1.1

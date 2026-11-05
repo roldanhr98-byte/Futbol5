@@ -27,6 +27,6 @@ El procedimiento completo está al final de `INDEX.md`. Si el índice y el códi
 ## Convenciones de código (resumen; detalle en `ARCHITECTURE.md`)
 
 - Sangría con tabuladores; `class_name` en cada clase reutilizable; tipado explícito; comentarios `##` y texto de interfaz en español; identificadores en inglés.
-- Ejes: X = largo (arcos en x = ±20), Z = ancho, Y = arriba. El equipo 0 ataca +X. `yaw = 0` mira a −Z.
+- Ejes: X = largo (arcos en x = ±25 en la cancha de fútbol 7 de 50 × 30 del juego; ±20 en la de futsal 40 × 20 de las pruebas de mecánica), Z = ancho, Y = arriba. El equipo 0 ataca +X. `yaw = 0` mira a −Z.
 - La pelota solo cambia de velocidad por impulsos (`Ball.kick`) y por su integración física; nunca se fija su posición para «conducirla».
 - Los atributos de jugador escalan parámetros dentro de límites (`PlayerAttributes.factor/norm`), no sustituyen la física.

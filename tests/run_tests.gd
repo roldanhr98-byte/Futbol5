@@ -62,8 +62,10 @@ func _run() -> void:
 			t.tree = get_tree()
 			total_tests += 1
 			var t0: int = Time.get_ticks_msec()
+			t.begin()
 			await t.call(mname)
 			t.cleanup()
+			t.end()
 			await get_tree().physics_frame
 			if t.skipped:
 				skipped_tests += 1

@@ -173,16 +173,19 @@ func test_reach_is_limited_by_the_leg_not_a_fixed_radius() -> void:
 	await wait_seconds(0.8)
 	check(_events_of(s2["events"], GameEvent.Type.SHOT).is_empty(), "pelota a 2.2 m delante: sin tiro")
 	cleanup()
-	# A media distancia SI se adapta: el jugador da un toque de preparacion que acerca la pelota al pie y luego tira.
+	# A media distancia SI se adapta: el jugador va hasta la pelota (no hay toque a distancia que la traiga, conduccion
+	# fisica desde 2026-11-05) y tira con el pie en la pelota.
 	var s3: Dictionary = await _setup(START + Vector3(1.3, 0.11, 0.0))
 	var p3: Footballer = s3["p"]
+	var x0: float = p3.global_position.x
 	s3["src"].hold_shoot()
 	await physics_frames(2)
 	s3["src"].release_shoot()
-	await wait_seconds(0.8)
-	note("pelota a 1.3 m: toques de preparacion=%d, modo del ultimo toque='%s'" % [p3.ball_handler.dribble_touch_count, p3.ball_handler.last_touch_mode])
-	check(p3.ball_handler.dribble_touch_count >= 1, "la pelota a 1.3 m se acerca primero con un toque de preparacion")
+	await wait_seconds(1.2)
+	note("pelota a 1.3 m: el jugador avanzo %.2f m, toques=%d, golpeos %s, pie-pelota %.3f m" % [p3.global_position.x - x0, p3.ball_handler.dribble_touch_count, str(p3.ball_handler.kick_stats), p3.ball_handler.last_foot_distance])
+	check(p3.global_position.x - x0 > 0.3, "la pelota a 1.3 m: el jugador va hasta ella")
 	check(not _events_of(s3["events"], GameEvent.Type.SHOT).is_empty(), "y despues el tiro se ejecuta")
+	check(int(p3.ball_handler.kick_stats["missed"]) == 0, "con el pie en la pelota (sin patada en falso)")
 
 func test_stride_adjustment_reaches_a_ball_slightly_off_the_foot() -> void:
 	if _skip_if_missing():
