@@ -3542,19 +3542,19 @@
         {
           "file": "scripts/animation/pack_library.gd",
           "name": "PackLibrary.available",
-          "line": 152,
+          "line": 153,
           "kind": "func"
         },
         {
           "file": "scripts/animation/pack_library.gd",
           "name": "PackLibrary.clip",
-          "line": 166,
+          "line": 167,
           "kind": "func"
         },
         {
           "file": "scripts/animation/pack_library.gd",
           "name": "PackLibrary.meta",
-          "line": 193,
+          "line": 194,
           "kind": "func"
         },
         {
@@ -3950,25 +3950,25 @@
         {
           "file": "scripts/player/player_actions.gd",
           "name": "PlayerActions.try_slide_tackle",
-          "line": 210,
+          "line": 211,
           "kind": "func"
         },
         {
           "file": "scripts/player/player_actions.gd",
           "name": "PlayerActions.suffer_contact",
-          "line": 481,
+          "line": 482,
           "kind": "func"
         },
         {
           "file": "scripts/player/player_actions.gd",
           "name": "PlayerActions.try_skill",
-          "line": 662,
+          "line": 663,
           "kind": "func"
         },
         {
           "file": "scripts/player/player_actions.gd",
           "name": "PlayerActions.stumble",
-          "line": 678,
+          "line": 679,
           "kind": "func"
         },
         {
@@ -4218,7 +4218,7 @@
         {
           "file": "scripts/player/json_ball_move.gd",
           "name": "JsonBallMove.start_receive",
-          "line": 279,
+          "line": 377,
           "kind": "func"
         },
         {
@@ -5604,13 +5604,13 @@
         {
           "file": "scripts/animation/pack_library.gd",
           "name": "PackLibrary.resolve",
-          "line": 123,
+          "line": 124,
           "kind": "func"
         },
         {
           "file": "scripts/animation/pack_library.gd",
           "name": "PackLibrary.by_role",
-          "line": 198,
+          "line": 199,
           "kind": "func"
         },
         {
@@ -5646,25 +5646,25 @@
         {
           "file": "scripts/player/json_ball_move.gd",
           "name": "JsonBallMove.consider",
-          "line": 110,
+          "line": 165,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_ball_move.gd",
           "name": "JsonBallMove.plan_move",
-          "line": 192,
+          "line": 256,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_ball_move.gd",
           "name": "JsonBallMove.turn_for_kick",
-          "line": 179,
+          "line": 243,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_ball_move.gd",
           "name": "JsonBallMove.step",
-          "line": 309,
+          "line": 408,
           "kind": "func"
         },
         {
@@ -5694,7 +5694,7 @@
         {
           "file": "scripts/animation/pack_library.gd",
           "name": "PackLibrary.vary_aliases",
-          "line": 215,
+          "line": 216,
           "kind": "func"
         },
         {
@@ -5712,7 +5712,7 @@
         {
           "file": "scripts/player/player_actions.gd",
           "name": "PlayerActions.start_move",
-          "line": 132,
+          "line": 133,
           "kind": "func"
         },
         {

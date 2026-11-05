@@ -10,7 +10,9 @@
 - **Modelo:** el humanoide propio (`assets/characters/json/json_human.scn`, ~7 000 triángulos): tubos elípticos que siguen cada
   miembro, pose A, zonas del kit (camiseta, short, medias, botines, piel, pelo, ojos, suela, ribete, labios) en `COLOR.r` y oclusión en
   `COLOR.g` (`json_kit.gdshader`). El GLB de Tripo adaptado se **descartó** el 2026-10-30 (se deformaba con estas animaciones; pedido
-  del usuario): ya no hay selector de modelo.
+  del usuario): ya no hay selector de modelo. Botines de ~0.26 m desde el 2026-11-05: de 6 cm detrás a 18.3 cm delante del
+  tobillo, un pie real de 1.74 m como en UCS. Antes medían ~0.40 m, 1.8 veces la pelota
+  ([E3](../../fases/E3_conduccion_ucs.md#4-qué-cambió)).
 - **Estado (2026-10-30):** las **2 022** animaciones convertidas (3 223 clips contando los espejos) y conectadas por rol; ver «Qué usa
   cada grupo». Conducción con toques dados con el pie, giros con pelota / vuelta pisando la pelota / regates con los clips y sus
   toques, golpeo girando hacia un destino al costado o detrás.
@@ -84,7 +86,7 @@ para el **reposo** del modelo y para cada instante de la animación. Medido (`re
 
 | Grupo del zip (clips) | Rol(es) | Dónde se usa en el juego |
 |---|---|---|
-| CONTROL (269) | `ball_turn`, `ball_turn_stop`, `ball_skill`, `ball_stop`, `ball_sole`, `ball_start`, `ball_dribble`, `receive`, `receive_turn`, `control_stand`, `jostle_ball`, ciclos `dribble_*` | `JsonBallMove`: giros con pelota (joystick a ≥ 50° del frente), vuelta pisando la pelota (REGATE + atrás), regates (REGATE), frenada con pelota (soltar el joystick a 2.6–4.6 m/s), giro antes de golpear hacia atrás; ciclos de conducción en la marcha con pelota |
+| CONTROL (269) | `ball_turn`, `ball_turn_stop`, `ball_skill`, `ball_stop`, `ball_sole`, `ball_start`, `ball_dribble`, `receive`, `receive_turn`, `control_stand`, `jostle_ball`, ciclos `dribble_*` | `JsonBallMove`: giros con pelota (joystick a ≥ 50° del frente), toque orientado con los clips de conducción de UCS (joystick a 14-50°, jugador de la persona), vuelta pisando la pelota (REGATE + atrás), regates (REGATE), frenada con pelota (soltar el joystick a 2.6–4.6 m/s), giro antes de golpear hacia atrás; ciclos de conducción en la marcha con pelota |
 | TURN (123) | `turn_start`, `turn_run`, `turn_stand`, `turn_stop`, `start`, `stop`, `ball_turn` (con pelota) | `Footballer._json_turn_move`: giros sin pelota de ≥ 100° lejos de la pelota (la IA, solo desde parado) |
 | KICK (494) | `kick_pass_soft`, `kick_pass`, `kick_shot`, `kick_shot_hard`, `kick_lob`, `kick_cross`, `kick_flick`, `kick_turn`, `kick_back`, `header`, `volley` | planificador de golpeos (`plan_clip_kick`, solo golpeos `clean`), golpeo girando (`plan_turn_kick`), planificador aéreo |
 | KICKSETPIECE (36), THROW (12) | `setpiece_*`, `throw_in` | `SetPiece` (alias repartidos en cada balón parado) |
@@ -136,6 +138,13 @@ tiros hacia atrás usan siempre giro y después golpeo.
   (`_json_touch_ik_start/_step`, hasta 0.34 m de estiramiento). Sin pie justo en la pelota, el pie bajo más cercano a ≤ 0.48 m se estira.
 - **Toque de rumbo:** en diagonal o zigzag (camino de la pelota a ≥ 18° del rumbo pedido) y con un pie junto a la pelota, el toque se da
   ya y empuja la pelota casi del todo hacia el rumbo nuevo (`_steer_touch_ready`), en vez de esperar al paso siguiente.
+- **Toque orientado con clips de UCS (2026-11-05):** con el joystick a 14-50° del frente, el jugador de la persona sigue
+  con un clip de conducción de UCS (`JsonBallMove`, intención `steer`; `steer_pool`: los clips de control con «dribble»
+  en el nombre que siguen en carrera, 48 y sus espejos) que gira hacia el mismo lado. El clip se corta tras su segundo
+  toque, que deja la pelota hacia el joystick, y prefiere el interior del pie de afuera del giro. Se planifica en cada
+  paso (si no, el toque de rumbo físico se adelantaba). Si ningún clip encaja, queda el toque de rumbo. Datos de UCS
+  (`animdb.adb`: cuadro del toque, pie, destino, giro y ventana del joystick por clip), video y medidas:
+  [E3](../../fases/E3_conduccion_ucs.md).
 - Planificación de golpeos con cientos de clips: se evalúan a fondo los 24 cuyo contacto y carrera de entrada (`v_in`) encajan mejor
   (`JSON_KICK_EVAL`); listas de candidatos y cajas de trayectorias del planificador aéreo guardadas por clip.
 

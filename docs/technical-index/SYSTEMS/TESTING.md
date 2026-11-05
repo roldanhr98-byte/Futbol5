@@ -143,3 +143,18 @@ Ver [CHANGELOG.md](../CHANGELOG.md): evolución 9/24 → 40/113 → 44/140 → 5
   nuevo, 1 de 4 cada una (tiros 2, 2, 7, 3). Junto con `test_ai_match` (arqueros que enfrentan tiros, jugador fuera de la
   cancha) y el partido de 3 min (≥ 2 tiros), la suite completa falla a menudo por azar de la IA aunque nada cambie:
   GitHub Actions #47 (reintento) y #48 fallaron así. Pendiente: semillas fijas para la IA en esas pruebas.
+
+## Toque orientado con clips de UCS y botines (2026-11-05)
+
+- **`test_mode4_dribble::test_oriented_touch_with_ucs_dribble_clips`** (nueva): al trote, con el joystick cambiando 35° a
+  cada lado (cuatro casos), cuenta los toques orientados (`JsonBallMove`, intención `steer`). Pide que el clip gire hacia
+  el lado del joystick, que el error de cada toque del pie sea < 0.2 m, que no se corte por un toque perdido, que la
+  pelota no se escape (< 2.2 m), que no salte de posición, que salga a < 45° del joystick y que siga la posesión. Pide
+  también que al menos 3 de los 4 cambios usen un clip.
+- **`tools/json_anim/play_view.tscn`** (herramienta): escenas nuevas `steps` (cambios bruscos de ±35°) y `curve` (el
+  joystick gira 30°/s, `CURVE_SIGN`). Imprime cada movimiento con pelota (`MOV`: intención, clip, giro, pie del toque que
+  orienta, error de cada toque y cuadro) y la posición del jugador. Medidas antes y después en
+  [E3](../../fases/E3_conduccion_ucs.md#5-medido-play_view-render-xvfb-joystick-08-85-s-antes--commit-anterior).
+- La curva en sprint de 8.5 s de `play_view` llega a la banda (z = 14.7 m): la pelota «perdida» ahí es el borde de la
+  cancha, en las dos versiones. Las corridas en sprint se acortan a 6.5 s.
+

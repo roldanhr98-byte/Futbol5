@@ -3,7 +3,7 @@ extends Node
 ## costado que lo sigue. Guarda una tira de imagenes (cada EVERY pasos de fisica) y escribe por la salida la distancia de la
 ## pelota al cuerpo en cada paso (resumen al final). Necesita render:
 ##   SCENARIO=dribble OUT=/tmp/x.png xvfb-run -a godot --rendering-driver opengl3 --fixed-fps 60 --path . res://tools/json_anim/play_view.tscn
-## Env: SCENARIO dribble|pass|shot|turn|zigzag|diag|dragback|backshot|turn90|turnshot|turnpass, STICK (0..1), SPRINT (0|1), SECONDS, EVERY,
+## Env: SCENARIO dribble|pass|shot|turn|zigzag|diag|curve|steps|dragback|backshot|turn90|turnshot|turnpass, STICK (0..1), SPRINT (0|1), SECONDS, EVERY,
 ## COUNT (imagenes), START (s sin imagen), W/H (tamano de cada imagen), VIEW side|three|top|close, CHARGE (pasos de carga del tiro/pase).
 
 func _env(k: String, d: String) -> String:
@@ -104,6 +104,23 @@ func _ready() -> void:
 			src.move = Vector2(-stick, 0.0)
 		elif scenario == "turn90" and i == act_at:
 			src.move = Vector2(0.0, stick)
+		elif scenario == "curve":
+			# Curva progresiva (como en UCS: diagonal cada vez mas cerrada): el joystick gira 30 grados por segundo hacia la
+			# izquierda desde 1.5 s hasta 90 grados y despues hacia la derecha hasta -90 (CURVE_SIGN=-1 empieza a la derecha).
+			var cs: float = float(_env("CURVE_SIGN", "1"))
+			var tt: float = float(i) / 60.0
+			var a: float = 0.0
+			if tt > 1.5:
+				a = minf((tt - 1.5) * 30.0, 90.0)
+			if tt > 5.0:
+				a = maxf(90.0 - (tt - 5.0) * 30.0, -90.0)
+			src.move = Vector2(cos(deg_to_rad(a * cs)), sin(deg_to_rad(a * cs))) * stick
+		elif scenario == "steps":
+			# Cambios bruscos de 35 grados (lo que mas hace la persona con el joystick): 0, +35, 0, -35, 0 cada 1.5 s.
+			var seq: Array = [0.0, 35.0, 0.0, -35.0, 0.0, 35.0]
+			var k: int = clampi(int(float(i) / 90.0), 0, seq.size() - 1)
+			var a2: float = deg_to_rad(float(seq[k]) * float(_env("CURVE_SIGN", "1")))
+			src.move = Vector2(cos(a2), sin(a2)) * stick
 		elif scenario == "diag":
 			# Cambios de rumbo suaves: 25 grados a un lado y al otro cada 1.5 s.
 			var ang: float = 0.0 if i < 120 else deg_to_rad(25.0) * (1.0 if ((i - 120) / 90) % 2 == 0 else -1.0)
@@ -150,7 +167,7 @@ func _ready() -> void:
 		dists.append(Vector2(rel.x, rel.z).length())
 		gaps.append(ahead)
 		if i % log_every == 0:
-			print("t=%.2f v=%.2f bola adelante %.2f lateral %.2f y %.2f vel %.1f | dist pie-pelota (ult. toque) %.3f | toques %d" % [float(i) / 60.0, f.locomotion.speed, ahead, rel.dot(f.locomotion.right()), ball.global_position.y, ball.linear_velocity.length(), f.ball_handler.last_touch_foot_distance, f.ball_handler.dribble_touch_count])
+			print("t=%.2f pos (%.1f, %.1f) v=%.2f bola adelante %.2f lateral %.2f y %.2f vel %.1f | dist pie-pelota (ult. toque) %.3f | toques %d" % [float(i) / 60.0, f.global_position.x, f.global_position.z, f.locomotion.speed, ahead, rel.dot(f.locomotion.right()), ball.global_position.y, ball.linear_velocity.length(), f.ball_handler.last_touch_foot_distance, f.ball_handler.dribble_touch_count])
 		var want_shot: bool = (touch_flag[0] == 1) if on_touch else (i % every == 0)
 		touch_flag[0] = 0
 		if float(i) / 60.0 >= t_start and want_shot and shot_i < count:
@@ -167,5 +184,7 @@ func _ready() -> void:
 	print("RESUMEN %s: pelota-cuerpo mediana %.2f m, p90 %.2f m, max %.2f m, >1.8 m: %d de %d pasos; toques %d, de pie vivo %d; kick_stats %s" % [scenario, dists[dists.size() / 2], dists[int(dists.size() * 0.9)], dists[dists.size() - 1], far, dists.size(), f.ball_handler.dribble_touch_count, f.ball_handler.foot_touches, str(f.ball_handler.kick_stats)])
 	print("GOLPEOS %s | plan %s" % [str(f.ball_handler.kick_log), f.ball_handler.last_plan_debug])
 	print("MOVIMIENTOS %s | ultimo %s" % [str(f.ball_handler.json_move.stats), str(f.ball_handler.json_move.last)])
+	for hm in f.ball_handler.json_move.history:
+		print("MOV %s %s giro %.0f pie %s toques %s %s cuadro %d" % [hm.get("intent", ""), hm.get("clip", ""), float(hm.get("turn", 0.0)), "der" if int(hm.get("foot", 0)) > 0 else "izq", str(hm.get("touches", [])), str(hm.get("aborted", hm.get("ended", ""))), int(hm.get("frame", 0))])
 	print("PLAYVIEW guardado ", out)
 	get_tree().quit()

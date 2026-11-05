@@ -318,15 +318,18 @@ func _boot(side: int) -> void:
 	var n: String = "Right" if side > 0 else "Left"
 	var ankle: Vector3 = _pos["mixamorig_%sFoot" % n]
 	var z0: float = ankle.z
+	# Largo del botin (2026-11-05): talon a 6 cm detras del tobillo y punta a 18 cm delante (2.5 cm por delante de la punta
+	# del pie del esqueleto, 15.8 cm): ~0.26 m con las tapas, el pie de una persona de 1.74 m (15 % de la talla), como los
+	# jugadores de UCS. Antes iba de -0.088 a 0.248 (~0.40 m con las tapas: 1.8 veces la pelota; se veia enorme).
 	var rows := [
-		[-0.088, 0.058, 0.038, 0.050], [-0.070, 0.063, 0.043, 0.060], [-0.035, 0.086, 0.047, 0.078], [0.010, 0.080, 0.048, 0.070],
-		[0.060, 0.056, 0.049, 0.050], [0.110, 0.040, 0.050, 0.038], [0.158, 0.033, 0.050, 0.032], [0.208, 0.029, 0.045, 0.027], [0.248, 0.027, 0.032, 0.023],
+		[-0.060, 0.055, 0.034, 0.045], [-0.046, 0.060, 0.040, 0.055], [-0.020, 0.082, 0.043, 0.072], [0.015, 0.078, 0.044, 0.066],
+		[0.055, 0.056, 0.045, 0.048], [0.095, 0.040, 0.046, 0.037], [0.130, 0.033, 0.045, 0.031], [0.160, 0.029, 0.040, 0.026], [0.183, 0.027, 0.028, 0.021],
 	]
 	var rings: Array = []
 	for r in rows:
 		var x: float = ankle.x + r[0]
 		var w := {}
-		var wt: float = _x(x - ankle.x, 0.10, 0.19)
+		var wt: float = _x(x - ankle.x, 0.085, 0.15)
 		var wl: float = (1.0 - _x(r[2] * 0.0 + r[1], 0.07, 0.11)) * (1.0 - _x(x, -0.10, 0.0)) * 0.0
 		w[_b("%sFoot" % n)] = 1.0 - wt
 		w[_b("%sToeBase" % n)] = wt

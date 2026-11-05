@@ -9,6 +9,12 @@ extends RefCounted
 ## pie se lleva con TouchFootIK los centimetros que falten hasta la pelota real, asi el toque se ve.
 ## Solo empieza si la pelota llega al primer toque (prediccion de su rodadura, con un ajuste de paso acotado); si no, siguen
 ## los mecanismos de siempre (BallTurn, DragBack, toques de conduccion).
+## Toque orientado (2026-11-05, como UCS): con el joystick a 14-50 grados del frente, la conduccion del jugador de la persona
+## sigue con uno de los clips de conduccion de UCS (avance con giro de 2 a 40 grados, diagonales «45», arranques) que gira
+## hacia alli: el clip da los toques con su pie y en su instante y se corta tras el segundo (el giro ya esta dado); la pelota
+## sale hacia el joystick y la conduccion normal sigue. Con el joystick sostenido en diagonal se encadenan (curva progresiva).
+## En UCS es igual: animdb.adb guarda por clip el fotograma del toque, el pie, el destino de la pelota, el giro y la ventana
+## del joystick en la que se elige (docs/fases/E3_conduccion_ucs_animdb.csv).
 
 ## Angulo (grados) minimo entre el frente y el joystick para girar con un clip, y joystick minimo.
 const TURN_MIN_ANGLE := 50.0
@@ -54,6 +60,23 @@ const ROLES_TURN: Array[StringName] = [&"ball_turn"]
 const ROLES_DRAG: Array[StringName] = [&"ball_turn", &"ball_turn_stop", &"ball_skill"]
 const ROLES_SKILL: Array[StringName] = [&"ball_skill"]
 const ROLES_STOP: Array[StringName] = [&"ball_stop"]
+## Toque orientado: angulo minimo del joystick (por debajo manda el toque de rumbo fisico), tolerancia entre el giro del clip
+## y el pedido, diferencia de velocidad admitida, espera tras uno (para encadenarlos en curva), cola tras el toque que
+## orienta y velocidad minima (parado o casi, los arranques y giros de siempre).
+const STEER_MIN_ANGLE := 14.0
+const STEER_TOL := 24.0
+const STEER_MAX_DV := 1.6
+const STEER_COOLDOWN := 0.15
+const STEER_TAIL := 0.12
+const STEER_MIN_SPEED := 0.6
+## Preferencia (puntos de error) por el interior del pie de afuera del giro: el izquierdo para doblar a la derecha y el
+## derecho para doblar a la izquierda (lo que se ve en UCS con la pelota al centro).
+const STEER_OUTER_FOOT_BONUS := 0.06
+## Roles del banco donde estan los clips de conduccion de UCS (el overlay de roles paso los de avance a ball_skill).
+const STEER_ROLES: Array[StringName] = [&"ball_turn", &"ball_dribble", &"ball_skill", &"ball_start", &"ball_turn_stop",
+	&"ball_stop", &"control_stand"]
+static var _steer_pool: Array[StringName] = []
+static var _steer_built: bool = false
 
 var handler: BallHandler
 var active: bool = false
@@ -77,6 +100,10 @@ var _plan_tick: int = 0
 var _skill_req: float = 0.0
 var _ik_foot: int = -1
 var _released_t: float = 0.0
+## Indice del toque que deja la pelota para la conduccion normal (el ultimo del clip; en el toque orientado, el segundo) e
+## instante del clip en que termina el movimiento (la duracion, o el corte del toque orientado).
+var _last: int = 0
+var _end_t: float = 0.0
 ## Recepcion (intencion &"receive", JsonReceive): quien toco la pelota por ultimo al planificar (si otro la toca antes del
 ## primer toque la recepcion se corta) y si ya hubo toque.
 var _recv_toucher: Node = null
@@ -101,6 +128,34 @@ var history: Array = []
 
 func _init(h: BallHandler) -> void:
 	handler = h
+
+## Clips de conduccion de UCS que sirven para el toque orientado (con su espejo): los de control con «dribble» en el nombre
+## del archivo que siguen en carrera (v_out >= 1) y tienen toques de pelota.
+static func steer_pool() -> Array[StringName]:
+	if _steer_built:
+		return _steer_pool
+	_steer_built = true
+	_steer_pool.clear()
+	var seen := {}
+	for role in STEER_ROLES:
+		for id in PackLibrary.by_role(role):
+			if seen.has(id):
+				continue
+			seen[id] = true
+			var m: Dictionary = PackLibrary.meta(id)
+			var src: String = String(m.get("source", "")).to_lower()
+			if src.find("_control_") < 0 or src.find("dribble") < 0:
+				continue
+			if (m.get("ball_touches", []) as Array).is_empty() or float(m.get("v_out", 0.0)) < 1.0:
+				continue
+			if String(m.get("heading_mode", "")) != "turn":
+				continue
+			_steer_pool.append(id)
+	return _steer_pool
+
+static func reset_caches() -> void:
+	_steer_pool.clear()
+	_steer_built = false
 
 func request_skill() -> void:
 	_skill_req = 0.3
@@ -160,13 +215,22 @@ func consider(desired_dir: Vector3, stick_mag: float, dt: float) -> bool:
 		want = 0.0
 		tol = 60.0
 		new_intent = &"stop"
+	elif has_dir and absf(ang) >= STEER_MIN_ANGLE and owner.is_human_controlled and loco.speed >= STEER_MIN_SPEED and handler.is_dribbling():
+		want = ang
+		tol = STEER_TOL
+		new_intent = &"steer"
 	else:
 		return false
-	# Planificar recorre decenas de clips: no en cada paso (salvo un pedido con el boton, que es puntual).
+	# Planificar recorre decenas de clips: no en cada paso (salvo un pedido con el boton, que es puntual, y el toque orientado
+	# del jugador de la persona: si espera, el toque de rumbo fisico se adelanta y el clip de UCS no llega a usarse).
 	_plan_tick += 1
-	if new_intent != &"drag" and new_intent != &"skill" and _plan_tick % PLAN_EVERY != 0:
+	if new_intent != &"drag" and new_intent != &"skill" and new_intent != &"steer" and _plan_tick % PLAN_EVERY != 0:
 		return false
-	var plan: Dictionary = plan_move(roles, want, tol, new_intent == &"drag", MAX_DV_BUTTON if (new_intent == &"drag" or new_intent == &"skill") else MAX_DV_STICK)
+	var plan: Dictionary
+	if new_intent == &"steer":
+		plan = plan_ids(steer_pool(), want, tol, false, STEER_MAX_DV, true)
+	else:
+		plan = plan_move(roles, want, tol, new_intent == &"drag", MAX_DV_BUTTON if (new_intent == &"drag" or new_intent == &"skill") else MAX_DV_STICK)
 	if plan.is_empty():
 		return false
 	if not _start(plan, new_intent):
@@ -190,69 +254,102 @@ func turn_for_kick(dir: Vector3) -> bool:
 ## Elige el clip, el instante de inicio y el ajuste de paso para que la pelota llegue al primer toque del clip.
 ## {} si ninguno llega. want: giro pedido (grados, + izquierda); tol: tolerancia; both_sides: vale girar por cualquier lado.
 func plan_move(roles: Array[StringName], want: float, tol: float, both_sides: bool = false, max_dv: float = MAX_DV_BUTTON) -> Dictionary:
+	var ids: Array[StringName] = []
+	for role in roles:
+		ids.append_array(PackLibrary.by_role(role))
+	return plan_ids(ids, want, tol, both_sides, max_dv)
+
+## Como plan_move, sobre una lista de clips. steer: toque orientado (se corta tras el segundo toque: ese es el que deja la
+## pelota hacia el joystick; se prefiere el interior del pie de afuera del giro).
+func plan_ids(ids: Array[StringName], want: float, tol: float, both_sides: bool = false, max_dv: float = MAX_DV_BUTTON, steer: bool = false) -> Dictionary:
 	var owner: Footballer = handler.owner
 	var loco: Locomotion = owner.locomotion
 	var b: Ball = handler.ball()
 	var best: Dictionary = {}
 	var best_score: float = INF
 	var pos: Vector3 = KickModel.flat(owner.global_position)
-	for role in roles:
-		for id in PackLibrary.by_role(role):
-			var m: Dictionary = PackLibrary.meta(id)
-			var bt: Array = m.get("ball_touches", [])
-			if bt.is_empty():
+	for id in ids:
+		var m: Dictionary = PackLibrary.meta(id)
+		var bt: Array = m.get("ball_touches", [])
+		if bt.is_empty():
+			continue
+		var hp: PackedFloat32Array = m.get("heading_path", PackedFloat32Array())
+		var dur: float = float(m.get("duration", 1.0))
+		# Toque orientado: cuenta lo que gira el cuerpo hasta el corte (tras el segundo toque), no el clip entero.
+		var turn_t: float = minf(float(bt[1][0]) + STEER_TAIL, dur) if steer and bt.size() > 1 else dur
+		var turn: float = rad_to_deg(ActionMotion.heading_rel(hp, turn_t))
+		var dturn: float = absf(turn - want)
+		# Toque orientado: el cuerpo no puede girar al lado contrario del pedido (con el joystick a la izquierda, un clip que
+		# dobla a la derecha se veia al reves aunque la pelota saliera bien).
+		if steer and turn * want < 0.0 and absf(turn) > 3.0:
+			continue
+		if both_sides:
+			dturn = minf(dturn, absf(turn + want))
+		if dturn > tol:
+			continue
+		var v_in: float = float(m.get("v_in", 0.0))
+		var dv: float = absf(v_in - loco.speed)
+		if dv > max_dv:
+			continue
+		var rp: PackedVector2Array = m.get("root_path", PackedVector2Array())
+		for start_at in [0.0, 0.1, 0.2, 0.3]:
+			var t1: float = float(bt[0][0])
+			if t1 - start_at < 0.12:
+				break
+			var yaw0: float = loco.yaw - ActionMotion.heading_rel(hp, start_at)
+			var f0: Vector3 = Locomotion.dir_from_yaw(yaw0)
+			var r0 := Vector3(-f0.z, 0.0, f0.x)
+			var rs: Vector2 = ActionMotion._at(rp, start_at) if rp.size() >= 2 else Vector2.ZERO
+			var origin: Vector3 = pos - f0 * rs.x - r0 * rs.y
+			var p1: Vector3 = bt[0][2]
+			var vel1: Vector2 = bt[0][3]
+			var lead: Vector3 = (f0 * vel1.x + r0 * vel1.y).normalized() * BALL_LEAD if vel1.length() > 0.3 else Vector3.ZERO
+			var target: Vector3 = origin + f0 * p1.x + r0 * p1.z + lead
+			var dt1: float = t1 - start_at
+			if dt1 > MAX_LEAD:
 				continue
-			var hp: PackedFloat32Array = m.get("heading_path", PackedFloat32Array())
-			var dur: float = float(m.get("duration", 1.0))
-			var turn: float = rad_to_deg(ActionMotion.heading_rel(hp, dur))
-			var dturn: float = absf(turn - want)
-			if both_sides:
-				dturn = minf(dturn, absf(turn + want))
-			if dturn > tol:
+			var bp: Vector3 = KickModel.flat(b.global_position + handler.ball_travel(b, dt1))
+			var err: Vector3 = bp - target
+			var corr: Vector3 = err.limit_length(minf(CORR_MAX, CORR_SPEED * dt1))
+			var residual: float = (err - corr).length()
+			if residual > FOOT_SLACK:
 				continue
-			var v_in: float = float(m.get("v_in", 0.0))
-			var dv: float = absf(v_in - loco.speed)
-			if dv > max_dv:
-				continue
-			var rp: PackedVector2Array = m.get("root_path", PackedVector2Array())
-			for start_at in [0.0, 0.1, 0.2, 0.3]:
-				var t1: float = float(bt[0][0])
-				if t1 - start_at < 0.12:
-					break
-				var yaw0: float = loco.yaw - ActionMotion.heading_rel(hp, start_at)
-				var f0: Vector3 = Locomotion.dir_from_yaw(yaw0)
-				var r0 := Vector3(-f0.z, 0.0, f0.x)
-				var rs: Vector2 = ActionMotion._at(rp, start_at) if rp.size() >= 2 else Vector2.ZERO
-				var origin: Vector3 = pos - f0 * rs.x - r0 * rs.y
-				var p1: Vector3 = bt[0][2]
-				var vel1: Vector2 = bt[0][3]
-				var lead: Vector3 = (f0 * vel1.x + r0 * vel1.y).normalized() * BALL_LEAD if vel1.length() > 0.3 else Vector3.ZERO
-				var target: Vector3 = origin + f0 * p1.x + r0 * p1.z + lead
-				var dt1: float = t1 - start_at
-				if dt1 > MAX_LEAD:
-					continue
-				var bp: Vector3 = KickModel.flat(b.global_position + handler.ball_travel(b, dt1))
-				var err: Vector3 = bp - target
-				var corr: Vector3 = err.limit_length(minf(CORR_MAX, CORR_SPEED * dt1))
-				var residual: float = (err - corr).length()
-				if residual > FOOT_SLACK:
-					continue
-				var score: float = residual + 0.25 * corr.length() + 0.12 * dv + 0.004 * dturn + 0.03 * start_at + handler.rng.randf() * 0.04
-				if score < best_score:
-					best_score = score
-					best = {"clip": id, "start_at": start_at, "yaw0": yaw0, "origin": origin, "corr": corr, "dt1": dt1, "residual": residual, "turn": turn}
+			var score: float = residual + 0.25 * corr.length() + 0.12 * dv + 0.004 * dturn + 0.03 * start_at + handler.rng.randf() * 0.04
+			if steer:
+				# El toque que orienta es el segundo (o el unico): con su pie del lado de afuera del giro, interior.
+				var lt: Array = bt[mini(1, bt.size() - 1)]
+				if signf(float(lt[1])) == signf(want):
+					score -= STEER_OUTER_FOOT_BONUS
+			if score < best_score:
+				best_score = score
+				best = {"clip": id, "start_at": start_at, "yaw0": yaw0, "origin": origin, "corr": corr, "dt1": dt1, "residual": residual, "turn": turn}
 	return best
 
 func _start(plan: Dictionary, new_intent: StringName) -> bool:
 	var owner: Footballer = handler.owner
 	var id: StringName = plan["clip"]
-	if not owner.actions.start_move(&"ball_move", id, 1.0, float(plan["start_at"])):
-		return false
 	var m: Dictionary = PackLibrary.meta(id)
+	var bts: Array = m.get("ball_touches", [])
+	var dur: float = float(m.get("duration", 1.0))
+	var start_at: float = float(plan["start_at"])
+	var last_i: int = bts.size() - 1
+	var end_t: float = dur
+	var cut: float = -1.0
+	if new_intent == &"steer" and bts.size() > 1:
+		last_i = 1
+		end_t = minf(float(bts[1][0]) + STEER_TAIL, dur)
+		if end_t < dur - 0.05:
+			cut = end_t - start_at
+		else:
+			end_t = dur
+	if not owner.actions.start_move(&"ball_move", id, 1.0, start_at, cut):
+		return false
 	active = true
 	intent = new_intent
 	clip = id
-	_touches = m.get("ball_touches", [])
+	_touches = bts
+	_last = last_i
+	_end_t = end_t
 	_next = 0
 	_misses = 0
 	_origin = plan["origin"]
@@ -271,7 +368,8 @@ func _start(plan: Dictionary, new_intent: StringName) -> bool:
 	handler.ball_turn.cancel("movimiento")
 	owner.set_ball_ghost(true)
 	stats["started"] += 1
-	last = {"clip": String(id), "intent": String(new_intent), "residual": plan["residual"], "turn": plan["turn"], "touches": []}
+	last = {"clip": String(id), "intent": String(new_intent), "residual": plan["residual"], "turn": plan["turn"], "touches": [],
+		"foot": int(bts[last_i][1]) if not bts.is_empty() else 0, "frame": Engine.get_physics_frames()}
 	return true
 
 ## Recepcion planificada por JsonReceive: el mismo movimiento con pelota, pero la pelota llega al primer toque desde lejos
@@ -302,6 +400,7 @@ func start_receive(plan: Dictionary) -> bool:
 		if tt > _recv_t + 0.05 and (_recv_cut < 0.0 or tt < _recv_cut):
 			touches.append(bt)
 	_touches = touches
+	_last = _touches.size() - 1
 	handler.owner.set_ball_ghost(false)
 	return true
 
@@ -354,8 +453,8 @@ func step(clip_t: float, dt: float) -> void:
 	# El ajuste de paso solo hasta el primer toque.
 	if _next > 0 or clip_t >= float(_touches[0][0]):
 		owner.actions.motion.extra_velocity = Vector3.ZERO
-	# Toques cuyo instante ya paso.
-	while _next < _touches.size() and clip_t >= float(_touches[_next][0]):
+	# Toques cuyo instante ya paso (hasta el que deja la pelota para la conduccion normal).
+	while _next <= _last and _next < _touches.size() and clip_t >= float(_touches[_next][0]):
 		_touch(_next, b)
 		if not active:
 			return
@@ -457,21 +556,28 @@ func _touch(i: int, b: Ball, met: bool = false) -> void:
 	var target: Vector3
 	var travel: float
 	var stop: bool = false
-	if i + 1 < _touches.size():
+	if i < _last:
 		target = _touch_point(i + 1, drift)
 		travel = maxf((float(_touches[i + 1][0]) - clip_t) / _speed, 0.06)
 	else:
-		# Ultimo toque: la pelota queda delante del rumbo de salida, donde el jugador la encuentra al terminar el clip.
+		# Ultimo toque: la pelota queda delante del rumbo de salida, donde el jugador la encuentra al terminar el clip (en el
+		# toque orientado, al cortarlo: raiz, rumbo y velocidad del clip en ese instante).
 		var f0: Vector3 = Locomotion.dir_from_yaw(_yaw0)
 		var r0 := Vector3(-f0.z, 0.0, f0.x)
-		var end_pos: Vector3 = _origin + drift + f0 * _root_end.x + r0 * _root_end.y
-		var exit_dir: Vector3 = Locomotion.dir_from_yaw(_yaw0 + _turn_end)
+		var m: Dictionary = PackLibrary.meta(clip)
+		var cut: bool = _end_t < _length - 0.01
+		var rp: PackedVector2Array = m.get("root_path", PackedVector2Array())
+		var re: Vector2 = ActionMotion._at(rp, _end_t) if cut and rp.size() >= 2 else _root_end
+		var end_pos: Vector3 = _origin + drift + f0 * re.x + r0 * re.y
+		var turn_at_end: float = ActionMotion.heading_rel(m.get("heading_path", PackedFloat32Array()), _end_t) if cut else _turn_end
+		var exit_dir: Vector3 = Locomotion.dir_from_yaw(_yaw0 + turn_at_end)
 		var desired: Vector3 = handler._desired_dir
 		var oriented: bool = false
-		if desired.length_squared() > 0.01 and KickModel.angle_between_deg(exit_dir, desired) < (JsonReceive.TURN_TOL if intent == &"receive" else 35.0):
+		var snap: float = JsonReceive.TURN_TOL if intent == &"receive" else (60.0 if intent == &"steer" else 35.0)
+		if desired.length_squared() > 0.01 and KickModel.angle_between_deg(exit_dir, desired) < snap:
 			exit_dir = KickModel.flat(desired).normalized()
 			oriented = intent == &"receive"
-		var remain: float = maxf((_length - clip_t) / _speed, 0.0)
+		var remain: float = maxf((_end_t - clip_t) / _speed, 0.0)
 		if intent == &"kick_turn" or handler._pending_action != &"":
 			# Giro para golpear: la pelota queda quieta delante del pie, lista para el golpeo que espera.
 			stop = true
@@ -480,12 +586,19 @@ func _touch(i: int, b: Ball, met: bool = false) -> void:
 			# Control orientado: la pelota sale hacia el joystick, un paso por delante de donde termina el clip.
 			stop = true
 			target = end_pos + exit_dir * (Tuning.player.settle_gap + 0.6)
-		elif _v_out < 0.8:
+		elif _v_out < 0.8 and not cut:
 			stop = true
 			target = end_pos + exit_dir * Tuning.player.settle_gap
 		else:
-			travel = remain + 0.35
-			target = end_pos + exit_dir * (_v_out * 0.35 + handler.carry_gap(_v_out, handler._carry_skill()))
+			# Velocidad de salida: la del clip al terminar (al cortarlo, la de su raiz en ese instante).
+			var v_end: float = _v_out
+			if cut and rp.size() >= 2:
+				v_end = maxf((ActionMotion._at(rp, _end_t + 0.05) - ActionMotion._at(rp, _end_t - 0.05)).length() / 0.1, 1.0)
+			# Tras el toque orientado la pelota queda a la distancia de la conduccion normal un poco antes (0.25 s) que tras un
+			# giro entero (0.35 s): en UCS va 0.5-1.0 m por delante al trote.
+			var lead_t: float = 0.25 if intent == &"steer" else 0.35
+			travel = remain + lead_t
+			target = end_pos + exit_dir * (v_end * lead_t + handler.carry_gap(v_end, handler._carry_skill()))
 	var to_t: Vector3 = target - bp
 	var v: Vector3
 	if stop:
@@ -527,7 +640,7 @@ func _update_ik(clip_t: float, b: Ball) -> void:
 	if v == null or v.touch_ik == null:
 		return
 	var idx: int = -1
-	for i in range(maxi(_next - 1, 0), mini(_next + 1, _touches.size())):
+	for i in range(maxi(_next - 1, 0), mini(_next + 1, _last + 1)):
 		var tt: float = float(_touches[i][0])
 		if clip_t >= tt - IK_LEAD and clip_t <= tt + IK_HOLD:
 			idx = i
@@ -567,7 +680,7 @@ func finish() -> void:
 	if intent == &"receive":
 		handler.receive.ended(_next > 0)
 	_remember()
-	_cooldown = maxf(_cooldown, COOLDOWN)
+	_cooldown = maxf(_cooldown, STEER_COOLDOWN if intent == &"steer" else COOLDOWN)
 	handler.touch_timer = 0.12
 	_release_ik()
 

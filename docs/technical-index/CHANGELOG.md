@@ -11,6 +11,59 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-11-05 — Conducción como UCS: toque orientado con los clips de conducción de UCS y botines proporcionados
+
+Rama `respaldo-f3`. Pedido del usuario, con el video de UCS (`Screenrecorder-20261105-145139`) y el paquete de recursos
+de UCS:
+
+- analizar la conducción cuadro por cuadro;
+- «el pie izquierdo toca para doblar hacia la derecha; si voy a doblar a la izquierda, el pie derecho orienta la pelota…
+  o con el exterior del pie»;
+- «hay animaciones que no están conectadas»;
+- mirar el APK de UCS;
+- los pies y botines son muy grandes.
+
+Informe completo: [`docs/fases/E3_conduccion_ucs.md`](../fases/E3_conduccion_ucs.md) ·
+[JSON_MODE](SYSTEMS/JSON_MODE.md#conducción) · [TESTING](SYSTEMS/TESTING.md#toque-orientado-con-clips-de-ucs-y-botines-2026-11-05).
+
+- **Dónde está en UCS:** `animdb.adb` (APK de UCS, carpeta de animaciones junto a `anims.pak`) tiene un registro de 104 bytes por clip, en el orden de los `.sat`
+  y de nuestros JSON (2022/2022 coinciden en cuadros). Cada registro guarda:
+  - el cuadro del toque de pelota;
+  - el pie (bit 128 izquierdo, bit 256 derecho);
+  - el destino de la pelota (mm);
+  - el giro del clip;
+  - la ventana del joystick en la que se elige (sectores de 11.25°);
+  - las velocidades de entrada y salida.
+
+  Tabla de los 78 clips de conducción: `docs/fases/E3_conduccion_ucs_animdb.csv`. El código que los lee (`libMPX.so`) no
+  se descompiló.
+- **Video, 2099 cuadros revisados:** el giro lo da un toque en el momento de girar. Con la pelota al centro, el interior
+  del pie de afuera (izquierdo para la derecha, derecho para la izquierda). Con la pelota del lado del giro, el exterior de
+  ese pie. Un toque cada 0.26-0.39 s al trote, con la pelota 0.5-1.0 m delante. Notas:
+  `docs/fases/E3_video_conduccion_notas.md`.
+- **Qué faltaba conectar:** los 78 clips están en el banco. Los de avance con giro chico solo salían con REGATE. Las
+  diagonales «45» solo entraban con el joystick a ≥ 50°. Por debajo de 50° giraba un impulso físico con el pie más cercano.
+- **Cambio, toque orientado** (`JsonBallMove`, intención `steer`, solo el jugador de la persona):
+  - con el joystick a 14-50° del frente, uno de los 48 clips de conducción de UCS (y sus espejos) que gira hacia ese lado;
+  - lo planifica cada paso, prefiere el pie de afuera y se corta tras su segundo toque, que deja la pelota hacia el
+    joystick;
+  - si ninguno encaja, sigue el toque de rumbo físico;
+  - `PlayerActions.start_move` acepta el corte;
+  - `JsonBallMove.reset_caches` se llama desde `PackLibrary._reset_caches`.
+- **Cambio, botines** (`tools/json_anim/build_json_human.gd`, `assets/characters/json/json_human.scn` regenerado): de
+  ~0.40 m a ~0.26 m, de 6 cm detrás a 18.3 cm delante del tobillo. Es el pie de una persona de 1.74 m, la talla del
+  esqueleto, que es el de UCS. Mecánica sin cambios: los toques usan los huesos, no la malla.
+- **Medido** (`play_view`, render Xvfb):
+  - `steps` (±35°): 3 toques orientados y 1 giro por corrida, a los dos lados, error del pie ≤ 0.07 m, 0 cortes;
+    pelota-cuerpo mediana 0.52-0.55 m;
+  - `zigzag`: 4 toques orientados (antes 2 giros), mediana 0.51 m (antes 0.53), p90 0.90 (0.92);
+  - `diag`: p90 0.96 m (antes 0.52), dentro de los 0.5-1.0 m de UCS;
+  - curva lenta: sin cambios (el cuerpo sigue al joystick y no hace falta clip).
+- **Pruebas:** `test_mode4_dribble::test_oriented_touch_with_ucs_dribble_clips` (nueva) y suite headless completa: en
+  ejecución al hacer el primer commit de este cambio; el resultado va en el commit siguiente.
+- **Pendiente:** probarlo con el joystick real en el teléfono (APK). La IA no usa el toque orientado. No se decodificaron
+  las mallas de `models.pak` ni la cola de `animdb.adb`.
+
 ## 2026-11-05 — Tirones de CPU (recepción, arquero), opciones de rendimiento y joystick suelto: el jugador va a la pelota
 
 Rama `respaldo-f3`. Pedido del usuario con dos videos (05-11 04:42:20 del juego y la referencia): «se traba mucho, mucho

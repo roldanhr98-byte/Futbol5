@@ -50,6 +50,7 @@ traspaso (`a977fb3`), F3 corregido (`ff6124b`), F3 en curso (`895b3f8`), F2 árb
 | Programa maestro E1-E6 (sustituye a F4-F8, autorizado en un solo mensaje del usuario) | hecho | [`fases/E_programa_maestro_informe.md`](fases/E_programa_maestro_informe.md), [`fases/E2_auditoria_banco.md`](fases/E2_auditoria_banco.md), inventario [`fases/E2_inventario_banco.csv`](fases/E2_inventario_banco.csv) |
 | Corrección 2026-11-05 (conducción física sin «hilo», golpeos en todas direcciones con el banco, cancha de fútbol 7, 60 fps) | hecha | CHANGELOG 2026-11-05, [`technical-index/SYSTEMS/PLAYER.md`](technical-index/SYSTEMS/PLAYER.md), [`technical-index/SYSTEMS/JSON_MODE.md`](technical-index/SYSTEMS/JSON_MODE.md) |
 | Rendimiento (tirones de CPU de la recepción y del arquero, opciones de rendimiento, diagnóstico por sistema) y joystick suelto: el jugador va a la pelota (2026-11-05, segunda entrega) | hecha; **sin medir en un teléfono** | CHANGELOG «Tirones de CPU…», [`technical-index/SYSTEMS/PERFORMANCE.md`](technical-index/SYSTEMS/PERFORMANCE.md), [`fases/joystick_suelto_antes_despues.jpg`](fases/joystick_suelto_antes_despues.jpg) |
+| Conducción como UCS (toque orientado con los 48 clips de conducción de UCS, datos de `animdb.adb`, video cuadro por cuadro) y botines proporcionados (2026-11-05, tercera entrega) | hecha; **sin probar en un teléfono** | [`fases/E3_conduccion_ucs.md`](fases/E3_conduccion_ucs.md), CHANGELOG 2026-11-05 |
 
 ## 4. Lo que queda abierto
 
@@ -59,6 +60,7 @@ traspaso (`a977fb3`), F3 corregido (`ff6124b`), F3 en curso (`895b3f8`), F2 árb
   arquero (antes lo era por un error de predicción). Cambiar el efecto del tiro es mecánica: decisión del usuario.
 - Pruebas estadísticas sin semilla fija que a veces fallan (ver §6).
 - Sin prueba en Android real: la APK se genera y verifica en GitHub Actions.
+- La IA no usa el toque orientado (solo el jugador de la persona). Mallas de UCS (`models.pak`) sin decodificar.
 - Subida a la rama principal `ccr-a6c53cd2-uoxpk0`: pendiente de la orden del usuario.
 
 ## 5. Cómo regenerar los datos del banco

@@ -129,10 +129,11 @@ func _begin(k: StringName, clip: StringName, speed: float, cut: float, start_at:
 
 ## Modo 4: movimiento de cuerpo entero con rumbo propio (giro, giro con pelota, regate) desde `start_at` s del clip. Igual
 ## que start pero sin cortar las acciones de pelota que lo piden (JsonBallMove maneja la pelota durante el clip).
-func start_move(k: StringName, clip: StringName, speed: float = 1.0, start_at: float = 0.0) -> bool:
+## cut: segundos de clip tras los que se corta (toque orientado de JsonBallMove); -1 entero.
+func start_move(k: StringName, clip: StringName, speed: float = 1.0, start_at: float = 0.0, cut: float = -1.0) -> bool:
 	if not _can_play() or not PackLibrary.has_clip(clip):
 		return false
-	return _begin(k, clip, speed, -1.0, start_at, false)
+	return _begin(k, clip, speed, cut, start_at, false)
 
 ## Avanza un paso de fisica moviendo el cuerpo con la raiz del clip. Devuelve true si la accion se ocupo del paso.
 func tick(delta: float) -> bool:

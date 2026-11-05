@@ -128,6 +128,50 @@ func test_sharp_direction_change_recovers_the_ball() -> void:
 	cleanup()
 	_restore()
 
+## Toque orientado (2026-11-05, como UCS): con el joystick a 35 grados del frente, al trote, el jugador de la persona gira con
+## un clip de conduccion de UCS (JsonBallMove, intencion steer): el cuerpo gira hacia el mismo lado que el joystick, el pie
+## del clip llega a la pelota (error de cada toque < 0.2 m), el clip no se corta por un toque perdido y la pelota sigue
+## cerca y sale hacia el joystick. Cuatro casos (dos a cada lado); al menos tres deben usar un clip.
+func test_oriented_touch_with_ucs_dribble_clips() -> void:
+	if _skip_if_missing():
+		return
+	var used: int = 0
+	for k in 4:
+		var deg: float = 35.0 if k % 2 == 0 else -35.0
+		var want: Vector3 = FACE.rotated(Vector3.UP, deg_to_rad(deg))
+		var s: Dictionary = await _setup(41 + k, Vector2(1, 0), 90, -signf(want.z) * 5.0)
+		var p: Footballer = s["p"]
+		var jm: JsonBallMove = p.ball_handler.json_move
+		var hist0: int = jm.history.size()
+		(s["src"] as ScriptedInput).move = Vector2(want.x, want.z)
+		await _run(s, 70)
+		var steers: Array = []
+		for i in range(hist0, jm.history.size()):
+			if String(jm.history[i].get("intent", "")) == "steer":
+				steers.append(jm.history[i])
+		if jm.active and jm.intent == &"steer":
+			steers.append(jm.last)
+		var dir_err: float = _ball_dir_error(s, want)
+		var desc := ""
+		for h in steers:
+			desc += "%s giro %.0f pie %s toques %s %s; " % [h.get("clip", ""), float(h.get("turn", 0.0)), "der" if int(h.get("foot", 0)) > 0 else "izq", str(h.get("touches", [])), str(h.get("aborted", ""))]
+		note("joystick %+.0f: %d toques orientados [%s] pelota a %.0f grados del joystick, distancia max %.2f m, saltos %d" % [deg, steers.size(), desc, dir_err, s["max_d"], s["jumps"]])
+		if not steers.is_empty():
+			used += 1
+		for h in steers:
+			var turn: float = float(h.get("turn", 0.0))
+			check(turn * deg >= 0.0 or absf(turn) <= 3.0, "el clip gira hacia el lado del joystick (%.0f con joystick %+.0f)" % [turn, deg])
+			check(not h.has("aborted"), "el clip no se corta por un toque perdido (%s)" % str(h.get("aborted", "")))
+			for e in h.get("touches", []):
+				check(float(e) < 0.2, "el pie del clip llega a la pelota (%.2f m)" % float(e))
+		check(float(s["max_d"]) < 2.2, "la pelota no se escapa (max %.2f m)" % s["max_d"])
+		check(float(dir_err) < 45.0, "la pelota sale hacia el joystick (%.0f grados)" % dir_err)
+		check(int(s["jumps"]) == 0, "sin saltos de posicion")
+		check(p.ball_handler.has_possession(), "sigue con la pelota")
+		cleanup()
+	check(used >= 3, "al menos 3 de 4 cambios de 35 grados usan un clip de conduccion de UCS (%d)" % used)
+	_restore()
+
 func test_accelerate_and_decelerate_with_the_ball() -> void:
 	if _skip_if_missing():
 		return
