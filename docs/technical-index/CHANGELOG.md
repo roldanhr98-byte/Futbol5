@@ -72,6 +72,16 @@ Informe completo: [`docs/fases/E3_conduccion_ucs.md`](../fases/E3_conduccion_ucs
   - Nuevo arranque con pelota desde parado (`JsonBallMove`, intención `start`): rol `ball_start` (antes sin sistema) y
     clips de conducción de UCS que entran casi quietos. En `play_view` arranca con `0544` (espejo), toques a 1-2 cm,
     pelota a ≤ 0.65 m.
+  - Segunda suite completa (con el arranque): 290 pruebas, **2 fallidas**.
+    - `test_ball_turn::test_wide_turn_and_sprint` falló por el arranque con sprint apretado. Ahora con sprint el arranque
+      es el de siempre y pasa.
+    - `test_ai_match::test_ai_teams_play_a_real_match_without_getting_stuck`: el control pasaba al receptor con la entrada
+      de la IA. El toque orientado y el arranque ahora son solo del mando de la persona, así que la IA ejecuta el mismo
+      código que antes.
+    - Partido de IA medido: con el código anterior (`dc90567`) falló 1 de 3 corridas y con el final 1 de 3 (antes del
+      guardia, 2 de 3). Es la inestabilidad ya documentada (sin semillas fijas).
+    - Con el código final, sin fallos: `mode4_dribble` 9, `ball_turn` 4, `gameplay_feel` 10, `json_mode` 10, `receive`
+      30, `player_actions` 4, `action_arbiter` 9.
   - Quedan sin conectar 250 de presentación y fuera de la cancha y ~85 de juego (motivos en el animdb y en
     [E3 §7](../fases/E3_conduccion_ucs.md#7-nuestro-animdb-y-animaciones-que-faltaban-conectar-segundo-pedido-2026-11-05)).
 - **Pendiente:** probarlo con el joystick real en el teléfono (APK). La IA no usa el toque orientado. No se decodificaron
