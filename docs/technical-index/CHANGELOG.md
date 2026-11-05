@@ -50,7 +50,7 @@ Rama `respaldo-f3` (corrección del trabajo pedida por el usuario; continúa el 
   headless `test_mode4_dribble` 8/0, `test_ai_match` (incluida la cancha de fútbol 7), `test_pack_kick` 8/0 y `test_receive`
   30/0 (2 omitidas). Suite headless completa con el primer commit (`6d483ea`): 288 pruebas, 1 fallo
   (`test_receive::test_reception_then_pass`, corregido arriba); GitHub Actions #44 falló por la misma prueba.
-  Suite completa tras la corrección: en curso al hacer este commit (GitHub Actions #45 la corre también).
+  Suite completa tras la corrección (`481ded7`): **288 pruebas, 0 fallos**, 31 omitidas, 1 690 comprobaciones (local).
 - Pendiente: tiro a 180° al trote a veces sin tiro en 4 s (encadena giros); medir 60 fps en Android; los `kick_cross`
   necesitan la pelota al costado (no se usan conduciendo).
 
