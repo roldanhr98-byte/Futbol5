@@ -5544,7 +5544,10 @@
         "scripts/gameplay/match_manager.gd",
         "scripts/gameplay/practice_scene.gd",
         "scripts/animation/clip_roles_overlay.gd",
-        "tools/json_anim/analyze_bank.py"
+        "tools/json_anim/analyze_bank.py",
+        "scripts/animation/anim_db.gd",
+        "tools/json_anim/make_animdb.py",
+        "tools/json_anim/dump_ball_pools.gd"
       ],
       "symbols": [
         {
