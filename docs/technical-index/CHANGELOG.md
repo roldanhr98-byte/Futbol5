@@ -60,6 +60,12 @@ lag, dame más opciones de optimización» y «la pelota se acomoda al jugador e
 - Pendiente: picos de la IA al preparar pases (hasta 13-20 ms), peor caso del arquero (16-20 ms), imágenes ocasionales de
   50-85 ms cerca de las repeticiones de gol, costo medio de los jugadores; medir en un teléfono; pase bajo presión a la
   carrera con el pie lejos de la pelota (9 de 16).
+- **GitHub Actions #46 falló** en `test_shared_ball_mechanics::test_every_touch_of_an_ai_carrier_comes_from_its_ball_handler`
+  (un impulso de la IA sin evento de su `BallHandler`). Causa previa: la recepción con muslo, rodilla, pecho o pie en el
+  aire (`JsonBallMove._touch`) impulsaba la pelota sin `touched_ball`; solo pasa si la IA recibe una pelota a media
+  altura (1 de 30 corridas de la prueba con el código nuevo, 0 de 30 con el anterior: depende de la jugada). Ahora avisa
+  el toque como `body`. Verificado: 40 corridas sin toques sueltos; `shared_ball_mechanics` 2/0, `receive` 34/0,
+  `json_mode` 10/0 (headless).
 
 ## 2026-11-05 — Conducción física sin «hilo», golpeos en todas direcciones con el banco, cancha de fútbol 7 y 60 fps
 

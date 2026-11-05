@@ -449,6 +449,9 @@ func _touch(i: int, b: Ball, met: bool = false) -> void:
 		var rel_air: float = (b.linear_velocity - owner.velocity).length()
 		var va: Vector3 = handler.receive.contact_velocity(Vector3.ZERO, b, _recv_part).limit_length(9.0)
 		b.kick(va, Vector3.ZERO, owner)
+		# Toque con el cuerpo (como el de BallHandler._shrug_resting_ball): sin este aviso era el unico impulso del jugador sin
+		# evento de su BallHandler (test_shared_ball_mechanics lo vio en GitHub Actions #46 con una recepcion de la IA).
+		handler.touched_ball.emit(&"body")
 		_received(b, rel_air)
 		return
 	var target: Vector3
