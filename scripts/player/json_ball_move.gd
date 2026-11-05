@@ -77,6 +77,15 @@ const STEER_ROLES: Array[StringName] = [&"ball_turn", &"ball_dribble", &"ball_sk
 	&"ball_stop", &"control_stand"]
 static var _steer_pool: Array[StringName] = []
 static var _steer_built: bool = false
+## Arranque con pelota desde parado (UCS: STAND_TO_JOGGING_DRIBBLE, STAND_TO_45_R…, CONTROL_DRIBBLE_00, CONTROL_STAND_17):
+## con el jugador de la persona casi quieto (< STEER_MIN_SPEED) y el joystick firme a menos de 50 grados, el arranque es el
+## clip entero (los de 50 grados o mas ya los usa el giro con pelota). Tolerancia del giro, joystick minimo y diferencia
+## de velocidad admitida.
+const START_TOL := 40.0
+const START_MIN_STICK := 0.6
+const START_MAX_DV := 1.2
+const START_MAX_V_IN := 1.2
+static var _start_pool: Array[StringName] = []
 
 var handler: BallHandler
 var active: bool = false
@@ -153,9 +162,27 @@ static func steer_pool() -> Array[StringName]:
 			_steer_pool.append(id)
 	return _steer_pool
 
+## Clips de arranque con pelota: los de conduccion de UCS que entran casi quietos (v_in < START_MAX_V_IN) y todos los del rol
+## ball_start (arranques de conduccion del banco) que siguen en carrera.
+static func start_pool() -> Array[StringName]:
+	if not _start_pool.is_empty():
+		return _start_pool
+	for id in steer_pool():
+		if float(PackLibrary.meta(id).get("v_in", 9.0)) < START_MAX_V_IN:
+			_start_pool.append(id)
+	for id in PackLibrary.by_role(&"ball_start"):
+		var m: Dictionary = PackLibrary.meta(id)
+		if _start_pool.has(id) or (m.get("ball_touches", []) as Array).is_empty():
+			continue
+		if float(m.get("v_out", 0.0)) < 1.0 or String(m.get("heading_mode", "")) != "turn":
+			continue
+		_start_pool.append(id)
+	return _start_pool
+
 static func reset_caches() -> void:
 	_steer_pool.clear()
 	_steer_built = false
+	_start_pool.clear()
 
 func request_skill() -> void:
 	_skill_req = 0.3
@@ -219,16 +246,22 @@ func consider(desired_dir: Vector3, stick_mag: float, dt: float) -> bool:
 		want = ang
 		tol = STEER_TOL
 		new_intent = &"steer"
+	elif has_dir and stick_mag >= START_MIN_STICK and owner.is_human_controlled and loco.speed < STEER_MIN_SPEED:
+		want = ang
+		tol = START_TOL
+		new_intent = &"start"
 	else:
 		return false
 	# Planificar recorre decenas de clips: no en cada paso (salvo un pedido con el boton, que es puntual, y el toque orientado
 	# del jugador de la persona: si espera, el toque de rumbo fisico se adelanta y el clip de UCS no llega a usarse).
 	_plan_tick += 1
-	if new_intent != &"drag" and new_intent != &"skill" and new_intent != &"steer" and _plan_tick % PLAN_EVERY != 0:
+	if new_intent != &"drag" and new_intent != &"skill" and new_intent != &"steer" and new_intent != &"start" and _plan_tick % PLAN_EVERY != 0:
 		return false
 	var plan: Dictionary
 	if new_intent == &"steer":
 		plan = plan_ids(steer_pool(), want, tol, false, STEER_MAX_DV, true)
+	elif new_intent == &"start":
+		plan = plan_ids(start_pool(), want, tol, false, START_MAX_DV)
 	else:
 		plan = plan_move(roles, want, tol, new_intent == &"drag", MAX_DV_BUTTON if (new_intent == &"drag" or new_intent == &"skill") else MAX_DV_STICK)
 	if plan.is_empty():
@@ -280,9 +313,14 @@ func plan_ids(ids: Array[StringName], want: float, tol: float, both_sides: bool 
 		var turn: float = rad_to_deg(ActionMotion.heading_rel(hp, turn_t))
 		var dturn: float = absf(turn - want)
 		# Toque orientado: el cuerpo no puede girar al lado contrario del pedido (con el joystick a la izquierda, un clip que
-		# dobla a la derecha se veia al reves aunque la pelota saliera bien).
+		# dobla a la derecha se veia al reves aunque la pelota saliera bien), y el joystick tiene que caer en la ventana en
+		# la que UCS elige ese clip (animdb: 32 sectores de 11.25 grados).
 		if steer and turn * want < 0.0 and absf(turn) > 3.0:
 			continue
+		if steer:
+			var win: Vector2 = AnimDB.joystick_window(id)
+			if want < win.x - 1.0 or want > win.y + 1.0:
+				continue
 		if both_sides:
 			dturn = minf(dturn, absf(turn + want))
 		if dturn > tol:
@@ -681,6 +719,7 @@ func finish() -> void:
 		handler.receive.ended(_next > 0)
 	_remember()
 	_cooldown = maxf(_cooldown, STEER_COOLDOWN if intent == &"steer" else COOLDOWN)
+	# (arranque: la espera normal; el jugador ya va en carrera y sigue el toque orientado si hace falta)
 	handler.touch_timer = 0.12
 	_release_ik()
 

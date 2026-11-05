@@ -4218,7 +4218,7 @@
         {
           "file": "scripts/player/json_ball_move.gd",
           "name": "JsonBallMove.start_receive",
-          "line": 377,
+          "line": 415,
           "kind": "func"
         },
         {
@@ -5646,25 +5646,25 @@
         {
           "file": "scripts/player/json_ball_move.gd",
           "name": "JsonBallMove.consider",
-          "line": 165,
+          "line": 192,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_ball_move.gd",
           "name": "JsonBallMove.plan_move",
-          "line": 256,
+          "line": 289,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_ball_move.gd",
           "name": "JsonBallMove.turn_for_kick",
-          "line": 243,
+          "line": 276,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_ball_move.gd",
           "name": "JsonBallMove.step",
-          "line": 408,
+          "line": 446,
           "kind": "func"
         },
         {

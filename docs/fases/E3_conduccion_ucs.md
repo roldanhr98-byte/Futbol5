@@ -127,3 +127,41 @@ cerca, con el ciclo de carrera de siempre. No había animación de giro ni se el
 - La sensación con el joystick real en el teléfono (eso lo prueba la persona con el APK).
 - La IA no usa el toque orientado.
 - No se descifraron la cola de `animdb.adb`, los campos 28-39 ni las mallas de `models.pak`.
+
+## 7. Nuestro animdb y animaciones que faltaban conectar (segundo pedido, 2026-11-05)
+
+Pedido: «conectá todas nuestras animaciones que tenemos desconectadas y fijate que tengamos un animdb, así tenemos todas
+nuestras animaciones para cada acción».
+
+**`assets/animations/animdb.json`** (generado por `tools/json_anim/make_animdb.py` con el `animdb.adb` de UCS, el
+`index.json` del banco y el inventario E2) tiene:
+
+- Una entrada por clip del banco (2022; indice `NNNN`) con nombre, cuadros y sus tramos. Cada tramo lleva id en la
+  librería, acción, estado (si / no / pendiente), sistemas que lo usan y motivo.
+- Los datos de UCS de cada clip: cuadro y pie del toque, destino de la pelota (m, adelante / izquierda), giro (sector y
+  medido), ventana del joystick y velocidades.
+- El índice `acciones`: para cada una de las 111 acciones, **todos** sus clips, conectados o no.
+
+El juego lo lee con `AnimDB` (`scripts/animation/anim_db.gd`, con el lado de los espejos aplicado). El toque orientado
+usa la **ventana del joystick de UCS** de cada clip: si el joystick no cae en la ventana en la que UCS elige ese clip, no
+se usa. Se exporta en el APK (`include_filter` de `export_presets.cfg`).
+
+**Conectados ahora** (estado en el animdb):
+
+- Toque orientado: los clips de control con «dribble» en el nombre que siguen en carrera (lista en
+  `tools/json_anim/steer_pool.json`).
+- Arranque con pelota desde parado (`JsonBallMove`, intención `start`; jugador de la persona casi quieto, joystick ≥ 0.6
+  a menos de 50°): los de conducción de UCS que entran casi quietos y el rol `ball_start` (antes sin sistema: «arranque de
+  conducción, no recepción»). Los arranques de 50° o más ya los usaba el giro con pelota.
+
+**Siguen sin conectar** (motivo en el animdb):
+
+- 139 de presentación (túnel, himno, escenas): el juego no tiene presentación previa.
+- 111 de personajes fuera de la cancha (público, bancos, técnicos): el entorno no tiene esos personajes con esqueleto.
+- 25 recepciones sin contacto confirmado en la verificación visual.
+- Variantes de marcha y de conducción: un ciclo por velocidad, medido.
+- Giros del arquero.
+- Giros sin pelota fuera de las franjas.
+- Pelotas paradas en las que el pie no llega a la pelota.
+- Saques de banda sin suelta.
+- El sombrero (necesita la pelota en el aire).
