@@ -154,6 +154,12 @@ se usa. Se exporta en el APK (`include_filter` de `export_presets.cfg`).
   a menos de 50°): los de conducción de UCS que entran casi quietos y el rol `ball_start` (antes sin sistema: «arranque de
   conducción, no recepción»). Los arranques de 50° o más ya los usaba el giro con pelota.
 
+Los dos (toque orientado y arranque) son solo del jugador que lleva la persona **con su mando**. En las pruebas de
+partidos de IA el control pasa al receptor con la entrada de la IA, y ahí sigue decidiendo la IA como antes. Con el
+botón de sprint apretado, el arranque es el de siempre: los clips de arranque de UCS salen al trote y, en
+`test_ball_turn::test_wide_turn_and_sprint`, dejaban la pelota lejos para el giro siguiente en sprint (falló en la suite
+y se corrigió).
+
 **Siguen sin conectar** (motivo en el animdb):
 
 - 139 de presentación (túnel, himno, escenas): el juego no tiene presentación previa.

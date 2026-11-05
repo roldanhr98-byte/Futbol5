@@ -59,8 +59,21 @@ Informe completo: [`docs/fases/E3_conduccion_ucs.md`](../fases/E3_conduccion_ucs
   - `zigzag`: 4 toques orientados (antes 2 giros), mediana 0.51 m (antes 0.53), p90 0.90 (0.92);
   - `diag`: p90 0.96 m (antes 0.52), dentro de los 0.5-1.0 m de UCS;
   - curva lenta: sin cambios (el cuerpo sigue al joystick y no hace falta clip).
-- **Pruebas:** `test_mode4_dribble::test_oriented_touch_with_ucs_dribble_clips` (nueva) y suite headless completa: en
-  ejecución al hacer el primer commit de este cambio; el resultado va en el commit siguiente.
+- **Pruebas:**
+  - Suite headless completa con el código del commit `0dbdc63`: **290 pruebas, 0 fallidas, 32 omitidas (render), 1722
+    comprobaciones**, 852.7 s.
+  - `tools/run_tests.sh mode4_dribble` con el código de esta entrada: 9 pruebas, 0 fallidas, 59 comprobaciones. La nueva
+    `test_oriented_touch_with_ucs_dribble_clips` dio 4 de 4 cambios de 35° con un clip de UCS, error del pie ≤ 0.16 m,
+    pelota a ≤ 9° del joystick y máximo 0.96 m.
+- **animdb propio y arranque con pelota (segundo pedido del mismo día):**
+  - `assets/animations/animdb.json` (`tools/json_anim/make_animdb.py`, lo lee `AnimDB`; se exporta en el APK) tiene
+    todas las animaciones por acción, con su estado y los datos de UCS de cada clip.
+  - El toque orientado solo usa clips cuya ventana del joystick de UCS contiene el pedido.
+  - Nuevo arranque con pelota desde parado (`JsonBallMove`, intención `start`): rol `ball_start` (antes sin sistema) y
+    clips de conducción de UCS que entran casi quietos. En `play_view` arranca con `0544` (espejo), toques a 1-2 cm,
+    pelota a ≤ 0.65 m.
+  - Quedan sin conectar 250 de presentación y fuera de la cancha y ~85 de juego (motivos en el animdb y en
+    [E3 §7](../fases/E3_conduccion_ucs.md#7-nuestro-animdb-y-animaciones-que-faltaban-conectar-segundo-pedido-2026-11-05)).
 - **Pendiente:** probarlo con el joystick real en el teléfono (APK). La IA no usa el toque orientado. No se decodificaron
   las mallas de `models.pak` ni la cola de `animdb.adb`.
 

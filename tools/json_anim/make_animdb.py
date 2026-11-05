@@ -27,6 +27,7 @@ OUT = os.path.join(ROOT, "assets", "animations", "animdb.json")
 CONNECTED_NOW = {}
 # Toque orientado de JsonBallMove (2026-11-05): los clips de control con «dribble» que siguen en carrera.
 STEER_POOL_SYSTEM = "toque orientado con clips de UCS (JsonBallMove, intencion steer)"
+START_SYSTEM = "arranque con pelota desde parado (JsonBallMove, intencion start)"
 
 
 def adb_records(path):
@@ -61,7 +62,10 @@ def main():
     inv = {}
     for r in csv.DictReader(open(INV, encoding="utf-8")):
         inv.setdefault(r["archivo"][:4], []).append(r)
+    # Listas que escribe tools/json_anim/dump_ball_pools.tscn con lo que el juego usa de verdad.
     steer = set(json.load(open(os.path.join(ROOT, "tools", "json_anim", "steer_pool.json"), encoding="utf-8")))
+    start_path = os.path.join(ROOT, "tools", "json_anim", "start_pool.json")
+    start = set(json.load(open(start_path, encoding="utf-8"))) if os.path.exists(start_path) else set()
     clips = {}
     actions = {}
     for c in bank:
@@ -86,6 +90,11 @@ def main():
             uses = [system] if system and system != "-" else []
             if cid in steer:
                 uses.append(STEER_POOL_SYSTEM)
+                if state != "si":
+                    state, reason = "si", "conectado despues del inventario E2"
+            # Arranque con pelota (JsonBallMove.start_pool).
+            if cid in start:
+                uses.append(START_SYSTEM)
                 if state != "si":
                     state, reason = "si", "conectado despues del inventario E2"
             entry["tramos"].append({"id": cid, "accion": role, "conectada": state, "sistemas": uses, "motivo": reason})
