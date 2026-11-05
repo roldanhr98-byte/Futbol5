@@ -242,11 +242,14 @@ func consider(desired_dir: Vector3, stick_mag: float, dt: float) -> bool:
 		want = 0.0
 		tol = 60.0
 		new_intent = &"stop"
-	elif has_dir and absf(ang) >= STEER_MIN_ANGLE and owner.is_human_controlled and loco.speed >= STEER_MIN_SPEED and handler.is_dribbling():
+	elif has_dir and absf(ang) >= STEER_MIN_ANGLE and _person(owner) and loco.speed >= STEER_MIN_SPEED and handler.is_dribbling():
 		want = ang
 		tol = STEER_TOL
 		new_intent = &"steer"
-	elif has_dir and stick_mag >= START_MIN_STICK and owner.is_human_controlled and loco.speed < STEER_MIN_SPEED:
+	elif has_dir and stick_mag >= START_MIN_STICK and _person(owner) and loco.speed < STEER_MIN_SPEED \
+			and not (owner.last_frame != null and owner.last_frame.sprint):
+		# Con el boton de sprint apretado el arranque es el de siempre: los clips de arranque de UCS salen al trote (2-3.5 m/s)
+		# y dejaban la pelota lejos para el giro siguiente en sprint (test_ball_turn::test_wide_turn_and_sprint).
 		want = ang
 		tol = START_TOL
 		new_intent = &"start"
@@ -271,6 +274,11 @@ func consider(desired_dir: Vector3, stick_mag: float, dt: float) -> bool:
 	if not owner.is_human_controlled:
 		_cooldown = AI_COOLDOWN
 	return true
+
+## Jugador que lleva la persona con su mando: el toque orientado y el arranque son solo suyos. Con el control puede pasar al
+## receptor la entrada de la IA (partidos de IA de las pruebas): ahi decide la IA y sigue como antes.
+static func _person(owner: Footballer) -> bool:
+	return owner.is_human_controlled and not (owner.input_source is AIInput)
 
 ## Golpeo pedido hacia `dir` casi detras del jugador: giro con la pelota hacia alli (el golpeo espera a que termine).
 func turn_for_kick(dir: Vector3) -> bool:

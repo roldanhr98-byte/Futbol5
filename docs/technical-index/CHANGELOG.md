@@ -44,7 +44,7 @@ Informe completo: [`docs/fases/E3_conduccion_ucs.md`](../fases/E3_conduccion_ucs
 - **Qué faltaba conectar:** los 78 clips están en el banco. Los de avance con giro chico solo salían con REGATE. Las
   diagonales «45» solo entraban con el joystick a ≥ 50°. Por debajo de 50° giraba un impulso físico con el pie más cercano.
 - **Cambio, toque orientado** (`JsonBallMove`, intención `steer`, solo el jugador de la persona):
-  - con el joystick a 14-50° del frente, uno de los 48 clips de conducción de UCS (y sus espejos) que gira hacia ese lado;
+  - con el joystick a 14-50° del frente, uno de los 41 clips de conducción de UCS (y sus espejos; 82 en total) que gira hacia ese lado;
   - lo planifica cada paso, prefiere el pie de afuera y se corta tras su segundo toque, que deja la pelota hacia el
     joystick;
   - si ninguno encaja, sigue el toque de rumbo físico;

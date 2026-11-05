@@ -140,7 +140,7 @@ tiros hacia atrás usan siempre giro y después golpeo.
   ya y empuja la pelota casi del todo hacia el rumbo nuevo (`_steer_touch_ready`), en vez de esperar al paso siguiente.
 - **Toque orientado con clips de UCS (2026-11-05):** con el joystick a 14-50° del frente, el jugador de la persona sigue
   con un clip de conducción de UCS (`JsonBallMove`, intención `steer`; `steer_pool`: los clips de control con «dribble»
-  en el nombre que siguen en carrera, 48 y sus espejos) que gira hacia el mismo lado. El clip se corta tras su segundo
+  en el nombre que siguen en carrera, 41 y sus espejos; lista en `tools/json_anim/steer_pool.json`) que gira hacia el mismo lado. El clip se corta tras su segundo
   toque, que deja la pelota hacia el joystick, y prefiere el interior del pie de afuera del giro. Se planifica en cada
   paso (si no, el toque de rumbo físico se adelantaba). Si ningún clip encaja, queda el toque de rumbo. Datos de UCS
   (`animdb.adb`: cuadro del toque, pie, destino, giro y ventana del joystick por clip), video y medidas:
