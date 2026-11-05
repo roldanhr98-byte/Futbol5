@@ -2637,6 +2637,15 @@ func kick_approach_steer() -> Array:
 	var gap_speed: float = bv.dot(target.normalized())
 	return [target.normalized(), 1.0, dist > 1.6 or gap_speed > owner.locomotion.max_run_speed() * 0.8]
 
+## Golpeo pedido que todavia no puede salir (bloqueo tras un movimiento con pelota o una recepcion) con la pelota propia al
+## pie: el jugador se queda sobre ella a pasos cortos en vez de seguir hacia el joystick y dejarla atras (medido: tras
+## recibir, en los 0.3 s de bloqueo el cuerpo llegaba a 2 m/s y la pelota quedaba 0.5 m detras: pase perdido).
+func holding_for_kick() -> bool:
+	if _pending_action == &"" or _kick_action != &"" or lockout <= 0.0 or is_waiting_first_time():
+		return false
+	var b: Ball = ball()
+	return b != null and not b.is_held() and b.last_toucher == owner and ball_distance() < 0.8
+
 ## true si hay un golpeo en espera y el jugador se esta acercando de verdad a su pelota (ver kick_approach_steer).
 func is_approaching_for_kick() -> bool:
 	if kick_approach_steer().is_empty():

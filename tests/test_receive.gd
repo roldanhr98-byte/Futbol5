@@ -235,7 +235,7 @@ func _reception_then_kick(shot: bool) -> void:
 		if kicked_at < 0 and int(p.ball_handler.kick_stats["started"]) > started0:
 			kicked_at = i
 	var bv: float = (s["ctx"] as MatchContext).ball.linear_velocity.length()
-	note("%s tras recibir (%s; en la cola del clip al pulsar: %s): golpeo %0.2f s despues de soltar, pelota a %.1f m/s, recepcion terminada: %s" % ["tiro" if shot else "pase", r["clip"], str(in_clip), float(kicked_at) / 60.0, bv, str(p.ball_handler.json_move.last.get("ended", p.ball_handler.json_move.last.get("aborted", "fin")))])
+	note("%s tras recibir (%s; en la cola del clip al pulsar: %s): golpeo %0.2f s despues de soltar, pelota a %.1f m/s, recepcion terminada: %s, golpeos %s, plan %s, pelota a %.2f m" % ["tiro" if shot else "pase", r["clip"], str(in_clip), float(kicked_at) / 60.0, bv, str(p.ball_handler.json_move.last.get("ended", p.ball_handler.json_move.last.get("aborted", "fin"))), str(p.ball_handler.kick_stats), p.ball_handler.last_plan_debug, p.ball_handler.ball_distance()])
 	check(r["contact"] >= 0 and in_clip, "el boton se pulsa con la recepcion en curso, despues del toque")
 	check(kicked_at >= 0 and kicked_at <= 40, "el %s sale enseguida (%d pasos)" % ["tiro" if shot else "pase", kicked_at])
 	check(p.arbiter.level == ActionArbiter.Level.NONE or p.arbiter.kind == &"kick", "la recepcion libero su lugar en el arbitro (%s)" % p.arbiter.kind)

@@ -825,7 +825,7 @@
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer.capture_state",
-          "line": 713,
+          "line": 719,
           "kind": "func"
         }
       ],
@@ -1083,13 +1083,13 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._try_first_touch",
-          "line": 2847,
+          "line": 2856,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.attempt_tackle",
-          "line": 2910,
+          "line": 2919,
           "kind": "func"
         },
         {
@@ -3537,7 +3537,7 @@
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer._on_match_event",
-          "line": 610,
+          "line": 616,
           "kind": "func"
         }
       ],
@@ -4171,7 +4171,7 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.first_touch_absorb",
-          "line": 2898,
+          "line": 2907,
           "kind": "func"
         }
       ],
@@ -4781,7 +4781,7 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._curve_turn_scale",
-          "line": 2683,
+          "line": 2692,
           "kind": "func"
         },
         {
@@ -4941,7 +4941,7 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.carry_steer",
-          "line": 2722,
+          "line": 2731,
           "kind": "func"
         },
         {
@@ -4971,7 +4971,7 @@
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer._skill_is_drag_back",
-          "line": 531,
+          "line": 537,
           "kind": "func"
         }
       ],
@@ -5665,13 +5665,13 @@
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer._json_turn_move",
-          "line": 476,
+          "line": 482,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer._json_idle",
-          "line": 454,
+          "line": 460,
           "kind": "func"
         },
         {

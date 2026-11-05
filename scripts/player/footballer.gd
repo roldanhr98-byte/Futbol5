@@ -348,6 +348,12 @@ func _physics_process(delta: float) -> void:
 			# poca velocidad (al frenar con la pelota rodando o tras un toque largo); al llegar manda de nuevo el joystick.
 			desired_mag = maxf(desired_mag, ball_handler.carry_catch_up_mag(desired_dir))
 
+	# Golpeo pedido que espera a que se libere el bloqueo (tras un movimiento con pelota) con la pelota al pie: pasos cortos
+	# sobre ella, sin dejarla atras.
+	if not is_pressing and ball_handler.holding_for_kick():
+		desired_mag = minf(desired_mag, 0.2)
+		want_sprint = false
+
 	# Golpeo pedido con la pelota propia por delante fuera del alcance del pie: se ajusta la carrera y se va a por ella
 	# (la direccion del golpeo sigue siendo la del joystick; solo cambia hacia donde corre el cuerpo).
 	var approach: Array = [] if is_pressing else ball_handler.kick_approach_steer()

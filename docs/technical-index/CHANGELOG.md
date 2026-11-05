@@ -27,6 +27,9 @@ Rama `respaldo-f3` (corrección del trabajo pedida por el usuario; continúa el 
   parado y al trote 10 de 10, con `kick_pass`, `kick_turn` (golpeo girando), **`kick_back` (taco) a 180° parado** y giro con
   pelota + golpeo; tiros 9 de 10. **Corregido:** tras un giro con pelota para golpear (`turn_for_kick`) la orden caducaba
   a los 0.5 s con el giro en curso (pase a 180° al trote sin golpeo); ahora espera al final del giro.
+- **Pase o tiro tras recibir:** con la orden esperando el fin del bloqueo (0.3 s tras la recepción) el jugador se queda
+  sobre la pelota (`holding_for_kick`); antes caminaba hacia el joystick, la dejaba detrás y el pase caducaba (lo mostró
+  `test_receive::test_reception_then_pass` en la suite y en GitHub Actions #44; ahora pasa: golpeo a los 0.32 s).
 - **Centros:** los 2 clips `kick_cross` del banco (y espejos) entran en los candidatos del centro; el planificador los usa
   solo si el pie llega (en la prueba, los 3 centros salieron con `kick_pass` y cayeron en el área).
 - **Cancha de fútbol 7** (`PitchConfig`): 50 × 30 m, arcos 5 × 2, círculo 6 m, área y penal a 8 m; `PitchConfig.futsal()`
@@ -44,8 +47,10 @@ Rama `respaldo-f3` (corrección del trabajo pedida por el usuario; continúa el 
   `scripts/ui/hud.gd`, `tests/*` (arriba), `.github/workflows/android.yml` (render: `physical_dribble`).
 - Verificación (con render, modo 4): `live_feet` 7/0, `live_kicks` 4/0 (50 de 50 golpeos con contacto), `json_mode` 10/0
   (1 omitida), `pack_motion` 2/0, `physical_dribble` 4/0, `directional_kicks` 3/0, `ball_turn` 4/0, `drag_back` 4/0;
-  headless `test_mode4_dribble` 8/0, `test_ai_match` (incluida la cancha de fútbol 7) y `test_pack_kick` 8/0. Suite
-  headless completa: en curso al hacer este commit (resultado en el commit siguiente).
+  headless `test_mode4_dribble` 8/0, `test_ai_match` (incluida la cancha de fútbol 7), `test_pack_kick` 8/0 y `test_receive`
+  30/0 (2 omitidas). Suite headless completa con el primer commit (`6d483ea`): 288 pruebas, 1 fallo
+  (`test_receive::test_reception_then_pass`, corregido arriba); GitHub Actions #44 falló por la misma prueba.
+  Suite completa tras la corrección: en curso al hacer este commit (GitHub Actions #45 la corre también).
 - Pendiente: tiro a 180° al trote a veces sin tiro en 4 s (encadena giros); medir 60 fps en Android; los `kick_cross`
   necesitan la pelota al costado (no se usan conduciendo).
 
