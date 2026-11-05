@@ -70,6 +70,13 @@ lag, dame más opciones de optimización» y «la pelota se acomoda al jugador e
   Partido de 3 min con IA, 5 corridas de cada versión: tiros 8, 7, 4, 4, 7 (media 6.0) con el código nuevo y 3, 7, 9, 10, 3
   (media 6.4) con `0baf375`; en las suites locales del código nuevo hubo además partidos con 2 y 1 tiros. Distribuciones
   parecidas con mucho azar: se relanzó una vez; si vuelve a fallar por pocos tiros, se revisa la IA con el acomodo nuevo.
+- **Reintento de #47** falló en `test_ai_match::test_ai_teams_play_a_real_match_without_getting_stuck` (un jugador de la IA
+  a más de 1 m fuera de la cancha). Con el código anterior las pruebas de partidos de IA pasaban; con el acomodo para
+  todos, cada suite tuvo alguna falla de partido de IA. Causa: el acomodo cercano movía también a la IA y su dirección no
+  pasaba por `Footballer._keep_inside` (seguía la pelota que se iba afuera). Ahora el acomodo cercano es solo para el
+  jugador de la persona; las reglas del toque siguen para todos. Verificado: `test_ai_teams_play_a_real_match…` 6 de 6
+  con el código nuevo y 6 de 6 con `0baf375` (tiros que enfrentan los arqueros parecidos); `physical_dribble` 5/0
+  (render), `pack_kick` 8/0, `receive` 34/0.
 
 ## 2026-11-05 — Conducción física sin «hilo», golpeos en todas direcciones con el banco, cancha de fútbol 7 y 60 fps
 

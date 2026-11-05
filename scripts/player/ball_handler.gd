@@ -2638,6 +2638,13 @@ func settle_steer() -> Array:
 		if _pending_action != &"" or _pass_active or _shoot_active or _through_active or _cross_active or kick_button_now:
 			_settle_adjust = false
 			return []
+		# Solo el jugador de la persona: la IA siempre decide hacia donde ir (con la pelota conduce con el joystick a fondo) y
+		# su joystick queda suelto solo al llegar a su sitio. Acomodando a la IA cambiaba el partido (sigue la pelota fuera de
+		# la cancha, sin el filtro _keep_inside; menos tiros): fallos en GitHub Actions #46-#47 que con el codigo anterior no
+		# aparecian. Las reglas del toque (solo con el pie, sin imán) valen para todos.
+		if not owner.is_human_controlled:
+			_settle_adjust = false
+			return []
 		var close: Array = _settle_close(b, off, bv)
 		settle_close_now = not close.is_empty()
 		return close
