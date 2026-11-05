@@ -134,3 +134,6 @@ Ver [CHANGELOG.md](../CHANGELOG.md): evolución 9/24 → 40/113 → 44/140 → 5
   carrera» (punta del pie a 0.42-0.43 m en la imagen del golpe). Medido repitiendo ese caso 16 veces con cada versión: el
   pie queda a más de 0.3 m en **9 de 16 con el código anterior y 9 de 16 con el nuevo**. Defecto previo (el golpeo bajo
   presión a la carrera), no causado por este cambio; pendiente.
+- `test_full_match::test_three_minute_match_is_played_to_the_final_whistle_with_goal_replays` pide ≥ 2 tiros en un partido
+  de IA de 3 min: con mucho azar (5 corridas: 3-10 tiros con `0baf375`, 4-8 con el código nuevo; casos aislados de 1-2).
+  Falló una vez en GitHub Actions #47 con 1 tiro.

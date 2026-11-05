@@ -66,6 +66,10 @@ lag, dame más opciones de optimización» y «la pelota se acomoda al jugador e
   altura (1 de 30 corridas de la prueba con el código nuevo, 0 de 30 con el anterior: depende de la jugada). Ahora avisa
   el toque como `body`. Verificado: 40 corridas sin toques sueltos; `shared_ball_mechanics` 2/0, `receive` 34/0,
   `json_mode` 10/0 (headless).
+- **GitHub Actions #47** (con el arreglo) falló en `test_full_match::test_three_minute_match…` («hay tiros»: 1, pide ≥ 2).
+  Partido de 3 min con IA, 5 corridas de cada versión: tiros 8, 7, 4, 4, 7 (media 6.0) con el código nuevo y 3, 7, 9, 10, 3
+  (media 6.4) con `0baf375`; en las suites locales del código nuevo hubo además partidos con 2 y 1 tiros. Distribuciones
+  parecidas con mucho azar: se relanzó una vez; si vuelve a fallar por pocos tiros, se revisa la IA con el acomodo nuevo.
 
 ## 2026-11-05 — Conducción física sin «hilo», golpeos en todas direcciones con el banco, cancha de fútbol 7 y 60 fps
 
