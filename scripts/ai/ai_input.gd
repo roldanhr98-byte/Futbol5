@@ -312,11 +312,12 @@ func _follow_order(f: Footballer, ctx: MatchContext, order: Dictionary, carrier:
 	var target: Vector3 = order["target"]
 	match role:
 		&"press", &"chase":
-			# A por la pelota / al portador: la presion calcula el punto de intercepcion, la contencion y el robo. El que
-			# presiona corre al 95 % (PressureSpeedRate de UCS); el que va a por una pelota suelta, a fondo.
+			# A por la pelota / al portador: la presion calcula el punto de intercepcion, la contencion y el robo. (El 95 % de
+			# PressureSpeedRate de UCS como velocidad de carrera cambiaba los tiros con un defensor encima, test_shot_keeper;
+			# su significado es inferido y no se aplica a la velocidad.)
 			var to_ball: Vector3 = bpos - pos
 			_dir = to_ball.normalized() if to_ball.length() > 0.2 else Vector3.ZERO
-			_mag = UcsParams.PRESSURE_SPEED_RATE if role == &"press" else 1.0
+			_mag = 1.0
 			_sprint = bool(order["sprint"])
 			_press = to_ball.length() < 14.0
 			return true
@@ -347,7 +348,7 @@ func _follow_order(f: Footballer, ctx: MatchContext, order: Dictionary, carrier:
 			# Segundo en presionar (UCS: hasta dos presionan, uno solo entra): cierra el camino al arco junto al portador,
 			# sin entrar.
 			_run_left = 0.0
-			_move_to(f, target, UcsParams.PRESSURE_SPEED_RATE)
+			_move_to(f, target, 1.0)
 			_sprint = bool(order["sprint"])
 			return true
 		&"cover", &"block", &"hold":

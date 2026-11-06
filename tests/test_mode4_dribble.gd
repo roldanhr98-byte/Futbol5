@@ -139,11 +139,12 @@ func test_oriented_touch_with_ucs_dribble_clips() -> void:
 	for k in 4:
 		var deg: float = 35.0 if k % 2 == 0 else -35.0
 		var want: Vector3 = FACE.rotated(Vector3.UP, deg_to_rad(deg))
-		var s: Dictionary = await _setup(41 + k, Vector2(1, 0), 90, -signf(want.z) * 5.0)
+		# Al trote (joystick 0.75): en sprint los cambios de rumbo los da el toque de rumbo fisico (STEER_MAX_SPEED).
+		var s: Dictionary = await _setup(41 + k, Vector2(0.75, 0), 90, -signf(want.z) * 5.0)
 		var p: Footballer = s["p"]
 		var jm: JsonBallMove = p.ball_handler.json_move
 		var hist0: int = jm.history.size()
-		(s["src"] as ScriptedInput).move = Vector2(want.x, want.z)
+		(s["src"] as ScriptedInput).move = Vector2(want.x, want.z) * 0.75
 		await _run(s, 70)
 		var steers: Array = []
 		for i in range(hist0, jm.history.size()):

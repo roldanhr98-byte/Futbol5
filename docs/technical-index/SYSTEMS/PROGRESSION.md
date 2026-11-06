@@ -46,8 +46,8 @@
 | `decision` | Capacidad de decisión | campo | **sin uso todavía** |
 | `reflexes` | Reflejos | arquero | **sin uso todavía** |
 | `positioning` | Posicionamiento | arquero | **sin uso todavía** |
-| `catching` | Blocaje | arquero | `scripts/goalkeeper/goalkeeper.gd:776` |
-| `diving` | Estirada | arquero | `scripts/goalkeeper/goalkeeper.gd:787` |
+| `catching` | Blocaje | arquero | `scripts/goalkeeper/goalkeeper.gd:777` |
+| `diving` | Estirada | arquero | `scripts/goalkeeper/goalkeeper.gd:788` |
 | `aerial` | Juego aéreo | arquero | **sin uso todavía** |
 | `throwing` | Saque con la mano | arquero | **sin uso todavía** |
 | `kicking` | Juego con los pies | arquero | **sin uso todavía** |

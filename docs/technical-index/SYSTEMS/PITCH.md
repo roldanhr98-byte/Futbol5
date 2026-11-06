@@ -27,15 +27,15 @@
 <!-- AUTO:params:PitchConfig -->
 | Parámetro | Defecto | Rango / tipo | Definido en | Dónde se usa (accesos reales) | Descripción |
 |---|---|---|---|---|---|
-| `length` | `50.0` | float | `scripts/pitch/pitch_config.gd:11` | `scripts/ai/ai_input.gd:662`, `scripts/ai/ai_input.gd:665`, `scripts/pitch/pitch.gd:73`, `scripts/pitch/pitch.gd:85` (+2) |  (Dimensiones) |
-| `width` | `30.0` | float | `scripts/pitch/pitch_config.gd:12` | `scripts/ai/ai_input.gd:667`, `scripts/gameplay/match_scene.gd:89`, `scripts/pitch/pitch.gd:74`, `scripts/pitch/pitch.gd:85` (+3) |  (Dimensiones) |
+| `length` | `50.0` | float | `scripts/pitch/pitch_config.gd:11` | `scripts/ai/ai_input.gd:663`, `scripts/ai/ai_input.gd:666`, `scripts/pitch/pitch.gd:73`, `scripts/pitch/pitch.gd:85` (+2) |  (Dimensiones) |
+| `width` | `30.0` | float | `scripts/pitch/pitch_config.gd:12` | `scripts/ai/ai_input.gd:668`, `scripts/gameplay/match_scene.gd:89`, `scripts/pitch/pitch.gd:74`, `scripts/pitch/pitch.gd:85` (+3) |  (Dimensiones) |
 | `goal_width` | `5.0` | float | `scripts/pitch/pitch_config.gd:15` | `scripts/pitch/goal.gd:52`, `scripts/pitch/goal.gd:98`, `scripts/pitch/goal.gd:101`, `scripts/pitch/pitch_config.gd:58` |  (Arco) |
 | `goal_height` | `2.0` | float | `scripts/pitch/pitch_config.gd:16` | `scripts/assistance/shot_assist.gd:229`, `scripts/gameplay/match_manager.gd:200`, `scripts/goalkeeper/goalkeeper.gd:362`, `scripts/pitch/goal.gd:47` (+5) |  (Arco) |
 | `goal_depth` | `1.0` | float | `scripts/pitch/pitch_config.gd:17` | `scripts/pitch/goal.gd:84`, `scripts/pitch/pitch.gd:259`, `scripts/pitch/pitch.gd:260` |  (Arco) |
 | `post_radius` | `0.04` | float | `scripts/pitch/pitch_config.gd:18` | `scripts/gameplay/match_manager.gd:200`, `scripts/pitch/goal.gd:46`, `scripts/pitch/pitch.gd:242`, `scripts/pitch/pitch.gd:257` (+1) |  (Arco) |
 | `line_width` | `0.08` | float | `scripts/pitch/pitch_config.gd:21` | `scripts/pitch/pitch.gd:172`, `scripts/pitch/pitch.gd:173`, `scripts/pitch/pitch.gd:174`, `scripts/pitch/pitch.gd:182` (+5) |  (Marcas) |
 | `center_circle_radius` | `6.0` | float | `scripts/pitch/pitch_config.gd:22` | `scripts/pitch/pitch.gd:182` |  (Marcas) |
-| `penalty_area_radius` | `8.0` | float | `scripts/pitch/pitch_config.gd:24` | `scripts/ai/ai_input.gd:386`, `scripts/gameplay/match_manager.gd:228`, `scripts/gameplay/match_scene.gd:395`, `scripts/goalkeeper/goalkeeper.gd:557` (+1) | Radio de los cuartos de circulo del area de penal (desde cada poste). (Marcas) |
+| `penalty_area_radius` | `8.0` | float | `scripts/pitch/pitch_config.gd:24` | `scripts/ai/ai_input.gd:387`, `scripts/gameplay/match_manager.gd:228`, `scripts/gameplay/match_scene.gd:395`, `scripts/goalkeeper/goalkeeper.gd:558` (+1) | Radio de los cuartos de circulo del area de penal (desde cada poste). (Marcas) |
 | `penalty_mark_distance` | `8.0` | float | `scripts/pitch/pitch_config.gd:25` | `scripts/assistance/cross_assist.gd:30`, `scripts/gameplay/match_manager.gd:219`, `scripts/gameplay/match_scene.gd:383`, `scripts/pitch/pitch.gd:198` |  (Marcas) |
 | `second_penalty_mark_distance` | `12.0` | float | `scripts/pitch/pitch_config.gd:27` | `scripts/pitch/pitch.gd:199` | Segundo punto penal (reglamento futsal, falta acumulada; en la cancha de futbol 7 solo se dibuja). (Marcas) |
 | `corner_arc_radius` | `0.25` | float | `scripts/pitch/pitch_config.gd:28` | `scripts/pitch/pitch.gd:205` |  (Marcas) |

@@ -372,9 +372,10 @@ func _assess_shot() -> void:
 		_shot_seen_at = _clock
 		_perc_noise = Vector2(rng.randfn(0.0, 1.0), rng.randfn(0.0, 1.0))
 	var dist_shot: float = absf(ball.global_position.x - goal_x())
-	# Reaccion a un tiro: la del arquero de UCS (ResponseGKSave 15 a 4 cuadros: 0.25 a 0.07 s segun los reflejos), escalada
-	# por reaction_time (0.2 = la de UCS), menos lo que anticipa leyendo el cuerpo del rival.
-	var react: float = maxf(0.05, UcsParams.by_skill(UcsParams.RESPONSE_GK_SAVE_S, _norm("reflexes")) * _tune.reaction_time / 0.2 - _tune.anticipation_gain * dist_shot / 10.0)
+	# Reaccion propia (calibrada con nuestro modelo de estirada). La de UCS (ResponseGKSave 15/4 cuadros, 0.25-0.07 s;
+	# UcsParams.RESPONSE_GK_SAVE_S) sobre este modelo atajaba el 87-97 % de los tiros a 8-11 m y la prueba de tiros ya no
+	# distinguia el tiro con un rival encima (test_shot_keeper, 2026-11-06): no se aplica.
+	var react: float = maxf(0.05, _tune.reaction_time * lerpf(1.5, 0.65, _norm("reflexes")) - _tune.anticipation_gain * dist_shot / 10.0)
 	if _clock - _threat_since < react:
 		return
 	# Planifica con lo que percibe del disparo (direccion con error que se reduce mientras lo mira), no con la exacta.

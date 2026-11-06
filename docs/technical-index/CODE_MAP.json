@@ -4219,7 +4219,7 @@
         {
           "file": "scripts/player/json_ball_move.gd",
           "name": "JsonBallMove.start_receive",
-          "line": 431,
+          "line": 438,
           "kind": "func"
         },
         {
@@ -4483,7 +4483,7 @@
         {
           "file": "scripts/goalkeeper/goalkeeper.gd",
           "name": "Goalkeeper.start_goal_kick",
-          "line": 1046,
+          "line": 1047,
           "kind": "func"
         }
       ],
@@ -5650,25 +5650,25 @@
         {
           "file": "scripts/player/json_ball_move.gd",
           "name": "JsonBallMove.consider",
-          "line": 196,
+          "line": 202,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_ball_move.gd",
           "name": "JsonBallMove.plan_move",
-          "line": 302,
+          "line": 309,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_ball_move.gd",
           "name": "JsonBallMove.turn_for_kick",
-          "line": 289,
+          "line": 296,
           "kind": "func"
         },
         {
           "file": "scripts/player/json_ball_move.gd",
           "name": "JsonBallMove.step",
-          "line": 462,
+          "line": 469,
           "kind": "func"
         },
         {
@@ -5734,7 +5734,7 @@
         {
           "file": "scripts/goalkeeper/goalkeeper.gd",
           "name": "Goalkeeper._json_getup",
-          "line": 1251,
+          "line": 1252,
           "kind": "func"
         }
       ],

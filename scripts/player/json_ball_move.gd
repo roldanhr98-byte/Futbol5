@@ -68,7 +68,13 @@ const STEER_TOL := 24.0
 const STEER_MAX_DV := 1.6
 const STEER_COOLDOWN := 0.15
 const STEER_TAIL := 0.12
+## Lo mas que se orienta la pelota respecto de la salida del clip en sprint (al trote 60 grados).
+const STEER_SNAP_SPRINT := 22.0
 const STEER_MIN_SPEED := 0.6
+## En sprint (mas de STEER_MAX_SPEED) los cambios de rumbo los da el toque de rumbo fisico: con los clips de sprint de UCS el
+## cuerpo seguia la raiz del clip y se apartaba 35 grados de su pelota (test_physical_dribble::test_diagonal_after_sprint,
+## 2026-11-06); al trote y en carrera, el toque orientado.
+const STEER_MAX_SPEED := 5.0
 ## Tras un pase o tiro propio la pelota va de viaje: el que golpeo y corre detras no la conduce con un toque orientado ni un
 ## arranque hasta pasado este tiempo (medido: tras un pase filtrado en carrera alcanzaba su propia pelota y empezaba un toque
 ## orientado; test_live_kicks::test_kick_battery_fifty_varied_actions lo daba por bloqueado).
@@ -246,7 +252,8 @@ func consider(desired_dir: Vector3, stick_mag: float, dt: float) -> bool:
 		want = 0.0
 		tol = 60.0
 		new_intent = &"stop"
-	elif has_dir and absf(ang) >= STEER_MIN_ANGLE and _person(owner) and loco.speed >= STEER_MIN_SPEED and handler.is_dribbling() \
+	elif has_dir and absf(ang) >= STEER_MIN_ANGLE and _person(owner) and loco.speed >= STEER_MIN_SPEED and loco.speed <= STEER_MAX_SPEED \
+			and handler.is_dribbling() \
 			and handler.seconds_since_kick() > STEER_AFTER_KICK_S:
 		want = ang
 		tol = STEER_TOL
@@ -628,7 +635,17 @@ func _touch(i: int, b: Ball, met: bool = false) -> void:
 		var desired: Vector3 = handler._desired_dir
 		var oriented: bool = false
 		var snap: float = JsonReceive.TURN_TOL if intent == &"receive" else (60.0 if intent == &"steer" else 35.0)
-		if desired.length_squared() > 0.01 and KickModel.angle_between_deg(exit_dir, desired) < snap:
+		if intent == &"steer" and desired.length_squared() > 0.01:
+			# Toque orientado: la pelota se orienta hacia el joystick, menos cuanto mas rapido (60 grados al trote, 22 en
+			# sprint): en carrera la curva se cierra toque a toque, como en UCS, y el jugador no se aparta de su pelota
+			# (test_physical_dribble::test_diagonal_after_sprint_follows_the_ball: 35 grados con 60 en sprint).
+			var lim: float = clampf(lerpf(60.0, STEER_SNAP_SPRINT, (handler.owner.locomotion.speed - 3.0) / 3.0), STEER_SNAP_SPRINT, 60.0)
+			var dd: Vector3 = KickModel.flat(desired).normalized()
+			var a_exit: float = Locomotion.yaw_from_dir(exit_dir)
+			var a_des: float = Locomotion.yaw_from_dir(dd)
+			var delta: float = wrapf(a_des - a_exit, -PI, PI)
+			exit_dir = Locomotion.dir_from_yaw(a_exit + clampf(delta, -deg_to_rad(lim), deg_to_rad(lim)))
+		elif desired.length_squared() > 0.01 and KickModel.angle_between_deg(exit_dir, desired) < snap:
 			exit_dir = KickModel.flat(desired).normalized()
 			oriented = intent == &"receive"
 		var remain: float = maxf((_end_t - clip_t) / _speed, 0.0)
@@ -734,8 +751,9 @@ func finish() -> void:
 	if intent == &"receive":
 		handler.receive.ended(_next > 0)
 	_remember()
-	_cooldown = maxf(_cooldown, STEER_COOLDOWN if intent == &"steer" else COOLDOWN)
-	# (arranque: la espera normal; el jugador ya va en carrera y sigue el toque orientado si hace falta)
+	# Tras un toque orientado o un arranque, espera corta: se encadenan (con la de 0.6 s de los giros, el cambio de rumbo que
+	# llegaba justo despues de arrancar lo daba siempre el toque fisico).
+	_cooldown = maxf(_cooldown, STEER_COOLDOWN if (intent == &"steer" or intent == &"start") else COOLDOWN)
 	handler.touch_timer = 0.12
 	_release_ik()
 
