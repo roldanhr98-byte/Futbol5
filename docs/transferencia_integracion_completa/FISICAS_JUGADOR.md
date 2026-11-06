@@ -75,8 +75,8 @@ Convención **[C]**: `Locomotion.dir_from_yaw(y) = (−sin y, 0, −cos y)` (`lo
   | con pelota: sprint | `jn_dribble_sprint_1582` | 5.98 | 0.533 |
 
   (Velocidades y duraciones: metadatos de la librería, volcados con `tools/transfer/dump_library_meta.tscn`.)
-- **Zancada:** `JsonCatalog.stride_of` = velocidad natural × duración del ciclo (`json_catalog.gd:81`). El ritmo de la
-  marcha es `JsonCatalog.cycles_per_second` (88): la velocidad dividida por la zancada interpolada, para que los pies no
+- **Zancada:** `JsonCatalog.stride_of` = velocidad natural × duración del ciclo (`json_catalog.gd:80`). El ritmo de la
+  marcha es `JsonCatalog.cycles_per_second` (86): la velocidad dividida por la zancada interpolada, para que los pies no
   patinen. **[C]**
 - **Con y sin pelota:** la mezcla pasa a los ciclos `CARRY` con `CARRY_BLEND_RATE` 4/s
   (`footballer_visual.gd:76`, `FootballerVisual.drive_motion`, 647). **[C]**
