@@ -144,6 +144,73 @@ def transitions(role, m, lib):
     return ent, sal
 
 
+def load_profiles():
+    """Perfiles de recepcion (scripts/player/receive_profiles.gd): id -> (parte, t, estado)."""
+    import re
+    out = {}
+    path = os.path.join(ROOT, "scripts", "player", "receive_profiles.gd")
+    for m in re.finditer(r'&"([a-z0-9_]+)": \{"name": "[^"]*", "part": "([a-z_]+)", "t": (-?[0-9.]+), "status": "([a-z_]+)"', open(path, encoding="utf-8").read()):
+        out[m.group(1)] = (m.group(2), float(m.group(3)), m.group(4))
+    return out
+
+
+PARTS = {"foot", "foot_air", "thigh", "knee", "chest"}           # JsonReceive.PARTS
+SITUATION = {"celebrate", "clap", "celebrate_scorer", "celebrate_team", "thumbs_up", "gesture", "dejected", "angry",
+             "defeat_end", "nis_idle", "warmup", "idle_fidget", "idle_ready", "tackle_stand", "jostle", "wall"}  # JsonCatalog.SITUATION_ROLES
+GK_ROLES = {"gk_catch", "gk_dive", "gk_scoop", "gk_sidestep", "gk_block"}  # KeeperPlanner.JSON_ROLE_RADIUS
+
+
+def system_filter(state, role, cid, m, profiles, steer, start):
+    """Si el clip pasa el filtro del sistema que lo elige (estado real en el juego, no solo el rol)."""
+    if state != "si":
+        return "no conectado"
+    if not m:
+        return "sin metadatos en la libreria"
+    base = cid
+    if base in steer:
+        return "pasa: toque orientado (JsonBallMove.steer_pool)"
+    if base in start:
+        return "pasa: arranque con pelota (JsonBallMove.start_pool)"
+    if role in ("kick_pass", "kick_pass_soft", "kick_shot", "kick_shot_hard", "kick_lob", "kick_cross"):
+        ct = m.get("contact")
+        if not isinstance(ct, dict):
+            return "no pasa: sin contacto medido (JsonCatalog.kick_candidates)"
+        if role != "kick_cross" and not ct.get("clean", True):
+            return "no pasa: contacto no limpio (JsonCatalog.kick_candidates exige clean)"
+        return "pasa: candidato de golpeo (JsonCatalog.kick_candidates)"
+    if role in ("kick_turn", "kick_back"):
+        ct = m.get("contact")
+        if not isinstance(ct, dict):
+            return "no pasa: sin contacto medido (BallHandler.plan_turn_kick)"
+        pos = ct.get("pos", [0, 0, 0])
+        if float(pos[1]) > 0.35:
+            return "no pasa: punta a mas de 0.35 m de altura en el contacto (BallHandler.plan_turn_kick)"
+        return "pasa: golpeo girando (BallHandler.plan_turn_kick; filtro de giro y, en tiros, pie >= 7 m/s, en cada plan)"
+    if role in ("header", "volley"):
+        return "planificador por trayectoria de cabeza / punta (meta paths; no se comprueba en este inventario)"
+    if role in ("ball_turn", "ball_skill", "ball_turn_stop", "ball_stop", "ball_dribble", "ball_start"):
+        if not m.get("ball_touches"):
+            return "no pasa: sin toques de pelota medidos (JsonBallMove.plan_ids los exige)"
+        return "pasa: movimiento con pelota (JsonBallMove.plan_move / plan_ids)"
+    if role in ("receive", "receive_turn", "control_stand", "jostle_ball"):
+        pr = profiles.get(base)
+        if pr is None:
+            return "no pasa: sin perfil de recepcion (ReceiveProfiles)"
+        part, t, st = pr
+        if st in ("usable", "conditional") and t > 0 and part in PARTS:
+            return "pasa: recepcion %s (%s, parte %s)" % (st, "ReceiveProfiles", part)
+        return "no pasa: perfil %s, parte %s (JsonReceive.selectable)" % (st, part)
+    if role in SITUATION:
+        rt = m.get("root_total", [0, 0])
+        d = (float(rt[0]) ** 2 + float(rt[1]) ** 2) ** 0.5 if isinstance(rt, list) else 0.0
+        if d > 1.0 or float(m.get("duration", 0.0)) < 0.6:
+            return "no pasa: recorrido de raiz > 1 m o duracion < 0.6 s (JsonCatalog.situation_clip)"
+        return "pasa: situacion de presentacion (JsonCatalog.situation_clip)"
+    if role in GK_ROLES:
+        return "pasa: candidato de atajada (KeeperPlanner.candidates)"
+    return "rol conectado; sin filtro adicional comprobado en este inventario"
+
+
 def describe(role, m, ucs_name):
     """Movimiento del jugador, con los datos medidos del clip en el juego (giro + = izquierda, raiz adelante/derecha)."""
     if not m:
@@ -201,6 +268,9 @@ def main():
     for r in csv.DictReader(open(os.path.join(ROOT, "docs", "fases", "E2_inventario_banco.csv"), encoding="utf-8")):
         e2.setdefault(r["archivo"][:4], []).append(r)
     adb_json = json.load(open(os.path.join(ROOT, "assets", "animations", "animdb.json"), encoding="utf-8"))
+    profiles = load_profiles()
+    steer = set(json.load(open(os.path.join(ROOT, "tools", "json_anim", "steer_pool.json"), encoding="utf-8")))
+    start = set(json.load(open(os.path.join(ROOT, "tools", "json_anim", "start_pool.json"), encoding="utf-8")))
     sel = {e["id"]: e.get("library", "field") for e in json.load(open(os.path.join(ROOT, "tools", "json_anim", "selection.json"), encoding="utf-8"))["clips"]}
     pkg_dir = os.path.dirname(os.path.abspath(sys.argv[1]))
     pkg_name = os.path.basename(pkg_dir)
@@ -267,6 +337,7 @@ def main():
                 "accion_rol": role,
                 "rol_antes_de_E2": r.get("anterior", ""),
                 "estado_conexion": t.get("conectada", r.get("util", "")),
+                "filtro_del_sistema": system_filter(t.get("conectada", r.get("util", "")), role, cid, m, profiles, steer, start),
                 "sistemas": " | ".join(t.get("sistemas", [])) or r.get("sistema", ""),
                 "motivo_estado": t.get("motivo", r.get("motivo", "")),
                 "sistema_que_selecciona": rule[0],
