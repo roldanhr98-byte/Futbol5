@@ -171,3 +171,18 @@ y se corrigió).
 - Pelotas paradas en las que el pie no llega a la pelota.
 - Saques de banda sin suelta.
 - El sombrero (necesita la pelota en el aire).
+
+## Corrección posterior (2026-11-06, documentación de transferencia)
+
+Al comparar `animdb.adb` con los `.sat` del paquete, se vio que el **campo 3 no es el cuadro del toque**. Es igual al
+byte 2 de la cabecera de su `.sat` en 1832/1832 archivos; la auditoría `00_auditoria_modo_json.md` lo relaciona con los
+bloques de datos. La coincidencia con los toques de la conducción era aproximada (±1-3 cuadros en algunos clips).
+
+- En los golpeos, el cuadro de contacto que mejor coincide con el nuestro es el **campo 24**: ±2 cuadros en 310 de
+  447 [deducido].
+- Los campos 5, 6, 40, 46, 47 y 49 cambian de significado según la familia.
+- El juego no usa el campo 3, así que no cambia nada en la conducción. Solo es incorrecta la etiqueta `toque_cuadro`
+  de `assets/animations/animdb.json`.
+
+Detalle y pasos: [`docs/transferencia_integracion_completa/DATOS_UCS.md`](../transferencia_integracion_completa/DATOS_UCS.md)
+y `PENDIENTES_INTEGRACION.md` §2.1.

@@ -11,6 +11,31 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-11-06 — Documentación de transferencia de la integración (sin cambios de código de juego)
+
+Rama `respaldo-f3`. Pedido: documentación técnica completa para transferir el proyecto. Carpeta nueva
+[`docs/transferencia_integracion_completa/`](../transferencia_integracion_completa/README_MAESTRO.md):
+
+- 10 documentos: README_MAESTRO, MAPA_ANIMACIONES, DATOS_UCS, FISICAS_BALON, FISICAS_JUGADOR, ACCIONES_FUTBOLISTICAS,
+  IA_UCS_Y_FUTBOL5, PARAMETROS_UCS, MAPA_CODIGO y PENDIENTES_INTEGRACION;
+- `INVENTARIO_ANIMACIONES.csv`: 2024 clips × 59 columnas, con el filtro real de cada sistema;
+- `PARAMETROS_UCS.csv`: 211 parámetros.
+
+- **Herramientas** (`tools/transfer/`, no tocan el juego): `dump_library_meta`, `make_inventory.py`,
+  `adb_field_stats.py`, `ucs_params_extract.py`, `make_params_doc.py`, `make_symbol_index.py` y `check_references.py`.
+- **Correcciones de datos de UCS** (no cambian el juego: esos datos no se leen):
+  - el campo 3 de `animdb.adb` es el byte de la cabecera del `.sat` (1832/1832), no el cuadro del toque; el contacto
+    de los golpeos está en el campo 24 [deducido];
+  - varios campos cambian de significado por familia;
+  - en `E4_parametros_ucs.csv`, 9 valores estaban mal o vacíos y faltaba `Version` (211 parámetros).
+- **Notas añadidas** al final de `docs/fases/E3_conduccion_ucs.md` y `docs/fases/E4_integracion_ucs.md`. El CSV de E4
+  se conserva.
+- **Verificación:**
+  - `python3 tools/transfer/check_references.py`: 0 errores (456 rutas, 193 citas de línea, 1293 símbolos, 240
+    líneas de función, 23 enlaces);
+  - `python3 tools/docs_index.py check`;
+  - no se ejecutaron pruebas del juego, porque no hubo cambios de código de juego.
+
 ## 2026-11-06 — E4: integración al nivel de UCS (IA con sus parámetros, golpeo de primera sincronizado con el pie animado)
 
 Rama `respaldo-f3`. Pedido: integrar todo como UCS con autorización completa. Informe:

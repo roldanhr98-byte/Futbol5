@@ -62,3 +62,19 @@ Pedido: integrar todo el sistema como UCS, sin auditorías ni recomendaciones. E
 - La sensación en el teléfono con el mando real (la verifica la persona con el APK).
 - Si el servidor de UCS cambia algún parámetro.
 - Lo que hace exactamente el código de UCS con cada campo: se leyeron los valores, no se descompiló la lógica.
+
+## Corrección posterior (2026-11-06, documentación de transferencia)
+
+Al rehacer la extracción de `E4_parametros_ucs.csv` se corrigió el extractor. Tomaba el `mov w2` del parámetro
+siguiente cuando el compilador lo adelantaba, y no armaba los valores `mov` + `movk` separados ni los calculados desde
+`w19`. Cada caso se comprobó en el desensamblado. Resultado:
+
+- el cargador lee **211** parámetros: faltaba `Version`;
+- 9 valores estaban mal o vacíos: `StrengthJump1`, `StrengthSlideTackleRange0/1`, `StrengthPressureTackleRange0/1`,
+  `TechniqueGKMinSaveDist1`, `TechniqueGKMaxSaveDist0`, `InterceptClearanceSpace` y `DribbleMinDist`;
+- el campo de `BotChatPercent` era otro;
+- 27 vacíos son 0.
+
+**Ninguno de esos parámetros se usa en el juego**, así que los resultados de este informe no cambian. Tabla corregida:
+[`docs/transferencia_integracion_completa/PARAMETROS_UCS.md`](../transferencia_integracion_completa/PARAMETROS_UCS.md)
+(y `PARAMETROS_UCS.csv`). Este CSV de E4 se conserva sin cambios.
