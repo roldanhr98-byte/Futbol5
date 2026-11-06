@@ -172,6 +172,7 @@ Cada `Animation` de `assets/animations/json_clips.res`, `json_scenes.res` y `jso
 | `touches`, `strides` | apoyos y toques de pie del JSON | s, pie | JSON | conversor, visual |
 | `ball_touches` | toques de pelota: `[t, pie (−1 izq / 1 der), punta (adelante, arriba, derecha), velocidad del pie (adelante, derecha)]` | s, m, m/s; marco del inicio del clip | cinemática del esqueleto canónico | `JsonBallMove.plan_ids` / `_touch_point` / `_touch` |
 | `contact` (golpeos: 894 clips) | `time` y `json_time` (instante), `foot`, `pos` (punta: adelante, arriba, derecha), `speed`, `json_speed`, `clean` (pie bajo, delante, apoyo en el suelo), `kick_turn`, `body_turn`, `reach`, `root`, `planted`, `plant_y`, `plant_slide`, `path` / `path_dt` / `path_t0` (trayectoria del pie) | s, m, m/s, grados | `_contact` del conversor | `JsonCatalog.kick_candidates`, `BallHandler.plan_clip_kick`, `BallHandler.foot_contact_world` (584), `BallHandler.contact_samples_cached` (778) |
+| `paths` (no volcado: trayectorias de las articulaciones `head`, `toe_l`, `toe_r`, manos…) | trayectoria por articulación | m, marco del clip | conversor (`build_json_library.gd`, línea 335) | `BallHandler.plan_aerial_kick`, `KeeperPlanner.path_world` |
 | `kick_kind`, `kind`, `power`, `state`, `move`, `lie`, `release` | clase del golpeo, postura de caída, suelta (saques) | — | conversor | golpeo, caídas (`PlayerActions._json_getup`), saques |
 | `pelvis_h`, `foot_floor_cm`, `reach_err_cm` | altura de la pelvis, pie respecto del piso, error del retarget | m, cm | conversor | diagnóstico |
 
@@ -189,7 +190,7 @@ del nombre), `v_in`, `v_out`, `turn`, `root`, `height`, `touches_after` y `note`
 | Conducción y giros con pelota (`ball_*`) | `ball_touches` medidos | 4, 7-8, 9, 24-27, 47; v_in / v_out (5, 6) | **solo la ventana (7-8) en el toque orientado** |
 | Recepciones (`receive*`, `control_stand`, `jostle_ball`) | `ReceiveProfiles` (parte, instante verificado o estimado) + cinemática directa (`JsonReceive.contact_point`, `json_receive.gd:176`) | 4, 5, 6, 24-27 (25-27 **no** son el punto de contacto: E4) | no |
 | Arquero (`gk_*`) | trayectoria medida de las manos (`KeeperPlanner.hands_world`, `keeper_planner.gd:93`) | 24-27 (sin validar) | no |
-| Golpeo aéreo (`header`, `volley`) | `contact` (volea); cabezazo sin contacto medido (0/95 con toques) | 4, 24-27 | no |
+| Golpeo aéreo (`header`, `volley`) | trayectorias medidas de la cabeza y de las puntas de los pies (meta `paths`, claves `head`, `toe_l`, `toe_r`; `BallHandler.AERIAL_SETS`, `ball_handler.gd:794`): el planificador busca el instante en que coinciden con la pelota prevista (`BallHandler.plan_aerial_kick`, 803). No se volcaron al inventario | 4, 24-27 | no |
 | Barrida, entrada (`slide`, `tackle_stand`) | pie del clip en su instante (`PlayerActions._slide_candidate`, `player_actions.gd:263`) | 4, 24-27 | no |
 | Giros sin pelota (`turn_*`) | `heading_path`, `v_in` | 9, **46** (el 47 vale 0 en TURN) | no |
 | Marcha (`LOCO`) | `natural_speed` | 49 (∝ velocidad) | no |
