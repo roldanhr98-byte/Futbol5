@@ -325,8 +325,8 @@ sequenceDiagram
   mira (`Goalkeeper._perceived`, 433).
 - **Contacto:** `Goalkeeper._evaluate_contact` (763), radio de contacto `Goalkeeper._contact_radius` (759).
 - **Balón:**
-  - blocar: `Ball.hold` (779);
-  - desviar: `Ball.kick` (795).
+  - blocar: `Ball.hold` (`goalkeeper.gd:779`);
+  - desviar: `Ball.kick` (`goalkeeper.gd:795`).
 
   Después, `Goalkeeper._enter_hold` (827) y el saque (`Goalkeeper._choose_distribution`, 862).
 - **Fin:** levantarse (`Goalkeeper._json_getup`, 1252) o tener la pelota.
@@ -339,7 +339,7 @@ sequenceDiagram
   - IA: la orden de `TeamBrain` (`TeamBrain.order_for`) o el ancla propia (`AIInput._anchor`), convertidas en dirección
     (`AIInput._move_to`, `ai_input.gd:732`).
 - **Selección:** BlendSpace de marcha por velocidad (`JsonCatalog.GAIT`). Mezcla direccional al marcar (jockey:
-  `JsonCatalog.dir_points`, `json_catalog.gd:24`). Giros grandes con clip (§7). Gestos de espera (`idle_fidget`,
+  `JsonCatalog.dir_points`, `json_catalog.gd:28`). Giros grandes con clip (§7). Gestos de espera (`idle_fidget`,
   `Footballer` líneas 492-501).
 - **Contacto:** ninguno.
 - **Balón:** ninguno. Si la pelota llega a la cápsula, rebota (§10).
