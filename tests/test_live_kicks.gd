@@ -243,7 +243,12 @@ func _battery_case(cfg: Dictionary) -> Dictionary:
 				ev[key] = minf(ev[key], tw.distance_to(ev["ball"]))
 	var bh: BallHandler = p.ball_handler
 	var out := {"kicked": ev["frame"] >= 0, "toe": ev["toe"], "toe_before": ev["toe_before"], "whiff": ev["whiff"], "count": ev["count"], "rival_first": ev["rival_first"],
-		"free": bh._kick_action == &"" and bh._pending_action == &"" and bh.lockout <= 0.0 and not p.actions.active(),
+		# Libre: sin golpeo ni orden colgados y sin una accion que lo retenga. Un movimiento con pelota (toque orientado,
+		# arranque) EMPEZADO DESPUES del golpe no es un bloqueo: el que paso alcanzo su pelota (pase filtrado sin
+		# companero) y sigue jugandola (2026-11-06; antes de esos movimientos cualquier accion contaba como bloqueo).
+		"free": bh._kick_action == &"" and bh._pending_action == &"" and (not p.actions.active() and bh.lockout <= 0.0 \
+			or (p.actions.kind == &"ball_move" and bh.json_move.active and int(bh.json_move.last.get("frame", -1)) > int(ev["frame"]))),
+		"busy": "golpeo %s, orden %s, bloqueo %.2f s, accion %s %s" % [bh._kick_action, bh._pending_action, bh.lockout, p.actions.kind, str(bh.json_move.last.get("intent", "")) if bh.json_move.active else ""],
 		"clip": bh.kick_log.back().get("clip", "-") if not bh.kick_log.is_empty() else "-"}
 	cleanup()
 	return out
@@ -302,7 +307,7 @@ func test_kick_battery_fifty_varied_actions() -> void:
 			line = "%s: SIN golpeo (%s)" % [c["name"], why]
 		if not r["free"]:
 			stuck.append(c["name"])
-			line += " [BLOQUEADO]"
+			line += " [BLOQUEADO: %s]" % r["busy"]
 		note(line)
 	note("TOTAL %d acciones: %d golpeos con contacto, sin golpeo %s, contacto invalido %d, bloqueos %d" % [cases.size(), kicked, str(whiffs), bad_contact.size(), stuck.size()])
 	check(cases.size() >= 50, "al menos 50 acciones (%d)" % cases.size())

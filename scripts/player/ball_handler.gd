@@ -385,11 +385,19 @@ func update(frame: InputFrame, stick_world: Vector3, stick_mag: float, desired_d
 		drag_back.cancel("golpeo")
 		ball_turn.cancel("golpeo")
 		_kick_timer -= dt
-		if _kick_timer <= 0.0:
+		var toe_before: Vector3 = _contact_toe_now()
+		if _kick_timer <= 0.0 and _ball_still_arriving(dt, toe_before):
+			# Pelota que llega (golpeo de primera): el impulso espera a que llegue de verdad al pie (sin esto el pie la
+			# golpeaba a 0.26 m, en el aire, con la pelota a 6-7 m/s: test_live_kicks).
+			_steer_clip_kick()
+			_json_kick_ik()
+		elif _kick_timer <= 0.0:
 			_finish_kick()
 		elif not _kick_clip.is_empty():
 			_steer_clip_kick()
 			_json_kick_ik()
+		if _kick_action != &"":
+			_contact_prev_toe = toe_before
 		return
 	if _pending_action != &"":
 		_pending_age += dt
@@ -1132,6 +1140,50 @@ func _log_kick(action: StringName, result: StringName, extra: Dictionary = {}) -
 	kick_log.append(entry)
 	if kick_log.size() > KICK_LOG_MAX:
 		kick_log.pop_front()
+
+## Espera del contacto con una pelota que llega (golpeo de primera): en el instante de contacto del clip la pelota todavia
+## viene hacia el pie. El impulso sale en el paso en que la punta del pie ANIMADO (la del cuadro que se dibuja: la leida
+## ahora mas su avance de un paso, porque el AnimationTree avanza despues de la fisica) y la pelota estan mas cerca: se
+## espera mientras esa distancia baja y supera CONTACT_ARRIVE_TOL, como mucho CONTACT_WAIT_MAX s. Sin esqueleto vivo, con el
+## punto de contacto del clip. La pelota nunca se mueve a mano: solo se elige el paso del impulso.
+const CONTACT_ARRIVE_TOL := 0.10
+const CONTACT_WAIT_MAX := 0.1
+var _contact_wait: float = 0.0
+var _contact_prev_d: float = INF
+var _contact_prev_toe: Vector3 = Vector3.ZERO
+
+## Punta del pie del golpeo en curso (esqueleto vivo), o ZERO.
+func _contact_toe_now() -> Vector3:
+	if _kick_clip.is_empty() or not feet_live:
+		return Vector3.ZERO
+	return toe_world(1 if int(_kick_clip["contact"]["foot"]) > 0 else 0)
+
+func _ball_still_arriving(dt: float, toe: Vector3) -> bool:
+	var b: Ball = ball()
+	if _kick_clip.is_empty() or b == null or b.is_held() or _contact_wait >= CONTACT_WAIT_MAX:
+		_contact_reset()
+		return false
+	var p: Vector3
+	if toe != Vector3.ZERO and _contact_prev_toe != Vector3.ZERO:
+		p = toe + (toe - _contact_prev_toe)
+	else:
+		p = foot_contact_world(_kick_clip["contact"], owner.global_position, owner.locomotion.yaw)
+	var d: float = p.distance_to(b.global_position) - b.radius
+	var to_p: Vector3 = KickModel.flat(p - b.global_position)
+	# Solo con una pelota que llega de verdad: la PELOTA va hacia el pie a > 2 m/s (golpeo de primera). El jugador que
+	# corre hacia una pelota quieta no espera (con la velocidad relativa esperaba y el pie pasaba de largo).
+	var ball_closing: float = KickModel.flat(b.linear_velocity).dot(to_p.normalized()) if to_p.length() > 0.001 else 0.0
+	if d > CONTACT_ARRIVE_TOL and ball_closing > 2.0 and d < _contact_prev_d:
+		_contact_prev_d = d
+		_contact_wait += dt
+		return true
+	_contact_reset()
+	return false
+
+func _contact_reset() -> void:
+	_contact_wait = 0.0
+	_contact_prev_d = INF
+	_contact_prev_toe = Vector3.ZERO
 
 ## Resuelve el golpeo de una patada con clip: valido solo si la pelota esta a kick_contact_radius del pie REAL
 ## (posicion de contacto del clip, con el jugador donde esta ahora). Si no, patada en falso: sin impulso.

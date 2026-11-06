@@ -69,6 +69,10 @@ const STEER_MAX_DV := 1.6
 const STEER_COOLDOWN := 0.15
 const STEER_TAIL := 0.12
 const STEER_MIN_SPEED := 0.6
+## Tras un pase o tiro propio la pelota va de viaje: el que golpeo y corre detras no la conduce con un toque orientado ni un
+## arranque hasta pasado este tiempo (medido: tras un pase filtrado en carrera alcanzaba su propia pelota y empezaba un toque
+## orientado; test_live_kicks::test_kick_battery_fifty_varied_actions lo daba por bloqueado).
+const STEER_AFTER_KICK_S := 1.2
 ## Preferencia (puntos de error) por el interior del pie de afuera del giro: el izquierdo para doblar a la derecha y el
 ## derecho para doblar a la izquierda (lo que se ve en UCS con la pelota al centro).
 const STEER_OUTER_FOOT_BONUS := 0.06
@@ -242,12 +246,13 @@ func consider(desired_dir: Vector3, stick_mag: float, dt: float) -> bool:
 		want = 0.0
 		tol = 60.0
 		new_intent = &"stop"
-	elif has_dir and absf(ang) >= STEER_MIN_ANGLE and _person(owner) and loco.speed >= STEER_MIN_SPEED and handler.is_dribbling():
+	elif has_dir and absf(ang) >= STEER_MIN_ANGLE and _person(owner) and loco.speed >= STEER_MIN_SPEED and handler.is_dribbling() \
+			and handler.seconds_since_kick() > STEER_AFTER_KICK_S:
 		want = ang
 		tol = STEER_TOL
 		new_intent = &"steer"
 	elif has_dir and stick_mag >= START_MIN_STICK and _person(owner) and loco.speed < STEER_MIN_SPEED \
-			and not (owner.last_frame != null and owner.last_frame.sprint):
+			and not (owner.last_frame != null and owner.last_frame.sprint) and handler.seconds_since_kick() > STEER_AFTER_KICK_S:
 		# Con el boton de sprint apretado el arranque es el de siempre: los clips de arranque de UCS salen al trote (2-3.5 m/s)
 		# y dejaban la pelota lejos para el giro siguiente en sprint (test_ball_turn::test_wide_turn_and_sprint).
 		want = ang
