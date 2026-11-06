@@ -174,8 +174,8 @@ Ver [CHANGELOG.md](../CHANGELOG.md): «Arquero, IA de equipos y acciones».
 
 ## Reacción del arquero de UCS (2026-11-06)
 
-`Goalkeeper`: la reacción a un tiro es la del arquero de UCS, `ResponseGKSave0/1` = 15/4 cuadros, leída de `libMPX.so`
-(`UcsParams.RESPONSE_GK_SAVE_S`). Va de 0.25 s con reflejos mínimos a 0.07 s con reflejos máximos, escalada por
-`KeeperTuning.reaction_time` (0.2 = la de UCS), menos su anticipación. Antes iba de 0.30 a 0.13 s. Ver
+Probado y **no aplicado**: la reacción del arquero de UCS, `ResponseGKSave0/1` = 15/4 cuadros (0.25 a 0.07 s según
+reflejos; `UcsParams.RESPONSE_GK_SAVE_S`). Sobre nuestro modelo de estirada atajaba el 87-97 % de los tiros a 8-11 m y
+`test_shot_keeper` ya no distinguía el tiro con un rival encima. Queda la reacción calibrada propia (0.30 a 0.13 s). Ver
 [MATCH](MATCH.md#ia-con-los-parámetros-de-ucs-2026-11-06).
 

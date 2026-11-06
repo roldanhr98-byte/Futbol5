@@ -361,8 +361,8 @@ configuración de juego. Cada parámetro se pide por nombre, con un valor por de
 | UCS | valor | en nuestra IA |
 |---|---|---|
 | `MaxActivePresses` / `MaxActiveTackles` | 2 / 1 | La cobertura pasa a segundo presionador si llega en ≤ 1.2 s (`TeamBrain`, rol `press2`). Se coloca a 2.5 m del portador, del lado del arco, y no entra: solo el primer presionador entra. |
-| `PressureSpeedRate` | 3891/4096 = 0.95 | El que presiona corre al 95 % (`AIInput`, roles `press` y `press2`). |
+| `PressureSpeedRate` | 3891/4096 = 0.95 | **No aplicado.** Probado como velocidad de carrera del que presiona; cambiaba los tiros con un defensor encima (`test_shot_keeper` falló) y su significado es inferido. |
 | `WidthOpenPlay` | 60 | La amplitud usa el 60 % del ancho, no pegada a la línea. |
 | `BotMinKickFrames` / `BotMaxKickFrames` | 30 / 120 cuadros | El portador de la IA pasa sin presión entre 0.5 y 2 s con la pelota (`CARRY_PATIENCE` 2.2 → 2.0 s; pase de progreso desde 0.5 s, antes 0.6 s). |
-| `ResponseGKSave0/1` | 15 / 4 cuadros | El arquero reacciona a un tiro en 0.25 a 0.07 s según los reflejos (antes 0.30 a 0.13 s), menos su anticipación. |
+| `ResponseGKSave0/1` | 15 / 4 cuadros | **No aplicado.** Probado: sobre nuestro modelo de estirada el arquero atajaba el 87-97 % a 8-11 m y `test_shot_keeper` falló. Sigue la reacción calibrada propia (0.30 a 0.13 s). |
 

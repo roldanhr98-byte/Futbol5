@@ -24,12 +24,12 @@ Pedido: integrar todo el sistema como UCS, sin auditorías ni recomendaciones. E
 
 | Área | Cambio | Dónde |
 |---|---|---|
-| Conducción | Toque orientado con 41 clips de UCS (82 con espejos), elegido por la ventana del joystick de UCS, cortado tras el toque que gira; arranque con pelota con los clips de arranque de UCS | `JsonBallMove` (E3) |
+| Conducción | Toque orientado con 41 clips de UCS (82 con espejos), elegido por la ventana del joystick de UCS, cortado tras el toque que gira, al trote y en carrera (hasta 5 m/s; en sprint, el toque de rumbo físico). La salida se orienta menos cuanto más rápido (60° al trote, 22° en sprint). Arranque con pelota con los clips de arranque de UCS | `JsonBallMove` (E3) |
 | Golpeo de primera | El impulso sale en el paso en que la pelota que llega y la punta del pie **animado** están más cerca (espera ≤ 0.1 s; la pelota no se mueve a mano) | `BallHandler._ball_still_arriving` |
 | Tras un golpe propio | Sin toque orientado ni arranque durante 1.2 s (el que pasaba alcanzaba su propio pase filtrado y empezaba un movimiento) | `JsonBallMove.STEER_AFTER_KICK_S` |
-| Presión | Hasta 2 presionan y 1 entra (`MaxActivePresses`/`MaxActiveTackles`); la cobertura pasa a segundo presionador si llega en ≤ 1.2 s; presión al 95 % (`PressureSpeedRate`) | `TeamBrain`, `AIInput` |
+| Presión | Hasta 2 presionan y 1 entra (`MaxActivePresses`/`MaxActiveTackles`); la cobertura pasa a segundo presionador si llega en ≤ 1.2 s | `TeamBrain`, `AIInput` |
 | Ataque | Amplitud al 60 % del ancho (`WidthOpenPlay`); el portador pasa sin presión entre 0.5 y 2 s (`BotMin/MaxKickFrames`) | `TeamBrain`, `AIInput` |
-| Arquero | Reacción de 0.25 a 0.07 s según reflejos (`ResponseGKSave` 15/4 cuadros) | `Goalkeeper` |
+| Arquero | Sin cambios: la reacción de UCS (`ResponseGKSave` 15/4 cuadros) atajaba el 87-97 % con nuestro modelo y se probó y descartó | `Goalkeeper` |
 | Botines | ~0.26 m (antes ~0.40 m) | `json_human.scn` (E3) |
 | animdb | Base de datos propia con todas las animaciones por acción y los datos de UCS; la lee el juego (`AnimDB`) | `assets/animations/animdb.json` |
 
