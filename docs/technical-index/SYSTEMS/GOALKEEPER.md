@@ -5,7 +5,7 @@
 - **Responsabilidad:** un arquero por equipo (`Goalkeeper`, `CharacterBody3D` en `Ball.LAYER_KEEPERS`) que se posiciona sobre el arco, anticipa los disparos con la trayectoria predicha de la pelota, **planifica la atajada con la trayectoria de manos medida de cada clip** (`KeeperPlanner`), la ejecuta con el clip y el movimiento de raíz reales y solo cuenta el contacto si las manos llegan a la pelota. Después bloquea o desvía por impulso, sostiene la pelota (`Ball.hold`) y la saca con la mano o con el pie.
 - **Estado real:** operativo en el partido (`MatchScene.with_keepers`, un arquero por equipo, registrado con `MatchContext.register_keeper`). Usa los 37 clips de `pack_keeper.res` (atajadas, estiradas, bloqueos, recogida, saques, reposo, festejos propios).
 - **Última verificación:** <!-- AUTO:verified -->
-2026-11-05
+2026-11-06
 <!-- /AUTO -->
 
 ## Cómo funciona
@@ -58,46 +58,46 @@ Recogida de pelota suelta y lenta dentro de su área (`pickup_*`): solo con clip
 <!-- AUTO:params:KeeperTuning -->
 | Parámetro | Defecto | Rango / tipo | Definido en | Dónde se usa (accesos reales) | Descripción |
 |---|---|---|---|---|---|
-| `move_speed` | `4.2` | float | `scripts/goalkeeper/keeper_tuning.gd:6` | `scripts/goalkeeper/goalkeeper.gd:306`, `scripts/goalkeeper/goalkeeper.gd:497`, `scripts/goalkeeper/goalkeeper.gd:683` |  (Movimiento) |
-| `accel` | `14.0` | float | `scripts/goalkeeper/keeper_tuning.gd:7` | `scripts/goalkeeper/goalkeeper.gd:309`, `scripts/goalkeeper/goalkeeper.gd:481`, `scripts/goalkeeper/goalkeeper.gd:488`, `scripts/goalkeeper/goalkeeper.gd:639` (+1) |  (Movimiento) |
+| `move_speed` | `4.2` | float | `scripts/goalkeeper/keeper_tuning.gd:6` | `scripts/goalkeeper/goalkeeper.gd:306`, `scripts/goalkeeper/goalkeeper.gd:499`, `scripts/goalkeeper/goalkeeper.gd:685` |  (Movimiento) |
+| `accel` | `14.0` | float | `scripts/goalkeeper/keeper_tuning.gd:7` | `scripts/goalkeeper/goalkeeper.gd:309`, `scripts/goalkeeper/goalkeeper.gd:483`, `scripts/goalkeeper/goalkeeper.gd:490`, `scripts/goalkeeper/goalkeeper.gd:641` (+1) |  (Movimiento) |
 | `base_depth` | `0.9` | float | `scripts/goalkeeper/keeper_tuning.gd:9` | `scripts/goalkeeper/goalkeeper.gd:197`, `scripts/goalkeeper/goalkeeper.gd:279` | Distancia a la linea de gol a la que se posiciona por defecto (m). (Movimiento) |
 | `max_depth` | `4.2` | float | `scripts/goalkeeper/keeper_tuning.gd:11` | `scripts/goalkeeper/goalkeeper.gd:279`, `scripts/goalkeeper/goalkeeper.gd:280` | Profundidad maxima al salir a achicar (m). (Movimiento) |
 | `rush_speed` | `5.6` | float | `scripts/goalkeeper/keeper_tuning.gd:12` | **sin uso** |  (Movimiento) |
-| `reaction_time` | `0.2` | float | `scripts/goalkeeper/keeper_tuning.gd:16` | `scripts/goalkeeper/goalkeeper.gd:375` | Segundos de reaccion con reflejos 50 (un arquero real tarda ~0.2 s en empezar a moverse tras ver salir la pelota). (Reaccion) |
-| `perception_error_ratio` | `0.05` | float | `scripts/goalkeeper/keeper_tuning.gd:20` | `scripts/goalkeeper/goalkeeper.gd:435` | Error con que el arquero estima la velocidad lateral (y la vertical si va por el aire) del disparo al verlo salir, como fraccion de la velocidad de la pelota (0.05 ~ 2.9 grados; reflejos 50); se reduce a cero mientras sigue la pelota durante perception_time s. El error del punto de llegada crece con el tiempo que falta. Planifica y se lanza con esa estimacion. (Reaccion) |
-| `perception_time` | `0.25` | float | `scripts/goalkeeper/keeper_tuning.gd:21` | `scripts/goalkeeper/goalkeeper.gd:385`, `scripts/goalkeeper/goalkeeper.gd:435`, `scripts/goalkeeper/goalkeeper.gd:448`, `scripts/goalkeeper/goalkeeper.gd:476` |  (Reaccion) |
-| `spin_read_time` | `0.3` | float | `scripts/goalkeeper/keeper_tuning.gd:24` | `scripts/goalkeeper/goalkeeper.gd:471` | Segundos (reflejos 50) que tarda en leer el efecto del disparo: la curva se percibe al verla desviarse, no al salir (antes preve la pelota casi recta y corrige al replanificar). (Reaccion) |
-| `dive_speed_max` | `1.15` | float | `scripts/goalkeeper/keeper_tuning.gd:27` | `scripts/goalkeeper/goalkeeper.gd:463` | Velocidad maxima (reflejos 50) a la que reproduce un clip de atajada respecto a la captura humana (antes 1.4: estiradas un 40 % mas rapidas que una persona, que llegaban al palo antes que cualquier tiro de 11 m). (Reaccion) |
+| `reaction_time` | `0.2` | float | `scripts/goalkeeper/keeper_tuning.gd:16` | `scripts/goalkeeper/goalkeeper.gd:377` | Segundos de reaccion con reflejos 50 (un arquero real tarda ~0.2 s en empezar a moverse tras ver salir la pelota). (Reaccion) |
+| `perception_error_ratio` | `0.05` | float | `scripts/goalkeeper/keeper_tuning.gd:20` | `scripts/goalkeeper/goalkeeper.gd:437` | Error con que el arquero estima la velocidad lateral (y la vertical si va por el aire) del disparo al verlo salir, como fraccion de la velocidad de la pelota (0.05 ~ 2.9 grados; reflejos 50); se reduce a cero mientras sigue la pelota durante perception_time s. El error del punto de llegada crece con el tiempo que falta. Planifica y se lanza con esa estimacion. (Reaccion) |
+| `perception_time` | `0.25` | float | `scripts/goalkeeper/keeper_tuning.gd:21` | `scripts/goalkeeper/goalkeeper.gd:387`, `scripts/goalkeeper/goalkeeper.gd:437`, `scripts/goalkeeper/goalkeeper.gd:450`, `scripts/goalkeeper/goalkeeper.gd:478` |  (Reaccion) |
+| `spin_read_time` | `0.3` | float | `scripts/goalkeeper/keeper_tuning.gd:24` | `scripts/goalkeeper/goalkeeper.gd:473` | Segundos (reflejos 50) que tarda en leer el efecto del disparo: la curva se percibe al verla desviarse, no al salir (antes preve la pelota casi recta y corrige al replanificar). (Reaccion) |
+| `dive_speed_max` | `1.15` | float | `scripts/goalkeeper/keeper_tuning.gd:27` | `scripts/goalkeeper/goalkeeper.gd:465` | Velocidad maxima (reflejos 50) a la que reproduce un clip de atajada respecto a la captura humana (antes 1.4: estiradas un 40 % mas rapidas que una persona, que llegaban al palo antes que cualquier tiro de 11 m). (Reaccion) |
 | `contact_scale` | `1.0` | float | `scripts/goalkeeper/keeper_tuning.gd:29` | `scripts/goalkeeper/keeper_planner.gd:47`, `scripts/goalkeeper/keeper_planner.gd:153`, `scripts/goalkeeper/keeper_planner.gd:274` | Escala del radio de contacto de las manos de cada clip (KeeperPlanner.radius_of) para planificar y resolver la atajada. (Reaccion) |
-| `hand_latency` | `0.12` | float | `scripts/goalkeeper/keeper_tuning.gd:32` | `scripts/goalkeeper/goalkeeper.gd:460` | Limite humano de las manos (reflejos 50): desde que puede moverse, las manos no llegan a un punto antes de hand_latency + distancia desde la posicion de espera / hand_speed (estirada al palo de futsal, ~1.5 m: ~0.45 s). (Reaccion) |
-| `hand_speed` | `4.5` | float | `scripts/goalkeeper/keeper_tuning.gd:33` | `scripts/goalkeeper/goalkeeper.gd:460` |  (Reaccion) |
-| `anticipation_gain` | `0.05` | float | `scripts/goalkeeper/keeper_tuning.gd:35` | `scripts/goalkeeper/goalkeeper.gd:375` | Segundos adicionales por cada 10 m de distancia al disparo (el arquero lee antes los tiros lejanos). (Reaccion) |
-| `shot_min_speed` | `5.5` | float | `scripts/goalkeeper/keeper_tuning.gd:37` | `scripts/goalkeeper/goalkeeper.gd:332`, `scripts/goalkeeper/goalkeeper.gd:343`, `scripts/goalkeeper/goalkeeper.gd:528` | Velocidad minima de la pelota (m/s) para considerarla un disparo. (Reaccion) |
-| `backpass_speed_max` | `11.0` | float | `scripts/goalkeeper/keeper_tuning.gd:39` | `scripts/goalkeeper/goalkeeper.gd:348`, `scripts/goalkeeper/goalkeeper.gd:645`, `scripts/goalkeeper/goalkeeper.gd:675` | Velocidad maxima (m/s) de un balon del propio equipo que se recibe en vez de atajarse (pase atras). (Reaccion) |
-| `manual_speed` | `5.0` | float | `scripts/goalkeeper/keeper_tuning.gd:41` | `scripts/goalkeeper/goalkeeper.gd:637` | Velocidad (m/s) del arquero controlado por la persona con el joystick a fondo. (Reaccion) |
+| `hand_latency` | `0.12` | float | `scripts/goalkeeper/keeper_tuning.gd:32` | `scripts/goalkeeper/goalkeeper.gd:462` | Limite humano de las manos (reflejos 50): desde que puede moverse, las manos no llegan a un punto antes de hand_latency + distancia desde la posicion de espera / hand_speed (estirada al palo de futsal, ~1.5 m: ~0.45 s). (Reaccion) |
+| `hand_speed` | `4.5` | float | `scripts/goalkeeper/keeper_tuning.gd:33` | `scripts/goalkeeper/goalkeeper.gd:462` |  (Reaccion) |
+| `anticipation_gain` | `0.05` | float | `scripts/goalkeeper/keeper_tuning.gd:35` | `scripts/goalkeeper/goalkeeper.gd:377` | Segundos adicionales por cada 10 m de distancia al disparo (el arquero lee antes los tiros lejanos). (Reaccion) |
+| `shot_min_speed` | `5.5` | float | `scripts/goalkeeper/keeper_tuning.gd:37` | `scripts/goalkeeper/goalkeeper.gd:332`, `scripts/goalkeeper/goalkeeper.gd:343`, `scripts/goalkeeper/goalkeeper.gd:530` | Velocidad minima de la pelota (m/s) para considerarla un disparo. (Reaccion) |
+| `backpass_speed_max` | `11.0` | float | `scripts/goalkeeper/keeper_tuning.gd:39` | `scripts/goalkeeper/goalkeeper.gd:348`, `scripts/goalkeeper/goalkeeper.gd:647`, `scripts/goalkeeper/goalkeeper.gd:677` | Velocidad maxima (m/s) de un balon del propio equipo que se recibe en vez de atajarse (pase atras). (Reaccion) |
+| `manual_speed` | `5.0` | float | `scripts/goalkeeper/keeper_tuning.gd:41` | `scripts/goalkeeper/goalkeeper.gd:639` | Velocidad (m/s) del arquero controlado por la persona con el joystick a fondo. (Reaccion) |
 | `prediction_horizon` | `1.6` | float | `scripts/goalkeeper/keeper_tuning.gd:42` | **sin uso** |  (Reaccion) |
-| `reach` | `1.05` | float | `scripts/goalkeeper/keeper_tuning.gd:46` | `scripts/goalkeeper/goalkeeper.gd:608` | Alcance de las manos desde el centro del cuerpo (m). (Atajada) |
+| `reach` | `1.05` | float | `scripts/goalkeeper/keeper_tuning.gd:46` | `scripts/goalkeeper/goalkeeper.gd:610` | Alcance de las manos desde el centro del cuerpo (m). (Atajada) |
 | `dive_reach` | `1.9` | float | `scripts/goalkeeper/keeper_tuning.gd:47` | **sin uso** |  (Atajada) |
 | `dive_speed` | `5.8` | float | `scripts/goalkeeper/keeper_tuning.gd:48` | **sin uso** |  (Atajada) |
 | `dive_duration` | `0.55` | float | `scripts/goalkeeper/keeper_tuning.gd:49` | **sin uso** |  (Atajada) |
 | `recover_duration` | `0.9` | float | `scripts/goalkeeper/keeper_tuning.gd:50` | **sin uso** |  (Atajada) |
-| `catch_speed_max` | `15.0` | float | `scripts/goalkeeper/keeper_tuning.gd:52` | `scripts/goalkeeper/goalkeeper.gd:774` | Velocidad maxima de la pelota (m/s) que puede blocar con seguridad con estirada 50. (Atajada) |
+| `catch_speed_max` | `15.0` | float | `scripts/goalkeeper/keeper_tuning.gd:52` | `scripts/goalkeeper/goalkeeper.gd:776` | Velocidad maxima de la pelota (m/s) que puede blocar con seguridad con estirada 50. (Atajada) |
 | `deflect_speed_min` | `9.0` | float | `scripts/goalkeeper/keeper_tuning.gd:54` | **sin uso** | Velocidad a partir de la cual solo puede desviar. (Atajada) |
-| `deflect_damping` | `0.42` | float | `scripts/goalkeeper/keeper_tuning.gd:55` | `scripts/goalkeeper/goalkeeper.gd:790` |  (Atajada) |
-| `hold_time_min` | `1.1` | float | `scripts/goalkeeper/keeper_tuning.gd:56` | `scripts/goalkeeper/goalkeeper.gd:830` |  (Atajada) |
-| `hold_time_max` | `2.4` | float | `scripts/goalkeeper/keeper_tuning.gd:57` | `scripts/goalkeeper/goalkeeper.gd:830` |  (Atajada) |
-| `throw_speed` | `12.5` | float | `scripts/goalkeeper/keeper_tuning.gd:60` | `scripts/goalkeeper/goalkeeper.gd:1014` |  (Distribucion) |
-| `kick_speed` | `17.0` | float | `scripts/goalkeeper/keeper_tuning.gd:61` | `scripts/goalkeeper/goalkeeper.gd:1014`, `scripts/goalkeeper/goalkeeper.gd:1016` |  (Distribucion) |
-| `clearance_speed` | `21.0` | float | `scripts/goalkeeper/keeper_tuning.gd:62` | `scripts/goalkeeper/goalkeeper.gd:628`, `scripts/goalkeeper/goalkeeper.gd:1016` |  (Distribucion) |
-| `plan_horizon` | `2.5` | float | `scripts/goalkeeper/keeper_tuning.gd:66` | `scripts/goalkeeper/goalkeeper.gd:355`, `scripts/goalkeeper/goalkeeper.gd:379`, `scripts/goalkeeper/goalkeeper.gd:531` | Segundos hacia adelante que predice la trayectoria de la pelota para anticipar los disparos. (Estirada y contacto con clips) |
-| `effort_radius` | `1.5` | float | `scripts/goalkeeper/keeper_tuning.gd:68` | `scripts/goalkeeper/goalkeeper.gd:391`, `scripts/goalkeeper/goalkeeper.gd:533` | Maxima distancia (m) entre manos y pelota prevista para intentar la atajada (mas lejos: no se lanza). (Estirada y contacto con clips) |
-| `dive_catch_factor` | `0.8` | float | `scripts/goalkeeper/keeper_tuning.gd:70` | `scripts/goalkeeper/goalkeeper.gd:774` | Factor de velocidad de la pelota que vuelve imposible blocar el balon con ese tipo de clip (estirada = menos). (Estirada y contacto con clips) |
-| `parry_speed_max` | `30.0` | float | `scripts/goalkeeper/keeper_tuning.gd:72` | `scripts/goalkeeper/goalkeeper.gd:785` | Velocidad maxima (m/s) de un balon que aun se puede desviar con las manos. (Estirada y contacto con clips) |
-| `pickup_distance` | `5.0` | float | `scripts/goalkeeper/keeper_tuning.gd:74` | `scripts/goalkeeper/goalkeeper.gd:557`, `scripts/goalkeeper/goalkeeper.gd:675` | Distancia (m) a la que sale a recoger una pelota suelta y lenta dentro de su area. (Estirada y contacto con clips) |
-| `pickup_ball_speed_max` | `3.0` | float | `scripts/goalkeeper/keeper_tuning.gd:75` | `scripts/goalkeeper/goalkeeper.gd:547`, `scripts/goalkeeper/goalkeeper.gd:610` |  (Estirada y contacto con clips) |
-| `pickup_opponent_clearance` | `2.2` | float | `scripts/goalkeeper/keeper_tuning.gd:77` | `scripts/goalkeeper/goalkeeper.gd:563` | Distancia maxima (m) a la que un jugador rival puede estar de la pelota suelta para que salga a recogerla. (Estirada y contacto con clips) |
-| `carry_height` | `1.15` | float | `scripts/goalkeeper/keeper_tuning.gd:79` | `scripts/goalkeeper/goalkeeper.gd:148`, `scripts/goalkeeper/goalkeeper.gd:831`, `scripts/goalkeeper/goalkeeper.gd:832`, `scripts/goalkeeper/goalkeeper.gd:847` (+2) | Altura del ancla (m) donde sostiene la pelota parado. (Estirada y contacto con clips) |
-| `carry_forward` | `0.35` | float | `scripts/goalkeeper/keeper_tuning.gd:80` | `scripts/goalkeeper/goalkeeper.gd:831`, `scripts/goalkeeper/goalkeeper.gd:847`, `scripts/goalkeeper/goalkeeper.gd:948`, `scripts/goalkeeper/goalkeeper.gd:1054` |  (Estirada y contacto con clips) |
+| `deflect_damping` | `0.42` | float | `scripts/goalkeeper/keeper_tuning.gd:55` | `scripts/goalkeeper/goalkeeper.gd:792` |  (Atajada) |
+| `hold_time_min` | `1.1` | float | `scripts/goalkeeper/keeper_tuning.gd:56` | `scripts/goalkeeper/goalkeeper.gd:832` |  (Atajada) |
+| `hold_time_max` | `2.4` | float | `scripts/goalkeeper/keeper_tuning.gd:57` | `scripts/goalkeeper/goalkeeper.gd:832` |  (Atajada) |
+| `throw_speed` | `12.5` | float | `scripts/goalkeeper/keeper_tuning.gd:60` | `scripts/goalkeeper/goalkeeper.gd:1016` |  (Distribucion) |
+| `kick_speed` | `17.0` | float | `scripts/goalkeeper/keeper_tuning.gd:61` | `scripts/goalkeeper/goalkeeper.gd:1016`, `scripts/goalkeeper/goalkeeper.gd:1018` |  (Distribucion) |
+| `clearance_speed` | `21.0` | float | `scripts/goalkeeper/keeper_tuning.gd:62` | `scripts/goalkeeper/goalkeeper.gd:630`, `scripts/goalkeeper/goalkeeper.gd:1018` |  (Distribucion) |
+| `plan_horizon` | `2.5` | float | `scripts/goalkeeper/keeper_tuning.gd:66` | `scripts/goalkeeper/goalkeeper.gd:355`, `scripts/goalkeeper/goalkeeper.gd:381`, `scripts/goalkeeper/goalkeeper.gd:533` | Segundos hacia adelante que predice la trayectoria de la pelota para anticipar los disparos. (Estirada y contacto con clips) |
+| `effort_radius` | `1.5` | float | `scripts/goalkeeper/keeper_tuning.gd:68` | `scripts/goalkeeper/goalkeeper.gd:393`, `scripts/goalkeeper/goalkeeper.gd:535` | Maxima distancia (m) entre manos y pelota prevista para intentar la atajada (mas lejos: no se lanza). (Estirada y contacto con clips) |
+| `dive_catch_factor` | `0.8` | float | `scripts/goalkeeper/keeper_tuning.gd:70` | `scripts/goalkeeper/goalkeeper.gd:776` | Factor de velocidad de la pelota que vuelve imposible blocar el balon con ese tipo de clip (estirada = menos). (Estirada y contacto con clips) |
+| `parry_speed_max` | `30.0` | float | `scripts/goalkeeper/keeper_tuning.gd:72` | `scripts/goalkeeper/goalkeeper.gd:787` | Velocidad maxima (m/s) de un balon que aun se puede desviar con las manos. (Estirada y contacto con clips) |
+| `pickup_distance` | `5.0` | float | `scripts/goalkeeper/keeper_tuning.gd:74` | `scripts/goalkeeper/goalkeeper.gd:559`, `scripts/goalkeeper/goalkeeper.gd:677` | Distancia (m) a la que sale a recoger una pelota suelta y lenta dentro de su area. (Estirada y contacto con clips) |
+| `pickup_ball_speed_max` | `3.0` | float | `scripts/goalkeeper/keeper_tuning.gd:75` | `scripts/goalkeeper/goalkeeper.gd:549`, `scripts/goalkeeper/goalkeeper.gd:612` |  (Estirada y contacto con clips) |
+| `pickup_opponent_clearance` | `2.2` | float | `scripts/goalkeeper/keeper_tuning.gd:77` | `scripts/goalkeeper/goalkeeper.gd:565` | Distancia maxima (m) a la que un jugador rival puede estar de la pelota suelta para que salga a recogerla. (Estirada y contacto con clips) |
+| `carry_height` | `1.15` | float | `scripts/goalkeeper/keeper_tuning.gd:79` | `scripts/goalkeeper/goalkeeper.gd:148`, `scripts/goalkeeper/goalkeeper.gd:833`, `scripts/goalkeeper/goalkeeper.gd:834`, `scripts/goalkeeper/goalkeeper.gd:849` (+2) | Altura del ancla (m) donde sostiene la pelota parado. (Estirada y contacto con clips) |
+| `carry_forward` | `0.35` | float | `scripts/goalkeeper/keeper_tuning.gd:80` | `scripts/goalkeeper/goalkeeper.gd:833`, `scripts/goalkeeper/goalkeeper.gd:849`, `scripts/goalkeeper/goalkeeper.gd:950`, `scripts/goalkeeper/goalkeeper.gd:1056` |  (Estirada y contacto con clips) |
 <!-- /AUTO -->
 
 Los valores son el punto de partida de la calibración (ver «Pruebas»); `Tuning.keeper` los carga y se ajustan aquí, no en el código.
@@ -171,3 +171,11 @@ Ver [CHANGELOG.md](../CHANGELOG.md): «Arquero, IA de equipos y acciones».
 - **Achique** (`_lone_attacker`, `rushing`): con un rival solo hacia el arco sale a `RUSH_GAP` de la pelota; `_try_smother` se lanza a los pies si el portador se adelanta la pelota.
 - **Centros** (`_cross_landing`, `_assess_cross`): va al punto de caída y sale si la alcanza antes que nadie; en la preparación ajusta los pasos para que las manos del clip coincidan con la pelota.
 - `goalkeeper_miss(_mirror)` para la estirada que no llega; `goalkeeper_idle_2` con la pelota en las manos (la pelota sigue sus manos); `goalkeeper_directing(_2)` como indicaciones. En penal espera en la línea.
+
+## Reacción del arquero de UCS (2026-11-06)
+
+`Goalkeeper`: la reacción a un tiro es la del arquero de UCS, `ResponseGKSave0/1` = 15/4 cuadros, leída de `libMPX.so`
+(`UcsParams.RESPONSE_GK_SAVE_S`). Va de 0.25 s con reflejos mínimos a 0.07 s con reflejos máximos, escalada por
+`KeeperTuning.reaction_time` (0.2 = la de UCS), menos su anticipación. Antes iba de 0.30 a 0.13 s. Ver
+[MATCH](MATCH.md#ia-con-los-parámetros-de-ucs-2026-11-06).
+

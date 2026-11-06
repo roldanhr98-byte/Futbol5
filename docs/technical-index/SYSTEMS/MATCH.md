@@ -8,7 +8,7 @@
   - `MatchScene`: raíz de composición. Crea cancha, pelota, cámara, equipos, `MatchManager`, `Hud`, y reposiciona en cada saque.
 - **Estado:** implementado y probado: **4 contra 4 con arquero** por equipo (`home_field_players = away_field_players = 4`, `with_keepers`), un humano local (el compañero más cercano a la pelota se controla con el cambio de jugador, `auto_switch`) y el resto con `AIInput`; árbitro y presentación previa (`intro_seconds`, `with_referee`). Las pruebas de flujo desactivan arqueros, árbitro y presentación para aislar el reloj.
 - **Última verificación:** <!-- AUTO:verified -->
-2026-11-05
+2026-11-06
 <!-- /AUTO -->
 
 ## Archivos responsables
@@ -347,3 +347,22 @@ dentro salen en línea recta; `AIInput._around_ball`: con la pelota muerta nadie
 (`_clear_zone(..., except)`); el apoyo corto del tiro libre cercano se coloca a `CLEAR_RADIUS + 0.5`. Prueba:
 `test_set_pieces::test_nobody_but_the_taker_enters_the_run_up_zone` (tiro libre en el medio, cerca del área y corner:
 el más cercano queda a 4.2-4.8 m). Los 38 clips de balón parado conectan en el tiro libre sin ningún atajo de colisiones.
+
+## IA con los parámetros de UCS (2026-11-06)
+
+`UcsParams` (`scripts/ai/ucs_params.gd`) lee los valores de la función de `libMPX.so` (UCS 1.810) que carga la
+configuración de juego. Cada parámetro se pide por nombre, con un valor por defecto entero; las escalas van en punto fijo
+4096 = 1.0. Tabla completa (210): [`E4_parametros_ucs.csv`](../../fases/E4_parametros_ucs.csv).
+
+- **Comprobado:** el valor.
+- **Inferido:** el significado y la unidad, por el nombre y por cómo encaja en el juego.
+- **Sin comprobar:** el servidor de UCS podría cambiar algún valor; sin conexión no se puede verificar.
+
+| UCS | valor | en nuestra IA |
+|---|---|---|
+| `MaxActivePresses` / `MaxActiveTackles` | 2 / 1 | La cobertura pasa a segundo presionador si llega en ≤ 1.2 s (`TeamBrain`, rol `press2`). Se coloca a 2.5 m del portador, del lado del arco, y no entra: solo el primer presionador entra. |
+| `PressureSpeedRate` | 3891/4096 = 0.95 | El que presiona corre al 95 % (`AIInput`, roles `press` y `press2`). |
+| `WidthOpenPlay` | 60 | La amplitud usa el 60 % del ancho, no pegada a la línea. |
+| `BotMinKickFrames` / `BotMaxKickFrames` | 30 / 120 cuadros | El portador de la IA pasa sin presión entre 0.5 y 2 s con la pelota (`CARRY_PATIENCE` 2.2 → 2.0 s; pase de progreso desde 0.5 s, antes 0.6 s). |
+| `ResponseGKSave0/1` | 15 / 4 cuadros | El arquero reacciona a un tiro en 0.25 a 0.07 s según los reflejos (antes 0.30 a 0.13 s), menos su anticipación. |
+

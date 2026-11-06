@@ -330,6 +330,9 @@ func plan_ids(ids: Array[StringName], want: float, tol: float, both_sides: bool 
 		# la que UCS elige ese clip (animdb: 32 sectores de 11.25 grados).
 		if steer and turn * want < 0.0 and absf(turn) > 3.0:
 			continue
+		# Solo en el toque orientado (14-50 grados): en los giros grandes la ventana de UCS no esta centrada en el giro del clip
+		# (en 839 clips el giro cae en su ventana en 444 y la mitad del giro en 629; con la ventana, los clips de 180 grados
+		# no se elegirian nunca para un giro de 180): su referencia ahi no se pudo establecer y no se aplica.
 		if steer:
 			var win: Vector2 = AnimDB.joystick_window(id)
 			if want < win.x - 1.0 or want > win.y + 1.0:
