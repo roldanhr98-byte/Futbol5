@@ -33,6 +33,32 @@ Pedido: integrar todo el sistema como UCS, sin auditorías ni recomendaciones. E
 | Botines | ~0.26 m (antes ~0.40 m) | `json_human.scn` (E3) |
 | animdb | Base de datos propia con todas las animaciones por acción y los datos de UCS; la lee el juego (`AnimDB`) | `assets/animations/animdb.json` |
 
-## Medido
+## Resultados (corridas reales, Godot 4.7.2, Linux; render con Xvfb)
 
-Ver la sección «Resultados» al final (se completa con las corridas reales).
+- **Suite headless completa:** 290 pruebas, **0 fallidas**, 32 omitidas (las de render), 1725 comprobaciones, 869 s.
+  Corrida con el código de `3ff0b3f`; el ajuste posterior de las esperas del toque orientado se probó por grupos (abajo).
+- **Batería de 50 golpeos con render** (`test_live_kicks`): 50/50 con contacto, 0 inválidos, 0 bloqueos; 4 pruebas, 0
+  fallidas. Punta del pie al centro de la pelota en la imagen del golpe: pase de primera a 5 m/s 0.264 → 0.172 m, a
+  6 m/s 0.268 → 0.162 m.
+- **Conducción con render** (`test_physical_dribble`): 5/0. El jugador se aparta de su pelota hasta 16° (trote + giro
+  90), 25° (sprint + diagonal 40) y 16° (curva suave).
+- **Grupos con el código final:** `mode4_dribble` 9/0 (toque orientado 4/4 con clip de UCS), `ball_turn` 4/0,
+  `gameplay_feel` 10/0, `receive` 30/0, `json_mode` 10/0, `pack_kick` 8/0, `player_actions` 4/0.
+- **Con la IA de UCS:** `ai_match` 3 de 3 corridas sin fallos, `goalkeeper` 5/0, `control_and_keeper` 7/0,
+  `full_match` 4/0, `shot_keeper` 1/0.
+
+### Probado y descartado (con su medida)
+
+| Qué | Por qué no quedó |
+|---|---|
+| Reacción del arquero de UCS (`ResponseGKSave` 15/4 cuadros) | Con nuestro modelo de estirada atajaba el 87-97 % a 8-11 m y `test_shot_keeper` falló |
+| Presión al 95 % (`PressureSpeedRate` como velocidad) | Cambió los tiros con un defensor encima (`test_shot_keeper` falló); el significado es inferido |
+| Ventana del joystick de UCS en los giros grandes | En 839 clips la ventana no está centrada en el giro; los clips de 180° no se elegirían nunca para un giro de 180° |
+| Toque orientado en sprint | El cuerpo seguía la raíz del clip y se apartaba 35° de su pelota |
+| Espera de 0.1 s del golpeo sin mirar el pie animado | El pie seguía de largo (de 0.268 a 0.316 m); se pasó a buscar el paso con el pie animado más cerca |
+
+### Qué no se pudo verificar
+
+- La sensación en el teléfono con el mando real (la verifica la persona con el APK).
+- Si el servidor de UCS cambia algún parámetro.
+- Lo que hace exactamente el código de UCS con cada campo: se leyeron los valores, no se descompiló la lógica.

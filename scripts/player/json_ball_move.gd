@@ -114,6 +114,8 @@ var _v_out: float = 0.0
 var _first_t: float = 0.0
 var _corr: Vector3 = Vector3.ZERO
 var _cooldown: float = 0.0
+## Espera propia del toque orientado (ver finish).
+var _steer_cd: float = 0.0
 var _plan_tick: int = 0
 ## Pedidos con el boton REGATE: vuelta atras pisando la pelota o regate (segundos que quedan del pedido).
 var _skill_req: float = 0.0
@@ -201,9 +203,10 @@ func request_skill() -> void:
 ## Devuelve true si empezo (el resto del paso lo maneja la accion).
 func consider(desired_dir: Vector3, stick_mag: float, dt: float) -> bool:
 	_cooldown = maxf(_cooldown - dt, 0.0)
+	_steer_cd = maxf(_steer_cd - dt, 0.0)
 	_skill_req = maxf(_skill_req - dt, 0.0)
 	_released_t = _released_t + dt if stick_mag < 0.15 else 0.0
-	if active or _cooldown > 0.0:
+	if active or (_cooldown > 0.0 and _steer_cd > 0.0):
 		return false
 	# Un giro con toques o una vuelta pisando la pelota ya en curso no se interrumpe (sumados, el giro tardaba el doble).
 	if handler.ball_turn.active() or handler.drag_back.active():
@@ -266,6 +269,9 @@ func consider(desired_dir: Vector3, stick_mag: float, dt: float) -> bool:
 		tol = START_TOL
 		new_intent = &"start"
 	else:
+		return false
+	# Esperas: el toque orientado tiene la suya (corta tras un arranque o tras otro toque orientado); el resto, la general.
+	if (new_intent == &"steer" and _steer_cd > 0.0) or (new_intent != &"steer" and _cooldown > 0.0):
 		return false
 	# Planificar recorre decenas de clips: no en cada paso (salvo un pedido con el boton, que es puntual, y el toque orientado
 	# del jugador de la persona: si espera, el toque de rumbo fisico se adelanta y el clip de UCS no llega a usarse).
@@ -751,9 +757,12 @@ func finish() -> void:
 	if intent == &"receive":
 		handler.receive.ended(_next > 0)
 	_remember()
-	# Tras un toque orientado o un arranque, espera corta: se encadenan (con la de 0.6 s de los giros, el cambio de rumbo que
-	# llegaba justo despues de arrancar lo daba siempre el toque fisico).
-	_cooldown = maxf(_cooldown, STEER_COOLDOWN if (intent == &"steer" or intent == &"start") else COOLDOWN)
+	# Tras un toque orientado o un arranque, el toque orientado puede seguir enseguida (con la espera de 0.6 s de los giros, el
+	# cambio de rumbo que llegaba justo despues de arrancar lo daba siempre el toque fisico); los giros grandes y el resto
+	# esperan lo de siempre tras un arranque (encadenado, un giro de 90 grados apartaba al jugador 42 grados de su pelota:
+	# test_physical_dribble::test_jog_turn_90_in_touches).
+	_cooldown = maxf(_cooldown, STEER_COOLDOWN if intent == &"steer" else COOLDOWN)
+	_steer_cd = maxf(_steer_cd, STEER_COOLDOWN if (intent == &"steer" or intent == &"start") else COOLDOWN)
 	handler.touch_timer = 0.12
 	_release_ik()
 
@@ -767,6 +776,7 @@ func _abort(reason: String) -> void:
 		handler.receive.ended(_next > 0)
 	_remember()
 	_cooldown = COOLDOWN
+	_steer_cd = COOLDOWN
 	_release_ik()
 	# Sin pelota que llevar el clip no sigue: se corta con un fundido y vuelve la marcha (el jugador puede ir a por ella).
 	# PlayerActions.stop corta raiz y pose y libera el lugar en el arbitro.
@@ -793,6 +803,7 @@ func cancel() -> void:
 		if intent == &"receive":
 			handler.receive.ended(_next > 0)
 		_cooldown = COOLDOWN
+		_steer_cd = COOLDOWN
 		_release_ik()
 
 func _release_ik() -> void:

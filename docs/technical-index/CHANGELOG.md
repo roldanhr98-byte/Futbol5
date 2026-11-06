@@ -11,6 +11,35 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-11-06 — E4: integración al nivel de UCS (IA con sus parámetros, golpeo de primera sincronizado con el pie animado)
+
+Rama `respaldo-f3`. Pedido: integrar todo como UCS con autorización completa. Informe:
+[`docs/fases/E4_integracion_ucs.md`](../fases/E4_integracion_ucs.md) ·
+[MATCH](SYSTEMS/MATCH.md#ia-con-los-parámetros-de-ucs-2026-11-06) ·
+[PLAYER](SYSTEMS/PLAYER.md#golpeo-de-primera-el-impulso-sale-cuando-la-pelota-llega-al-pie-animado-2026-11-06).
+
+- **UCS, comprobado:**
+  - `libMPX.so` carga 210 parámetros de juego con valores por defecto enteros (`docs/fases/E4_parametros_ucs.csv`,
+    leídos del código ARM64);
+  - en `animdb.adb`, los vectores de pelota de las recepciones no son el punto de contacto (son el destino tras el toque).
+- **IA:** hasta 2 presionan y 1 entra (`MaxActivePresses`/`MaxActiveTackles`, rol `press2`); amplitud al 60 %
+  (`WidthOpenPlay`); el portador pasa sin presión entre 0.5 y 2 s (`BotMin/MaxKickFrames`).
+- **Probado y descartado:**
+  - la reacción del arquero de UCS y la presión al 95 % (fallaba `test_shot_keeper`);
+  - la ventana del joystick en giros grandes.
+- **Golpeo de primera:** el impulso sale en el paso con la punta del pie animado más cerca de la pelota que llega
+  (`BallHandler._ball_still_arriving`). Medido 0.264/0.268 → 0.172/0.162 m.
+- **Toque orientado:**
+  - hasta 5 m/s, con la salida orientada menos cuanto más rápido;
+  - no arranca durante 1.2 s tras un golpe propio;
+  - espera propia, corta tras un arranque.
+- **Pruebas:**
+  - suite headless completa 290/0 (1725 comprobaciones);
+  - `test_live_kicks` (render) 4/0, con 50/50 golpeos con contacto;
+  - `test_physical_dribble` (render) 5/0;
+  - grupos con el código final sin fallos (ver el informe).
+- **Pendiente:** la sensación en el teléfono.
+
 ## 2026-11-05 — Conducción como UCS: toque orientado con los clips de conducción de UCS y botines proporcionados
 
 Rama `respaldo-f3`. Pedido del usuario, con el video de UCS (`Screenrecorder-20261105-145139`) y el paquete de recursos
