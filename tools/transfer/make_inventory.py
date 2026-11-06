@@ -227,18 +227,25 @@ def main():
             ct = m.get("contact", {}) if isinstance(m.get("contact", {}), dict) else {}
             ucs = {}
             if h is not None:
+                # Significado por campo y familia: DATOS_UCS.md. El campo 3 NO es el cuadro del toque: es el byte 2 de la
+                # cabecera del .sat (1832/1832); el cuadro de contacto de los golpeos es el campo 24 (+-2 cuadros en 310/447).
                 ucs = {
-                    "ucs_cuadro_toque": h[3],
-                    "ucs_t_toque_s": round(h[3] / 60.0, 3),
+                    "ucs_campo3_byte_cabecera_sat": h[3],
+                    "ucs_campo24_cuadro_evento_pelota": h[24],
+                    "ucs_t_evento_pelota_s": round(h[24] / 60.0, 3) if h[24] else "",
                     "ucs_pie_toque": "izq" if h[4] & 128 else ("der" if h[4] & 256 else ""),
                     "ucs_giro_sector_grados": h[9],
-                    "ucs_giro_medido_grados": h[47],
+                    "ucs_giro_medido_grados_campo47": h[47],
+                    "ucs_giro_turn_campo46": h[46],
                     "ucs_ventana_joystick_min": h[7],
                     "ucs_ventana_joystick_max": h[8],
-                    "ucs_v_in_x10": h[5],
-                    "ucs_v_out_x10": h[6],
+                    "ucs_campo5_x10": h[5],
+                    "ucs_campo6_x10": h[6],
+                    "ucs_campo40": h[40],
+                    "ucs_campo49": h[49],
                     "ucs_destino_adelante_m": round(-h[25] / 1000.0, 3),
                     "ucs_destino_izquierda_m": round(h[27] / 1000.0, 3),
+                    "ucs_destino_altura_m": round(h[26] / 1000.0, 3),
                     "ucs_cuadros": h[2],
                 }
             meta = c.get("meta", {})

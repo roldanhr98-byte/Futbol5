@@ -176,6 +176,6 @@ Todos los parámetros, con su evidencia: `PARAMETROS_UCS.md`.
 ## 10. Qué no se sabe
 
 - **[?]** La velocidad real de los jugadores de UCS en m/s: no hay un parámetro de velocidad absoluta en el cargador.
-  Los `v_in`/`v_out` de `animdb.adb` (campos 5 y 6, × 10) se correlacionan 0.57/0.56 con los nuestros, pero su unidad
-  no se estableció (`DATOS_UCS.md`).
+  En los controles, los campos 5 y 6 de `animdb.adb` (× 10) siguen nuestros `v_in`/`v_out` (r 0.90/0.87), pero su
+  unidad no se estableció (`DATOS_UCS.md`).
 - **[?]** Si UCS usa IK de pies: no hay datos.
