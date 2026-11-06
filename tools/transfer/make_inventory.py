@@ -73,6 +73,122 @@ def fmt_v(v):
     return "(%s)" % ", ".join("%.3f" % float(x) for x in v) if isinstance(v, list) else ""
 
 
+# Recurso del juego segun tools/json_anim/selection.json (campo «library»; sin campo = field).
+RES_PATH = {"field": "res://assets/animations/json_clips.res", "scenes": "res://assets/animations/json_scenes.res",
+            "keeper": "res://assets/animations/json_keeper.res"}
+# Ciclos de marcha (JsonCatalog.GAIT / CARRY, scripts/animation/json_catalog.gd).
+GAIT = ["jn_idle_0520", "jn_walk_0460", "jn_jog_1144", "jn_jog_2390", "jn_sprint_3022"]
+CARRY = ["jn_idle_ball_0524", "jn_dribble_walk_0234", "jn_dribble_jog_1574", "jn_dribble_run_3186",
+         "jn_dribble_fast_0548", "jn_dribble_sprint_1582"]
+# Diferencia maxima de velocidad (m/s) entre la del jugador y la v_in del clip con la que el sistema que lo elige lo
+# acepta (constantes del codigo): JsonBallMove.MAX_DV_STICK / MAX_DV_BUTTON / STEER_MAX_DV / START_MAX_DV,
+# JsonReceive.MAX_DV, Footballer._json_turn_move (1.6). Los golpeos no tienen tope: penalizan la diferencia
+# (BallHandler.JSON_PLANT_MISMATCH_COST).
+DV_RULE = {"ball_turn": (1.5, "JsonBallMove.MAX_DV_STICK"), "ball_skill": (3.0, "JsonBallMove.MAX_DV_BUTTON"),
+           "ball_turn_stop": (3.0, "JsonBallMove.MAX_DV_BUTTON"), "ball_start": (1.2, "JsonBallMove.START_MAX_DV"),
+           "ball_dribble": (1.6, "JsonBallMove.STEER_MAX_DV"), "receive": (1.2, "JsonReceive.MAX_DV"),
+           "receive_turn": (1.2, "JsonReceive.MAX_DV"), "control_stand": (1.2, "JsonReceive.MAX_DV"),
+           "jostle_ball": (1.2, "JsonReceive.MAX_DV"), "turn_start": (1.6, "Footballer._json_turn_move"),
+           "turn_run": (1.6, "Footballer._json_turn_move")}
+BALL_ROLES = {"ball_turn", "ball_skill", "ball_turn_stop", "ball_start", "ball_dribble", "ball_stop", "receive",
+              "receive_turn", "control_stand", "jostle_ball"}
+
+
+def _cycle_near(lib, ids, v, tol=None):
+    """Ciclos (id y velocidad natural) a menos de tol m/s de v; sin tol, el mas cercano."""
+    pts = [(i, float(lib.get(i, {}).get("natural_speed", 0.0))) for i in ids if i in lib]
+    if not pts:
+        return []
+    if tol is None:
+        best = min(pts, key=lambda p: abs(p[1] - v))
+        return [best]
+    return [p for p in pts if abs(p[1] - v) <= tol]
+
+
+def transitions(role, m, lib):
+    """(entrada, salida): animaciones con las que el clip puede encadenarse segun las reglas del codigo."""
+    if not m:
+        return "", ""
+    if role in [r for r in ("idle", "walk", "jog", "run", "sprint")] or role.startswith("dribble_") or role == "idle_ball":
+        return ("BlendSpace de marcha: se mezcla con los escalones vecinos (JsonCatalog.GAIT/CARRY, FootballerVisual)",
+                "idem")
+    v_in = float(m.get("v_in", 0.0) or 0.0)
+    v_out = float(m.get("v_out", 0.0) or 0.0)
+    cycles = CARRY if role in BALL_ROLES else GAIT
+    if role in DV_RULE:
+        tol, src = DV_RULE[role]
+        ins = _cycle_near(lib, GAIT + CARRY if role.startswith("receive") or role in ("control_stand", "jostle_ball") else cycles, v_in, tol)
+        ent = "desde marcha a %.2f m/s +-%.1f (%s): %s" % (v_in, tol, src, ", ".join("%s (%.2f)" % p for p in ins) or "ningun ciclo")
+    elif role.startswith("kick") or role in ("header", "volley"):
+        ins = _cycle_near(lib, GAIT + CARRY, v_in)
+        ent = "desde marcha (sin tope; penaliza |v_in - v|, BallHandler.JSON_PLANT_MISMATCH_COST); ciclo mas cercano a v_in %.2f: %s" % (v_in, ", ".join("%s (%.2f)" % p for p in ins))
+    elif role == "ball_stop":
+        ent = "desde conduccion a 2.6-4.6 m/s (JsonBallMove.STOP_MIN_SPEED/STOP_MAX_SPEED): jn_dribble_jog_1574, jn_dribble_run_3186"
+    elif role in ("getup", "gk_getup"):
+        ent = "tras una caida con la misma postura (PlayerActions._json_getup / Goalkeeper._json_getup)"
+    elif role in ("fall", "stumble", "slide", "tackle_stand", "shove"):
+        ent = "interrumpe la marcha o la accion vigente con nivel mayor (ActionArbiter.Level)"
+    elif m.get("loop"):
+        ent = "ciclo"
+    else:
+        ent = "pose en el sitio si el cuerpo no corre mas que el clip + 1.8 m/s (ActionArbiter.IN_PLACE_SLACK)" if (role not in DV_RULE) else ""
+    if role in ("fall",):
+        sal = "levantarse (rol getup, misma postura)"
+    elif role == "slide":
+        sal = "levantarse o caida segun el resultado (PlayerActions._resolve_slide)"
+    elif m.get("loop"):
+        sal = "ciclo"
+    else:
+        outs = _cycle_near(lib, cycles, v_out)
+        sal = "marcha a v_out %.2f m/s; ciclo mas cercano: %s" % (v_out, ", ".join("%s (%.2f)" % p for p in outs))
+    return ent, sal
+
+
+def describe(role, m, ucs_name):
+    """Movimiento del jugador, con los datos medidos del clip en el juego (giro + = izquierda, raiz adelante/derecha)."""
+    if not m:
+        return ""
+    parts = []
+    turn = float(m.get("turn_deg", 0.0) or 0.0)
+    if abs(turn) >= 5.0:
+        parts.append("gira %.0f grados a la %s" % (abs(turn), "izquierda" if turn > 0 else "derecha"))
+    rt = m.get("root_total")
+    if isinstance(rt, list) and len(rt) == 2:
+        d = (rt[0] ** 2 + rt[1] ** 2) ** 0.5
+        if d >= 0.15:
+            parts.append("se desplaza %.2f m (%.2f adelante, %.2f a la derecha)" % (d, rt[0], rt[1]))
+        else:
+            parts.append("en el sitio")
+    parts.append("entra a %s m/s y sale a %s m/s" % (m.get("v_in", "?"), m.get("v_out", "?")))
+    bt = m.get("ball_touches", [])
+    if bt:
+        parts.append("%d toque(s) de pelota: %s" % (len(bt), " ".join("%s@%.2fs" % ("der" if int(x[1]) > 0 else "izq", float(x[0])) for x in bt)))
+    ct = m.get("contact")
+    if isinstance(ct, dict) and "foot" in ct:
+        parts.append("golpeo con el pie %s a %.2f s" % ("der" if int(ct["foot"]) > 0 else "izq", float(ct.get("time", 0.0))))
+    if m.get("loop"):
+        parts.append("ciclo")
+    return "; ".join(parts)
+
+
+def ball_at_contact(m):
+    """Donde planifica el juego la pelota en el contacto (marco del inicio del clip: adelante, arriba, derecha)."""
+    if not m:
+        return ""
+    bt = m.get("ball_touches", [])
+    out = []
+    if bt:
+        p = bt[0][2]
+        v = bt[0][3]
+        n = (v[0] ** 2 + v[1] ** 2) ** 0.5
+        lead = (v[0] / n * 0.12, v[1] / n * 0.12) if n > 0.3 else (0.0, 0.0)
+        out.append("primer toque: (%.3f, %.3f, %.3f) = punta + 0.12 m en la direccion del pie (JsonBallMove.BALL_LEAD)" % (p[0] + lead[0], p[1], p[2] + lead[1]))
+    ct = m.get("contact")
+    if isinstance(ct, dict) and "pos" in ct:
+        out.append("golpeo: centro de la pelota en la punta (residuo planificado <= 0.18 m, PlayerTuning.kick_start_residual; valido si <= 0.65 m, json_kick_reach)")
+    return "; ".join(out)
+
+
 def main():
     if len(sys.argv) < 4:
         print(__doc__)
@@ -85,6 +201,14 @@ def main():
     for r in csv.DictReader(open(os.path.join(ROOT, "docs", "fases", "E2_inventario_banco.csv"), encoding="utf-8")):
         e2.setdefault(r["archivo"][:4], []).append(r)
     adb_json = json.load(open(os.path.join(ROOT, "assets", "animations", "animdb.json"), encoding="utf-8"))
+    sel = {e["id"]: e.get("library", "field") for e in json.load(open(os.path.join(ROOT, "tools", "json_anim", "selection.json"), encoding="utf-8"))["clips"]}
+    pkg_dir = os.path.dirname(os.path.abspath(sys.argv[1]))
+    pkg_name = os.path.basename(pkg_dir)
+    folder = {}
+    pkg_inv = os.path.join(pkg_dir, "INVENTARIO.csv")
+    if os.path.exists(pkg_inv):
+        for r in csv.DictReader(open(pkg_inv, encoding="utf-8")):
+            folder[r["archivo"]] = r["carpeta"]
     rows = []
     for c in bank:
         key = c["file"][:4]
@@ -118,9 +242,12 @@ def main():
                     "ucs_cuadros": h[2],
                 }
             meta = c.get("meta", {})
+            ent, sal = transitions(role, m, lib)
             row = {
                 "indice": key,
                 "archivo_json_banco": c["file"],
+                "ruta_json_paquete": "%s/%s/%s" % (pkg_name, folder[c["file"]], c["file"]) if c["file"] in folder else "",
+                "recurso_juego": ("%s :: %s" % (RES_PATH[sel[cid]], cid)) if cid in sel else "",
                 "nombre_ucs": c["name"],
                 "categoria": c.get("category", ""),
                 "cuadros_60fps": c.get("frames", ""),
@@ -138,6 +265,10 @@ def main():
                 "sistema_que_selecciona": rule[0],
                 "condicion_entrada": rule[1],
                 "condicion_salida": rule[2],
+                "movimiento_descripcion": describe(role, m, c["name"]),
+                "transicion_entrada_compatible": ent,
+                "transicion_salida_compatible": sal,
+                "balon_en_contacto_m_adelante_arriba_derecha": ball_at_contact(m),
                 "movimiento_heading_mode": m.get("heading_mode", ""),
                 "bucle": m.get("loop", ""),
                 "giro_cuerpo_juego_grados": round(float(m.get("turn_deg", 0.0)), 1) if m else "",
