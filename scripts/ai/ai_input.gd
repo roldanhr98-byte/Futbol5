@@ -26,8 +26,9 @@ const KICK_SAFE_TIME := 0.18
 const DESPERATE_SECONDS := 0.9
 ## Distancia (m) de un rival a partir de la cual el portador busca pase inmediato.
 const PASS_PRESSURE_DIST := 3.0
-## Segundos conduciendo tras los que se suelta la pelota aunque no haya presion (futbol de toque, no de carreras).
-const CARRY_PATIENCE := 2.2
+## Segundos conduciendo tras los que se suelta la pelota aunque no haya presion (futbol de toque, no de carreras): el bot
+## de UCS golpea entre 0.5 y 2 s despues de tener la pelota (BotMinKickFrames / BotMaxKickFrames, UcsParams).
+const CARRY_PATIENCE := UcsParams.BOT_MAX_KICK_S
 ## Segundos con la pelota muerta tras los que la jugada se considera atascada y todos van a por ella.
 const BALL_STALL_SECONDS := 1.5
 
@@ -311,10 +312,11 @@ func _follow_order(f: Footballer, ctx: MatchContext, order: Dictionary, carrier:
 	var target: Vector3 = order["target"]
 	match role:
 		&"press", &"chase":
-			# A por la pelota / al portador: la presion calcula el punto de intercepcion, la contencion y el robo.
+			# A por la pelota / al portador: la presion calcula el punto de intercepcion, la contencion y el robo. El que
+			# presiona corre al 95 % (PressureSpeedRate de UCS); el que va a por una pelota suelta, a fondo.
 			var to_ball: Vector3 = bpos - pos
 			_dir = to_ball.normalized() if to_ball.length() > 0.2 else Vector3.ZERO
-			_mag = 1.0
+			_mag = UcsParams.PRESSURE_SPEED_RATE if role == &"press" else 1.0
 			_sprint = bool(order["sprint"])
 			_press = to_ball.length() < 14.0
 			return true
@@ -340,6 +342,13 @@ func _follow_order(f: Footballer, ctx: MatchContext, order: Dictionary, carrier:
 			_move_to(f, target, 1.0)
 			_sprint = bool(order["sprint"])
 			_make_way(f, carrier)
+			return true
+		&"press2":
+			# Segundo en presionar (UCS: hasta dos presionan, uno solo entra): cierra el camino al arco junto al portador,
+			# sin entrar.
+			_run_left = 0.0
+			_move_to(f, target, UcsParams.PRESSURE_SPEED_RATE)
+			_sprint = bool(order["sprint"])
 			return true
 		&"cover", &"block", &"hold":
 			_run_left = 0.0
@@ -526,7 +535,7 @@ func _decide_with_ball(f: Footballer, ctx: MatchContext, atk: Vector3) -> void:
 			var want: bool = false
 			if desperate or opp_near < PASS_PRESSURE_DIST:
 				want = true                                   # con un rival encima, la pelota circula
-			elif gain > 2.0 and _carry_time > 0.6:
+			elif gain > 2.0 and _carry_time > UcsParams.BOT_MIN_KICK_S:
 				want = rng.randf() < 0.45 * (0.6 + skill)     # el companero progresa la jugada
 			elif _carry_time > CARRY_PATIENCE:
 				want = true                                   # lleva demasiado con la pelota
