@@ -13,3 +13,13 @@
 - **Pendiente:** si vuelve a aparecer, registrar la situación de juego (posición de la pelota y de los jugadores, estado del
   balón parado) en el instante en que la pelota queda quieta. Es del partido de fútbol 5, que la reforma conserva pero no
   desarrolla; no bloquea la comparación de bancos.
+
+## Otra prueba de partido intermitente (2026-11-07)
+
+- `tests/test_json_mode.gd::test_ai_match_in_json_mode` falló en GitHub Actions (compilación 67, intento 1): «Humanoide: hay
+  tiros (0)», un partido de IA de 90 s sin ningún tiro. En la suite local de la misma rama pasó (2 tiros).
+- Repetida 10 veces en local: falla 1 de 10 en `reforma-tiros-penales` y 3 de 10 en `5511cfe` (antes del cambio de golpeos
+  laterales de la Fase 2 de la guía anterior). Es intermitente y anterior; el cambio no la empeoró.
+- Las dos fallas son de estadísticas de partidos de IA no deterministas (fútbol 5). Para que la CI no dependa del azar
+  habría que fijar las semillas y el reloj del partido (Fase 9/11 de la guía anterior); no se relaja ni se desactiva la
+  prueba.
