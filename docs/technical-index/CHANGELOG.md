@@ -11,6 +11,18 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-11-07 — Fase 1 de la guía: trazabilidad de candidatos y overlay de depuración
+
+- `AnimTrace` (`scripts/diagnostics/anim_trace.gd`): registro por decisión de los candidatos examinados (motivo o coste),
+  el elegido, el árbitro, interrupciones, cancelaciones y validación del contacto, con el esquema fijo de 35 columnas;
+  apagado por defecto, solo en depuración. `AnimDebugOverlay` (F3/F4) en `MatchScene` solo en depuración. Commit `5511cfe`.
+- Herramientas de medición: `comparar_con_base.py` (umbrales de aborto + p de permutación, varios archivos por lado);
+  `medir_linea_base.py --recalcular` y métricas de contacto p95 / ≤ 0,20 / ≤ 0,30 m; registro por golpeo ampliado
+  (residuo planificado, latencia, ajuste, velocidad de pelota y cuerpo, interferencia).
+- Verificación: headless 318 / 3036 / 0 fallos (28 omitidas, 0 fugas); render 8 baterías 0 fallos; partidos 12 + 12:
+  «% pérdida tras recepción animada» supera el umbral (30,8 % frente a 25,6 %, p = 0,17), el resto dentro; confirmación
+  con 24 + 24 en curso. Detalle: `docs/integration/fase1/FASE1_VERIFICACION.md`.
+
 ## 2026-11-07 — Continuación (Claude), etapa 2: segundo ciclo de fugas, control de fugas en CI y estado final
 
 - `BallHandler.dispose()` desconecta además las señales del propio manejador (`kicked`, `touched_ball`): una lambda

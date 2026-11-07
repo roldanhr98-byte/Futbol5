@@ -67,7 +67,11 @@ PATCHES = [
      "\taudit_kick_log.append({\"r\": String(result), \"a\": String(action), \"d\": float(entry.get(\"foot_distance\", -1.0)), "
      "\"c\": String(entry.get(\"clip\", \"\")), \"live\": feet_live, \"team\": owner.team, \"t\": owner.ctx.match_time if owner.ctx != null else 0.0, "
      "\"bx\": _ab.global_position.x if _ab != null else 0.0, \"by\": _ab.global_position.y if _ab != null else 0.0, "
-     "\"px\": owner.global_position.x})"),
+     "\"px\": owner.global_position.x, \"pz\": owner.global_position.z, \"bz\": _ab.global_position.z if _ab != null else 0.0, "
+     "\"pred\": float(entry.get(\"predicted\", -1.0)), \"lat\": float(entry.get(\"latency\", -1.0)), \"adj\": float(entry.get(\"adjust_m\", -1.0)), "
+     "\"bv0\": float(entry.get(\"ball_v0\", -1.0)), \"pv0\": float(entry.get(\"body_v0\", -1.0)), \"intf\": bool(entry.get(\"interfered\", false)), "
+     "\"turn\": bool(entry.get(\"turn\", false)), \"aer\": String(entry.get(\"aerial\", \"\")), "
+     "\"ex\": entry.get(\"exec\", {})})"),
     ("scripts/player/ball_handler.gd",
      "\tvar res: KickModel.KickResult = perform_action(action, _kick_stick, _kick_charge, _kick_lob)\n\t_kick_event_info = {}",
      "\tvar res: KickModel.KickResult = perform_action(action, _kick_stick, _kick_charge, _kick_lob)\n"
@@ -291,7 +295,10 @@ def match_metrics(d, meta):
         "golpeos_fuera_de_alcance": k.get("out_of_reach", 0), "golpeos_girando": k.get("turn", 0),
         "pct_golpeos_iniciados_sin_contacto": pct(k.get("started", 0) - k.get("contact", 0), k.get("started", 0)),
         "contacto_dist_mediana": quant([e["d"] for e in ok], 0.5), "contacto_dist_p90": quant([e["d"] for e in ok], 0.9),
+        "contacto_dist_p95": quant([e["d"] for e in ok], 0.95),
         "contacto_dist_max": round(max([e["d"] for e in ok]), 4) if ok else None,
+        "pct_contactos_hasta_020": pct(sum(e["d"] <= 0.20 for e in ok), len(ok)),
+        "pct_contactos_hasta_030": pct(sum(e["d"] <= 0.30 for e in ok), len(ok)),
         "pct_contactos_mas_030": pct(sum(e["d"] > 0.30 for e in ok), len(ok)),
         "golpeos_aereos": len(aerial), "golpeos_aereos_contacto": len(aerial_ok),
         "pct_aereos_fallidos": pct(len(aerial) - len(aerial_ok), len(aerial)),
@@ -324,6 +331,7 @@ def main():
     ap.add_argument("--render-seed", type=int, default=None)
     ap.add_argument("--render-minutes", type=float, default=3.0)
     ap.add_argument("--jobs", type=int, default=3)
+    ap.add_argument("--keep-meta", action="store_true", help="conservar _meta.json (metadatos de los clips) en --out")
     a = ap.parse_args()
     repo = sh(["git", "rev-parse", "--show-toplevel"]).stdout.strip()
     out_dir = os.path.abspath(a.out)
@@ -339,6 +347,34 @@ def main():
         jobs.append((a.render_seed, a.render_minutes, True, f"s{a.render_seed}_render"))
     with ThreadPoolExecutor(max_workers=a.jobs) as ex:
         results = list(ex.map(lambda j: run_match(wt, out_dir, j[0], j[1], j[2], j[3]), jobs))
+    write_summary(out_dir, results, meta, head, a.repeat_seed)
+    if not a.keep_meta:
+        os.remove(meta_path)
+    sh(["git", "worktree", "remove", "--force", wt], cwd=repo, check=False)
+
+
+def recalc():
+    """Recalcula metricas.json de un directorio ya medido (partido_*.json y .log) con las metricas actuales, sin jugar.
+    Uso: medir_linea_base.py --recalcular DIR --meta _meta.json [--repeat-seed N]"""
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--recalcular", required=True)
+    ap.add_argument("--meta", required=True)
+    ap.add_argument("--repeat-seed", type=int, default=None)
+    a = ap.parse_args()
+    out_dir = os.path.abspath(a.recalcular)
+    meta = json.load(open(a.meta))
+    prev = os.path.join(out_dir, "metricas.json")
+    head = json.load(open(prev)).get("commit", "") if os.path.exists(prev) else ""
+    tags = sorted(f[len("partido_"):-len(".json")] for f in os.listdir(out_dir) if f.startswith("partido_") and f.endswith(".json"))
+    results = []
+    for tag in tags:
+        log = os.path.join(out_dir, f"partido_{tag}.log")
+        errors = [l for l in open(log).read().splitlines() if "SCRIPT ERROR" in l] if os.path.exists(log) else []
+        results.append((tag, os.path.join(out_dir, f"partido_{tag}.json"), errors))
+    write_summary(out_dir, results, meta, head, a.repeat_seed)
+
+
+def write_summary(out_dir, results, meta, head, repeat_seed):
     rows = []
     union_played = set()
     plays_total = Counter()
@@ -362,12 +398,12 @@ def main():
         "roles_nunca_reproducidos": sorted(roles_all - roles_seen),
     }
     det = None
-    if a.repeat_seed is not None:
-        r1 = next(r for r in rows if r["partido"] == f"s{a.repeat_seed}")
-        r2 = next(r for r in rows if r["partido"] == f"s{a.repeat_seed}_repeticion")
+    if repeat_seed is not None:
+        r1 = next(r for r in rows if r["partido"] == f"s{repeat_seed}")
+        r2 = next(r for r in rows if r["partido"] == f"s{repeat_seed}_repeticion")
         keys = [k for k in r1 if k not in ("partido",)]
         diff = {k: [r1[k], r2[k]] for k in keys if r1[k] != r2[k]}
-        det = {"semilla": a.repeat_seed, "identico": not diff, "diferencias": diff}
+        det = {"semilla": repeat_seed, "identico": not diff, "diferencias": diff}
     summary["determinismo"] = det
     agg_keys = [k for k in rows[0] if isinstance(rows[0][k], (int, float)) and k not in ("semilla", "minutos")]
     normal = [r for r in rows if not r["partido"].endswith("_repeticion")]
@@ -384,10 +420,8 @@ def main():
         f.write("clip,rol,reproducciones\n")
         for c, n in plays_total.most_common():
             f.write(f"{c},{meta[c]['role']},{n}\n")
-    os.remove(meta_path)
-    sh(["git", "worktree", "remove", "--force", wt], cwd=repo, check=False)
     print(json.dumps({k: v for k, v in summary.items() if k != "por_partido"}, indent=1, ensure_ascii=False))
 
 
 if __name__ == "__main__":
-    main()
+    recalc() if "--recalcular" in sys.argv else main()
