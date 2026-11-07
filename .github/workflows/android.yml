@@ -123,6 +123,32 @@ jobs:
       - name: Importar el proyecto
         run: godot --headless --path . --import
 
+      - name: Auditar cada animacion del banco sobre el esqueleto real
+        env:
+          OUT: ${{ runner.temp }}/integration_audit.json
+        run: |
+          set -o pipefail
+          godot --headless --path . res://tools/integration/audit_bank.tscn 2>&1 | tee "$RUNNER_TEMP/integration_audit.log"
+          if grep -q "SCRIPT ERROR\|Parse Error" "$RUNNER_TEMP/integration_audit.log"; then exit 1; fi
+          python3 - <<'PY'
+          import json, os
+          with open(os.environ['OUT']) as f:
+              report = json.load(f)
+          assert report['sources'] == 2022, report['sources']
+          assert report['failures'] == 0, report['failures']
+          assert all(r['registered'] and r['invoked'] and r['pose_sampled'] and r['role_indexed'] for r in report['rows'])
+          PY
+
+      - name: Subir informe individual de animaciones
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: animation-audit
+          path: |
+            ${{ runner.temp }}/integration_audit.json
+            ${{ runner.temp }}/integration_audit.log
+          if-no-files-found: warn
+
       - name: Pruebas headless
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.skip_tests) }}
         run: tools/run_tests.sh
@@ -131,9 +157,8 @@ jobs:
       # con render en un servidor X virtual.
       - name: Pruebas con render (pies animados)
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.skip_tests) }}
-        # Depende del OpenGL por software del runner: si el entorno no puede renderizar, no bloquea el APK (queda en el log).
-        continue-on-error: true
         run: |
+          set -o pipefail
           sudo apt-get update -q > /dev/null && sudo apt-get install -y -q xvfb libgl1-mesa-dri > /dev/null
           for f in live_feet live_kicks pack_motion json_mode physical_dribble directional_kicks; do
             xvfb-run -a godot --rendering-driver opengl3 --fixed-fps 60 --path . res://tests/run_tests.tscn -- --filter "$f" 2>&1 \
@@ -210,7 +235,7 @@ jobs:
             echo "- Tamano: $(du -h "build/$NAME" | cut -f1) · arm64-v8a · sin permisos"
             echo "- Firma de DEPURACION verificada (v2), SHA-256 del certificado: \`${FPR}\` (clave de depuracion de esta ejecucion)"
             echo "- Animaciones: $( [ "$PACK_INCLUDED" = true ] && echo 'pack de Mixamo (133 clips de campo y arquero, librerias verificadas dentro de la APK) + respaldo Tripo' || echo 'SIN el pack: Tripo + patada procedural')"
-            echo "- Modo 4 (Json): las 2 022 animaciones JSON (json_clips.res + json_scenes.res + json_keeper.res) y el humanoide verificados dentro de la APK"
+            echo "- Modo 4 (Json): librerias y humanoide incluidos; invocacion y muestreo de poses por clip en el artefacto animation-audit. La inclusion no certifica conexion situacional ni verificacion visual individual."
             echo "- Commit: \`${GITHUB_SHA::7}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 

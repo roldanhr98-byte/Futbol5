@@ -1163,3 +1163,16 @@ contra personas.
 - **Verificado:** 9 / 24 / 0 fallos (reproducido).
 - **Tripo:** 45 créditos (modelo 20, rig de comprobación 0, auto-rig v3.0 25). Saldo 955.
 - **Fichas:** [BALL](SYSTEMS/BALL.md), [PITCH](SYSTEMS/PITCH.md), [CAMERA](SYSTEMS/CAMERA.md), [TUNING](SYSTEMS/TUNING.md), [TESTING](SYSTEMS/TESTING.md).
+
+## 2026-11-07 — Catálogo consultable y auditoría ejecutable de la integración
+
+- Rama autorizada para esta misión: `integracion-openai`; `respaldo-f3` es de solo respaldo.
+- ZIP original preservado, extraído fuera del proyecto y copiado sin cambios a `docs/integration`; manifiesto SHA-256.
+  Contiene 38 ejemplos sintéticos, no las 2.022 fuentes; las poses de esas fuentes ya están en las librerías del juego.
+- `AnimDB`: consulta completa, registros defensivos y candidatos por acción/contexto; utilizado por las situaciones de
+  `JsonCatalog`. No duplica el arbitraje ni sustituye la física existente.
+- Auditoría por `AnimationPlayer` sobre el humanoide real: 2.022 fuentes, 3.223 variantes, cero fallos de recurso,
+  pistas/huesos, invocación y poses finitas en tres instantes. Esto no es una certificación visual individual.
+- Workflow: informe por clip como artefacto, fallo de render bloqueante, errores de importación ya no ignorados.
+- Pruebas iniciales: catálogo 2/0 (78 comprobaciones), integración del banco 6/0 (42), ejemplos del ZIP 38 sin errores.
+  Resultados ampliados y pendientes: `docs/integration/INFORME.md`.

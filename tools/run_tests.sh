@@ -7,7 +7,18 @@ cd "$(dirname "$0")/.."
 FILTER_ARGS=()
 if [ "${1:-}" != "" ]; then FILTER_ARGS=(-- --filter "$1"); fi
 # Reimporta siempre: registra clases globales nuevas (class_name) y recursos modificados.
-"$GODOT_BIN" --headless --path . --import >/dev/null 2>&1 || true
+IMPORT_OUT="$(mktemp)"
+if ! "$GODOT_BIN" --headless --path . --import >"$IMPORT_OUT" 2>&1; then
+  cat "$IMPORT_OUT"
+  rm -f "$IMPORT_OUT"
+  exit 1
+fi
+if grep -q "SCRIPT ERROR\|Parse Error\|Compile Error" "$IMPORT_OUT"; then
+  cat "$IMPORT_OUT"
+  rm -f "$IMPORT_OUT"
+  exit 1
+fi
+rm -f "$IMPORT_OUT"
 OUT="$(mktemp)"
 "$GODOT_BIN" --headless --fixed-fps 60 --path . res://tests/run_tests.tscn "${FILTER_ARGS[@]}" 2>&1 \
   | sed 's/\x1b\[[0-9;]*m//g' | grep -v '^Picked up' | tee "$OUT"

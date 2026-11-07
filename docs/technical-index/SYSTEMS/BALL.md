@@ -6,7 +6,7 @@
 - **Principio de diseño:** la pelota nunca se coloca en el pie ni se anula su velocidad para simular control; los jugadores solo la cambian con `Ball.kick`/`Ball.push` en el instante del contacto.
 - **Estado:** implementado.
 - **Última verificación:** <!-- AUTO:verified -->
-2026-11-06
+2026-11-07
 <!-- /AUTO -->
 
 ## Archivos responsables
@@ -35,7 +35,7 @@
 <!-- AUTO:params:BallTuning -->
 | Parámetro | Defecto | Rango / tipo | Definido en | Dónde se usa (accesos reales) | Descripción |
 |---|---|---|---|---|---|
-| `radius` | `0.1` | float | `scripts/ball/ball_tuning.gd:8` | `scripts/ball/ball.gd:129`, `scripts/ball/ball_predictor.gd:26`, `scripts/ball/ball_predictor.gd:31`, `scripts/ball/ball_predictor.gd:39` (+14) | Radio real en metros (circunferencia ~63 cm). (Cuerpo) |
+| `radius` | `0.1` | float | `scripts/ball/ball_tuning.gd:8` | `scripts/player/ball_handler.gd:1859`, `scripts/player/ball_handler.gd:1976`, `scripts/player/ball_handler.gd:1998`, `scripts/player/ball_handler.gd:2090` (+14) | Radio real en metros (circunferencia ~63 cm). (Cuerpo) |
 | `mass` | `0.42` | float | `scripts/ball/ball_tuning.gd:10` | `scripts/ball/ball.gd:130`, `scripts/ball/ball_predictor.gd:33`, `scripts/ball/ball_predictor.gd:43`, `scripts/assistance/kick_model.gd:68` (+1) | Masa en kg (futsal: 400-440 g). (Cuerpo) |
 | `visual_scale` | `1.25` | float | `scripts/ball/ball_tuning.gd:12` | `scripts/ball/ball.gd:147`, `scripts/ball/ball.gd:148` | Escala solo visual para que se lea bien con camara alta (no afecta a la fisica). (Cuerpo) |
 | `bounce` | `0.54` | 0.0, 1.0 | `scripts/ball/ball_tuning.gd:16` | `scripts/ball/ball.gd:138`, `scripts/ball/ball_predictor.gd:54`, `scripts/ball/ball_predictor.gd:57` | Coeficiente de restitucion. El balon de futsal rebota ~50-60 % de la altura de caida. (Contacto) |
@@ -63,7 +63,7 @@
 | `driven_pass_extra` | `1.25` | float | `scripts/ball/ball_tuning.gd:64` | `scripts/assistance/pass_assist.gd:116` |  (Pase) |
 | `shot_speed_min` | `12.0` | float | `scripts/ball/ball_tuning.gd:68` | `scripts/assistance/shot_assist.gd:117`, `scripts/assistance/shot_assist.gd:119` | Tiro flojo / a carga maxima (m/s). prueba03: «shootar se siente horrible, necesita mas potencia» (antes 9 y 27). (Tiro) |
 | `shot_speed_max` | `30.0` | float | `scripts/ball/ball_tuning.gd:69` | `scripts/assistance/shot_assist.gd:117`, `scripts/assistance/shot_assist.gd:119`, `scripts/assistance/shot_assist.gd:124` |  (Tiro) |
-| `shot_charge_time` | `0.9` | float | `scripts/ball/ball_tuning.gd:71` | `scripts/ai/ai_input.gd:509`, `scripts/player/ball_handler.gd:473` | Segundos para cargar el tiro al maximo. (Tiro) |
+| `shot_charge_time` | `0.9` | float | `scripts/ball/ball_tuning.gd:71` | `scripts/player/ball_handler.gd:473`, `scripts/ai/ai_input.gd:509` | Segundos para cargar el tiro al maximo. (Tiro) |
 | `shot_loft_low_deg` | `4.0` | float | `scripts/ball/ball_tuning.gd:72` | `scripts/assistance/shot_assist.gd:158`, `scripts/assistance/shot_assist.gd:163`, `scripts/assistance/shot_assist.gd:164`, `scripts/assistance/shot_assist.gd:224` |  (Tiro) |
 | `shot_loft_high_deg` | `22.0` | float | `scripts/ball/ball_tuning.gd:73` | `scripts/assistance/shot_assist.gd:163`, `scripts/assistance/shot_assist.gd:164` |  (Tiro) |
 | `shot_spin_factor` | `14.0` | float | `scripts/ball/ball_tuning.gd:75` | `scripts/assistance/shot_assist.gd:183` | Factor de efecto (spin) aplicado segun la desviacion lateral del golpeo. (Tiro) |

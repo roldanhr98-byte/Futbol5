@@ -297,3 +297,16 @@ jugador al que le llega la pelota: ~120-300 ms en un teléfono). Cambios exactos
 - `rejects` solo se llena con `record_rejects` (la vista `tools/json_anim/receive_view.gd` lo activa).
 - Verificación: la salida completa de las 34 pruebas de `test_receive` es idéntica con el código anterior y el nuevo (la
   única línea distinta, un partido IA contra el arquero, también cambia entre dos corridas del mismo código).
+
+## Integración ZIP — 2026-11-07
+
+`AnimDB.catalog/record/actions` permite consultar las 2.022 fuentes sin cargar poses y sin entregar el diccionario
+compartido. `AnimDB.candidates` resuelve roles efectivos (con las correcciones de `ClipRolesOverlay`) y filtra solo
+las condiciones solicitadas por el consumidor: espejos, recorrido de raíz, duración, contacto y librería del arquero.
+Sin contexto entrega todas las variantes del rol, sin recorrer sus metadatos. `JsonCatalog.situation_clip` consume
+este resolver y conserva sus condiciones físicas. `ActionArbiter` sigue siendo la autoridad sobre interrupciones y pose.
+
+Auditoría reproducible: `OUT=/ruta/audit.json godot --headless --path . res://tools/integration/audit_bank.tscn`.
+El informe distingue registro, índice por rol, invocación por `AnimationPlayer`, muestreo de poses, conexión histórica,
+verificación visual y Android. Muestrear tres instantes **no certifica** contactos ni transiciones en partido.
+Inventario cruzado: `python3 tools/integration/report.py`; resultados y limitaciones en `docs/integration/`.

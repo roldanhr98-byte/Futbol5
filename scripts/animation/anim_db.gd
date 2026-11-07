@@ -69,3 +69,43 @@ static func clips_for(action: String) -> Array:
 static func summary() -> Dictionary:
 	_ensure()
 	return _db.get("resumen", {})
+
+## Consulta del banco completo sin cargar las librerias de poses. Devuelve copias para proteger el indice compartido.
+static func catalog() -> Dictionary:
+	_ensure()
+	return (_db.get("clips", {}) as Dictionary).duplicate(true)
+
+## Acepta indice de fuente, id de tramo o espejo; conserva todos los tramos de una misma fuente.
+static func record(id: StringName) -> Dictionary:
+	_ensure()
+	return ((_db.get("clips", {}) as Dictionary).get(index_of(id), {}) as Dictionary).duplicate(true)
+
+static func actions() -> Array[String]:
+	_ensure()
+	var out: Array[String] = []
+	out.assign((_db.get("acciones", {}) as Dictionary).keys())
+	out.sort()
+	return out
+
+## Resolver por funcion usa los roles efectivos de PackLibrary (incluye las correcciones de auditoria y los espejos).
+## No modifica la conexion historica del inventario ni sustituye las condiciones fisicas de cada planificador.
+static func candidates(action: StringName, context: Dictionary = {}) -> Array[StringName]:
+	var out: Array[StringName] = []
+	if not PackLibrary.json_mode():
+		return out
+	if context.is_empty():
+		return PackLibrary.by_role(action)
+	for id in PackLibrary.by_role(action):
+		if not bool(context.get("mirrors", true)) and String(id).ends_with("_mirror"):
+			continue
+		var m: Dictionary = PackLibrary.meta(id)
+		if context.has("max_root") and (m.get("root_total", Vector2.ZERO) as Vector2).length() > float(context["max_root"]):
+			continue
+		if float(m.get("duration", 0.0)) < float(context.get("min_duration", 0.0)):
+			continue
+		if context.has("contact") and m.has("contact") != bool(context["contact"]):
+			continue
+		if context.has("keeper") and PackLibrary.is_keeper_clip(id) != bool(context["keeper"]):
+			continue
+		out.append(id)
+	return out

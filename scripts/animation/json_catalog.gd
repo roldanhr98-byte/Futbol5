@@ -172,11 +172,8 @@ static func situation_clip(situation: StringName, pick: int) -> StringName:
 	if not _situation_cache.has(situation):
 		var pool: Array[StringName] = []
 		for role in SITUATION_ROLES[situation]:
-			for id in PackLibrary.by_role(role):
-				if String(id).ends_with("_mirror"):
-					continue
-				var m: Dictionary = PackLibrary.meta(id)
-				if (m.get("root_total", Vector2.ZERO) as Vector2).length() <= SITUATION_ROOT_MAX and float(m.get("duration", 0.0)) >= 0.6:
+			for id in AnimDB.candidates(role, {"mirrors": false, "max_root": SITUATION_ROOT_MAX, "min_duration": 0.6}):
+				if not pool.has(id):
 					pool.append(id)
 		_situation_cache[situation] = pool
 	var p: Array = _situation_cache[situation]
