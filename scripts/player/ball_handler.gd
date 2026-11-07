@@ -208,6 +208,10 @@ func dispose() -> void:
 	ball_turn = null
 	json_move = null
 	receive = null
+	# Lambdas conectadas a las senales del propio manejador (kicked, touched_ball...) que lo capturan forman otro ciclo.
+	for sig in get_signal_list():
+		for conn in get_signal_connection_list(sig["name"]):
+			disconnect(sig["name"], conn["callable"])
 
 func ball() -> Ball:
 	return owner.ctx.ball if owner.ctx != null else null

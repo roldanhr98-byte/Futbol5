@@ -16,9 +16,9 @@ WARNING: All audio drivers failed, falling back to the dummy driver.
      at: initialize (servers/audio/audio_server.cpp:258)
 
        · recuperacion tras giro y ventana de orden: { "kicked": true, "toe": 0.13266542553902, "toe_raw": 0.04030011594296, "toe_before": 0.17450469732285, "whiff": "", "count": 1, "rival_first": false, "free": true, "busy": "golpeo , orden , bloqueo 0.00 s, accion  ", "clip": "jn_kick_shot_0656" }
-[ OK ] test_live_kicks::test_behind_ball_shot_finishes_after_its_measured_turn_and_pending_window (2 checks, 1397 ms)
+[ OK ] test_live_kicks::test_behind_ball_shot_finishes_after_its_measured_turn_and_pending_window (2 checks, 1455 ms)
        · pase de primera (pelota que llega a 5 m/s): clip jn_kick_pass_soft_1638, pie der, punta del pie a 0.172 m de la pelota en el impulso, pelota antes 7.23 m/s, sale a 44 grados del cuerpo, pie de apoyo desliza 0.17 m/s (por fotograma: ["0.0", "0.1", "0.2"])
-[ OK ] test_live_kicks::test_first_time_pass_from_an_incoming_ball (4 checks, 1103 ms)
+[ OK ] test_live_kicks::test_first_time_pass_from_an_incoming_ball (4 checks, 1276 ms)
        · parado, pelota delante, pass carga 6: GOLPEO con jn_kick_pass_soft_1608, punta visible 0.125 m, pose base 0.036 m (0.079 en la anterior)
        · parado, pelota delante, pass carga 40: GOLPEO con jn_kick_shot_1754_mirror, punta visible 0.126 m, pose base 0.051 m (0.279 en la anterior)
        · parado, pelota delante, shot carga 6: GOLPEO con jn_kick_shot_3592, punta visible 0.132 m, pose base 0.013 m (0.130 en la anterior)
@@ -70,23 +70,19 @@ WARNING: All audio drivers failed, falling back to the dummy driver.
        · bajo presion parado, shot: GOLPEO con jn_kick_shot_3592, punta visible 0.132 m, pose base 0.014 m (0.127 en la anterior)
        · bajo presion en carrera, shot: GOLPEO con jn_kick_shot_1162, punta visible 0.129 m, pose base 0.031 m (0.125 en la anterior)
        · TOTAL 50 acciones: 50 golpeos con contacto, sin golpeo {  }, contacto invalido 0, bloqueos 0
-[ OK ] test_live_kicks::test_kick_battery_fifty_varied_actions (5 checks, 40116 ms)
+[ OK ] test_live_kicks::test_kick_battery_fifty_varied_actions (5 checks, 49343 ms)
        · pase parado, pelota a la derecha: clip jn_kick_pass_soft_1596, pie der, punta del pie a 0.019 m de la pelota en el impulso, pelota antes 0.00 m/s, sale a 0 grados del cuerpo, pie de apoyo desliza 0.21 m/s (por fotograma: ["0.2", "0.1", "0.0"])
        · pase parado, pelota a la izquierda: clip jn_kick_pass_soft_3052, pie izq, punta del pie a 0.026 m de la pelota en el impulso, pelota antes 1.42 m/s, sale a 1 grados del cuerpo, pie de apoyo desliza 0.59 m/s (por fotograma: ["0.6", "0.1", "0.3"])
        · pase largo: clip jn_kick_shot_1782, pie izq, punta del pie a 0.088 m de la pelota en el impulso, pelota antes 4.76 m/s, sale a 9 grados del cuerpo, pie de apoyo desliza 0.79 m/s (por fotograma: ["0.8", "0.1", "0.1"])
        · pase en carrera: clip jn_kick_pass_3234_mirror, pie der, punta del pie a 0.025 m de la pelota en el impulso, pelota antes 4.05 m/s, sale a 2 grados del cuerpo, pie de apoyo desliza 0.79 m/s (por fotograma: ["0.8", "0.2", "0.1"])
-[ OK ] test_live_kicks::test_passes_standing_with_each_foot_long_and_running (17 checks, 4216 ms)
-       · contacto bajo presion: { "kicked": true, "toe": 0.12690365314484, "toe_raw": 0.01721164956689, "toe_before": 0.08602959662676, "whiff": "", "count": 1, "rival_first": false, "free": true, "busy": "golpeo , orden , bloqueo 0.00 s, accion  ", "clip": "jn_kick_shot_2198_mirror" }
-[ OK ] test_live_kicks::test_running_shot_under_pressure_has_a_visible_foot_contact (2 checks, 2159 ms)
+[ OK ] test_live_kicks::test_passes_standing_with_each_foot_long_and_running (17 checks, 4786 ms)
+       · contacto bajo presion: { "kicked": true, "toe": 0.12690378725529, "toe_raw": 0.01721164956689, "toe_before": 0.08602959662676, "whiff": "", "count": 1, "rival_first": false, "free": true, "busy": "golpeo , orden , bloqueo 0.00 s, accion  ", "clip": "jn_kick_shot_2198_mirror" }
+[ OK ] test_live_kicks::test_running_shot_under_pressure_has_a_visible_foot_contact (2 checks, 1829 ms)
        · tiro suave: clip jn_kick_shot_1892_mirror, pie izq, punta del pie a 0.021 m de la pelota en el impulso, pelota antes 0.00 m/s, sale a 4 grados del cuerpo, pie de apoyo desliza 0.13 m/s (por fotograma: ["0.1", "0.1", "0.0"])
        · tiro medio: clip jn_kick_shot_2202_mirror, pie der, punta del pie a 0.078 m de la pelota en el impulso, pelota antes 1.82 m/s, sale a 4 grados del cuerpo, pie de apoyo desliza 0.11 m/s (por fotograma: ["0.1", "0.0", "0.1"])
        · tiro potente: clip jn_kick_shot_1780_mirror, pie izq, punta del pie a 0.038 m de la pelota en el impulso, pelota antes 3.91 m/s, sale a 7 grados del cuerpo, pie de apoyo desliza 0.73 m/s (por fotograma: ["0.7", "0.2", "0.1"])
        · tiro cruzado izquierda: clip jn_kick_shot_2522_mirror, pie der, punta del pie a 0.050 m de la pelota en el impulso, pelota antes 1.87 m/s, sale a 29 grados del cuerpo, pie de apoyo desliza 0.31 m/s (por fotograma: ["0.3", "0.3", "0.2"])
        · tiro cruzado derecha: clip jn_kick_shot_hard_3780, pie izq, punta del pie a 0.058 m de la pelota en el impulso, pelota antes 0.99 m/s, sale a 27 grados del cuerpo, pie de apoyo desliza 0.30 m/s (por fotograma: ["0.2", "0.3", "0.3"])
-[ OK ] test_live_kicks::test_shots_of_different_power_and_angle (20 checks, 4737 ms)
+[ OK ] test_live_kicks::test_shots_of_different_power_and_angle (20 checks, 4679 ms)
 
-Resumen: 6 pruebas, 0 fallidas, 0 omitidas, 50 comprobaciones, 53.8 s
-WARNING: 74 ObjectDB instances were leaked at exit (run with `--verbose` for details).
-   at: cleanup (core/object/object.cpp:2536)
-ERROR: 5 resources still in use at exit (run with --verbose for details).
-   at: clear (core/io/resource.cpp:822)
+Resumen: 6 pruebas, 0 fallidas, 0 omitidas, 50 comprobaciones, 63.4 s

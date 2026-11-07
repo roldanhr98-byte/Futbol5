@@ -11,6 +11,18 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-11-07 — Continuación (Claude), etapa 2: segundo ciclo de fugas, control de fugas en CI y estado final
+
+- `BallHandler.dispose()` desconecta además las señales del propio manejador (`kicked`, `touched_ball`): una lambda
+  conectada que capturaba el manejador lo dejaba vivo (`test_physical_dribble` con render: 28 instancias, 5 recursos).
+  Prueba nueva `test_resource_cleanup::test_lambda_on_a_ball_handler_signal_does_not_keep_it_alive` (falla sin el cambio).
+- Workflow: la suite headless y cada batería con render fallan si reaparecen «ObjectDB instances were leaked» o
+  «resources still in use at exit».
+- Verificación (código final): headless 310 / 2991 / 0 fallos, 28 omitidas, 0 fugas; render live_feet 7/0, live_kicks 6/0,
+  pack_motion 2/0, json_mode 10/0, physical_dribble 5/0, directional_kicks 3/0, dribble_reference 2/0, test_receive 30/0,
+  todas sin fugas; partido real con render 60 s + 3 × 120 s sin errores. Estado completo:
+  [`ESTADO_ACTUAL_PARA_CLAUDE.md`](../integration/ESTADO_ACTUAL_PARA_CLAUDE.md).
+
 ## 2026-11-07 — Continuación (Claude): fugas al cerrar, invasión en balón parado, pruebas no deterministas y workflow
 
 Rama `integracion-openai`, sobre `ac92f42` (Codex). Godot 4.7.2 oficial (`ed1daf0bf`).

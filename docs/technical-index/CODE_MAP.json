@@ -1071,49 +1071,49 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.update",
-          "line": 382,
+          "line": 386,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._try_dribble_touch",
-          "line": 2259,
+          "line": 2263,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._try_first_touch",
-          "line": 3050,
+          "line": 3054,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.attempt_tackle",
-          "line": 3113,
+          "line": 3117,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.has_possession",
-          "line": 227,
+          "line": 231,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.controls_ball",
-          "line": 353,
-          "kind": "func"
-        },
-        {
-          "file": "scripts/player/ball_handler.gd",
-          "name": "BallHandler.can_reach",
           "line": 357,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
+          "name": "BallHandler.can_reach",
+          "line": 361,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.touch_reach",
-          "line": 367,
+          "line": 371,
           "kind": "func"
         }
       ],
@@ -1251,49 +1251,49 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._update_buttons",
-          "line": 463,
+          "line": 467,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._try_execute_pending",
-          "line": 536,
+          "line": 540,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.contact_delay",
-          "line": 563,
-          "kind": "func"
-        },
-        {
-          "file": "scripts/player/ball_handler.gd",
-          "name": "BallHandler.request_kick",
           "line": 567,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
+          "name": "BallHandler.request_kick",
+          "line": 571,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._finish_kick",
-          "line": 1255,
+          "line": 1259,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.perform_pass",
-          "line": 1312,
+          "line": 1316,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.perform_shot",
-          "line": 1328,
+          "line": 1332,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._after_kick",
-          "line": 1347,
+          "line": 1351,
           "kind": "func"
         }
       ],
@@ -3645,43 +3645,43 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.plan_clip_kick",
-          "line": 907,
+          "line": 911,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.contact_samples",
-          "line": 774,
+          "line": 778,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.foot_contact_world",
-          "line": 596,
+          "line": 600,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.predicted_foot_to_ball",
-          "line": 762,
+          "line": 766,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.clip_timing",
-          "line": 610,
+          "line": 614,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.uses_clip_kicks",
-          "line": 590,
+          "line": 594,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._finish_clip_kick",
-          "line": 1207,
+          "line": 1211,
           "kind": "func"
         }
       ],
@@ -4227,7 +4227,7 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.first_touch_absorb",
-          "line": 3101,
+          "line": 3105,
           "kind": "func"
         }
       ],
@@ -4642,7 +4642,7 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.curl_from",
-          "line": 519,
+          "line": 523,
           "kind": "func"
         },
         {
@@ -4737,19 +4737,19 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._sample_feet",
-          "line": 1401,
+          "line": 1405,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._foot_strike",
-          "line": 1453,
+          "line": 1457,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._try_dribble_touch",
-          "line": 2259,
+          "line": 2263,
           "kind": "func"
         }
       ],
@@ -4807,61 +4807,61 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._clip_touch_update",
-          "line": 1887,
+          "line": 1891,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._plan_clip_touch",
-          "line": 1990,
+          "line": 1994,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._clip_touch_step",
-          "line": 2139,
+          "line": 2143,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._predict_body",
-          "line": 2029,
+          "line": 2033,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._update_touch_ik",
-          "line": 2094,
+          "line": 2098,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._curve_turn_scale",
-          "line": 2886,
+          "line": 2890,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.touch_candidates",
-          "line": 1783,
+          "line": 1787,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.clip_touch_gap",
-          "line": 1874,
+          "line": 1878,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.dribble_speed_cap",
-          "line": 364,
+          "line": 368,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.toe_world",
-          "line": 2087,
+          "line": 2091,
           "kind": "func"
         },
         {
@@ -4997,19 +4997,19 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.carry_steer",
-          "line": 2925,
+          "line": 2929,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.settle_steer",
-          "line": 2699,
+          "line": 2703,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.ball_travel",
-          "line": 283,
+          "line": 287,
           "kind": "func"
         },
         {
@@ -5210,13 +5210,13 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.loose_ball_chase",
-          "line": 308,
+          "line": 312,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.LOOSE_CHASE_RANGE",
-          "line": 301,
+          "line": 305,
           "kind": "const"
         },
         {
@@ -5408,7 +5408,7 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.clip_timing",
-          "line": 610,
+          "line": 614,
           "kind": "func"
         },
         {
@@ -5676,25 +5676,25 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.plan_turn_kick",
-          "line": 1030,
+          "line": 1034,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.estimated_kick_dir",
-          "line": 1006,
+          "line": 1010,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._json_touch_ik_step",
-          "line": 2588,
+          "line": 2592,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._steer_touch_ready",
-          "line": 2622,
+          "line": 2626,
           "kind": "func"
         },
         {

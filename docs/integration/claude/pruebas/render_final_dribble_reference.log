@@ -25,12 +25,12 @@ WARNING: All audio drivers failed, falling back to the dummy driver.
        ·    pelota al costado p95 0.16 m, encima de la pelota 0 %, pelota atras 0 %
        · zigzag a la carrera (+-37 grados cada 0.83 s) (3.5 m/s): 16 toques (0 con animacion de toque, 0 de ellos sin pie en la pelota), intervalo mediano 0.25 s (video B 0.63), pie izq./der./sin pie 8/8/0, alternancia 60 %, pelota delante 0.04 / 0.42 / 0.66 m (p5/media/p95; B media 0.66), deriva lateral +-0.19 m, 2.0 cambios de lado por s
        ·    pelota al costado p95 0.39 m, encima de la pelota 6 %, pelota atras 0 %
-[ OK ] test_dribble_reference::test_gentle_curves_at_speed (5 checks, 7907 ms)
+[ OK ] test_dribble_reference::test_gentle_curves_at_speed (5 checks, 11254 ms)
        · trote (2.8 m/s): 19 toques (0 con animacion de toque, 0 de ellos sin pie en la pelota), intervalo mediano 0.40 s (video B 0.63), pie izq./der./sin pie 9/10/0, alternancia 100 %, pelota delante 0.37 / 0.43 / 0.47 m (p5/media/p95; B media 0.66), deriva lateral +-0.01 m, 0.0 cambios de lado por s
        · carrera (5.3 m/s): 21 toques (0 con animacion de toque, 0 de ellos sin pie en la pelota), intervalo mediano 0.28 s (video B 0.63), pie izq./der./sin pie 11/10/0, alternancia 100 %, pelota delante 0.53 / 0.64 / 0.74 m (p5/media/p95; B media 0.66), deriva lateral +-0.02 m, 0.5 cambios de lado por s
        · sprint (6.0 m/s): 15 toques (0 con animacion de toque, 0 de ellos sin pie en la pelota), intervalo mediano 0.53 s (video B 0.63), pie izq./der./sin pie 6/7/2, alternancia 7 %, pelota delante 0.42 / 0.80 / 0.99 m (p5/media/p95; B media 0.66), deriva lateral +-0.02 m, 0.5 cambios de lado por s
        · cambios de ritmo: trote, carrera, sprint (5.0 m/s): 19 toques (0 con animacion de toque, 0 de ellos sin pie en la pelota), intervalo mediano 0.28 s (video B 0.63), pie izq./der./sin pie 11/8/0, alternancia 61 %, pelota delante 0.41 / 0.64 / 0.84 m (p5/media/p95; B media 0.66), deriva lateral +-0.01 m, 0.0 cambios de lado por s
        · arrancada: paso, carrera y sprint (5.5 m/s): 7 toques (0 con animacion de toque, 0 de ellos sin pie en la pelota), intervalo mediano 0.47 s (video B 0.63), pie izq./der./sin pie 2/3/2, alternancia 33 %, pelota delante 0.53 / 0.75 / 1.02 m (p5/media/p95; B media 0.66), deriva lateral +-0.02 m, 0.0 cambios de lado por s
-[ OK ] test_dribble_reference::test_straight_dribble_metrics_against_the_reference_video (10 checks, 8881 ms)
+[ OK ] test_dribble_reference::test_straight_dribble_metrics_against_the_reference_video (10 checks, 12522 ms)
 
-Resumen: 2 pruebas, 0 fallidas, 0 omitidas, 15 comprobaciones, 16.8 s
+Resumen: 2 pruebas, 0 fallidas, 0 omitidas, 15 comprobaciones, 23.8 s

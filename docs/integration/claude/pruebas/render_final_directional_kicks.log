@@ -18,7 +18,7 @@ WARNING: All audio drivers failed, falling back to the dummy driver.
        · centro (parado): clip jn_kick_pass_3660 (kick_pass), cae en (13.94357, 0.264822, -2.780128), { "started": 1, "contact": 1, "missed": 0, "out_of_reach": 0 }
        · centro (carrera 0.55): clip jn_kick_pass_0992_mirror (kick_pass), cae en (13.78515, 0.293044, -2.509823), { "started": 1, "contact": 1, "missed": 0, "out_of_reach": 0 }
        · centro (carrera 0.85): clip  (), cae en (inf, inf, inf), { "started": 0, "contact": 0, "missed": 0, "out_of_reach": 0 }
-[ OK ] test_directional_kicks::test_crosses_from_the_wing (1 checks, 4789 ms)
+[ OK ] test_directional_kicks::test_crosses_from_the_wing (1 checks, 6114 ms)
        · pass parado a    0 grados: golpea a los 0.20 s, clip jn_kick_pass_3086 (kick_pass), error 1 grados, cuerpo-pelota 1 grados, { "started": 1, "contact": 1, "missed": 0, "out_of_reach": 0 } []
        · pass parado a   45 grados: golpea a los 0.20 s, clip jn_kick_pass_soft_3052_mirror (kick_pass_soft), error 2 grados, cuerpo-pelota 4 grados, { "started": 1, "contact": 1, "missed": 0, "out_of_reach": 0 } []
        · pass parado a  -90 grados: golpea a los 0.20 s, clip jn_kick_pass_soft_3138 (kick_pass_soft), error 0 grados, cuerpo-pelota 3 grados, { "started": 1, "contact": 1, "missed": 0, "out_of_reach": 0 } []
@@ -29,7 +29,7 @@ WARNING: All audio drivers failed, falling back to the dummy driver.
        · pass trote a  -90 grados: golpea a los 0.20 s, clip jn_kick_pass_1208_mirror (kick_pass), error 6 grados, cuerpo-pelota 9 grados, { "started": 1, "contact": 1, "missed": 0, "out_of_reach": 0 } []
        · pass trote a  135 grados: golpea a los 0.25 s, clip jn_kick_turn_1338 (kick_turn), error 5 grados, cuerpo-pelota 123 grados, { "started": 1, "contact": 1, "missed": 0, "out_of_reach": 0, "turn": 1 } []
        · pass trote a  180 grados: golpea a los 2.18 s, clip jn_kick_turn_2168 (kick_turn) tras giro con pelota ["jn_ball_turn_0202"], error 1 grados, cuerpo-pelota 16 grados, { "started": 1, "contact": 1, "missed": 0, "out_of_reach": 0, "turn": 1 } []
-[ OK ] test_directional_kicks::test_passes_in_every_direction (4 checks, 4775 ms)
+[ OK ] test_directional_kicks::test_passes_in_every_direction (4 checks, 5207 ms)
        · shot parado a    0 grados: golpea a los 0.33 s, clip jn_kick_shot_1886 (kick_shot), error 11 grados, cuerpo-pelota 9 grados, { "started": 1, "contact": 1, "missed": 0, "out_of_reach": 0 } [0.9869898557663, -0.16078256070614]
        · shot parado a   45 grados: golpea a los 0.33 s, clip jn_kick_shot_1892_mirror (kick_shot), error 4 grados, cuerpo-pelota 1 grados, { "started": 1, "contact": 1, "missed": 0, "out_of_reach": 0 } [0.99971157312393, 0.02401723340154]
        · shot parado a  -90 grados: golpea a los 0.33 s, clip jn_kick_shot_3592 (kick_shot), error 2 grados, cuerpo-pelota 1 grados, { "started": 1, "contact": 1, "missed": 0, "out_of_reach": 0 } [0.99993133544922, -0.01172020658851]
@@ -40,6 +40,6 @@ WARNING: All audio drivers failed, falling back to the dummy driver.
        · shot trote a  -90 grados: golpea a los 0.33 s, clip jn_kick_shot_2202_mirror (kick_shot), error 2 grados, cuerpo-pelota 2 grados, { "started": 1, "contact": 1, "missed": 0, "out_of_reach": 0 } [0.97894686460495, 0.20411509275436]
        · shot trote a  135 grados: golpea a los 1.68 s, clip jn_kick_shot_1162 (kick_shot) tras giro con pelota ["jn_ball_turn_3132"], error 4 grados, cuerpo-pelota 5 grados, { "started": 1, "contact": 1, "missed": 0, "out_of_reach": 0 } [0.98126631975174, -0.19265595078468]
        · shot trote a  180 grados: golpea a los 3.28 s, clip jn_kick_shot_1162_mirror (kick_shot) tras giro con pelota ["jn_ball_turn_0202", "jn_ball_turn_stop_3120"], error 3 grados, cuerpo-pelota 2 grados, { "started": 1, "contact": 1, "missed": 0, "out_of_reach": 0 } [0.99959087371826, -0.02860164642334]
-[ OK ] test_directional_kicks::test_shots_in_every_direction (2 checks, 5896 ms)
+[ OK ] test_directional_kicks::test_shots_in_every_direction (2 checks, 7495 ms)
 
-Resumen: 3 pruebas, 0 fallidas, 0 omitidas, 7 comprobaciones, 15.5 s
+Resumen: 3 pruebas, 0 fallidas, 0 omitidas, 7 comprobaciones, 18.8 s

@@ -150,6 +150,8 @@ jobs:
           set -o pipefail
           tools/run_tests.sh 2>&1 | tee "$RUNNER_TEMP/headless_tests.txt"
           if grep -q "SCRIPT ERROR\|Parse Error\|\[FAIL\]" "$RUNNER_TEMP/headless_tests.txt"; then exit 1; fi
+          # Fugas al cerrar Godot (corregidas 2026-11-07: ciclos RefCounted de BallHandler): no deben volver.
+          if grep -q "ObjectDB instances were leaked\|resources still in use at exit" "$RUNNER_TEMP/headless_tests.txt"; then echo "::error::fugas de ObjectDB o recursos al cerrar"; exit 1; fi
 
       # Pruebas que necesitan el esqueleto animado (toques de conduccion con el pie real, pie en la pelota al patear):
       # con render en un servidor X virtual.
@@ -163,6 +165,7 @@ jobs:
             xvfb-run -a godot --display-driver x11 --rendering-driver opengl3 --fixed-fps 60 --path . res://tests/run_tests.tscn -- --filter "$f" 2>&1 \
               | sed 's/\x1b\[[0-9;]*m//g' | tee "$RUNNER_TEMP/render_$f.txt"
             if grep -q "SCRIPT ERROR\|\[FAIL\]" "$RUNNER_TEMP/render_$f.txt"; then exit 1; fi
+            if grep -q "ObjectDB instances were leaked\|resources still in use at exit" "$RUNNER_TEMP/render_$f.txt"; then echo "::error::fugas al cerrar en $f"; exit 1; fi
           done
 
       - name: Conservar resultados de pruebas

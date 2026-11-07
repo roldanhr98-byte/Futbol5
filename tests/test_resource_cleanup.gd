@@ -31,3 +31,21 @@ func test_ball_handler_dispose_is_safe_to_call_twice() -> void:
 	# Restituye un manejador nuevo para que el resto de la limpieza sea la normal del juego.
 	p.ball_handler = BallHandler.new(p)
 	cleanup()
+
+## Segundo ciclo (test_physical_dribble con render): una lambda conectada a una senal del propio BallHandler
+## (touched_ball) que captura el manejador lo mantenia vivo. dispose() desconecta sus senales.
+func test_lambda_on_a_ball_handler_signal_does_not_keep_it_alive() -> void:
+	var ctx: MatchContext = await make_match(Vector3(2.0, 0.11, 0.0))
+	var p: Footballer = add_player(ctx, 0, Vector3.ZERO, 60, ScriptedInput.new())
+	await physics_frames(2)
+	var ref: WeakRef = _connect_capturing_lambda(p.ball_handler)
+	p.queue_free()
+	await physics_frames(3)
+	check(ref.get_ref() == null, "la lambda que captura el manejador no lo deja vivo al liberar el futbolista")
+	cleanup()
+
+## En una funcion aparte: los temporales de la pila de una corrutina con await (la prueba) retendrian el manejador.
+func _connect_capturing_lambda(bh: BallHandler) -> WeakRef:
+	var touches := [0]
+	bh.touched_ball.connect(func(_kind: StringName) -> void: touches[0] += bh.foot_touches)
+	return weakref(bh)

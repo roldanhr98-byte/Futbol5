@@ -17,7 +17,7 @@ WARNING: All audio drivers failed, falling back to the dummy driver.
 
        · pass: la punta del pie animada pasa a 0.027 m del centro de la pelota (fotograma +1 respecto al impulso); radio de contacto 0.30 m
        · shot: la punta del pie animada pasa a 0.065 m del centro de la pelota (fotograma +1 respecto al impulso); radio de contacto 0.30 m
-[ OK ] test_pack_motion::test_live_foot_passes_through_the_ball_at_the_impulse (4 checks, 1762 ms)
+[ OK ] test_pack_motion::test_live_foot_passes_through_the_ball_at_the_impulse (4 checks, 1936 ms)
        · caminata v=1.54 m/s | Tripo: pie de apoyo desliza media 1.54 m/s (p90 1.54, 358 fotogramas)
        · caminata v=1.54 m/s | pack : pie de apoyo desliza media 0.31 m/s (p90 0.69, 173 fotogramas)
        · paso vivo v=2.31 m/s | Tripo: pie de apoyo desliza media 2.31 m/s (p90 2.31, 358 fotogramas)
@@ -25,15 +25,11 @@ WARNING: All audio drivers failed, falling back to the dummy driver.
        · trote    v=2.83 m/s | Tripo: pie de apoyo desliza media 2.83 m/s (p90 2.83, 358 fotogramas)
        · trote    v=2.83 m/s | pack : pie de apoyo desliza media 0.39 m/s (p90 0.57, 65 fotogramas)
        · trote alto v=3.60 m/s | Tripo: pie de apoyo desliza media 3.60 m/s (p90 3.60, 358 fotogramas)
-       · trote alto v=3.60 m/s | pack : pie de apoyo desliza media 0.34 m/s (p90 0.44, 67 fotogramas)
+       · trote alto v=3.60 m/s | pack : pie de apoyo desliza media 0.33 m/s (p90 0.45, 68 fotogramas)
        · carrera  v=5.20 m/s | Tripo: pie de apoyo desliza media 5.20 m/s (p90 5.20, 358 fotogramas)
        · carrera  v=5.20 m/s | pack : pie de apoyo desliza media 0.59 m/s (p90 0.76, 57 fotogramas)
        · sprint   v=6.80 m/s | Tripo: pie de apoyo desliza media 6.80 m/s (p90 6.80, 358 fotogramas)
        · sprint   v=6.80 m/s | pack : pie de apoyo desliza media 0.52 m/s (p90 0.71, 53 fotogramas)
-[ OK ] test_pack_motion::test_planted_foot_slide_pack_vs_tripo (20 checks, 38998 ms)
+[ OK ] test_pack_motion::test_planted_foot_slide_pack_vs_tripo (20 checks, 48321 ms)
 
-Resumen: 2 pruebas, 0 fallidas, 0 omitidas, 24 comprobaciones, 40.8 s
-WARNING: 8 ObjectDB instances were leaked at exit (run with `--verbose` for details).
-   at: cleanup (core/object/object.cpp:2536)
-ERROR: 4 resources still in use at exit (run with --verbose for details).
-   at: clear (core/io/resource.cpp:822)
+Resumen: 2 pruebas, 0 fallidas, 0 omitidas, 24 comprobaciones, 50.3 s
