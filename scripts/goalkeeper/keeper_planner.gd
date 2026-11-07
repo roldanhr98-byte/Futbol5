@@ -216,8 +216,14 @@ static func plan_save(origin: Vector3, yaw: float, traj: PackedVector3Array, ste
 	Prof.end(&"arquero (plan de atajada)")
 	return plan
 
+## Traza (AnimTrace, solo depuracion): motivo por candidato del ultimo plan_save (id -> motivo; "evaluado" = sus manos se
+## compararon con la pelota y perdio por distancia o estilo). La lee Goalkeeper al empezar la atajada.
+static var trace_reasons: Dictionary = {}
+
 static func _plan_save(origin: Vector3, yaw: float, traj: PackedVector3Array, step: float, min_delay: float, pickup: bool,
 		speeds: Array, human: Vector2) -> Dictionary:
+	if AnimTrace.enabled:
+		trace_reasons = {}
 	var best: Dictionary = {}
 	var best_score: float = INF
 	var best_dist: float = INF
@@ -276,15 +282,23 @@ static func _plan_save(origin: Vector3, yaw: float, traj: PackedVector3Array, st
 		var id: StringName = cd[0]
 		var is_pickup_clip: bool = cd[8]
 		if pickup != is_pickup_clip and (pickup or bool(cd[9])):
+			if AnimTrace.enabled:
+				trace_reasons[id] = "recogida" if is_pickup_clip else "no es de recogida"
 			continue
 		var hp: PackedVector3Array = cd[1]
 		if hp.is_empty():
+			if AnimTrace.enabled:
+				trace_reasons[id] = "sin trayectoria de manos medida"
 			continue
 		var rad: float = float(cd[3]) * scale
 		var lo: Vector3 = (cd[4] as Vector3) - Vector3.ONE * (rad + 0.9)
 		var hi: Vector3 = (cd[5] as Vector3) + Vector3.ONE * (rad + 0.9)
 		if whi.x < lo.x or wlo.x > hi.x or whi.y < lo.y or wlo.y > hi.y or whi.z < lo.z or wlo.z > hi.z:
+			if AnimTrace.enabled:
+				trace_reasons[id] = "manos del clip fuera del alcance de la trayectoria"
 			continue
+		if AnimTrace.enabled:
+			trace_reasons[id] = "evaluado"
 		var rp: PackedVector2Array = cd[2]
 		var style: float = cd[6]
 		var duration: float = cd[7]

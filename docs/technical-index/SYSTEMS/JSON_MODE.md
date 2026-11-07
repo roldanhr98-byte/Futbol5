@@ -315,3 +315,26 @@ Inventario cruzado: `python3 tools/integration/report.py`; resultados y limitaci
 ## Continuación de integración (2026-11-07)
 
 Catálogo central ampliado con rutas de presentación y consulta de estado de las 338 conexiones históricas. Estado parcial y evidencia individual: [continuación](../../integration/continuacion/README.md).
+
+## Trazabilidad de la selección y overlay de depuración (Fase 1, 2026-11-07)
+
+- `scripts/diagnostics/anim_trace.gd` (`AnimTrace`): cada planificador registra los candidatos que examinó (motivo de
+  descarte o coste desglosado), el elegido, la decisión de `ActionArbiter`, interrupciones, cancelaciones, caducidades y
+  la validación del contacto (punto del cuerpo, pelota, distancia, tolerancia y si se aplicó el impulso). Esquema fijo de
+  35 columnas (`AnimTrace.COLUMNS`, sección 3.3 de la guía); `export_csv` / `export_json`. Decisiones sin elegido
+  muestreadas (una cada 0,25 s por jugador y familia); máximo 200.000 filas.
+- Enganches (todos bajo `if AnimTrace.enabled`, sin consumir azar ni cambiar decisiones): `ActionArbiter.request/_interrupt/_clear`,
+  `BallHandler.plan_clip_kick/plan_turn_kick/plan_aerial_kick/_try_execute_pending/_finish_clip_kick/abort_kick`,
+  `JsonReceive.consider/plan/_reject`, `JsonBallMove.consider/turn_for_kick/plan_ids/_touch/_received/finish/_abort/cancel`,
+  `KeeperPlanner._plan_save` + `Goalkeeper._begin_action/_evaluate_contact`, `PlayerActions.transition_score/try_locomotion_transition/_json_fall/suffer_contact`,
+  `Footballer._json_turn_move`.
+- `AnimTrace.explain(id)`: por qué un clip no sale — `no_encontrado`, `sin_rol`, `sin_consumidor`, `filtro` (filtros
+  estáticos del selector: `JsonCatalog.kick_clip_rejection`, filtro de situación, toques medidos, `JsonReceive.is_candidate`),
+  `coste`, `arbitro`, `cancelado`, `sin_contacto`, `filtro_dinamico`, `reproducido` o `sin_evaluar`.
+- `scripts/diagnostics/anim_debug_overlay.gd` (`AnimDebugOverlay`, `CanvasLayer`): lo crea `MatchScene` solo en
+  compilaciones de depuración. F3 lo muestra y enciende la traza; F4 cambia de jugador. Panel con árbitro, decisión,
+  elegido, fotogramas, coste, candidatos y descartes; en el mundo, punto del cuerpo (círculo), pelota prevista (cuadro) y
+  línea con la distancia (roja si supera 0,30 m).
+- Encender sin overlay: `FUTBOL5_ANIM_TRACE=1` o `-- --anim-trace`; overlay al iniciar: `FUTBOL5_ANIM_DEBUG=1` o `-- --anim-debug`.
+- Prueba: `tests/test_anim_trace.gd` (apagado por defecto, esquema, no cambia decisiones, exportación, `explain` por
+  categoría, overlay, partido real de 90 s con todas las familias).

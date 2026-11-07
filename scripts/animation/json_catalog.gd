@@ -160,10 +160,8 @@ static func kick_candidates(kind: StringName, charge: float) -> Array:
 	for r in roles:
 		for id in PackLibrary.by_role(r):
 			var m: Dictionary = PackLibrary.meta(id)
-			if not m.has("contact"):
-				continue
-			# Solo golpeos limpios (contacto medido al convertir): pie bajo delante del cuerpo, apoyo en el suelo, hacia delante.
-			if not bool(m["contact"].get("clean", true)) and r != &"kick_cross":
+			# Solo golpeos con contacto medido y limpios (pie bajo delante del cuerpo, apoyo en el suelo, hacia delante).
+			if kick_clip_rejection(m, r) != "":
 				continue
 			var c := {"clip": id, "foot": m["contact"]["foot"], "contact": m["contact"], "role": r, "mocap": bool(m.get("mocap", false))}
 			# Carrera de entrada del clip (BallHandler.plan_clip_kick la compara con la del jugador en cada plan).
@@ -174,6 +172,15 @@ static func kick_candidates(kind: StringName, charge: float) -> Array:
 	return out
 
 static var _kick_cache: Dictionary = {}
+
+## Motivo por el que kick_candidates no ofrece un clip de golpeo de ese rol ("" si lo ofrece). Los dos centros del banco
+## (kick_cross) se admiten aunque su contacto no sea limpio: el planificador exige igualmente que el pie llegue.
+static func kick_clip_rejection(m: Dictionary, role: StringName) -> String:
+	if not m.has("contact"):
+		return "sin contacto medido (JsonCatalog.kick_candidates)"
+	if not bool(m["contact"].get("clean", true)) and role != &"kick_cross":
+		return "contacto no limpio (JsonCatalog.kick_candidates exige clean)"
+	return ""
 
 ## Situaciones de presentacion (AnimationCatalog.FIELD) -> roles de los clips JSON. Se elige entre TODOS los clips de esos
 ## roles que se pueden reproducir en el sitio (poco recorrido de raiz): festejos, lamentos, enojo, aplausos, gestos,

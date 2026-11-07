@@ -71,6 +71,8 @@ func request(k: StringName, lv: int, src: StringName, c: StringName = &"", in_pl
 	if why != "":
 		stats["rechazadas"] += 1
 		_note("RECHAZADA %s (%s, nivel %d) %s: %s" % [k, src, lv, c, why])
+		if AnimTrace.enabled:
+			AnimTrace.event(owner, k, &"ActionArbiter", c, "rejected", "arbitro: " + why, {"context": "%s nivel %d" % [src, lv]})
 		return 0
 	if level != Level.NONE:
 		_interrupt(k)
@@ -82,6 +84,8 @@ func request(k: StringName, lv: int, src: StringName, c: StringName = &"", in_pl
 	clip = c
 	stats["aceptadas"] += 1
 	_note("ACEPTADA %s (%s, nivel %d) %s" % [k, src, lv, c])
+	if AnimTrace.enabled:
+		AnimTrace.event(owner, k, &"ActionArbiter", c, "accepted", "", {"context": "%s nivel %d" % [src, lv]})
 	return token
 
 ## request + reproducir el clip en la ranura de pose. Un clip inexistente o que no se reproduce falla sin dejar nada tomado.
@@ -89,6 +93,8 @@ func play(k: StringName, lv: int, src: StringName, c: StringName, speed: float =
 	if owner.visual == null or c == &"" or not PackLibrary.has_clip(c):
 		stats["rechazadas"] += 1
 		_note("RECHAZADA %s (%s, nivel %d) %s: clip inexistente" % [k, src, lv, c])
+		if AnimTrace.enabled:
+			AnimTrace.event(owner, k, &"ActionArbiter", c, "rejected", "no_encontrado: clip inexistente", {"context": "%s nivel %d" % [src, lv]})
 		return 0
 	var t: int = request(k, lv, src, c, in_place)
 	if t == 0:
@@ -207,6 +213,8 @@ func _pose_is(c: StringName) -> bool:
 func _interrupt(by: StringName) -> void:
 	stats["interrumpidas"] += 1
 	_note("INTERRUMPIDA %s (nivel %d) por %s" % [kind, level, by])
+	if AnimTrace.enabled:
+		AnimTrace.event(owner, kind, &"ActionArbiter", clip, "interrupted", "por " + String(by), {"context": "%s nivel %d" % [source, level]})
 	if ROOT_LEVELS.has(level) and owner.actions != null:
 		owner.actions.interrupt()
 	elif level == Level.KICK and owner.ball_handler != null:
@@ -222,6 +230,9 @@ func _clear(why: String, stat: String) -> void:
 	if stat != "":
 		stats[stat] += 1
 		_note("FIN %s (nivel %d): %s" % [kind, level, why])
+		if AnimTrace.enabled:
+			var res: String = "expired" if stat == "caducadas" else ("completed" if why == "fin" else "cancelled")
+			AnimTrace.event(owner, kind, &"ActionArbiter", clip, res, "" if res == "completed" else why, {"context": "%s nivel %d" % [source, level]})
 	kind = &""
 	level = Level.NONE
 	source = &""

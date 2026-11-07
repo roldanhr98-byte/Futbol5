@@ -112,36 +112,52 @@ func transition_score(id: StringName, desired_dir: Vector3, magnitude: float) ->
 	var role := StringName(String(m.get("role", "")))
 	if not LOCOMOTION_TRANSITIONS.has(role) or not can_start(&"turn") or owner.ball_handler.is_dribbling() \
 			or owner.has_incoming_pass() or not is_inf(owner.ball_handler.incoming_ball_eta()) or owner.ball_handler.is_kick_in_progress() or owner.ball_handler._pending_action != &"":
-		return INF
-	if owner.ctx.ball == null or KickModel.flat(owner.ctx.ball.global_position - owner.global_position).length() < 2.0 or not _lands_inside(id):
-		return INF
+		return _no(id, "rol o estado del jugador (pelota, pase entrante, golpeo u otra accion)")
+	if owner.ctx.ball == null or KickModel.flat(owner.ctx.ball.global_position - owner.global_position).length() < 2.0:
+		return _no(id, "pelota a menos de 2 m")
+	if not _lands_inside(id):
+		return _no(id, "la raiz termina fuera del area de juego")
 	if not _keeps_set_piece_clear(id):
-		return INF
+		return _no(id, "la raiz entra en la zona del balon parado")
 	var loco: Locomotion = owner.locomotion
 	var dv: float = absf(loco.speed - float(m.get("v_in", 0.0)))
 	if dv > 1.0:
-		return INF
+		return _no(id, "carrera de entrada %.1f m/s frente a %.1f m/s" % [float(m.get("v_in", 0.0)), loco.speed])
 	var moving: bool = magnitude >= 0.2 and desired_dir.length_squared() > 0.01
 	if (role == &"step_stand" and moving) or (role != &"step_stand" and not moving):
-		return INF
+		return _no(id, "rol %s no corresponde a %s" % [role, "moverse" if moving else "pararse"])
 	if role == &"start" and (loco.speed >= 1.3 or magnitude < 0.5):
-		return INF
+		return _no(id, "arranque: ya en marcha o joystick debil")
 	if role == &"run_change" and (loco.speed < 0.8 or magnitude < 0.5):
-		return INF
+		return _no(id, "cambio de ritmo: parado o joystick debil")
 	if role == &"turn_stop" and (magnitude > 0.5 or loco.speed < 1.0):
-		return INF
+		return _no(id, "giro frenando: joystick firme o parado")
 	var displacement: Vector2 = m.get("root_total", Vector2.ZERO)
 	var world_displacement: Vector3 = loco.forward() * displacement.x + loco.right() * displacement.y
 	var want: Vector3 = desired_dir if moving else loco.velocity
 	if world_displacement.length() > 0.08 and want.length() > 0.05 and world_displacement.normalized().dot(want.normalized()) < 0.65:
-		return INF
+		return _no(id, "la raiz va hacia otro lado que el pedido")
 	var measured: float = ActionMotion.heading_rel(m.get("heading_path", PackedFloat32Array()), float(m.get("duration", 1.0)))
 	var face: Vector3 = loco.face_override if loco.face_override.length_squared() > 0.01 else desired_dir
 	var needed: float = wrapf(Locomotion.yaw_from_dir(face.normalized()) - loco.yaw, -PI, PI) if moving else 0.0
 	var error: float = absf(wrapf(needed - measured, -PI, PI))
 	if moving and error > deg_to_rad(25.0):
-		return INF
+		return _no(id, "rumbo del clip a %.0f grados del pedido" % rad_to_deg(error))
+	if not _trace_dec.is_empty():
+		AnimTrace.cand(_trace_dec, id, "", {"v_in": loco.speed, "v_clip": float(m.get("v_in", 0.0)), "orient_start": rad_to_deg(loco.yaw),
+			"orient_target": rad_to_deg(loco.yaw + needed), "angular_error_deg": rad_to_deg(error), "cost_total": dv + error,
+			"cost_breakdown_json": {"carrera": dv, "rumbo_rad": error}})
 	return dv + error
+
+## Traza (AnimTrace, solo depuracion): decision de transicion en curso y descarte de un candidato (devuelve INF).
+var _trace_dec: Dictionary = {}
+
+func _no(id: StringName, why: String) -> float:
+	if not _trace_dec.is_empty():
+		AnimTrace.cand(_trace_dec, id, why)
+	return INF
+
+
 
 func request_locomotion_transition(id: StringName, desired_dir: Vector3, magnitude: float) -> bool:
 	if is_inf(transition_score(id, desired_dir, magnitude)):
@@ -165,6 +181,7 @@ func try_locomotion_transition(desired_dir: Vector3, magnitude: float) -> bool:
 	var pool: Array[StringName] = []
 	var weights: Array[float] = []
 	var total: float = 0.0
+	_trace_dec = AnimTrace.begin(owner, &"transition", &"PlayerActions.try_locomotion_transition", "joystick %.2f" % magnitude) if AnimTrace.enabled else {}
 	for role in LOCOMOTION_TRANSITIONS:
 		for id in PackLibrary.by_role(role):
 			var score: float = transition_score(id, desired_dir, magnitude)
@@ -175,13 +192,23 @@ func try_locomotion_transition(desired_dir: Vector3, magnitude: float) -> bool:
 			weights.append(weight)
 			total += weight
 	if pool.is_empty():
+		if not _trace_dec.is_empty():
+			AnimTrace.commit(_trace_dec, &"", {}, "rejected", "ninguna transicion compatible")
+			_trace_dec = {}
 		return false
+	var dec: Dictionary = _trace_dec
+	_trace_dec = {}
 	var pick: float = rng.randf() * total
+	var chosen: StringName = pool.back()
 	for i in pool.size():
 		pick -= weights[i]
 		if pick <= 0.0:
-			return request_locomotion_transition(pool[i], desired_dir, magnitude)
-	return request_locomotion_transition(pool.back(), desired_dir, magnitude)
+			chosen = pool[i]
+			break
+	var ok: bool = request_locomotion_transition(chosen, desired_dir, magnitude)
+	if not dec.is_empty():
+		AnimTrace.commit(dec, chosen, {}, "accepted" if ok else "rejected", "" if ok else "arbitro o clip no reproducible")
+	return ok
 
 ## Empieza una accion. chain: [{kind, clip, speed, cut}] que se encadenan al terminar. El arbitro decide si entra (por
 ## nivel: una caida corta un giro o un movimiento con pelota; un giro no corta una caida).
@@ -621,7 +648,11 @@ func suffer_contact(k: StringName, from_dir: Vector3) -> void:
 	elif not shove and PackLibrary.has_clip(FALLEN_IDLE) and lie_ok:
 		# Tras un golpe queda tendido un instante (aturdido) antes de levantarse.
 		chain.push_front({"kind": &"down", "clip": FALLEN_IDLE, "speed": 1.0, "cut": FALLEN_SECONDS})
-	if start(&"fall", clip, FALL_SPEED, -1.0, chain):
+	var fell: bool = start(&"fall", clip, FALL_SPEED, -1.0, chain)
+	if not _trace_fall.is_empty():
+		AnimTrace.commit(_trace_fall, PackLibrary.resolve(clip), {"context": String(k)}, "accepted" if fell else "rejected", "" if fell else "arbitro o clip no reproducible")
+		_trace_fall = {}
+	if fell:
 		stats["falls"] += 1
 		owner.ctx.emit_event(GameEvent.make(GameEvent.Type.TURNOVER, owner.actor_id, owner.team, {"reason": String(k)}))
 
@@ -633,6 +664,7 @@ func _json_fall(speed: float, from_dir: Vector3 = Vector3.ZERO) -> StringName:
 	var lo: float = 1.5 if speed >= FALL_SPRINT_MIN_SPEED else (DIRECTED_IN_PLACE if speed >= 3.0 else 0.0)
 	var hi: float = minf(1.3 if speed < 3.0 else 4.0, room - 0.5) if speed < FALL_SPRINT_MIN_SPEED else minf(8.0, room - 0.5)
 	var pool: Array[StringName] = []
+	_trace_fall = AnimTrace.begin(owner, &"fall", &"PlayerActions._json_fall", "%.1f m/s, sitio %.1f m" % [speed, room]) if AnimTrace.enabled else {}
 	for role in [&"fall", &"fall_hit", &"trip"]:
 		for id in PackLibrary.by_role(role):
 			if String(id).ends_with("_mirror"):
@@ -641,7 +673,12 @@ func _json_fall(speed: float, from_dir: Vector3 = Vector3.ZERO) -> StringName:
 			var travel: float = (m.get("root_total", Vector2.ZERO) as Vector2).length()
 			if travel >= lo and travel <= maxf(hi, 0.4) and m.has("lie"):
 				pool.append(id)
+			elif not _trace_fall.is_empty():
+				AnimTrace.cand(_trace_fall, id, "sin postura final medida (lie)" if not m.has("lie") else "recorrido %.1f m fuera de %.1f-%.1f m" % [travel, lo, maxf(hi, 0.4)])
 	return _directed_pick(pool, from_dir)
+
+## Traza (AnimTrace, solo depuracion): decision de caida en curso (la cierra suffer_contact).
+var _trace_fall: Dictionary = {}
 
 ## Peso (m/s equivalentes) del empujon del contacto frente a la inercia del cuerpo al decidir hacia donde cae o trastabilla.
 const PUSH_WEIGHT := 3.0

@@ -49,6 +49,8 @@ const RING_COLORS: Array[Color] = [Color(1.0, 0.35, 0.3, 0.9), Color(1.0, 0.86, 
 ## Arquero propio bajo control de la persona (null = lo lleva la IA). Mientras lo maneja, el jugador de campo
 ## `controlled` queda en manos de la IA pero se recuerda para devolverle el control.
 var controlled_keeper: Goalkeeper = null
+## Overlay de depuracion de animaciones (solo compilaciones de depuracion; null en la APK de produccion).
+var debug_overlay: AnimDebugOverlay = null
 ## Con false no se crean arqueros (algunas pruebas y la practica los omiten).
 @export var with_keepers: bool = true
 
@@ -106,6 +108,13 @@ func _ready() -> void:
 	hud.name = "Hud"
 	add_child(hud)
 	hud.bind(manager)
+	# Depuracion de animaciones (Fase 1): registro de decisiones y overlay. Nunca en la APK de produccion.
+	AnimTrace.configure_from_environment()
+	if AnimTrace.allowed():
+		debug_overlay = AnimDebugOverlay.new()
+		debug_overlay.name = "AnimDebugOverlay"
+		add_child(debug_overlay)
+		debug_overlay.setup(self)
 	hud.charge_provider = _charge_state
 	hud.restart_play_requested.connect(func() -> void: manager.restart_play())
 	hud.restart_match_requested.connect(func() -> void: manager.restart_match())

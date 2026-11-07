@@ -550,18 +550,28 @@ func _json_turn_move(desired_dir: Vector3, desired_mag: float, delta: float, inp
 	_turn_cd = JSON_TURN_COOLDOWN if is_human_controlled else JSON_TURN_COOLDOWN_AI
 	var best: StringName = &""
 	var best_s: float = INF
+	var dec: Dictionary = AnimTrace.begin(self, &"turn", &"Footballer._json_turn_move", "%s %.0f grados" % [role, ang]) if AnimTrace.enabled else {}
 	for id in PackLibrary.by_role(role):
 		var m: Dictionary = PackLibrary.meta(id)
 		var turn: float = rad_to_deg(ActionMotion.heading_rel(m.get("heading_path", PackedFloat32Array()), float(m.get("duration", 1.0))))
 		var dturn: float = absf(turn - ang)
 		var dv: float = absf(float(m.get("v_in", 0.0)) - spd)
 		if dturn > JSON_TURN_TOL or dv > 1.6:
+			if not dec.is_empty():
+				AnimTrace.cand(dec, id, ("giro del clip %.0f grados frente a %.0f" % [turn, ang]) if dturn > JSON_TURN_TOL else ("carrera de entrada %.1f m/s frente a %.1f m/s" % [float(m.get("v_in", 0.0)), spd]),
+					{"angular_error_deg": dturn, "v_in": spd, "v_clip": float(m.get("v_in", 0.0))})
 			continue
 		var s: float = dturn / JSON_TURN_TOL + 0.3 * dv + actions.rng.randf() * 0.3
+		if not dec.is_empty():
+			AnimTrace.cand(dec, id, "", {"angular_error_deg": dturn, "v_in": spd, "v_clip": float(m.get("v_in", 0.0)), "orient_start": rad_to_deg(locomotion.yaw),
+				"orient_target": rad_to_deg(locomotion.yaw) + ang, "cost_total": s, "cost_breakdown_json": {"giro": dturn / JSON_TURN_TOL, "carrera": 0.3 * dv}})
 		if s < best_s:
 			best_s = s
 			best = id
-	if best != &"" and actions.start_move(&"turn", best, 1.15 if is_human_controlled else JSON_TURN_SPEED_AI):
+	var turned: bool = best != &"" and actions.start_move(&"turn", best, 1.15 if is_human_controlled else JSON_TURN_SPEED_AI)
+	if not dec.is_empty():
+		AnimTrace.commit(dec, best, {}, "accepted" if turned else "rejected", "" if turned else ("ningun giro compatible" if best == &"" else "arbitro o clip no reproducible"))
+	if turned:
 		actions.stats["turns"] = int(actions.stats.get("turns", 0)) + 1
 var _tired_cd: float = 0.0
 

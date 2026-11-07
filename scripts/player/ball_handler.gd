@@ -542,6 +542,8 @@ func _try_execute_pending() -> bool:
 		return false
 	if uses_clip_kicks():
 		var plan: Dictionary = plan_clip_kick(_pending_action, _pending_charge, _pending_lob)
+		if plan.is_empty() and not _trace_kick.is_empty():
+			AnimTrace.commit(_trace_kick, &"", {}, "rejected", "ningun clip llega a la pelota")
 		if plan.is_empty():
 			# Modo 4, destino detras: giro con la pelota (clip) y la orden sigue pendiente para despues del giro.
 			if _kick_turn_dir != Vector3.ZERO and json_move.turn_for_kick(_kick_turn_dir):
@@ -550,7 +552,16 @@ func _try_execute_pending() -> bool:
 				return true
 			return false   # ningun pie llegaria a la pelota: se espera (buffer) o se descarta
 		var act: StringName = _pending_action
-		if not _start_clip_kick(act, plan, _pending_stick, _pending_charge, _pending_lob):
+		var started: bool = _start_clip_kick(act, plan, _pending_stick, _pending_charge, _pending_lob)
+		if not _trace_kick.is_empty():
+			var ct: Dictionary = plan["contact"]
+			var tbp: Vector3 = foot_contact_world(ct, owner.global_position, owner.locomotion.yaw)
+			AnimTrace.commit(_trace_kick, plan["clip"], {"frame_start": int(round(float(plan["offset"]) * AnimTrace.FRAME_RATE)),
+				"frame_contact": int(round(float(ct["time"]) * AnimTrace.FRAME_RATE)), "spatial_error_m": float(plan["distance"]),
+				"root_correction_m": (plan["adjust"] as Vector3).length()}, "accepted" if started else "rejected",
+				"" if started else "arbitro: " + (owner.arbiter.log.back() if owner.arbiter != null and not owner.arbiter.log.is_empty() else ""))
+			_trace_kick = {}
+		if not started:
 			return false   # el arbitro no da el control ahora: la orden sigue pendiente
 		_pending_action = &""
 		_kick_curl = _pending_curl
@@ -646,6 +657,9 @@ func _predicted_yaw(latency: float) -> float:
 
 ## Aborta una patada en curso y la accion pendiente (caida, barrida): no se aplica ningun impulso.
 func abort_kick() -> void:
+	if _kick_action != &"" and AnimTrace.enabled:
+		AnimTrace.event(owner, &"kick", &"BallHandler.abort_kick", _kick_clip.get("clip", &""), "cancelled", "golpeo abortado antes del contacto",
+			{"context": String(_kick_action), "contact_validated": false, "physics_applied": false})
 	if _kick_action != &"":
 		if owner.arbiter != null:
 			owner.arbiter.relevel(_kick_token, ActionArbiter.Level.OVERLAY)
@@ -860,6 +874,8 @@ func plan_aerial_kick(action: StringName, charge: float) -> Dictionary:
 						var lo: Vector3 = bb[0]
 						var hi: Vector3 = bb[1]
 						if whi.x < lo.x or wlo.x > hi.x or whi.y < lo.y or wlo.y > hi.y or whi.z < lo.z or wlo.z > hi.z:
+							if not _trace_kick.is_empty():
+								AnimTrace.cand(_trace_kick, clip, "trayectoria de %s fuera del alcance de la pelota" % key)
 							continue
 					# Modo 4 (muchos clips): un instante de cada dos (a 30 Hz sobran).
 					for k in range(4, path.size() - 1, 2 if PackLibrary.json_mode() else 1):
@@ -882,6 +898,11 @@ func plan_aerial_kick(action: StringName, charge: float) -> Dictionary:
 							var step: Vector3 = flat_d.limit_length(adjust_max)
 							var residual: float = Vector3(flat_d.x - step.x, delta.y, flat_d.z - step.z).length()
 							var score: float = residual + 0.12 * step.length() + (0.06 if sp > 1.0 else 0.0) + (0.0 if set["kind"] == &"volley" else 0.03)
+							if not _trace_kick.is_empty():
+								var tc: Dictionary = {"time": c["time"], "foot": 0 if key == "toe_l" else 1}
+								AnimTrace.cand(_trace_kick, clip, "" if residual <= t.kick_start_residual else "residuo %.2f m > %.2f m" % [residual, t.kick_start_residual],
+									_trace_kick_fields(clip, tc, lat, 0.0, bp, delta, step, score, {"residuo": residual, "ajuste": 0.12 * step.length()},
+										"head" if set["kind"] == &"header" else "foot"))
 							if score < best_score:
 								best_score = score
 								best = {"clip": clip, "speed": sp, "offset": 0.0, "latency": lat, "contact": c, "distance": delta.length(),
@@ -904,6 +925,24 @@ static func _path_bbox(clip: StringName, key: String, path: PackedVector3Array) 
 	_bbox_cache[ck] = [lo, hi]
 	return [lo, hi]
 
+## Traza (AnimTrace, solo depuracion): decision del golpeo en curso de planificacion. La abre plan_clip_kick, la completan
+## plan_turn_kick y plan_aerial_kick, y la cierra _try_execute_pending con lo que decidio el arbitro.
+var _trace_kick: Dictionary = {}
+
+## Campos de traza de un instante de contacto evaluado (pelota prevista, punto del pie, errores y coste desglosado).
+func _trace_kick_fields(clip: StringName, c: Dictionary, latency: float, offset: float, bp: Vector3, delta: Vector3, step: Vector3,
+		score: float, breakdown: Dictionary, part: String = "foot") -> Dictionary:
+	var cp: Vector3 = bp - delta
+	var m: Dictionary = PackLibrary.meta(clip)
+	var target: Vector3 = _pending_stick if _pending_stick.length_squared() > 0.01 else _desired_dir
+	return {"frame_start": int(round(offset * AnimTrace.FRAME_RATE)), "frame_contact": int(round(float(c["time"]) * AnimTrace.FRAME_RATE)),
+		"body_part": part, "foot": "R" if int(c.get("foot", 1)) > 0 else "L", "v_in": owner.locomotion.speed, "v_clip": float(m.get("v_in", 0.0)),
+		"orient_start": rad_to_deg(owner.locomotion.yaw), "orient_target": rad_to_deg(Locomotion.yaw_from_dir(target.normalized())) if target.length_squared() > 0.01 else "",
+		"ball_pred_x": bp.x, "ball_pred_y": bp.y, "ball_pred_z": bp.z, "contact_point_x": cp.x, "contact_point_y": cp.y, "contact_point_z": cp.z,
+		"spatial_error_m": delta.length(), "root_correction_m": step.length(), "tolerance_applied": Tuning.player.kick_start_residual,
+		"tolerance_reason": "kick_start_residual (residuo tras el ajuste de zancada)", "cost_total": score, "cost_breakdown_json": breakdown,
+		"_latency": latency}
+
 ## Elige el mejor clip, pierna E INSTANTE DE CONTACTO para la accion. El instante sale de la trayectoria real del pie del
 ## clip (contact_samples), no es fijo: se busca el punto que mejor encaja con la pelota predicha. Cada opcion puede
 ## compensar hasta el ajuste de zancada maximo; se empieza solo si, tras el ajuste, el pie quedaria a menos de
@@ -912,7 +951,10 @@ func plan_clip_kick(action: StringName, charge: float, lob: bool, preferred_clip
 	var b: Ball = ball()
 	if b == null or b.is_held():
 		return {}
+	_trace_kick = AnimTrace.begin(owner, &"kick", &"BallHandler.plan_clip_kick", String(action)) if AnimTrace.enabled else {}
 	if b.global_position.y > AERIAL_MIN_BALL_Y:
+		if not _trace_kick.is_empty():
+			_trace_kick["family"] = &"aerial"
 		var aerial: Dictionary = plan_aerial_kick(action, charge)
 		return aerial if preferred_clip == &"" or aerial.get("clip", &"") == PackLibrary.resolve(preferred_clip) else {}
 	var t: PlayerTuning = Tuning.player
@@ -967,12 +1009,17 @@ func plan_clip_kick(action: StringName, charge: float, lob: bool, preferred_clip
 			var v_in: float = float(cand["v_in"]) if cand.has("v_in") else spd
 			scored.append([Vector2(cp0.x - pf, cp0.z - pr).length() + JSON_PLANT_MISMATCH_COST * absf(v_in - spd), cand])
 		scored.sort_custom(func(a: Array, c: Array) -> bool: return float(a[0]) < float(c[0]))
+		if not _trace_kick.is_empty():
+			for e in scored.slice(JSON_KICK_EVAL):
+				AnimTrace.cand(_trace_kick, (e[1] as Dictionary)["clip"], "fuera de los %d contactos mas cercanos" % JSON_KICK_EVAL, {"cost_total": float(e[0])})
 		cands = scored.slice(0, JSON_KICK_EVAL).map(func(e: Array) -> Dictionary: return e[1])
 	for cand in cands:
 		var samples: Array = contact_samples_cached(cand["clip"], cand["contact"]) if json else contact_samples(cand["contact"])
 		if json:
 			var cp: Vector3 = cand["contact"]["pos"]
 			if Vector2(cp.x - bfwd, cp.z - bright).length() > margin:
+				if not _trace_kick.is_empty():
+					AnimTrace.cand(_trace_kick, cand["clip"], "contacto del clip a mas de %.2f m de la pelota" % margin)
 				continue
 		for smp in samples:
 			var c := {"time": smp["time"], "pos": smp["pos"], "foot": cand["foot"]}
@@ -993,6 +1040,12 @@ func plan_clip_kick(action: StringName, charge: float, lob: bool, preferred_clip
 			var mismatch: float = absf((c["plant"] as Vector2).length() - owner.locomotion.speed)
 			var score: float = residual + (JSON_STEP_COST if json else 0.15) * step.length() + (JSON_PLANT_MISMATCH_COST if json else PLANT_MISMATCH_COST) * mismatch
 			var plan: Dictionary = timing.merged({"clip": cand["clip"], "contact": c, "distance": delta.length(), "residual": residual, "adjust": step})
+			if not _trace_kick.is_empty():
+				var tbp: Vector3 = fast["bp"] if json else b.global_position + ball_travel(b, float(timing["latency"]))
+				AnimTrace.cand(_trace_kick, cand["clip"], "" if residual <= t.kick_start_residual else "residuo %.2f m > %.2f m" % [residual, t.kick_start_residual],
+					_trace_kick_fields(cand["clip"], c, float(timing["latency"]), float(timing["offset"]), tbp, delta, step, score,
+						{"residuo": residual, "ajuste_zancada": (JSON_STEP_COST if json else 0.15) * step.length(),
+						"carrera_pie_apoyo": (JSON_PLANT_MISMATCH_COST if json else PLANT_MISMATCH_COST) * mismatch}))
 			if score < best_score:
 				best_score = score
 				best = plan
@@ -1049,8 +1102,12 @@ func plan_turn_kick(action: StringName, alpha: float, adjust_max: float) -> Dict
 			var kt: float = float(ct.get("kick_turn", 0.0))
 			var dk: float = absf(wrapf(kt - alpha, -180.0, 180.0))
 			if dk > TURN_KICK_TOL or (ct["pos"] as Vector3).y > 0.35:
+				if not _trace_kick.is_empty():
+					AnimTrace.cand(_trace_kick, id, "giro del clip %.0f grados frente a %.0f pedidos" % [kt, alpha] if dk > TURN_KICK_TOL else "pie a mas de 0.35 m en el contacto")
 				continue
 			if action == &"shot" and float(ct["speed"]) < 7.0:
+				if not _trace_kick.is_empty():
+					AnimTrace.cand(_trace_kick, id, "pie a menos de 7 m/s para un tiro")
 				continue
 			var hp: PackedFloat32Array = m.get("heading_path", PackedFloat32Array())
 			var rp: PackedVector2Array = m.get("root_path", PackedVector2Array())
@@ -1064,6 +1121,8 @@ func plan_turn_kick(action: StringName, alpha: float, adjust_max: float) -> Dict
 					var steps: int = maxi(int(round((tc - start_at) / sp / dt)), 2)
 					var lat: float = float(steps) * dt
 					if lat > max_lat:
+						if not _trace_kick.is_empty():
+							AnimTrace.cand(_trace_kick, id, "contacto a %.2f s (maximo %.2f s)" % [lat, max_lat])
 						continue
 					var speed: float = (tc - start_at) / lat
 					var yaw0: float = loco.yaw - ActionMotion.heading_rel(hp, start_at)
@@ -1079,6 +1138,10 @@ func plan_turn_kick(action: StringName, alpha: float, adjust_max: float) -> Dict
 					var step: Vector3 = flat_d.limit_length(minf(adjust_max, KICK_NUDGE_MAX * maxf(lat - KICK_PLANT_TIME, 0.0)))
 					var residual: float = Vector3(flat_d.x - step.x, delta.y, flat_d.z - step.z).length()
 					var score: float = residual + 0.3 * step.length() + 0.006 * dk + 0.12 * dv + (0.04 if sp > 1.0 else 0.0) + rng.randf() * 0.03
+					if not _trace_kick.is_empty():
+						AnimTrace.cand(_trace_kick, id, "" if residual <= t.kick_start_residual else "residuo %.2f m > %.2f m" % [residual, t.kick_start_residual],
+							_trace_kick_fields(id, ct, lat, start_at, bp, delta, step, score, {"residuo": residual, "ajuste_zancada": 0.3 * step.length(),
+								"giro": 0.006 * dk, "carrera": 0.12 * dv}).merged({"angular_error_deg": dk}, true))
 					if score < best_score:
 						best_score = score
 						best = {"clip": id, "speed": speed, "offset": start_at, "latency": lat - 0.0005, "contact": ct, "distance": delta.length(),
@@ -1240,6 +1303,17 @@ func _finish_clip_kick() -> void:
 	var interfered: bool = b != null and b.last_touch_msec != _kick_start_touch and b.last_toucher != owner
 	var dv: float = (KickModel.flat(b.linear_velocity) - _kick_start_ball_v).length() if b != null else 0.0
 	var info := {"clip": String(plan["clip"]), "foot_distance": d, "predicted": plan["residual"], "latency": plan["latency"], "adjust_m": (plan["adjust"] as Vector3).length(), "interfered": interfered, "ball_dv": dv, "by_team": int(b.last_touch_team) if b != null else -1, "own_team": owner.team, "ball_v0": _kick_start_ball_v.length(), "body_v0": _kick_v0.length(), "turn": plan.has("turn"), "ball_y": b.global_position.y if b != null else 0.0}
+	if AnimTrace.enabled:
+		var ok: bool = d >= 0.0 and d <= kick_reach()
+		var fw: Vector3 = foot_contact_world(plan["contact"], owner.global_position, owner.locomotion.yaw)
+		var bpos: Vector3 = b.global_position if b != null else Vector3.ZERO
+		AnimTrace.event(owner, &"kick", &"BallHandler._finish_clip_kick", plan["clip"], "completed" if ok else "contact_failed",
+			"" if ok else "pelota a %.2f m del punto de contacto (limite %.2f m)" % [d, kick_reach()],
+			{"context": String(action), "frame_contact": int(round(float(plan["contact"]["time"]) * AnimTrace.FRAME_RATE)),
+			"body_part": "head" if plan.get("aerial", &"") == &"header" else "foot", "foot": "R" if int(plan["contact"].get("foot", 1)) > 0 else "L",
+			"ball_pred_x": bpos.x, "ball_pred_y": bpos.y, "ball_pred_z": bpos.z, "contact_point_x": fw.x, "contact_point_y": fw.y, "contact_point_z": fw.z,
+			"spatial_error_m": d, "tolerance_applied": kick_reach(), "tolerance_reason": "json_kick_reach" if _json_kicks() else "kick_contact_radius",
+			"contact_validated": ok, "physics_applied": ok})
 	if d < 0.0 or d > kick_reach():
 		lockout = 0.3
 		touch_timer = lockout

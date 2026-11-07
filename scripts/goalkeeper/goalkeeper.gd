@@ -715,6 +715,14 @@ func _begin_action() -> void:
 	_prev_ball = Vector3.INF
 	_eval_min = INF
 	var clip: StringName = _plan["clip"]
+	if AnimTrace.enabled:
+		var dec: Dictionary = AnimTrace.begin(self, &"keeper_save", &"KeeperPlanner.plan_save", "recogida" if _plan.get("pickup", false) else "atajada")
+		for id in KeeperPlanner.trace_reasons:
+			var why: String = String(KeeperPlanner.trace_reasons[id])
+			AnimTrace.cand(dec, id, "" if why == "evaluado" else why)
+		AnimTrace.commit(dec, clip, {"frame_contact": int(round(float(_plan.get("tau", 0.0)) * AnimTrace.FRAME_RATE)), "body_part": "hands",
+			"spatial_error_m": float(_plan.get("dist", -1.0)), "tolerance_applied": float(_plan.get("radius", 0.0)),
+			"tolerance_reason": "radio de manos del rol (KeeperPlanner.JSON_ROLE_RADIUS)"}, "accepted")
 	visual.play_pack_clip(clip, float(_plan["speed"]))
 	_motion.start(clip, float(_plan["speed"]))
 	_set_lying(true)
@@ -774,6 +782,14 @@ func _evaluate_contact(k: int, d: float) -> void:
 	var info := {"clip": String(clip), "dist": d, "speed": speed, "radius": radius, "pickup": _plan.get("pickup", false),
 		"plan_dist": float(_plan.get("dist", -1.0)), "clip_speed": float(_plan.get("speed", 1.0)), "late": (_clock - _plan_clock) - float(_plan.get("arrive", 0.0)),
 		"off": ball.global_position - hands}
+	if AnimTrace.enabled:
+		var ok: bool = not ball.is_held() and d <= radius
+		AnimTrace.event(self, &"keeper_save", &"Goalkeeper._evaluate_contact", clip, "completed" if ok else "contact_failed",
+			"" if ok else "manos a %.2f m de la pelota (radio %.2f m)" % [d, radius],
+			{"frame_contact": k, "body_part": "hands", "ball_pred_x": ball.global_position.x, "ball_pred_y": ball.global_position.y,
+			"ball_pred_z": ball.global_position.z, "contact_point_x": hands.x, "contact_point_y": hands.y, "contact_point_z": hands.z,
+			"spatial_error_m": d, "tolerance_applied": radius, "tolerance_reason": "radio de manos (_contact_radius)",
+			"contact_validated": ok, "physics_applied": ok})
 	if ball.is_held() or d > radius:
 		stats["beaten"] += 1
 		_log_save(&"beaten", info)

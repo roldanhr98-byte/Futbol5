@@ -88,6 +88,9 @@ const PLAN_EVERY := 2
 const COOLDOWN := 0.4
 
 var handler: BallHandler
+## Traza (AnimTrace, solo depuracion): decision en curso de plan y candidato que se esta examinando.
+var _trace_dec: Dictionary = {}
+var _trace_id: StringName = &""
 var _plan_tick: int = 0
 var _cooldown: float = 0.0
 var stats := {"planned": 0, "started": 0, "contact": 0, "missed": 0, "aborted": 0, "no_clip": 0}
@@ -320,6 +323,15 @@ static func warm_cache() -> void:
 				"slack": float(PART_SLACK[part]), "vtol": float(PART_VTOL[part]),
 				"contact_local": _local_point(rc, hd, lp)})
 
+## true si el clip esta entre los candidatos de recepcion (perfil seleccionable y punto de contacto calculable): el mismo
+## conjunto que recorre plan. Lo usa el diagnostico (AnimTrace.explain).
+static func is_candidate(id: StringName) -> bool:
+	warm_cache()
+	for c in _cands:
+		if c["id"] == id:
+			return true
+	return false
+
 ## Distancia horizontal minima (m) de `pos` a la trayectoria prevista entre `t_from` y `t_to` s (tramos interpolados como _at).
 static func _min_dist(traj: PackedVector3Array, pos: Vector3, t_from: float, t_to: float) -> float:
 	var last: int = traj.size() - 1
@@ -351,7 +363,11 @@ func consider(desired_dir: Vector3, stick_mag: float, dt: float) -> bool:
 	_plan_tick += 1
 	if _plan_tick % PLAN_EVERY != 0:
 		return false
+	_trace_dec = AnimTrace.begin(handler.owner, &"receive", &"JsonReceive.plan", "pelota que llega") if AnimTrace.enabled else {}
 	var plan: Dictionary = plan(desired_dir, stick_mag)
+	if not _trace_dec.is_empty() and plan.is_empty():
+		AnimTrace.commit(_trace_dec, &"", {}, "rejected", String(_trace_dec.get("reason", "ningun clip de recepcion llega")))
+		_trace_dec = {}
 	if plan.is_empty():
 		stats["no_clip"] += 1
 		if _plan_tick % APPROACH_EVERY == 0:
@@ -359,7 +375,11 @@ func consider(desired_dir: Vector3, stick_mag: float, dt: float) -> bool:
 		return false
 	approach = Vector3.INF
 	stats["planned"] += 1
-	if not handler.json_move.start_receive(plan):
+	var started: bool = handler.json_move.start_receive(plan)
+	if not _trace_dec.is_empty():
+		AnimTrace.commit(_trace_dec, plan["clip"], {}, "accepted" if started else "rejected", "" if started else "arbitro o clip no reproducible")
+		_trace_dec = {}
+	if not started:
 		return false
 	stats["started"] += 1
 	last_plan = plan
@@ -422,6 +442,7 @@ func plan(desired_dir: Vector3, stick_mag: float) -> Dictionary:
 		var p: Dictionary = c["p"]
 		var id: StringName = c["id"]
 		var role: StringName = c["role"]
+		_trace_id = id
 		if c["rival"] and not rival_near:
 			_reject("sin rival para el control protegiendo")
 			continue
@@ -520,6 +541,16 @@ func plan(desired_dir: Vector3, stick_mag: float) -> Dictionary:
 			# Con geometria equivalente, mejor un clip con el contacto visto con la pelota (verificado) que uno estimado.
 			if p["confidence"] != "verified":
 				score += UNVERIFIED_PENALTY
+			if not _trace_dec.is_empty():
+				AnimTrace.cand(_trace_dec, id, "", {"frame_start": int(round(start_at * AnimTrace.FRAME_RATE)), "frame_contact": int(round(t1 * AnimTrace.FRAME_RATE)),
+					"body_part": String(part), "foot": "R" if int(cp["foot"]) > 0 else "L", "v_in": loco.speed, "v_clip": float(c["v_in"]),
+					"orient_start": rad_to_deg(loco.yaw), "orient_target": rad_to_deg(Locomotion.yaw_from_dir(want)) if has_dir else "",
+					"ball_pred_x": bp.x, "ball_pred_y": bp.y, "ball_pred_z": bp.z, "contact_point_x": center.x, "contact_point_y": center.y,
+					"contact_point_z": center.z, "spatial_error_m": err.length(), "angular_error_deg": dturn, "root_correction_m": corr.length(),
+					"tolerance_applied": float(c["slack"]), "tolerance_reason": "PART_SLACK[%s]" % part, "cost_total": score,
+					"cost_breakdown_json": {"residuo": residual, "altura": 0.6 * absf(err.y), "correccion": 0.25 * corr.length(),
+						"carrera": 0.12 * (dv + dv_out), "giro": 0.006 * dturn, "direccion": 0.003 * ddir, "inicio": 0.03 * start_at,
+						"sin_verificar": UNVERIFIED_PENALTY if p["confidence"] != "verified" else 0.0}})
 			if score < best_score:
 				best_score = score
 				var post_t: float = float(p["post_t"])
@@ -530,6 +561,7 @@ func plan(desired_dir: Vector3, stick_mag: float) -> Dictionary:
 					"contact_local": c["contact_local"],
 					"incoming_speed": (bv - owner.velocity).length(), "ball_y": bp.y, "pred_ball": bp, "pred_contact": contact + corr,
 					"traj": traj, "frame": Engine.get_physics_frames()}
+	_trace_id = &""
 	return best
 
 ## Anticipacion: entre los clips que se podrian usar ahora (mismas condiciones que plan), donde tendria que estar el cuerpo
@@ -628,6 +660,11 @@ func _rival_within(r: float) -> bool:
 func _reject(why: String) -> void:
 	if record_rejects:
 		rejects[why] = int(rejects.get(why, 0)) + 1
+	if not _trace_dec.is_empty():
+		if _trace_id != &"":
+			AnimTrace.cand(_trace_dec, _trace_id, why)
+		else:
+			_trace_dec["reason"] = why
 
 ## Del punto de contacto al centro de la pelota: la pelota viene por `inc` y la parte del cuerpo se pone delante de ella,
 ## asi que su centro queda un radio (y una holgura) antes, del lado por donde llega.

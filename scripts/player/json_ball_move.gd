@@ -143,6 +143,12 @@ var _recv_gap: float = INF
 var _recv_traj: PackedVector3Array = PackedVector3Array()
 var _recv_frame0: int = 0
 var stats := {"started": 0, "done": 0, "touches": 0, "missed": 0, "aborted": 0}
+## Traza (AnimTrace, solo depuracion): decision en curso de consider / turn_for_kick (plan_ids agrega los candidatos).
+var _trace_dec: Dictionary = {}
+
+## Familia de traza del movimiento en curso: la recepcion se cuenta aparte de los movimientos con pelota.
+func _trace_family() -> StringName:
+	return &"receive" if intent == &"receive" else &"ball_move"
 var last := {}
 ## Ultimos movimientos terminados o cortados (diagnostico y pruebas).
 var history: Array = []
@@ -279,6 +285,7 @@ func consider(desired_dir: Vector3, stick_mag: float, dt: float) -> bool:
 	if new_intent != &"drag" and new_intent != &"skill" and new_intent != &"steer" and new_intent != &"start" and _plan_tick % PLAN_EVERY != 0:
 		return false
 	var plan: Dictionary
+	_trace_dec = AnimTrace.begin(owner, &"ball_move", &"JsonBallMove.consider", String(new_intent)) if AnimTrace.enabled else {}
 	if new_intent == &"steer":
 		plan = plan_ids(steer_pool(), want, tol, false, STEER_MAX_DV, true)
 	elif new_intent == &"start":
@@ -286,8 +293,15 @@ func consider(desired_dir: Vector3, stick_mag: float, dt: float) -> bool:
 	else:
 		plan = plan_move(roles, want, tol, new_intent == &"drag", MAX_DV_BUTTON if (new_intent == &"drag" or new_intent == &"skill") else MAX_DV_STICK)
 	if plan.is_empty():
+		if not _trace_dec.is_empty():
+			AnimTrace.commit(_trace_dec, &"", {}, "rejected", "ningun clip llega a la pelota")
+			_trace_dec = {}
 		return false
-	if not _start(plan, new_intent):
+	var started: bool = _start(plan, new_intent)
+	if not _trace_dec.is_empty():
+		AnimTrace.commit(_trace_dec, plan["clip"], {"orient_target": want}, "accepted" if started else "rejected", "" if started else "arbitro o clip no reproducible")
+		_trace_dec = {}
+	if not started:
 		return false
 	if not owner.is_human_controlled:
 		_cooldown = AI_COOLDOWN
@@ -305,10 +319,18 @@ func turn_for_kick(dir: Vector3) -> bool:
 		return false
 	var ang: float = rad_to_deg(wrapf(Locomotion.yaw_from_dir(KickModel.flat(dir).normalized()) - owner.locomotion.yaw, -PI, PI))
 	var roles: Array[StringName] = [&"ball_turn", &"ball_turn_stop"]
+	_trace_dec = AnimTrace.begin(owner, &"ball_move", &"JsonBallMove.turn_for_kick", "kick_turn") if AnimTrace.enabled else {}
 	var plan: Dictionary = plan_move(roles, ang, 50.0, absf(ang) > 165.0)
 	if plan.is_empty():
+		if not _trace_dec.is_empty():
+			AnimTrace.commit(_trace_dec, &"", {}, "rejected", "ningun giro con pelota llega")
+			_trace_dec = {}
 		return false
-	return _start(plan, &"kick_turn")
+	var started: bool = _start(plan, &"kick_turn")
+	if not _trace_dec.is_empty():
+		AnimTrace.commit(_trace_dec, plan["clip"], {"orient_target": ang}, "accepted" if started else "rejected", "" if started else "arbitro o clip no reproducible")
+		_trace_dec = {}
+	return started
 
 ## Elige el clip, el instante de inicio y el ajuste de paso para que la pelota llegue al primer toque del clip.
 ## {} si ninguno llega. want: giro pedido (grados, + izquierda); tol: tolerancia; both_sides: vale girar por cualquier lado.
@@ -331,6 +353,8 @@ func plan_ids(ids: Array[StringName], want: float, tol: float, both_sides: bool 
 		var m: Dictionary = PackLibrary.meta(id)
 		var bt: Array = m.get("ball_touches", [])
 		if bt.is_empty():
+			if not _trace_dec.is_empty():
+				AnimTrace.cand(_trace_dec, id, "sin toques de pelota medidos")
 			continue
 		var hp: PackedFloat32Array = m.get("heading_path", PackedFloat32Array())
 		var dur: float = float(m.get("duration", 1.0))
@@ -342,6 +366,8 @@ func plan_ids(ids: Array[StringName], want: float, tol: float, both_sides: bool 
 		# dobla a la derecha se veia al reves aunque la pelota saliera bien), y el joystick tiene que caer en la ventana en
 		# la que UCS elige ese clip (animdb: 32 sectores de 11.25 grados).
 		if steer and turn * want < 0.0 and absf(turn) > 3.0:
+			if not _trace_dec.is_empty():
+				AnimTrace.cand(_trace_dec, id, "gira al lado contrario del pedido")
 			continue
 		# Solo en el toque orientado (14-50 grados): en los giros grandes la ventana de UCS no esta centrada en el giro del clip
 		# (en 839 clips el giro cae en su ventana en 444 y la mitad del giro en 629; con la ventana, los clips de 180 grados
@@ -349,14 +375,20 @@ func plan_ids(ids: Array[StringName], want: float, tol: float, both_sides: bool 
 		if steer:
 			var win: Vector2 = AnimDB.joystick_window(id)
 			if want < win.x - 1.0 or want > win.y + 1.0:
+				if not _trace_dec.is_empty():
+					AnimTrace.cand(_trace_dec, id, "joystick fuera de la ventana del clip (%.0f a %.0f grados)" % [win.x, win.y])
 				continue
 		if both_sides:
 			dturn = minf(dturn, absf(turn + want))
 		if dturn > tol:
+			if not _trace_dec.is_empty():
+				AnimTrace.cand(_trace_dec, id, "giro del clip %.0f grados frente a %.0f pedidos" % [turn, want], {"angular_error_deg": dturn})
 			continue
 		var v_in: float = float(m.get("v_in", 0.0))
 		var dv: float = absf(v_in - loco.speed)
 		if dv > max_dv:
+			if not _trace_dec.is_empty():
+				AnimTrace.cand(_trace_dec, id, "carrera de entrada %.1f m/s frente a %.1f m/s" % [v_in, loco.speed], {"v_in": loco.speed, "v_clip": v_in})
 			continue
 		var rp: PackedVector2Array = m.get("root_path", PackedVector2Array())
 		for start_at in [0.0, 0.1, 0.2, 0.3]:
@@ -374,14 +406,26 @@ func plan_ids(ids: Array[StringName], want: float, tol: float, both_sides: bool 
 			var target: Vector3 = origin + f0 * p1.x + r0 * p1.z + lead
 			var dt1: float = t1 - start_at
 			if dt1 > MAX_LEAD:
+				if not _trace_dec.is_empty():
+					AnimTrace.cand(_trace_dec, id, "primer toque a %.2f s (maximo %.2f s)" % [dt1, MAX_LEAD])
 				continue
 			var bp: Vector3 = KickModel.flat(b.global_position + handler.ball_travel(b, dt1))
 			var err: Vector3 = bp - target
 			var corr: Vector3 = err.limit_length(minf(CORR_MAX, CORR_SPEED * dt1))
 			var residual: float = (err - corr).length()
 			if residual > FOOT_SLACK:
+				if not _trace_dec.is_empty():
+					AnimTrace.cand(_trace_dec, id, "pie a %.2f m de la pelota en el primer toque (limite %.2f m)" % [residual, FOOT_SLACK])
 				continue
 			var score: float = residual + 0.25 * corr.length() + 0.12 * dv + 0.004 * dturn + 0.03 * start_at + handler.rng.randf() * 0.04
+			if not _trace_dec.is_empty():
+				AnimTrace.cand(_trace_dec, id, "", {"frame_start": int(round(start_at * AnimTrace.FRAME_RATE)), "frame_contact": int(round(t1 * AnimTrace.FRAME_RATE)),
+					"body_part": "foot", "foot": "R" if float(bt[0][1]) > 0.0 else "L", "v_in": loco.speed, "v_clip": v_in,
+					"orient_start": rad_to_deg(loco.yaw), "orient_target": want, "ball_pred_x": bp.x, "ball_pred_y": b.global_position.y, "ball_pred_z": bp.z,
+					"contact_point_x": target.x, "contact_point_y": 0.0, "contact_point_z": target.z, "spatial_error_m": err.length(),
+					"angular_error_deg": dturn, "root_correction_m": corr.length(), "tolerance_applied": FOOT_SLACK, "tolerance_reason": "FOOT_SLACK",
+					"cost_total": score, "cost_breakdown_json": {"residuo": residual, "correccion": 0.25 * corr.length(), "carrera": 0.12 * dv,
+						"giro": 0.004 * dturn, "inicio": 0.03 * start_at}})
 			if steer:
 				# El toque que orienta es el segundo (o el unico): con su pie del lado de afuera del giro, interior.
 				var lt: Array = bt[mini(1, bt.size() - 1)]
@@ -597,6 +641,14 @@ func _touch(i: int, b: Ball, met: bool = false) -> void:
 	if receiving:
 		var want_y: float = float((_touches[i][2] as Vector3).y) if i == 0 else 0.0
 		high = absf(b.global_position.y - want_y) > 0.35 if i == 0 else b.global_position.y > 0.45
+	if AnimTrace.enabled:
+		var bad: bool = (d > MISS_DIST or high) and not met
+		AnimTrace.event(owner, _trace_family(), &"JsonBallMove._touch", clip, "contact_failed" if bad else "completed",
+			("toque %d: pelota a %.2f m del pie (limite %.2f m)%s" % [i, d, MISS_DIST, ", altura distinta" if high else ""]) if bad else "",
+			{"context": "toque %d de %s" % [i, String(intent)], "frame_contact": int(round(clip_t * AnimTrace.FRAME_RATE)), "body_part": "foot",
+			"foot": "R" if float(_touches[i][1]) > 0.0 else "L", "ball_pred_x": b.global_position.x, "ball_pred_y": b.global_position.y,
+			"ball_pred_z": b.global_position.z, "contact_point_x": here.x, "contact_point_y": 0.0, "contact_point_z": here.z, "spatial_error_m": d,
+			"tolerance_applied": MISS_DIST, "tolerance_reason": "MISS_DIST", "contact_validated": not bad, "physics_applied": not bad})
 	if (d > MISS_DIST or high) and not met:
 		_misses += 1
 		stats["missed"] += 1
@@ -706,6 +758,10 @@ func _received(b: Ball, rel_in: float) -> void:
 	var owner: Footballer = handler.owner
 	handler.control_cooldown = 0.5
 	handler.receive.stats["contact"] += 1
+	if AnimTrace.enabled:
+		AnimTrace.event(owner, &"receive", &"JsonBallMove._received", clip, "completed", "", {"context": "primer contacto", "body_part": String(_recv_part),
+			"foot": "R" if int(_touches[0][1]) > 0 else "L", "ball_pred_x": b.global_position.x, "ball_pred_y": b.global_position.y,
+			"ball_pred_z": b.global_position.z, "spatial_error_m": _recv_gap if is_finite(_recv_gap) else "", "contact_validated": true, "physics_applied": true})
 	owner.set_ball_ghost(true)
 	owner.ctx.emit_event(GameEvent.make(GameEvent.Type.FIRST_TOUCH, owner.actor_id, owner.team,
 		{"absorb": handler.receive.last_contact.get("absorb", 0.0), "incoming_speed": rel_in, "clip": String(clip), "planned": true, "part": String(_recv_part)}))
@@ -755,6 +811,8 @@ func finish() -> void:
 		return
 	active = false
 	stats["done"] += 1
+	if AnimTrace.enabled:
+		AnimTrace.event(handler.owner, _trace_family(), &"JsonBallMove.finish", clip, "completed", "", {"context": String(intent)})
 	if intent == &"receive":
 		handler.receive.ended(_next > 0)
 	_remember()
@@ -773,6 +831,8 @@ func _abort(reason: String) -> void:
 	active = false
 	stats["aborted"] += 1
 	last["aborted"] = reason
+	if AnimTrace.enabled:
+		AnimTrace.event(handler.owner, _trace_family(), &"JsonBallMove._abort", clip, "cancelled", reason, {"context": String(intent)})
 	if intent == &"receive":
 		handler.receive.ended(_next > 0)
 	_remember()
@@ -800,6 +860,8 @@ func _remember() -> void:
 ## La accion se corto desde fuera (saque, gol, caida).
 func cancel() -> void:
 	if active:
+		if AnimTrace.enabled:
+			AnimTrace.event(handler.owner, _trace_family(), &"JsonBallMove.cancel", clip, "cancelled", "cortado desde fuera (saque, gol, caida)", {"context": String(intent)})
 		active = false
 		if intent == &"receive":
 			handler.receive.ended(_next > 0)
