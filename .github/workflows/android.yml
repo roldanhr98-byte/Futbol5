@@ -160,8 +160,9 @@ jobs:
         run: |
           set -o pipefail
           sudo apt-get update -q > /dev/null && sudo apt-get install -y -q xvfb libgl1-mesa-dri > /dev/null
-          # dribble_reference y test_receive (pie vivo en la recepcion) tambien necesitan el esqueleto animado: en headless se omiten.
-          for f in live_feet live_kicks pack_motion json_mode physical_dribble directional_kicks dribble_reference test_receive; do
+          # Reforma (tiros libres y penales): sin las baterias del futbol 5 (conduccion y recepcion), que se quitaron de esta
+          # rama; test_anim_bank_bench mide el golpe en el contacto del clip con el esqueleto animado.
+          for f in live_kicks pack_motion json_mode directional_kicks test_anim_bank_bench; do
             xvfb-run -a godot --display-driver x11 --rendering-driver opengl3 --fixed-fps 60 --path . res://tests/run_tests.tscn -- --filter "$f" 2>&1 \
               | sed 's/\x1b\[[0-9;]*m//g' | tee "$RUNNER_TEMP/render_$f.txt"
             if grep -q "SCRIPT ERROR\|\[FAIL\]" "$RUNNER_TEMP/render_$f.txt"; then exit 1; fi

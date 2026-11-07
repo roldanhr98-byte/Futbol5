@@ -14,7 +14,7 @@
 
 | Archivo | Qué hace |
 |---|---|
-| `scripts/dev/dev_menu.gd`, `scenes/dev/dev_menu.tscn` | `DevMenu`: escena principal del proyecto; abre el banco de pruebas o el partido de fútbol 5 anterior (que se conserva entero). El menú de pausa del partido tiene «Menú de desarrollo» para volver. |
+| `scripts/dev/dev_menu.gd`, `scenes/dev/dev_menu.tscn` | `DevMenu`: escena principal del proyecto; abre el banco de pruebas (y los modos de tiros libres y penales cuando existan). El modo de fútbol 5 se quitó de esta rama: ver `docs/reforma/FUTBOL5_QUITADO.md`. |
 | `scripts/dev/anim_bank_bench.gd`, `scenes/dev/anim_bank_bench.tscn` | `AnimBankBench`: selector de banco (carga solo sus bibliotecas), cuerpo común (humano JSON) o cuerpo original del banco (diagnóstico), categorías de tirador, barrera y arquero, «sin clip en este banco», golpe de referencia en el instante de contacto del clip, marcador de las manos en atajadas, mediciones en vivo, secuencia reposo → clip → reposo del mismo banco, tres cámaras fijas y zoom. |
 | `scripts/dev/anim_bank_catalog.gd` | `AnimBankCatalog`: lectura del catálogo por procedencia y material del uniforme de cada cuerpo. |
 | `resources/animation/catalogo_bancos.json` | Catálogo generado (entra en la APK). |
@@ -29,6 +29,9 @@
 - Mixamo y Mocap se convirtieron para el futbolista (`player_base.glb`) y el JSON para el humano JSON: sus reposos de hueso
   difieren hasta 177°, así que sobre el cuerpo ajeno la pose se deforma (medido; ver el informe). No se corrige sin
   autorización del usuario.
+
+- Modo de fútbol 5 quitado de la rama (sin escena, acceso ni pruebas de juego abierto); su código queda como librería sin
+  acceso porque los sistemas reutilizados lo nombran (se desacopla en la Fase 3).
 
 ## Riesgos
 

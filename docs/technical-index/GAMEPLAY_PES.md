@@ -21,25 +21,25 @@ valores se fijaron con la física del juego y se midieron (sección 5).
 
 | Mecánica observada | Qué hace el jugador | Cómo responde el juego | Animaciones y física | Cómo se prueba |
 |---|---|---|---|---|
-| Circulación al pie (tiki-taka) | PASE apuntando con el joystick (mantener = más fuerte) | Elige compañero por intención, distancia y línea libre; el control pasa al receptor; error por precisión, postura y **presión rival** | Clip de pase con contacto real del pie (8 mm medidos); impulso único | `test_passing`, `test_pes_mechanics::test_receiver_runs…`, `test_pack_motion` (render) |
-| Receptor que sale al pase | Nada (o joystick) | El receptor corre al punto de la trayectoria PREDICHA al que llega antes que la pelota | Recepción con el pie (`receive_soccerball`) o el cuerpo (`Receive`) cuando la pelota llega a ~0.5 m, no a 1 m | `test_pes_mechanics`, `test_pack_reactions` |
-| Pase filtrado | FILTRADO (+ ALTO = por arriba) | Pelota al espacio por delante del desmarque, en el hueco de mayor línea libre | Mismo golpeo; llega a velocidad de carrera | `test_pes_mechanics::test_through_pass…` |
+| Circulación al pie (tiki-taka) | PASE apuntando con el joystick (mantener = más fuerte) | Elige compañero por intención, distancia y línea libre; el control pasa al receptor; error por precisión, postura y **presión rival** | Clip de pase con contacto real del pie (8 mm medidos); impulso único | *test_passing (eliminada en la reforma)*, *test_pes_mechanics::test_receiver_runs… (eliminada en la reforma)*, `test_pack_motion` (render) |
+| Receptor que sale al pase | Nada (o joystick) | El receptor corre al punto de la trayectoria PREDICHA al que llega antes que la pelota | Recepción con el pie (`receive_soccerball`) o el cuerpo (`Receive`) cuando la pelota llega a ~0.5 m, no a 1 m | *test_pes_mechanics (eliminada en la reforma)*, *test_pack_reactions (eliminada en la reforma)* |
+| Pase filtrado | FILTRADO (+ ALTO = por arriba) | Pelota al espacio por delante del desmarque, en el hueco de mayor línea libre | Mismo golpeo; llega a velocidad de carrera | *test_pes_mechanics::test_through_pass… (eliminada en la reforma)* |
 | Pared | Pasar con espacio por delante | El pasador (ya IA) sigue la jugada al espacio 1.8 s | Locomoción normal | `test_receiver_runs…` (control al receptor) |
-| Centro desde la banda | CENTRO (carga alta = tenso; + ALTO = raso) | Zona: primer palo, segundo palo o punto de penal según joystick y compañeros llegando; trayectoria resuelta con la física real | Altura de remate 1.7 m en la zona; efecto natural hacia el arco | `test_pes_mechanics::test_crosses…` |
-| Llegada al área | — | Con el portador en zona de centro: pivote al primer palo, alas al segundo palo / penal, cierre a la frontal | — | `test_full_match` (partidos) |
-| Conducción cercana | Joystick | Cada toque lo da **el pie animado** que llega a la pelota; la pelota se deja al alcance de la zancada | Esqueleto vivo: punta del pie a 0.21–0.27 m del centro de la pelota (radio 0.11) | `test_live_feet` (render) |
-| Tiro normal / potente / colocado | TIRO (corto cerca del arco = colocado; carga alta = potente) | Colocado: al palo lejano, más lento y preciso, con rosca; potente: más rápido y menos preciso | Clip de tiro con contacto del pie | `test_shooting`, `test_pes_mechanics::test_placed_shot…` |
+| Centro desde la banda | CENTRO (carga alta = tenso; + ALTO = raso) | Zona: primer palo, segundo palo o punto de penal según joystick y compañeros llegando; trayectoria resuelta con la física real | Altura de remate 1.7 m en la zona; efecto natural hacia el arco | *test_pes_mechanics::test_crosses… (eliminada en la reforma)* |
+| Llegada al área | — | Con el portador en zona de centro: pivote al primer palo, alas al segundo palo / penal, cierre a la frontal | — | *test_full_match (eliminada en la reforma)* (partidos) |
+| Conducción cercana | Joystick | Cada toque lo da **el pie animado** que llega a la pelota; la pelota se deja al alcance de la zancada | Esqueleto vivo: punta del pie a 0.21–0.27 m del centro de la pelota (radio 0.11) | *test_live_feet (eliminada en la reforma)* (render) |
+| Tiro normal / potente / colocado | TIRO (corto cerca del arco = colocado; carga alta = potente) | Colocado: al palo lejano, más lento y preciso, con rosca; potente: más rápido y menos preciso | Clip de tiro con contacto del pie | *test_shooting (eliminada en la reforma)*, *test_pes_mechanics::test_placed_shot… (eliminada en la reforma)* |
 | Chanfle / comba | Pulsar TIRO apuntando y, al soltar, girar el joystick hacia un lado | La salida se abre y la curva la cierra al objetivo | Giro lateral → efecto Magnus real (1.3 m de curva en 17 m) | `test_ball_curl` |
-| Presión y contención | PRESIÓN mantenido | Cierra distancia y contiene (jockey); **no roba solo** | Mezcla direccional + lateral rápido (`Strafe_3`) | `test_pes_mechanics::test_human_press…` |
-| Entrada | ENTRADA | Al alcance: de pie (probabilística); a la carrera: barrida; a la par: carga con el hombro; lejos: entrada al aire (penaliza) | `soccer_tackle*`, `Defender`, `Jogging_Stumble` (pierde la carga) | `test_pes_mechanics::test_tackle…`, `test_shoulder…` |
-| Faltas | Entrar por detrás / barrer al cuerpo | Tiro libre o penal según el área | Caída, `fallen_idle`/dolor y levantarse | `test_set_pieces` |
+| Presión y contención | PRESIÓN mantenido | Cierra distancia y contiene (jockey); **no roba solo** | Mezcla direccional + lateral rápido (`Strafe_3`) | *test_pes_mechanics::test_human_press… (eliminada en la reforma)* |
+| Entrada | ENTRADA | Al alcance: de pie (probabilística); a la carrera: barrida; a la par: carga con el hombro; lejos: entrada al aire (penaliza) | `soccer_tackle*`, `Defender`, `Jogging_Stumble` (pierde la carga) | *test_pes_mechanics::test_tackle… (eliminada en la reforma)*, `test_shoulder…` |
+| Faltas | Entrar por detrás / barrer al cuerpo | Tiro libre o penal según el área | Caída, `fallen_idle`/dolor y levantarse | *test_set_pieces (eliminada en la reforma)* |
 | Bloqueo de tiro | — | El defensor en la línea salta | `Defender_2`; el bloqueo real es su cuerpo | partidos |
 | Arquero: atajadas | — | Plan con la trayectoria real de las manos; reacción con retraso por atributos | Estiradas, bloqueos, `goalkeeper_miss` cuando no llega | `test_goalkeeper`, `test_keeper_and_gait_clips` |
 | Arquero: mano a mano | — | Sale a cerrar el ángulo si el atacante va solo; se lanza a los pies si se adelanta la pelota | Bloqueo/recogida con el plan de manos | `test_keeper_and_gait_clips::test_keeper_rushes…` |
 | Arquero: centros | — | Sale si la pelota cae en su zona y llega antes; ajusta los pasos para que las manos coincidan | `goalkeeper_catch_4` | `test_keeper_and_gait_clips::test_keeper_claims…` |
-| Saque de banda, córner, saque de arco | Botones de pase / centro / tiro con el ejecutor | Reglas con bandas; rivales a 5 m; jugada ensayada en córner y penal | `throw_in` (manos reales), `Chip`, `strike_foward_jog`, `soccer_penalty_kick`, `goalkeeper_placing_ball` | `test_set_pieces` |
-| Repetición de goles | Cualquier botón la salta | Cámara lenta 4.5 s antes del gol, con cámara propia; el partido queda exactamente como estaba | Poses de hueso grabadas | `test_goal_replay`, `test_full_match` |
-| Árbitro que sigue la jugada | — | Por la banda, de lado o de frente | Gemelos con raíz (sin patinar) | `test_pes_mechanics::test_referee…` |
+| Saque de banda, córner, saque de arco | Botones de pase / centro / tiro con el ejecutor | Reglas con bandas; rivales a 5 m; jugada ensayada en córner y penal | `throw_in` (manos reales), `Chip`, `strike_foward_jog`, `soccer_penalty_kick`, `goalkeeper_placing_ball` | *test_set_pieces (eliminada en la reforma)* |
+| Repetición de goles | Cualquier botón la salta | Cámara lenta 4.5 s antes del gol, con cámara propia; el partido queda exactamente como estaba | Poses de hueso grabadas | *test_goal_replay (eliminada en la reforma)*, *test_full_match (eliminada en la reforma)* |
+| Árbitro que sigue la jugada | — | Por la banda, de lado o de frente | Gemelos con raíz (sin patinar) | *test_pes_mechanics::test_referee… (eliminada en la reforma)* |
 
 ## 3. Diagnóstico inicial (antes de este cambio)
 
@@ -56,8 +56,8 @@ valores se fijaron con la física del juego y se midieron (sección 5).
 ## 4. Archivos
 
 **Nuevos:** `scripts/gameplay/set_piece.gd`, `scripts/gameplay/goal_replay.gd`, `scripts/assistance/cross_assist.gd`,
-`scripts/input/input_bindings.gd`; pruebas `tests/test_set_pieces.gd`, `test_pes_mechanics.gd`, `test_keeper_and_gait_clips.gd`,
-`test_live_feet.gd`, `test_ball_curl.gd`, `test_goal_replay.gd`, `test_full_match.gd`.
+`scripts/input/input_bindings.gd`; pruebas *tests/test_set_pieces.gd (eliminada en la reforma; en el historial de git)*, *test_pes_mechanics.gd (eliminada en la reforma)*, `test_keeper_and_gait_clips.gd`,
+*test_live_feet.gd (eliminada en la reforma)*, `test_ball_curl.gd`, *test_goal_replay.gd (eliminada en la reforma)*, *test_full_match.gd (eliminada en la reforma)*.
 
 **Modificados:** `ball_handler.gd` (pies vivos, filtrado, centro, chanfle, toques de preparación), `footballer.gd`
 (entrada, recepción asistida, transiciones de marcha, bloqueo), `player_actions.gd` (entrada/carga/barrida larga,
@@ -74,10 +74,10 @@ achique, centros, estirada desesperada, indicaciones, pelota en las manos), `mat
 Ver la entrada de este cambio en [CHANGELOG.md](CHANGELOG.md) (suite headless completa y pruebas con render).
 Mediciones destacadas:
 
-- Conducción con el pie animado (render, `test_live_feet`): trote 3.3 m/s, carrera 5.3 m/s y sprint 6.4 m/s con el
+- Conducción con el pie animado (render, *test_live_feet (eliminada en la reforma)*): trote 3.3 m/s, carrera 5.3 m/s y sprint 6.4 m/s con el
   100 % de la pelota a menos de 1.6 m y mediana punta del pie–centro de pelota 0.21–0.27 m; zigzag 18 de 21 toques con
   el pie.
-- Partidos de IA con reloj (`test_full_match`): 3, 5, 7 y 10 minutos jugados hasta el pitazo final, con una repetición
+- Partidos de IA con reloj (*test_full_match (eliminada en la reforma)*): 3, 5, 7 y 10 minutos jugados hasta el pitazo final, con una repetición
   por gol, balón parado de todos los tipos y la pelota nunca trabada más de 1.6 s.
 - Chanfle: 1.3 m de curva en ~17 m; un tiro escorado con chanfle entra en el arco.
 
@@ -93,7 +93,7 @@ Mediciones destacadas:
 
 ## 7. Cómo probarlo
 
-- PC: abrir con Godot 4.7.2 y ejecutar `scenes/main/match.tscn`. Teclado: WASD, J pase, K tiro, O filtrado, H centro,
+- PC: abrir con Godot 4.7.2 y ejecutar *scenes/main/match.tscn (eliminada en la reforma; en el historial de git)*. Teclado: WASD, J pase, K tiro, O filtrado, H centro,
   I alto, L presión, N entrada, U regate, Q cambio, Shift sprint, Esc pausa. Mando: A pase/presión, X tiro/entrada,
   Y filtrado, B centro, RB sprint, LB alto, LT cambio, RT regate, Start pausa.
 - Móvil: el APK del workflow (ver `README.md`). La duración (3/5/7/10 min), el tamaño de los botones y la sensibilidad

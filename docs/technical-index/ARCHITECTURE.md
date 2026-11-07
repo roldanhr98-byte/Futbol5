@@ -53,7 +53,7 @@ Goal._physics_process → Pitch.goal_scored → MatchManager._on_goal → score_
 | `Sfx` | `scripts/audio/sfx.gd` | línea 19 |
 <!-- /AUTO -->
 
-Escena principal: `scenes/main/match.tscn` (`project.godot`, `run/main_scene`).
+Escena principal: *scenes/main/match.tscn (eliminada en la reforma; en el historial de git)* (`project.godot`, `run/main_scene`).
 
 ### Capas de física 3D
 

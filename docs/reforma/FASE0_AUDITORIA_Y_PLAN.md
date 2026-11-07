@@ -147,7 +147,7 @@ autorización**.
 3. **Jugador de la comparación:** propongo el humano del modo JSON (`json_human.scn`, el cuerpo que el juego usa hoy) y
    comprobar sobre él los otros dos bancos; la alternativa es el futbolista `player_base.glb`, sobre el que se
    retargetearon Mixamo y Mocap.
-4. **Partido de fútbol 5:** ¿lo dejo accesible desde un menú de desarrollo mientras dura la reforma, o solo en el código?
+4. ~~Partido de fútbol 5~~ — **decidido: se quita de esta rama** (ver §9.2; antes se había decidido conservarlo accesible).
 
 ## 9. Decisiones tomadas
 
@@ -171,3 +171,23 @@ Pruebas a agregar en las fases de cámaras e interfaz: encuadre de tiro libre y 
 21:9 (arco, barrera y pelota visibles, sin estiramiento: la relación entre ancho y alto de los postes se mantiene) y
 controles dentro de la pantalla en cada una.
 
+
+### 9.2 Fútbol 5 quitado de la rama de la reforma (usuario, 2026-11-07)
+
+Reemplaza la decisión 4 de la §8 («conservar el modo anterior accesible»). En `reforma-tiros-penales` el modo de fútbol 5
+**sale**: no hay escena de partido, ni acceso desde el menú, ni pruebas de juego abierto. Se conserva todo lo que sirve para
+tiros libres y penales: las animaciones de los tres bancos, la física (pelota, efecto, red, arco), el contacto de los
+golpeos, el arquero, la locomoción y el árbitro de acciones. Detalle de lo quitado y lo conservado:
+[`FUTBOL5_QUITADO.md`](FUTBOL5_QUITADO.md). La rama `integracion-openai` conserva el partido completo.
+
+### 9.3 Requisitos del modo tiro libre (usuario, 2026-11-07)
+
+Para la Fase 4 (tiros libres). El objetivo del modo es **hacer el gol de tiro libre directo**.
+
+- En la cancha están **todos los jugadores**: la **barrera real** y además **jugadores sueltos** de los dos equipos.
+- Nadie fuera del tirador remata: los jugadores sueltos **no tiran ni cabecean al arco**; solo se mueven.
+- **Defensores:** si llegan a alcanzar una pelota que va al arco, la **interrumpen o la despejan**; si no llegan, no la tocan.
+- **Compañeros del tirador:** no hacen nada con la pelota; **se mueven como si fueran a recibir un centro o esperan un
+  rebote**, para que la jugada se vea real.
+- La barrera y el arquero siguen las reglas de las §8 y §9 de la instrucción de la reforma (salto sincronizado con colisión
+  real; arquero que lee la trayectoria y no conoce el resultado).

@@ -96,7 +96,7 @@
 | `accel`, `decel`, `brake` | `test_acceleration_is_progressive` (v(0.2 s) < 50 % de la velocidad de carrera; 90 % entre 0.9 y 2.2 s; medido 1.05 s) y `test_stops_without_sliding_like_ice` (frena en < 0.9 s y < 2 m; medido 0.55 s / 1.38 m). |
 | `turn_rate_standing`, `turn_rate_sprint`, `sharp_turn_angle_deg` | `test_turning_rate_depends_on_speed` (giro de 90° parado entre 0.08 y 0.30 s; a sprint ≥ 0.25 s y > 1.5× el parado; medidos 0.15 s / 0.30 s) y `test_reversal_at_sprint_brakes_first_and_never_slides_sideways`. |
 | `lateral_grip` | Es el «anti-hielo»: elimina la velocidad lateral respecto al cuerpo. Valores bajos = deslizamiento; la prueba exige desplazamiento lateral < 2.0 m al invertir a sprint (medido 0.67 m). |
-| `touch_reach`, `touch_interval_*`, `touch_lead_*`, `touch_overshoot_sprint`, `touch_error_*` | Conducción: `test_dribble_at_jog_keeps_ball_close_with_physical_touches` (pelota < 2 m el 85 % del tiempo y 8–40 toques en 6 s; medido 100 % y 21 toques), `test_sprint_dribble_is_less_precise_than_jog`, `test_better_ball_carrying_means_tighter_control`, `test_turning_with_ball_changes_ball_direction_physically`. Subir `touch_lead_*` o `touch_overshoot_sprint` alarga los toques y pierde la pelota más seguido. |
+| `touch_reach`, `touch_interval_*`, `touch_lead_*`, `touch_overshoot_sprint`, `touch_error_*` | Conducción: *test_dribble_at_jog_keeps_ball_close_with_physical_touches (eliminada en la reforma)* (pelota < 2 m el 85 % del tiempo y 8–40 toques en 6 s; medido 100 % y 21 toques), *test_sprint_dribble_is_less_precise_than_jog (eliminada en la reforma)*, *test_better_ball_carrying_means_tighter_control (eliminada en la reforma)*, *test_turning_with_ball_changes_ball_direction_physically (eliminada en la reforma)*. Subir `touch_lead_*` o `touch_overshoot_sprint` alarga los toques y pierde la pelota más seguido. |
 | `possession_radius` | Define «tiene la pelota»: lo usan `BallHandler.has_possession`, el primer toque y `PressController._find_carrier`. Cambiarlo altera cuándo se activa la presión y el robo. |
 | `kick_lockout` | Bloqueo de toques tras un pase/tiro (`BallHandler._after_kick`). Muy bajo: el jugador vuelve a empujar la pelota recién pateada. |
 | `first_touch_absorb` | Fracción de energía absorbida en el control (`BallHandler._try_first_touch`, escalada por `ball_control`). |
@@ -354,17 +354,7 @@ Ver la tabla «Valores fijos» de [ARCHITECTURE.md](../ARCHITECTURE.md) (carga d
 | `test_attributes_scale_speed_within_limits` | 107 |
 <!-- /AUTO -->
 
-<!-- AUTO:tests:tests/test_dribbling.gd -->
-| Prueba | Línea |
-|---|---|
-| `test_dribble_at_jog_keeps_ball_close_with_physical_touches` | 34 |
-| `test_sprint_dribble_is_less_precise_than_jog` | 42 |
-| `test_better_ball_carrying_means_tighter_control` | 50 |
-| `test_no_touch_when_standing_still` | 56 |
-| `test_turning_with_ball_changes_ball_direction_physically` | 64 |
-| `test_player_collides_with_walls` | 80 |
-| `test_ball_resting_on_two_players_is_shrugged_off` | 92 |
-<!-- /AUTO -->
+*Pruebas de test_dribbling: eliminadas en la reforma (modo de fútbol 5 quitado; en el historial de git).*
 
 <!-- AUTO:tests:tests/test_kick_timing.gd -->
 | Prueba | Línea |
@@ -387,30 +377,16 @@ Ver la tabla «Valores fijos» de [ARCHITECTURE.md](../ARCHITECTURE.md) (carga d
 | `test_contact_instant_comes_from_the_foot_trajectory` | 227 |
 <!-- /AUTO -->
 
-<!-- AUTO:tests:tests/test_pack_dribble_metrics.gd -->
-| Prueba | Línea |
-|---|---|
-| `test_dribble_distribution_at_jog_run_and_sprint` | 136 |
-| `test_pass_and_shot_execution_rate_per_speed` | 160 |
-<!-- /AUTO -->
+*Pruebas de test_pack_dribble_metrics: eliminadas en la reforma (modo de fútbol 5 quitado; en el historial de git).*
 
-<!-- AUTO:tests:tests/test_pack_reactions.gd -->
-| Prueba | Línea |
-|---|---|
-| `test_goal_makes_the_scoring_team_celebrate_and_the_other_one_mourn` | 26 |
-| `test_own_goal_scorer_is_on_the_conceding_team` | 50 |
-| `test_reaction_waits_for_a_running_player_to_slow_down` | 59 |
-| `test_slow_first_touch_plays_receive_and_fast_one_does_not` | 79 |
-| `test_kick_cancels_a_reaction_and_actions_never_overlap` | 110 |
-| `test_tripo_fallback_for_goal_reactions_and_no_invented_receive` | 120 |
-<!-- /AUTO -->
+*Pruebas de test_pack_reactions: eliminadas en la reforma (modo de fútbol 5 quitado; en el historial de git).*
 
-- **Qué podría romperse:** deslizamiento tipo hielo o giros instantáneos; pelota que se escapa al trotar; patada que se aplica antes/después del gesto; jugador atravesando paredes (`test_player_collides_with_walls`).
+- **Qué podría romperse:** deslizamiento tipo hielo o giros instantáneos; pelota que se escapa al trotar; patada que se aplica antes/después del gesto; jugador atravesando paredes (*test_player_collides_with_walls (eliminada en la reforma)*).
 
 ## Conducción física y golpeos en todas direcciones (2026-11-05)
 
 La persona sentía que la pelota seguía al jugador «como con un hilo» al girar o tirar una diagonal tras un toque largo.
-La sonda `tests/test_physical_dribble.gd` (con render) lo confirmó en el código de entonces: a sprint la mitad de los toques
+La sonda *tests/test_physical_dribble.gd (eliminada en la reforma; en el historial de git)* (con render) lo confirmó en el código de entonces: a sprint la mitad de los toques
 eran **sin pie**, uno a **1.28 m** del cuerpo (toque `redirect` desde lejos), y el jugador corría hasta **71°** apartado de su
 pelota. Como en FTS / Ultimate Clash (ver [`fases/00_auditoria_modo_json.md`](../../fases/00_auditoria_modo_json.md) §C), la
 pelota cambia de rumbo solo en el toque del pie y el jugador la sigue:
@@ -439,7 +415,7 @@ pelota cambia de rumbo solo en el toque del pie y el jugador la sigue:
 - **Golpeo pedido que espera el fin del bloqueo** tras un movimiento con pelota o una recepción (`PlayerActions` deja
   `lockout` ≥ 0.3 s): con la pelota propia a menos de 0.8 m el jugador se queda sobre ella a pasos cortos
   (`BallHandler.holding_for_kick`, intensidad ≤ 0.2 en `Footballer`); antes seguía hacia el joystick, llegaba a 2 m/s y
-  dejaba la pelota 0.5 m detrás (pase tras recibir perdido, `test_receive::test_reception_then_pass`).
+  dejaba la pelota 0.5 m detrás (pase tras recibir perdido, *test_receive::test_reception_then_pass (eliminada en la reforma)*).
 - Medido (render, modo 4): sprint + diagonal 40° → pelota ≤ 1.0 m, jugador ≤ 25° de la pelota; trote + giro 90° → con un
   giro con pelota del banco (toques del clip a 0.01 m del pie); `live_feet` 7/7 (a sprint 4–7 de 9–10 toques con la punta
   medida: sin toques a distancia el cuerpo alcanza la pelota empujada; antes 8 de 9), `live_kicks` 4/4 (50 de 50 golpeos con
@@ -464,7 +440,7 @@ llegue allí.
 `settle_gap` 0.38 m, `touch_escape_factor` (toque de recuperación si la pelota va a salirse en 0.14 s),
 `touch_error_max_deg` (tope del error del toque), `lateral_hold_seconds`, `lateral_max_stick`, `shield_radius`.
 
-**Medidas** (`tests/test_gameplay_feel.gd`, con la librería del pack):
+**Medidas** (*tests/test_gameplay_feel.gd (eliminada en la reforma; en el historial de git)*, con la librería del pack):
 
 | Situación | Resultado |
 |---|---|
@@ -488,7 +464,7 @@ mismo `Locomotion.face_override` que el marcaje en jockey, así que la animació
 - La IA (`AIInput`) y el cambio de jugador existen (ver [MATCH](MATCH.md)); `PlayerActions` añade barrida, caídas, levantarse y regate (`skill_pressed`, tecla U / botón REGATE) con movimiento de raíz. Límite: la IA no se ha calibrado contra humanos.
 - Las señales `Footballer.tackled`/`Footballer.kicked` y `BallHandler.touched_ball` se emiten sin ningún consumidor.
 - `Footballer.display_name`, `shirt_number` y `is_human_controlled` no los usa ninguna lógica o interfaz todavía.
-- **Patada con clip (medido, `test_pack_dribble_metrics`):** latencia 0.20 s frente a 0.10–0.18 s de la patada procedural; a sprint el pase/tiro se ejecuta el 88 % de las pulsaciones (el resto se descarta por no haber pie que llegue). El ajuste de zancada (media 0.26–0.47 m) mueve el cuerpo sin pasos animados y es sobre todo lateral: puede verse un deslizamiento leve (solo medido, no mirado en vídeo). `soccer_penalty_kick` y `Chip` no están conectados (llevan carrera de 2.5 / 4.4 m).
+- **Patada con clip (medido, *test_pack_dribble_metrics (eliminada en la reforma)*):** latencia 0.20 s frente a 0.10–0.18 s de la patada procedural; a sprint el pase/tiro se ejecuta el 88 % de las pulsaciones (el resto se descarta por no haber pie que llegue). El ajuste de zancada (media 0.26–0.47 m) mueve el cuerpo sin pasos animados y es sobre todo lateral: puede verse un deslizamiento leve (solo medido, no mirado en vídeo). `soccer_penalty_kick` y `Chip` no están conectados (llevan carrera de 2.5 / 4.4 m).
 - **Cadencia de toques ≠ fase del paso:** con el pack el intervalo entre toques sigue a la frecuencia de apoyos de la animación, pero no se sincroniza con el pie que pisa.
 - **Sin estado de caída/falta/salto:** `fall`, `getup`, `soccer_tackle`, `soccer_trip` y los saltos del catálogo no tienen disparador (no se inventó mecánica).
 - El atributo `dribbling` (regate) no se usa; no hay amagues ni regates con ventanas de ejecución (solo toques de colocación).
@@ -573,8 +549,8 @@ por nombre los controles aéreos (auditoría de los 124 clips).
 - **Después:** toques de pie posteriores del clip solo si la pelota está ahí (si no, `segundo contacto no llega`: el clip se
   corta y el jugador va a por ella); un pase o golpeo del clip no se reproduce como impulso: el clip se corta antes y el golpeo
   lo da el sistema de pase/tiro (destino real) si hay orden. Árbitro: acción `ball_move`, nivel `BALL_MOVE` (sin cambios de F2).
-- **Medido** (`tests/test_receive.gd`, modo 4, 2026-10-30 tras la verificación visual): 30 pruebas, 27 pasan (con render
-  también `test_live_foot_meets_the_ball`); parado, 42 de 42 pases rasos recibidos con clip y controlados; globo en carrera
+- **Medido** (*tests/test_receive.gd (eliminada en la reforma; en el historial de git)*, modo 4, 2026-10-30 tras la verificación visual): 30 pruebas, 27 pasan (con render
+  también *test_live_foot_meets_the_ball (eliminada en la reforma)*); parado, 42 de 42 pases rasos recibidos con clip y controlados; globo en carrera
   recibido con el pecho (el receptor frena hasta un clip casi parado); control orientado con el joystick a 120°: la pelota
   avanza 1.63 m hacia allí (antes 0.13 m).
 - **Limitaciones:** 3 pruebas en rojo por la parte elegida (1.06 m → muslo de 3162 en vez de pecho; 0.91 m → rodilla de 0204
@@ -586,10 +562,10 @@ por nombre los controles aéreos (auditoría de los 124 clips).
 
 - **Conducción, alcanzar la pelota** (`BallHandler.carry_catch_up_mag`, `CATCH_UP_TIME`, `CATCH_UP_MARGIN`; llamada en
   `Footballer` tras `carry_steer`): con la pelota propia demasiado adelantada en la dirección pedida, el joystick se eleva
-  lo necesario para recuperarla en 0.6 s (al frenar quedaba a 1.79 m; ahora ~0.7 m). Prueba `test_mode4_dribble`.
+  lo necesario para recuperarla en 0.6 s (al frenar quedaba a 1.79 m; ahora ~0.7 m). Prueba *test_mode4_dribble (eliminada en la reforma)*.
 - **Toque al alcanzar la pelota** (`BallHandler._catching_ball`, `CATCH_LEAD`, `CATCH_CLOSING`): si el cuerpo acelera y
   alcanza la pelota del toque anterior (lanzada para la velocidad de antes), el toque no espera a la cadencia (de caminar a
-  correr el cuerpo pasaba a 0.07 m de la pelota: «encima» 5 %; ahora 0 %). `test_live_feet` (con render).
+  correr el cuerpo pasaba a 0.07 m de la pelota: «encima» 5 %; ahora 0 %). *test_live_feet (eliminada en la reforma)* (con render).
 - **Esquivar una barrida** (`PlayerActions.avoid_tackle`, `AVOID_RADIUS`): la barrida fallida a menos de 1.2 m se salta
   con un clip `avoid` del banco (por velocidad de entrada y espejo por lado), a través del árbitro.
 - **Caídas y trastabillones dirigidos** (`PlayerActions._directed_pick`, `push_dir_local`, `PUSH_WEIGHT`,
@@ -598,9 +574,9 @@ por nombre los controles aéreos (auditoría de los 124 clips).
   cae hacia atrás o en el sitio, por detrás a la carrera cae hacia adelante, de costado se desvía al lado contrario al
   rival. Antes era un clip al azar. Junto a una línea se descartan las caídas y esquives cuyo recorrido terminaría fuera
   de la cancha (`_lands_inside`, `LAND_MARGIN` 0.5 m; sin el filtro, 17 de 40 caídas elegidas junto a la banda terminaban
-  fuera). `test_falls_direction` (5).
+  fuera). *test_falls_direction (eliminada en la reforma)* (5).
 - **Recepción**: penalización `JsonReceive.UNVERIFIED_PENALTY` a perfiles sin verificar; franjas de altura medidas
-  (muslo 0.78-0.98 m, pecho desde 1.10 m) en `test_receive`.
+  (muslo 0.78-0.98 m, pecho desde 1.10 m) en *test_receive (eliminada en la reforma)*.
 
 ## Joystick suelto: el jugador va a la pelota (2026-11-05)
 
@@ -658,7 +634,7 @@ Ver [CHANGELOG.md](../CHANGELOG.md): «Control asistido» (locomoción y conducc
 
 ## Pies animados, entrada y transiciones (2026-10-27)
 
-- **Conducción con el pie real:** `BallHandler._sample_feet` lee las puntas de los pies del esqueleto animado; con el esqueleto vivo (`feet_live`, nunca en headless) un toque solo ocurre si una punta baja está a `FOOT_CONTACT` (0.28 m) de la pelota y yendo hacia delante (`_foot_strike`), y la pelota se deja a `_foot_reach + FOOT_BALL_LEAD` (alcance real de la zancada). Si la pelota se escapa junto al cuerpo o el cuerpo la alcanza, se toca igual tras una espera corta. El primer toque espera a que la pelota llegue al pie o al cuerpo (~0.5 m). Medido con render en `test_live_feet`.
+- **Conducción con el pie real:** `BallHandler._sample_feet` lee las puntas de los pies del esqueleto animado; con el esqueleto vivo (`feet_live`, nunca en headless) un toque solo ocurre si una punta baja está a `FOOT_CONTACT` (0.28 m) de la pelota y yendo hacia delante (`_foot_strike`), y la pelota se deja a `_foot_reach + FOOT_BALL_LEAD` (alcance real de la zancada). Si la pelota se escapa junto al cuerpo o el cuerpo la alcanza, se toca igual tras una espera corta. El primer toque espera a que la pelota llegue al pie o al cuerpo (~0.5 m). Medido con render en *test_live_feet (eliminada en la reforma)*.
 - **Entrada con botón** (`PlayerActions.tackle_request`): de pie, carga con el hombro (`shoulder_charge`, pierde `Jogging_Stumble`), barrida forzada o entrada al aire. La persona no roba por mantener PRESIÓN; la IA sí disputa sola.
 - **Caídas:** a sprint `Sprint_To_Backslide` (o su versión en el sitio sin espacio), `fallen_idle` antes de levantarse.
 - **Transiciones** (`Footballer._gait_overlays`): `Idle_To_Sprint`, `Sprint_Turn`, parada agotado con `Running_Tired`. Bloqueo con `Defender_2`.
@@ -700,7 +676,7 @@ jugador gira hacia el arco y la pelota sigue sola hasta la banda).
 - **`has_possession()`**: pelota al pie Y no es de otro (`MatchContext.possessor`). Exigir ser ya el poseedor arbitrado
   cortaba la conducción en zigzag (8 de 16 toques con el pie frente a 18 de 21).
 
-Medido con render (`test_live_feet`, `test_live_kicks`): curva 100 % con la pelota cerca (antes 83 %), medias vueltas
+Medido con render (*test_live_feet (eliminada en la reforma)*, `test_live_kicks`): curva 100 % con la pelota cerca (antes 83 %), medias vueltas
 100 % (antes 44 %), zigzag 18/21 toques con el pie; batería de 50 golpeos variados: 49 con contacto (punta del pie a
 ≤0.30 m en la imagen del golpe), 1 cancelado porque el rival tocó antes, 0 impulsos sin contacto, 0 jugadores bloqueados.
 
@@ -744,7 +720,7 @@ Diagnóstico completo con los videos A/B y el inventario medido: [DRIBBLE_DIAGNO
   es de preparación (`_touch_mode` → `setup`); parado y cargando no se toca la pelota. Antes: tiro a 3.6–4.2 m/s con la
   pelota a 1.7–2.6 m → sin golpeo (video A, 58.4 s); ahora 7/7 golpeos con el pie a 0.02–0.17 m (`test_kick_reach`).
 - **Diagnóstico por toque:** `BallHandler.last_touch_foot` (0 izq., 1 der., −1 sin pie cerca) — lo usan
-  `test_dribble_reference` y la demo grabable `tools/dribble_demo/dribble_demo.tscn`.
+  *test_dribble_reference (eliminada en la reforma)* y la demo grabable `tools/dribble_demo/dribble_demo.tscn`.
 - **Conducción sin cambios de mecánica en esta ronda:** el pack no tiene animación de carrera con toques
   (`FootTrajectory.dribble_verdict`: ningún clip cumple), así que no se tocaron distancias, cadencias ni toques.
   Medido con render frente al video B: carrera con un toque por paso alternando pies (0.27 s; B 0.60–0.66 s) y deriva
@@ -800,12 +776,12 @@ animación de toque del pie que llega a la pelota, y el impulso solo se aplica e
     `TOUCH_SHARP_DEG` 25° apunta a la variante `_Close` (pelota más cerca del cuerpo).
   - El **freno de giro en curva** solo actúa después de un toque de clip (antes interfería con los rescates de la
     conducción de giro en el zigzag) y la regla del pie (`foot_gap`) solo en recta (giro < 25°).
-- Pruebas ajustadas: `test_live_feet` mide el zigzag en 4 pasadas (al menos la mitad de los toques con un pie y la pelota
+- Pruebas ajustadas: *test_live_feet (eliminada en la reforma)* mide el zigzag en 4 pasadas (al menos la mitad de los toques con un pie y la pelota
   conservada más del 90 %; una pasada sola variaba entre 7 y 9 de 12 por la semilla) y la arrancada admite que la pelota
   se adelante hasta 0.75 m (con los toques largos de arrancada se mide 0.73 m; la pelota sigue al alcance). Las demás
   comprobaciones no cambiaron.
 
-Medido con render (`test_dribble_reference`, versión final; curvas con 5 semillas del error del toque,
+Medido con render (*test_dribble_reference (eliminada en la reforma)*, versión final; curvas con 5 semillas del error del toque,
 `DRIBBLE_SEEDS=5`; «antes» de las curvas: una pasada con los toques de clip en recta ya integrados, sin el trabajo de
 curvas):
 
@@ -847,7 +823,7 @@ llega corriendo; si está a ≤ `LOOSE_CHASE_RANGE` 9 m, `Footballer`:
 - con el joystick suelto (< 0.2), corre solo a ese punto (más rápido cuanto más lejos; sprint a más de 4 m);
 - con el joystick a menos de `LOOSE_SNAP_DEG` 40° de ese punto, ajusta el rumbo al punto (no se pasa ni llega tarde);
 - apuntando a otro lado, manda el joystick. Solo el jugador de la persona (la IA decide sola). Medido
-  (`tests/test_loose_ball_chase.gd`): pelota cruzada a 5 m, controlada a los 1.22 s sin tocar el joystick y a los
+  (*tests/test_loose_ball_chase.gd (eliminada en la reforma; en el historial de git)*): pelota cruzada a 5 m, controlada a los 1.22 s sin tocar el joystick y a los
   1.30 s con el joystick hacia donde estaba la pelota.
 
 ### Giro con toques (`BallTurn`, 2026-10-29)
@@ -873,7 +849,7 @@ pedirlo y hasta `MAX_SPEED` 7.2 m/s (también a sprint):
 
 El joystick puede corregir el rumbo durante el giro (hacia el mismo lado). Si la pelota se aleja más de `LOST_DIST`
 1.25 m, la toca otro, se golpea o pasa `MAX_TIME` 1.8 s, el giro se suelta. Lo usan la persona y la IA (lo dispara el
-rumbo pedido). Medido (`tests/test_ball_turn.gd`, giro de 180°; con render el pie queda a 0.05–0.14 m de la superficie
+rumbo pedido). Medido (*tests/test_ball_turn.gd (eliminada en la reforma; en el historial de git)*, giro de 180°; con render el pie queda a 0.05–0.14 m de la superficie
 de la pelota en cada toque):
 
 | Caso | Toques | Mira al rumbo nuevo | Giro completo | Sigue de largo | Separación máxima |
@@ -908,7 +884,7 @@ hace el giro con toques:
 
 Visual: `TouchFootIK.set_target` lleva la punta del pie a lo alto de la pelota (sin el límite de 0.16 m de las
 correcciones) mientras llega, pisa y acompaña el tirón, y la suelta en 0.16 s. Lo usan la persona y la IA (con el mismo
-botón). Medido (`tests/test_drag_back.gd`; con render la suela queda a 0.04 m de lo alto de la pelota):
+botón). Medido (*tests/test_drag_back.gd (eliminada en la reforma; en el historial de git)*; con render la suela queda a 0.04 m de lo alto de la pelota):
 
 | Caso | Pisa a | Mira al rumbo nuevo | Sigue de largo | Separación máxima |
 |---|---|---|---|---|
@@ -925,7 +901,7 @@ Tras un toque a la carrera la pelota sale más rápido que el cuerpo. Si en ese 
 giraba y frenaba (castigo de giro de `Locomotion`) y la pelota se iba: a 135° a la carrera el jugador la perseguía 0.8 s
 y avanzaba −3.2 m en 1.5 s; a 90° a sprint, 0.8 m con la pelota a 1.9 m. Ahora `carry_steer` también persigue la pelota
 **al alcance** si se aleja del cuerpo a más de `ESCAPE_STEER_SPEED` 0.8 m/s: derecho a un punto detrás de ella respecto
-al rumbo pedido, y el toque de giro la lleva hacia allí en cuanto el pie llega. Medido con render (`test_live_feet`):
+al rumbo pedido, y el toque de giro la lleva hacia allí en cuanto el pie llega. Medido con render (*test_live_feet (eliminada en la reforma)*):
 135° a la carrera +2.78 m (separación 0.62 m), 90° a sprint +5.47 m (0.85 m).
 
 ### Parar: amortiguar para que la pelota quede quieta junto al pie

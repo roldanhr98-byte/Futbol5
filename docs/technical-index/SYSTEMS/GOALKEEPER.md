@@ -36,7 +36,7 @@
 Un balón tocado por un **compañero** que llega a menos de `backpass_speed_max` (11 m/s) nunca se trata como disparo:
 el arquero sale a su encuentro y lo **para con el pie** (`_receive_backpass` / `_foot_trap`), y después lo juega con
 un pase de pie (`_choose_distribution` modo `foot`, clip `Soccer_Pass`). Mientras la pelota está en sus pies no la
-recoge con la mano. Medido en `tests/test_control_and_keeper.gd`: cedida a 9 m/s → 0 estiradas; disparo rival a
+recoge con la mano. Medido en *tests/test_control_and_keeper.gd (eliminada en la reforma; en el historial de git)*: cedida a 9 m/s → 0 estiradas; disparo rival a
 16 m/s desde la misma zona → se lanza y ataja.
 
 Recogida de pelota suelta y lenta dentro de su área (`pickup_*`): solo con clips bajos y nunca detrás de la línea de gol; si la pelota lleva ≥ 1.2 s parada en el área con rivales encima (barullo, `SCRUM_SECONDS`) la recoge igualmente. **Lectura del disparo:** si un rival cercano a la pelota está armando una patada, la reacción empieza hasta 0.22 s antes de que salga la pelota (`KICK_READ_MAX`, escalado por reflejos). Medido con tiradores reales (80 tiros desde 8–14 m a 0.5–1.2 m del centro, `ShotAssist` y clips): 74 a puerta, 22 % goles, 36 % atajadas con las manos y 42 % bloqueos con el cuerpo/desvío. Eventos: `SAVE`, `KEEPER_CATCH`, `KEEPER_DISTRIBUTE`. `stats`, `save_log` y la señal `saved(kind)` sirven para diagnóstico y pruebas.

@@ -4,7 +4,7 @@ extends TestCase
 ## banco elegido, una categoria vacia muestra «sin clip en este banco» (sin rellenar con otro banco), todos los clips del
 ## catalogo se reproducen sobre el cuerpo comun sin pistas huerfanas, el golpe de referencia sale en el instante de contacto
 ## del clip (con render: la punta del pie esta en la pelota sobre el cuerpo original de cada banco) y el menu de desarrollo
-## abre el banco y el partido de futbol 5 anterior. No compara calidad ni elige banco: eso lo decide el usuario.
+## abre el banco (el modo de futbol 5 ya no existe en esta rama). No compara calidad ni elige banco: eso lo decide el usuario.
 
 func _bench() -> AnimBankBench:
 	use_game_pitch()
@@ -130,16 +130,16 @@ func test_reference_kick_happens_at_the_clip_contact() -> void:
 				check(d <= 0.25, "%s sobre su cuerpo original: punta del pie a %.3f m del centro de la pelota (<= 0,25)" % [bank, d])
 	cleanup()
 
-func test_dev_menu_is_the_entry_and_keeps_the_old_match() -> void:
+func test_dev_menu_is_the_entry_and_the_5_a_side_mode_is_gone() -> void:
 	check(String(ProjectSettings.get_setting("application/run/main_scene")) == DevMenu.SCENE, "la entrada del juego es el menu de desarrollo")
 	check(ResourceLoader.exists(DevMenu.BENCH_SCENE), "existe la escena del banco de pruebas")
-	check(ResourceLoader.exists(DevMenu.MATCH_SCENE), "el partido de futbol 5 anterior sigue existiendo")
+	check(not ResourceLoader.exists("res://scenes/main/match.tscn"), "el modo de futbol 5 se quito de esta rama (sin escena de partido)")
 	var m: DevMenu = (load(DevMenu.SCENE) as PackedScene).instantiate()
 	spawn(m)
 	await physics_frames(1)
 	var texts: Array = []
 	for btn in m.find_children("*", "Button", true, false):
 		texts.append((btn as Button).text)
-	check(texts.size() == 2, "dos accesos: banco de pruebas y partido anterior (%s)" % str(texts))
-	check(str(texts).contains("Banco de pruebas") and str(texts).contains("fútbol 5"), "textos de los accesos")
+	check(texts.size() == 1 and str(texts).contains("Banco de pruebas"), "un acceso: el banco de pruebas (%s)" % str(texts))
+	check(not str(texts).contains("fútbol 5"), "ningun acceso al futbol 5")
 	cleanup()

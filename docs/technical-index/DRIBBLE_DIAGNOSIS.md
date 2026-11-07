@@ -25,7 +25,7 @@ cian + aro de posesión) y hojas de fotogramas al ritmo real del video (24–30 
 el seguimiento automático la confunde con medias y botines, así que **las cifras de A salen del motor** (misma
 conducción, esqueleto animado con render) y del video solo se usan observaciones fotograma a fotograma con su instante.
 
-| Medida | Video B (referencia) | Nuestro juego (prueba con render, `test_dribble_reference`) |
+| Medida | Video B (referencia) | Nuestro juego (prueba con render, *test_dribble_reference (eliminada en la reforma)*) |
 |---|---|---|
 | Intervalo entre toques | mediana 0.60–0.66 s (tramos rectos 4.4–7.8 s y 40–48 s) | trote 0.67 s · **carrera 0.27 s** · sprint 0.43 s |
 | Pelota por delante del cuerpo | 0.3–1.2 m (media 0.56–0.76 m); se acerca entre toques y cada toque la devuelve a ~1 m | trote 0.31/0.44/0.66 m (p5/media/p95) · carrera 0.42/0.66/1.11 · **sprint 0.07**/0.68/0.95 |
@@ -162,7 +162,7 @@ velocidad se cancela con aviso y sin impulso.
 ## Una misma base para la persona y la IA
 
 La IA solo produce entradas (`InputFrame`, como el joystick y los botones) que van al mismo `Footballer` →
-`BallHandler`; ningún script de `scripts/ai` toca la pelota. Comprobado en `test_shared_ball_mechanics`: el código de IA no
+`BallHandler`; ningún script de `scripts/ai` toca la pelota. Comprobado en *test_shared_ball_mechanics (eliminada en la reforma)*: el código de IA no
 contiene `kick`/`push`/impulsos/teletransportes, y en 6 s de un jugador de IA con la pelota sus 11 toques salen todos de
 su `BallHandler`. Cuando llegue el clip de conducción, compañeros y rivales lo usarán sin cambios.
 
@@ -249,7 +249,7 @@ Rectas: trote un toque de clip cada 0.68 s (video B 0.63 s), carrera un toque co
 a 0.57 m, sprint con la pelota a 0.65 m (video B 0.66 m); la punta nunca entra en la pelota tras el toque.
 
 **Lo que no se resolvió:** el zigzag cerrado (cambios de 37° cada 0.83 s) sigue en manos de la conducción de giro, cuyos
-toques no tienen animación de toque; y dos pruebas de sensación (`test_gameplay_feel`: recibir un pase corriendo frena
+toques no tienen animación de toque; y dos pruebas de sensación (*test_gameplay_feel (eliminada en la reforma)*: recibir un pase corriendo frena
 al receptor hasta 0.65 m/s y la pelota a sprint queda solo 0.14 m más lejos que al trote, se pedían 0.25) fallan igual
 que en el commit anterior a esta ronda: no son regresiones de este trabajo y siguen pendientes.
 
@@ -331,7 +331,7 @@ gravedad 98 unidades/imagen² = 10.77 m/s², radio de la pelota 0x1000 = 0.125).
 
 **Qué se cambió:** rodadura proporcional (y todas las predicciones con ella), vuelta atrás pisando la pelota, persecución
 de la pelota que se escapa en giros cerrados, parada con la pelota que se detuvo sola, tronco encorvado en control
-cerrado. **Antes → después** (con render, `test_dribble_reference`, pelota delante del cuerpo p5/media/p95):
+cerrado. **Antes → después** (con render, *test_dribble_reference (eliminada en la reforma)*, pelota delante del cuerpo p5/media/p95):
 
 | Caso | Antes (commit 10f6377) | Ahora |
 |---|---|---|

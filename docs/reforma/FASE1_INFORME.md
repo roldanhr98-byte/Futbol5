@@ -40,6 +40,11 @@ misma cancha, pelota, posición y cámaras. Ver la decisión pendiente en §6.
 
 ## 2. Qué se entregó
 
+> **Cambio posterior (mismo día, pedido del usuario):** el modo de fútbol 5 salió de esta rama, con su escena, su acceso
+> desde el menú y sus pruebas de juego abierto ([`FUTBOL5_QUITADO.md`](FUTBOL5_QUITADO.md)). El menú de desarrollo solo
+> abre el banco de pruebas. Suite después del cambio: 132 pruebas, 0 fallidas, 13 omitidas (necesitan render), 0 fugas; 5
+> baterías con render 0 fallidas ([`pruebas_sin_futbol5/`](pruebas_sin_futbol5/)).
+
 | Pieza | Archivo |
 |---|---|
 | Menú de desarrollo (entrada del juego): banco de pruebas y partido de fútbol 5 anterior; el menú de pausa del partido tiene «Menú de desarrollo» para volver | `scenes/dev/dev_menu.tscn`, `scripts/dev/dev_menu.gd` |

@@ -58,7 +58,7 @@ Botones (en `TouchControls._build_buttons`; posición = desplazamiento desde la 
 
 | Elemento | Efecto real y riesgo |
 |---|---|
-| `JOY_RADIUS` (95), `JOY_DEADZONE` (0.12) | Sensibilidad del movimiento: la intensidad `m` se reescala `(m − zona_muerta)/(1 − zona_muerta)` y define `walk/jog/run` en `Locomotion.speed_for_magnitude`. `test_floating_joystick_drives_move_actions_with_analog_strength` y `test_touch_joystick_moves_a_real_footballer_end_to_end` vigilan que el joystick produzca movimiento analógico y mueva a un futbolista real hacia +X. |
+| `JOY_RADIUS` (95), `JOY_DEADZONE` (0.12) | Sensibilidad del movimiento: la intensidad `m` se reescala `(m − zona_muerta)/(1 − zona_muerta)` y define `walk/jog/run` en `Locomotion.speed_for_magnitude`. *test_floating_joystick_drives_move_actions_with_analog_strength (eliminada en la reforma)* y *test_touch_joystick_moves_a_real_footballer_end_to_end (eliminada en la reforma)* vigilan que el joystick produzca movimiento analógico y mueva a un futbolista real hacia +X. |
 | Posición y radio de los botones | La prueba toca el **centro calculado** de cada botón (`get_button_center`); si se mueve un botón fuera del lienzo 1280×720 la prueba lo detecta. |
 | Nombres de acciones | Los usa `HumanInput.poll`, `TouchControls` y las pruebas; renombrar una exige tocar los tres y `project.godot`. |
 | `pointing/emulate_touch_from_mouse=true` | Permite probar el joystick con el ratón en escritorio. |
@@ -134,17 +134,9 @@ Botones (en `TouchControls._build_buttons`; posición = desplazamiento desde la 
 
 - **Ejecutar:** `tools/run_tests.sh touch_controls`.
 - **Última ejecución (2026-10-26):** suite completa 57 pruebas / 212 comprobaciones sin fallos.
-- **Alcance real:** `test_touch_controls.gd` envía eventos táctiles sintéticos (`Input.parse_input_event`) a un `Hud` real (ventana de pruebas de 1280×720) y a un futbolista creado con `TestCase.make_match` + `add_player`; esa configuración **no tiene cámara**, así que la conversión pantalla→mundo usada es el respaldo `Vector3(x, 0, y)`, no `MatchCamera`. **No se ha probado en un dispositivo Android real.**
+- **Alcance real:** *test_touch_controls.gd (eliminada en la reforma)* envía eventos táctiles sintéticos (`Input.parse_input_event`) a un `Hud` real (ventana de pruebas de 1280×720) y a un futbolista creado con `TestCase.make_match` + `add_player`; esa configuración **no tiene cámara**, así que la conversión pantalla→mundo usada es el respaldo `Vector3(x, 0, y)`, no `MatchCamera`. **No se ha probado en un dispositivo Android real.**
 
-<!-- AUTO:tests:tests/test_touch_controls.gd -->
-| Prueba | Línea |
-|---|---|
-| `test_floating_joystick_drives_move_actions_with_analog_strength` | 24 |
-| `test_buttons_fire_real_actions_and_support_multitouch` | 43 |
-| `test_buttons_follow_the_play_context` | 75 |
-| `test_pause_button_emits_signal_and_switch_button_only_when_needed` | 97 |
-| `test_touch_joystick_moves_a_real_footballer_end_to_end` | 119 |
-<!-- /AUTO -->
+*Pruebas de test_touch_controls: eliminadas en la reforma (modo de fútbol 5 quitado; en el historial de git).*
 
 - **Qué podría romperse:** botones que no reciben el toque (por posición o por la ventana de pruebas), joystick que se queda «pegado» al pausar (`release_all` se llama al entrar en pausa), flancos duplicados.
 

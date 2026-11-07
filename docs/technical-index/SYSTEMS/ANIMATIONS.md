@@ -275,7 +275,7 @@ Antes el cuerpo entero se inclinaba ~1/20 de lo que pide la física (2° a 6 m/s
 - **Suela sobre la pelota** (`TouchFootIK.set_target`): además de la corrección limitada de los toques de clip
   (`set_correction`, hasta 0.16 m) el IK lleva la punta del pie a un punto del mundo (lo alto de la pelota en la vuelta
   atrás, `DragBack`) con un giro del pie y un peso; manda sobre la corrección y se suelta sola sin refresco.
-  `abs_toe_world` guarda la punta tras el IK (lo mide `test_drag_back` con render: 0.04 m de lo alto de la pelota).
+  `abs_toe_world` guarda la punta tras el IK (lo mide *test_drag_back (eliminada en la reforma)* con render: 0.04 m de lo alto de la pelota).
   Imágenes: `tools/drag_back_view.tscn`.
   Rodilla en la pisada (2026-10-29): con el objetivo absoluto el polo de la rodilla se inclina hacia el frente del cuerpo
   (`_body_forward`: cadera izquierda − derecha × arriba, parámetro `knee_fwd` de `ik_toe`); antes, al pisar la pelota en

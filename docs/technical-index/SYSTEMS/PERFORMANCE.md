@@ -153,7 +153,7 @@ contenedor (4 núcleos x86, bastante más rápido que un teléfono):
   (el desempate aleatorio del puntaje consume el generador igual), cota del alcance de todos los clips: si la pelota no
   pasa cerca en la ventana de contacto no se recorre ninguno; pose del clip con el hueso de cada pista ya resuelto; los
   motivos de descarte solo se guardan para la vista de depuración (`record_rejects`). Verificado: la salida de las 34
-  pruebas de `test_receive` (clips elegidos, contactos) es idéntica con el código anterior y el nuevo (la única línea
+  pruebas de *test_receive (eliminada en la reforma)* (clips elegidos, contactos) es idéntica con el código anterior y el nuevo (la única línea
   distinta, un partido IA contra arquero, también cambia entre dos corridas del mismo código).
 - `KeeperPlanner`: datos fijos de cada candidato en caché (`warm_cache`), tramos de la trayectoria y muestras de manos
   en grupos con su caja (se salta un grupo entero si no puede dar nada), cota inferior del puntaje cuando ya hay una

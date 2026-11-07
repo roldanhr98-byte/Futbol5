@@ -3,7 +3,7 @@
 ## Identificación
 
 - **Qué es:** el pack propio (`futbol.zip`: `README.md`, `indice_futbol.json`, 133 FBX de animación y `personaje/ybot_tpose.fbx`) evaluado frente a los 13 clips de Tripo y **integrado parcialmente** en un único sistema de animación sobre el futbolista de Tripo (23 huesos, ~7 640 triángulos, sin cambios). Son FBX 7.7 a 30 fps, solo esqueleto `mixamorig` (sin malla) sobre el Y Bot; 63 clips son del Soccer Game Pack y 70 son sueltos/complementos.
-- **Estado (2026-10-27):** **integrado por completo.** Los 133 clips están convertidos (134 en `pack_clips.res` con sus espejos, 37 en `pack_keeper.res`) y **los 133 tienen disparador en el juego**. Los 40 que antes solo estaban en la galería se conectaron así: marcha (`Jogging_inplace` en la marcha; `Running_inplace` y `Two_Cycle_Sprint_inplace` en la marcha con pelota; `Strafe_3_inplace` en la mezcla direccional), transiciones (`Idle_To_Sprint`, `Sprint_Turn`, parada agotado con `Running_Tired`), balón parado con raíz real (`throw_in`, `Chip`, `strike_foward_jog`, `soccer_penalty_kick`), arquero (`goalkeeper_idle_2`, `goalkeeper_miss`, `goalkeeper_directing(_2)`, `goalkeeper_placing_ball(_2)`), defensa y contacto (`Defender`, `Defender_2`, `Jogging_Stumble`, `Sprint_To_Backslide(_inplace)`, `fallen_idle`), recepción (`receive_soccerball`) y el árbitro, que se mueve con el desplazamiento de raíz medido de los **gemelos con raíz** (`Walking_7`, `Jogging`, `Running`, `Sprint`, `Two_Cycle_Sprint`, `Strafe_3`, `jog_*`). La prueba `test_pes_mechanics::test_every_former_gallery_clip_is_wired_into_gameplay` lo comprueba. Detalle clip a clip: columna «Estado» y «Uso» de [ANIMATION_PACK_CLIPS.md](../ANIMATION_PACK_CLIPS.md).
+- **Estado (2026-10-27):** **integrado por completo.** Los 133 clips están convertidos (134 en `pack_clips.res` con sus espejos, 37 en `pack_keeper.res`) y **los 133 tienen disparador en el juego**. Los 40 que antes solo estaban en la galería se conectaron así: marcha (`Jogging_inplace` en la marcha; `Running_inplace` y `Two_Cycle_Sprint_inplace` en la marcha con pelota; `Strafe_3_inplace` en la mezcla direccional), transiciones (`Idle_To_Sprint`, `Sprint_Turn`, parada agotado con `Running_Tired`), balón parado con raíz real (`throw_in`, `Chip`, `strike_foward_jog`, `soccer_penalty_kick`), arquero (`goalkeeper_idle_2`, `goalkeeper_miss`, `goalkeeper_directing(_2)`, `goalkeeper_placing_ball(_2)`), defensa y contacto (`Defender`, `Defender_2`, `Jogging_Stumble`, `Sprint_To_Backslide(_inplace)`, `fallen_idle`), recepción (`receive_soccerball`) y el árbitro, que se mueve con el desplazamiento de raíz medido de los **gemelos con raíz** (`Walking_7`, `Jogging`, `Running`, `Sprint`, `Two_Cycle_Sprint`, `Strafe_3`, `jog_*`). La prueba *test_pes_mechanics::test_every_former_gallery_clip_is_wired_into_gameplay (eliminada en la reforma)* lo comprueba. Detalle clip a clip: columna «Estado» y «Uso» de [ANIMATION_PACK_CLIPS.md](../ANIMATION_PACK_CLIPS.md).
 - **Dónde están:** las animaciones van **dentro del juego** ya convertidas (`assets/animations/pack_clips.res` y `pack_keeper.res`, versionadas, y dentro de la APK). Los FBX originales (`pack/`) son solo la fuente para regenerar las librerías: están en `.gitignore` (no se suben al repositorio; cada copia local los pone en `pack/` si quiere reconvertir). Sin las librerías el juego funciona con Tripo + patada procedural y las pruebas del pack se **omiten** (no se dan por buenas).
 - **Última verificación:** <!-- AUTO:verified -->
 2026-11-07
@@ -28,7 +28,7 @@
 | `malabares` (8) | `kick_up_soccerball`, `kneeing_soccerball`(_2), `kick_soccerball`(_2), `stall_soccerball`(_2…_4) | `JuggleController` en la sala de práctica |
 | `practica`, `cansancio` y los gemelos con raíz (`gemelo_raiz`, 17) | `Chip`, `soccer_penalty_kick`, `throw_in`, `Running_Tired`, `Walking_7`… | solo galería (sin disparador en partido) |
 
-La sala de práctica (`PracticeScene`, `scenes/practice/practice.tscn`, botón «Práctica de animaciones» de la pausa) lista **todos** los clips por grupo con repetir, velocidad, raíz, espejo y cámara, y los malabares encadenan clips con impulsos hacia los puntos de contacto medidos (la pelota nunca se coloca a mano).
+La sala de práctica (`PracticeScene`, *scenes/practice/practice.tscn (eliminada en la reforma; en el historial de git)*, botón «Práctica de animaciones» de la pausa) lista **todos** los clips por grupo con repetir, velocidad, raíz, espejo y cámara, y los malabares encadenan clips con impulsos hacia los puntos de contacto medidos (la pelota nunca se coloca a mano).
 
 ## Modo 2 de jugabilidad: «Mocap Pack 05 Soccer» (2026-10-29)
 
@@ -66,14 +66,14 @@ las otras 20.
   el esqueleto del futbolista sigue haciendo todo (clips, toques, IK, contacto) pero no se dibuja; en cada
   `skeleton_updated` su pose se copia a Newton con el retarget inverso
   (`G_R = A⁻¹·(G_T·Reposo_T⁻¹)·A·Reposo_R`, cadera escalada por la altura de cadera) y piernas y brazos se cierran con
-  IK de dos huesos hasta los pies y las manos del futbolista. Medido (`test_mocap_mode`): pies y manos a ≤ 0.06 m de los
+  IK de dos huesos hasta los pies y las manos del futbolista. Medido (*test_mocap_mode (eliminada en la reforma)*): pies y manos a ≤ 0.06 m de los
   del futbolista en un partido; cabeza ≤ 0.06 m.
 - **Modo 3 · Tripo** (`Tuning.gameplay_mode` = 3): `FootballerVisual.uses_pack` falso → el modelo de Tripo con sus
   clips (presets) y la patada procedural (`ProceduralPose`), sin pack ni mocap. Tripo3D no genera animaciones a medida
   (su API solo ofrece rigging y retarget de presets de una biblioteca fija; se comprobó en la documentación oficial),
   así que el modo 3 es el modelo y los presets de Tripo. El cambio de modo recarga la escena del partido
   (`Hud.gameplay_mode_changed` → `MatchScene._on_gameplay_mode_changed`).
-- **Medido** (`tests/test_mocap_mode.gd`, 7 pruebas: además saque de banda con `mc_throw_in` que sale a 1.55 m, tarjeta
+- **Medido** (*tests/test_mocap_mode.gd (eliminada en la reforma; en el historial de git)*, 7 pruebas: además saque de banda con `mc_throw_in` que sale a 1.55 m, tarjeta
   del árbitro, modelo Newton y modo 3; con render `LIVE_KICKS_MODE=2` en `test_live_kicks`): 12 de 12 pases y tiros
   ejecutados con el clip de la captura de parado a sprint, pie a 0.008–0.057 m de la pelota; con el esqueleto animado,
   48 de 50 golpeos variados con contacto (los otros 2, pelota tocada antes por el rival), pie a 0.01–0.14 m; penal con
@@ -121,7 +121,7 @@ Las librerías ya están generadas y versionadas. Solo hace falta regenerar si s
 | `scripts/animation/pack_library.gd` | `PackLibrary`: carga (opcional) de las librerías locales y acceso a clips y metadatos |
 | `scripts/animation/animation_catalog.gd` | `AnimationCatalog`: situación → clip (pack o Tripo), candidatos de patada, mapa del arquero, `step_interval` |
 | `scripts/player/footballer_visual.gd` | Marcha por mezcla, acción única, `play_pack_clip`, `play_situation`, tabla de marcha estática |
-| `tests/test_pack_retarget.gd`, `test_pack_locomotion.gd`, `test_pack_kick.gd`, `test_pack_dribble_metrics.gd`, `test_pack_reactions.gd`, `test_pack_motion.gd` | Pruebas del pack (se omiten sin la librería local; `test_pack_motion` además necesita render) |
+| `tests/test_pack_retarget.gd`, `test_pack_locomotion.gd`, `test_pack_kick.gd`, *test_pack_dribble_metrics.gd (eliminada en la reforma)*, *test_pack_reactions.gd (eliminada en la reforma)*, `test_pack_motion.gd` | Pruebas del pack (se omiten sin la librería local; `test_pack_motion` además necesita render) |
 | `tools/animation_pack/pack_metrics.gd` | Métricas de cada clip (pistas, huesos, duración, raíz, cierre de ciclo) del pack y de la biblioteca de Tripo |
 | `tools/animation_pack/pack_checks.gd` | Compatibilidad: reposo idéntico al del Y Bot, cobertura de los 22 huesos, gemelos `_inplace` |
 | `tools/animation_pack/pack_rest.gd` | Compara reposo, proporciones y orientación de los dos esqueletos |
@@ -225,7 +225,7 @@ La patada actual contacta con el pie casi bajo el cuerpo (0.12 m) mientras la pe
 
 ## Conducción y pase/tiro: ANTES y DESPUÉS (medido)
 
-Protocolo (`tests/test_pack_dribble_metrics.gd`, permanente): 4 semillas, jugador desde x = −19 m con 50 de atributos, 0.8 s de arranque y 2.7 s de ventana, pelota inicial a 0.7 m. Pase/tiro: 4 semillas × 2 instantes de pulsación (8 intentos por celda).
+Protocolo (*tests/test_pack_dribble_metrics.gd (eliminada en la reforma; en el historial de git)*, permanente): 4 semillas, jugador desde x = −19 m con 50 de atributos, 0.8 s de arranque y 2.7 s de ventana, pelota inicial a 0.7 m. Pase/tiro: 4 semillas × 2 instantes de pulsación (8 intentos por celda).
 
 **Antes** (código original de conducción y patada procedural; medido con el mismo protocolo antes de tocar nada):
 

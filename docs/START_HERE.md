@@ -46,7 +46,7 @@ python3 tools/docs_index.py sync && python3 tools/docs_index.py check   # 5. doc
 | Arquero (posición, atajadas) | `scripts/goalkeeper/goalkeeper.gd`, `keeper_planner.gd`, `keeper_tuning.gd` |
 | IA de equipo | `scripts/ai/team_brain.gd`, `ai_input.gd` |
 | Reglas: gol, fuera, córner, faltas, penal, reloj | `scripts/gameplay/match_manager.gd`, `set_piece.gd`, `referee.gd` |
-| Composición del partido | `scripts/gameplay/match_scene.gd` → `scenes/main/match.tscn` |
+| Composición del partido | `scripts/gameplay/match_scene.gd` → *scenes/main/match.tscn (eliminada en la reforma; en el historial de git)* |
 | Cancha, arcos, red | `scripts/pitch/*`, `assets/pitch/*.gdshader` |
 | Cámara (encuadre, zoom, golpe) | `scripts/camera/match_camera.gd` |
 | Sonido | `scripts/audio/sfx.gd` (autoload `Sfx`) |
@@ -59,7 +59,7 @@ python3 tools/docs_index.py sync && python3 tools/docs_index.py check   # 5. doc
 | Patada procedural (modo 3) | `scripts/animation/procedural_pose.gd` |
 | Atributos de jugador (31, escalan parámetros) | `scripts/progression/player_attributes.gd` |
 | Repetición de goles | `scripts/gameplay/goal_replay.gd` |
-| Galería de animaciones / malabares | `scripts/gameplay/practice_scene.gd`, `scenes/practice/practice.tscn` |
+| Galería de animaciones / malabares | `scripts/gameplay/practice_scene.gd`, *scenes/practice/practice.tscn (eliminada en la reforma; en el historial de git)* |
 | Perfiles gráficos, FPS | `scripts/diagnostics/graphics_settings.gd`, `diagnostics_overlay.gd` |
 | APK / CI / firma | `.github/workflows/android.yml`, `export_presets.cfg`, `tools/android/` |
 
@@ -85,7 +85,7 @@ python3 tools/docs_index.py sync && python3 tools/docs_index.py check   # 5. doc
 - Con render (pies animados): `xvfb-run -a godot --rendering-driver opengl3 --fixed-fps 60 --path . res://tests/run_tests.tscn -- --filter <nombre>`
   - Modo 2 en patadas: `LIVE_KICKS_MODE=2 … --filter live_kicks`.
 - Imágenes de una acción: `tools/drag_back_view.tscn` (`DRAG_OUT`, `DRAG_ACTION`, `DRAG_MODE`, `DRAG_FRAMES`, ver cabecera del script).
-- **Pruebas estadísticas que pueden variar entre corridas** (no son necesariamente regresiones; repetir): `test_full_match` (tiros ≥ 2), `test_ai_match` (arqueros enfrentan tiros / nadie sale de la cancha), `test_shot_keeper`.
+- **Pruebas estadísticas que pueden variar entre corridas** (no son necesariamente regresiones; repetir): *test_full_match (eliminada en la reforma)* (tiros ≥ 2), *test_ai_match (eliminada en la reforma)* (arqueros enfrentan tiros / nadie sale de la cancha), `test_shot_keeper`.
 - Una prueba nueva = `tests/test_<tema>.gd` (`extends TestCase`; helpers `make_match`, `add_player`, `wait_seconds`, `physics_frames`, `check`, `note`, `cleanup`).
 
 ## 5. APK de prueba (CI)

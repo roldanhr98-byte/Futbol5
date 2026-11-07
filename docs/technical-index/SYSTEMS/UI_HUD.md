@@ -110,15 +110,7 @@ No hay recursos de parámetros. Constantes y valores fijos reales:
 - **Última ejecución (2026-10-26):** 4 pruebas / 20 comprobaciones sin fallos.
 - **Alcance real:** estas pruebas crean un `Hud` y usan el panel táctil; **no existe prueba del menú de pausa, del marcador, de los mensajes ni de la persistencia de ajustes** (`user://settings.cfg`).
 
-<!-- AUTO:tests:tests/test_touch_controls.gd -->
-| Prueba | Línea |
-|---|---|
-| `test_floating_joystick_drives_move_actions_with_analog_strength` | 24 |
-| `test_buttons_fire_real_actions_and_support_multitouch` | 43 |
-| `test_buttons_follow_the_play_context` | 75 |
-| `test_pause_button_emits_signal_and_switch_button_only_when_needed` | 97 |
-| `test_touch_joystick_moves_a_real_footballer_end_to_end` | 119 |
-<!-- /AUTO -->
+*Pruebas de test_touch_controls: eliminadas en la reforma (modo de fútbol 5 quitado; en el historial de git).*
 
 - **Qué podría romperse:** el menú no abre al pausar (error de clave en `_pause_buttons`), botones fuera de pantalla en relaciones de aspecto distintas de 16:9 (`window/stretch/aspect="expand"`).
 
@@ -141,7 +133,7 @@ heredan el giro ni la inclinación del cuerpo) y se dibujan sin prueba de profun
 | Siguiente | cono ámbar translúcido, más pequeño | `MatchScene.switch_candidate()`: a quien pasaría el control CAMBIO |
 
 Flotan a `PlayerMarker.HEIGHT` = 2.18 m con un balanceo de 5 cm. Al cambiar de jugador el indicador se va con el
-nuevo en el mismo paso (comprobado en `tests/test_control_and_keeper.gd`).
+nuevo en el mismo paso (comprobado en *tests/test_control_and_keeper.gd (eliminada en la reforma; en el historial de git)*).
 
 ## Historial
 

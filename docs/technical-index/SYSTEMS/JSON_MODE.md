@@ -252,7 +252,7 @@ tras un reinicio. Las situaciones de presentación que no tienen clip JSON ya no
 
 La recepción deja de ser un gesto después del toque y ya no depende de `ball_touches[0]`: perfiles de contacto por clip,
 trayectoria 3D, anticipación del receptor, contacto cuando la pelota llega a la parte del cuerpo animada y respuesta física por
-parte (pie, pie en el aire, muslo, rodilla, pecho). Medido en `tests/test_receive.gd` y visto en
+parte (pie, pie en el aire, muslo, rodilla, pecho). Medido en *tests/test_receive.gd (eliminada en la reforma; en el historial de git)* y visto en
 `tools/json_anim/receive_view.tscn` (tiras por familia). Verificación visual de los 70 clips pendientes con `CLIP=<id>`
 (2026-10-30): 45 confirmados, 25 siguen pendientes ([`fases/F3_verificacion_visual_70.md`](../../fases/F3_verificacion_visual_70.md)).
 Desde esa fecha el modo 4 es el predeterminado y el único que ofrece el menú (`Tuning.PLAYABLE_MODES`).
@@ -295,7 +295,7 @@ jugador al que le llega la pelota: ~120-300 ms en un teléfono). Cambios exactos
   paso y la holgura) en la ventana de contacto, ningún clip llega y `plan` / `_update_approach` no recorren nada.
 - `_pose`: hueso de cada pista resuelto una vez por clip (`_track_map`); antes, una búsqueda de texto por pista en cada pose.
 - `rejects` solo se llena con `record_rejects` (la vista `tools/json_anim/receive_view.gd` lo activa).
-- Verificación: la salida completa de las 34 pruebas de `test_receive` es idéntica con el código anterior y el nuevo (la
+- Verificación: la salida completa de las 34 pruebas de *test_receive (eliminada en la reforma)* es idéntica con el código anterior y el nuevo (la
   única línea distinta, un partido IA contra el arquero, también cambia entre dos corridas del mismo código).
 
 ## Integración ZIP — 2026-11-07

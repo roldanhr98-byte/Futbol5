@@ -12,7 +12,12 @@ Leer primero en un chat nuevo. Última actualización: 2026-11-07.
 - Bancos de animación: no elegir ganador, no mezclar bancos, no rellenar huecos con otro banco, no modificar originales.
   La elección la hace el usuario después de probar la APK.
 - Supabase: todavía no se conecta nada.
-- El partido de fútbol 5 anterior se conserva entero y accesible (menú de desarrollo → «Partido de fútbol 5»).
+- **El modo de fútbol 5 se quitó de esta rama** (pedido del usuario): sin escena, sin acceso y sin pruebas de juego abierto.
+  Se conservan animaciones, física y sistemas reutilizables; detalle en [`FUTBOL5_QUITADO.md`](FUTBOL5_QUITADO.md). El partido
+  completo sigue en `integracion-openai`.
+- Modo tiro libre (requisitos del usuario, §9.3 del plan): barrera real y jugadores sueltos de los dos equipos; nadie más
+  remata; los defensores solo interrumpen o despejan si llegan a una pelota que va al arco; los compañeros se mueven como
+  para un centro o un rebote; objetivo: gol de tiro libre directo.
 
 ## Fases
 
@@ -43,6 +48,6 @@ cada banco sobre su cuerpo original (ya disponible en el banco de pruebas), **C*
 
 ## Pendientes conocidos
 
-- Ticket [`F9-002`](../integration/tickets/F9-002_pelota_quieta_en_partido.md): pelota quieta 16,5 s en un partido de fútbol 5
-  (intermitente, 0 de 12 al repetir).
+- Ticket [`F9-002`](../integration/tickets/F9-002_pelota_quieta_en_partido.md): fallas intermitentes de pruebas de partido de
+  fútbol 5; cerrado en esta rama al quitarse el modo (siguen en `integracion-openai`).
 - Medición en Android (rendimiento de cada banco, tacto) depende de pruebas del usuario en su teléfono.

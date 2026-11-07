@@ -298,30 +298,9 @@ Fórmulas tal como están en el código (2026-10-26). `asistencia` = nivel 0–1
 - **Ejecutar:** `tools/run_tests.sh passing`, `tools/run_tests.sh shooting`, `tools/run_tests.sh press`.
 - **Resultados medidos (2026-10-26, semillas fijas):** pase de 11 m con asistencia 0.65: 17/24 llegan frente a 0/24 sin asistencia; pase largo con precisión 15 y asistencia 0.95: 16/30 (la asistencia no garantiza); σ de pase 4.64° (atributos 10) vs 1.52° (atributos 100); pase al espacio por carga 0 / 0.5 / 1: 4.8 / 11.9 / 19.3 m (previstos 4.5 / 11.75 / 19); tiro con asistencia 0.55 desde 8.5 m sin arquero: 27/40 goles y 3 impactos en poste/travesaño; 40 duelos de presión con marcaje 50: 24 robos ganados / 47 intentos fallidos ejecutando solo `press` (repetido 3 veces, idéntico) y 22 / 48 dentro de la suite completa (ver «Reglas del marco» en [TESTING](TESTING.md)).
 
-<!-- AUTO:tests:tests/test_passing.gd -->
-| Prueba | Línea |
-|---|---|
-| `test_assisted_pass_arrives_far_more_often_than_unassisted` | 29 |
-| `test_pass_is_never_guaranteed_with_poor_accuracy_at_long_range` | 50 |
-| `test_attributes_and_weak_foot_change_error` | 66 |
-| `test_pass_to_space_when_no_teammates_scales_with_charge` | 90 |
-| `test_lob_pass_flies_over_the_ground_and_lands_near_target` | 110 |
-| `test_pass_can_be_intercepted_by_a_defender` | 138 |
-| `test_active_defender_takes_possession_of_intercepted_pass` | 158 |
-| `test_assist_picks_best_aligned_and_ignores_out_of_cone` | 181 |
-| `test_medium_assist_pass_goes_to_the_chosen_teammate_firmly` | 202 |
-<!-- /AUTO -->
+*Pruebas de test_passing: eliminadas en la reforma (modo de fútbol 5 quitado; en el historial de git).*
 
-<!-- AUTO:tests:tests/test_shooting.gd -->
-| Prueba | Línea |
-|---|---|
-| `test_assist_improves_on_target_rate_but_never_guarantees` | 21 |
-| `test_assisted_shot_always_goes_at_goal_and_the_stick_picks_the_side` | 34 |
-| `test_charge_controls_power_and_attributes_scale_it_moderately` | 55 |
-| `test_lob_shot_is_higher_than_driven_shot` | 79 |
-| `test_physical_shot_outcomes_include_goals_posts_and_misses` | 88 |
-| `test_far_shots_are_much_harder_than_close_ones` | 123 |
-<!-- /AUTO -->
+*Pruebas de test_shooting: eliminadas en la reforma (modo de fútbol 5 quitado; en el historial de git).*
 
 <!-- AUTO:tests:tests/test_shot_keeper.gd -->
 | Prueba | Línea |
@@ -329,15 +308,7 @@ Fórmulas tal como están en el código (2026-10-26). `asistencia` = nivel 0–1
 | `test_shots_go_at_goal_and_the_keeper_saves_what_he_reaches` | 93 |
 <!-- /AUTO -->
 
-<!-- AUTO:tests:tests/test_press.gd -->
-| Prueba | Línea |
-|---|---|
-| `test_press_closes_distance_to_a_loose_ball_even_when_the_stick_changes_direction` | 8 |
-| `test_press_never_exceeds_physical_speed_limits` | 29 |
-| `test_press_intercept_point_is_ahead_of_a_moving_carrier` | 45 |
-| `test_press_released_stops_the_chase` | 64 |
-| `test_tackle_success_is_probabilistic` | 76 |
-<!-- /AUTO -->
+*Pruebas de test_press: eliminadas en la reforma (modo de fútbol 5 quitado; en el historial de git).*
 
 - **Qué podría romperse:** asistencia que garantice el resultado (todas las pruebas de «no garantizada» fallarían); pases que no llegan a su distancia si se cambia la física de la pelota sin revisar `KickModel.ground_speed_for_distance`; presión que abandona la pelota al mover el joystick.
 

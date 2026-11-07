@@ -18,7 +18,7 @@
 | `scripts/gameplay/match_manager.gd` | Estados, marcador, reloj, saque, gol (`_on_goal`), pausa | `MatchManager.State`, `MatchManager._on_goal`, `MatchManager._begin_kickoff`, `MatchManager.toggle_pause`, `MatchManager.restart_play`, `MatchManager.restart_match` | `MatchContext`, `Pitch.goal_scored`, `Ball.touched`, `GameEvent` |
 | `scripts/gameplay/match_context.gd` | Contexto compartido | `MatchContext.emit_event`, `MatchContext.attacking_goal`, `MatchContext.teammates_of`, `MatchContext.screen_to_world`, `MatchContext.keeper_defending` | `Ball`, `Pitch`, `MatchCamera`, `Footballer` |
 | `scripts/gameplay/match_scene.gd` | Composición y formación de saque | `MatchScene._ready`, `MatchScene._spawn_teams`, `MatchScene.kickoff_positions`, `MatchScene._on_kickoff_requested` | todo lo anterior + `Hud`, `HumanInput`, `PlayerAttributes` |
-| `scenes/main/match.tscn` | Escena principal (`run/main_scene`): un `Node3D` con `match_scene.gd`; todo lo demás se crea por código | nodo `Match` | `MatchScene` |
+| *scenes/main/match.tscn (eliminada en la reforma; en el historial de git)* | Escena principal (`run/main_scene`): un `Node3D` con `match_scene.gd`; todo lo demás se crea por código | nodo `Match` | `MatchScene` |
 
 **No modificar para cambiar el balance de juego:** `match_manager.gd` no tiene física; el gol lo decide `Goal` (ver [PITCH](PITCH.md)).
 
@@ -97,7 +97,7 @@
 
 | Elemento | Efecto real y riesgo |
 |---|---|
-| `duration_seconds` | `test_pause_and_full_time` usa 3 s y espera `FULL_TIME` a los 3.5 s. |
+| `duration_seconds` | *test_pause_and_full_time (eliminada en la reforma)* usa 3 s y espera `FULL_TIME` a los 3.5 s. |
 | `goal_celebration_seconds` (3), `pre_kickoff_seconds` (1.2) | Tiempo con `input_enabled = false`. |
 | `assist_window_seconds` (6) | Un pase solo cuenta como asistencia si el pasador tocó la pelota hace ≤ 6 s (`_last_touch_time_by_actor`). |
 | `home_field_players` / `away_field_players` | 4 por defecto. Los jugadores que no controla el humano usan `AIInput` (roles cierre/alas/pivote); con `InputSource` vacío se quedarían quietos. Las pruebas de flujo los ponen a 1/0 y desactivan arqueros, árbitro y presentación. |
@@ -225,17 +225,7 @@
 - **Ejecutar:** `tools/run_tests.sh match_flow`.
 - **Última ejecución (2026-10-26):** 6 pruebas / 28 comprobaciones sin fallos (suite completa: 57 / 212).
 
-<!-- AUTO:tests:tests/test_match_flow.gd -->
-| Prueba | Línea |
-|---|---|
-| `test_match_starts_with_kickoff_then_plays` | 18 |
-| `test_goal_updates_score_stats_and_restarts_kickoff` | 29 |
-| `test_ball_on_the_line_without_crossing_is_no_goal` | 59 |
-| `test_own_goal_is_credited_to_the_opponent` | 68 |
-| `test_restart_play_keeps_score_and_restart_match_resets_it` | 81 |
-| `test_pause_and_full_time` | 99 |
-| `test_full_scene_has_a_keeper_per_team_and_a_goal_still_counts_when_the_keeper_is_beaten` | 113 |
-<!-- /AUTO -->
+*Pruebas de test_match_flow: eliminadas en la reforma (modo de fútbol 5 quitado; en el historial de git).*
 
 - **Qué podría romperse:** gol que se cuenta dos veces (se controla con `Pitch.reset_goal_latches` y el estado `PLAYING`), gol en contra mal atribuido, reloj que avanza en pausa, jugadores que no vuelven a su sitio tras un gol.
 
@@ -244,7 +234,7 @@
 - **Saque:** `MatchScene.kickoff_positions(team, kicking)` coloca al pivote del equipo que saca a `KICKOFF_TAKER_X`
   = 0.62 m de la pelota (puede jugarla de inmediato) y al rival más adelantado a `KICKOFF_WAIT_X` = 3.4 m (fuera del
   círculo central). Medido: ejecutor a 0.62 m, rival más cercano a 3.40 m, y la pelota se pone en juego en los
-  primeros 5 s (`tests/test_control_and_keeper.gd`).
+  primeros 5 s (*tests/test_control_and_keeper.gd (eliminada en la reforma; en el historial de git)*).
 - **Cambio:** `switch_candidate()` es el compañero más cercano a la pelota y lo usan tanto el botón CAMBIO como el
   indicador del siguiente jugador, así que ambos señalan siempre al mismo. Con la jugada en el tercio defensivo
   propio, CAMBIO pasa al **arquero** (`take_keeper_control`) si es quien mejor puede intervenir.
@@ -266,14 +256,14 @@
     jugador marcándolo como controlado: con la primera versión la pelota quedó quieta 311 s en el partido de 7 min de
     la CI) y `AIInput._decide` no decide con la pelota para ese equipo; `_give_control` cancela cualquier carga que la
     IA hubiera empezado en el receptor.
-  - Pruebas: `tests/test_pass_receiver_control.gd` (las tres primeras fallan con el código anterior).
+  - Pruebas: *tests/test_pass_receiver_control.gd (eliminada en la reforma; en el historial de git)* (las tres primeras fallan con el código anterior).
 
 ## Limitaciones conocidas
 
 - **«Salir» no hace nada:** `Hud.quit_requested` → `MatchScene.quit_requested`, pero **nadie conecta esa señal** ni llama a `get_tree().quit()`. En un móvil no hay salida desde el menú.
-- **Tras `FULL_TIME` no hay salida de la pantalla:** `toggle_pause` ignora el estado `FULL_TIME` (no se puede abrir el menú de pausa para «Reiniciar partido») y no existe pantalla de resultado. Verificado leyendo el código; la prueba `test_pause_and_full_time` solo comprueba que el partido termina y la entrada se bloquea.
+- **Tras `FULL_TIME` no hay salida de la pantalla:** `toggle_pause` ignora el estado `FULL_TIME` (no se puede abrir el menú de pausa para «Reiniciar partido») y no existe pantalla de resultado. Verificado leyendo el código; la prueba *test_pause_and_full_time (eliminada en la reforma)* solo comprueba que el partido termina y la entrada se bloquea.
 - Sin reglas de saque de banda, córner, tiro libre, falta, tarjetas ni sustituciones: la pelota rebota en las paredes (ver [PITCH](PITCH.md)).
-- La IA (`AIInput`) es simple: decide cada 0.12 s con reglas (tiro solo con ángulo de arco ≥ 16° y sin rival a menos de 0.95 m de la pelota, pase por presión o a un compañero libre, barullo resuelto tras 0.9 s despejando, un único portador por equipo) y no se ha calibrado contra jugadores humanos. Medido con 3 partidos de 120 s: la pelota nunca queda quieta más de ~2 s en juego y ~29 % de sus patadas se pierden por un toque rival o de un compañero (`test_ai_match`). Sin estadísticas por jugador: los eventos se emiten pero nadie los agrega.
+- La IA (`AIInput`) es simple: decide cada 0.12 s con reglas (tiro solo con ángulo de arco ≥ 16° y sin rival a menos de 0.95 m de la pelota, pase por presión o a un compañero libre, barullo resuelto tras 0.9 s despejando, un único portador por equipo) y no se ha calibrado contra jugadores humanos. Medido con 3 partidos de 120 s: la pelota nunca queda quieta más de ~2 s en juego y ~29 % de sus patadas se pierden por un toque rival o de un compañero (*test_ai_match (eliminada en la reforma)*). Sin estadísticas por jugador: los eventos se emiten pero nadie los agrega.
 - `MatchContext.keepers` nunca se rellena (no hay arquero; ver [GOALKEEPER](GOALKEEPER.md)).
 
 ## Historial
@@ -288,7 +278,7 @@ Ver [CHANGELOG.md](../CHANGELOG.md): «Partido jugable».
 - **Pelota muerta:** `MatchContext.dead_ball` / `restart_taker`: solo el ejecutor puede tocarla; la IA se ofrece o marca a distancia (`AIInput._decide_dead_ball`).
 - **Repetición:** `GoalReplay` graba 7 s a 30 Hz (pelota, jugadores, arqueros, árbitro y la pose de cada hueso). `MatchManager.replay_requested` se emite `replay_after_seconds` tras el gol; la escena pausa el árbol, reproduce 4.5 s antes del gol + 0.7 s después a 0.6x con su cámara y restaura el estado exacto. Cualquier botón o toque la salta.
 - **Duración:** `MatchScene.duration_seconds < 0` usa `Tuning.match_minutes` (3, 5, 7 o 10; menú de pausa).
-- Pruebas: `test_set_pieces`, `test_goal_replay`, `test_full_match` (partidos completos de 3, 5, 7 y 10 minutos).
+- Pruebas: *test_set_pieces (eliminada en la reforma)*, *test_goal_replay (eliminada en la reforma)*, *test_full_match (eliminada en la reforma)* (partidos completos de 3, 5, 7 y 10 minutos).
 
 ## Posesión única y organización colectiva (2026-10-27)
 
@@ -308,7 +298,7 @@ Ver [CHANGELOG.md](../CHANGELOG.md): «Partido jugable».
   probabilidad `Footballer.AI_TACKLE_COMMIT`; el portador presionado pasa con el cuerpo a medio orientar (≤75°);
   la IA no sale de la cancha (`Footballer._keep_inside`) y rodea el arco si queda detrás de la línea
   (`AIInput._around_goal`).
-- **Medido** (`test_team_shape_metrics`, `tests/match_metrics.gd`): con la fase asentada (>2 s) cada jugador está a
+- **Medido** (*test_team_shape_metrics (eliminada en la reforma)*, `tests/match_metrics.gd`): con la fase asentada (>2 s) cada jugador está a
   2.7–4.6 m de su puesto, pero la posesión cambia cada ~1.9 s y el amontonamiento (≥4 jugadores a <4 m de la pelota)
   no bajó de forma clara (headless 41–49 %; versión anterior con render 33–55 %). Pendiente: reducir las pérdidas.
 
@@ -318,7 +308,7 @@ Menú de pausa → «Entrenamiento sin rivales» (`MatchScene.training_mode`, se
 al partido» lo quita). Tu equipo (4 + arquero) contra el arquero rival solo: sin rivales de campo, sin reloj que
 termine, saques siempre para tu equipo salvo el saque de arco del arquero rival (`MatchManager.training`), y tras un
 gol vuelve a sacar tu equipo. Sirve para probar conducción, pases y tiros al arco/arquero. Prueba:
-`test_training_mode` (150 s con la IA: pases, llegadas al arco, atajadas, sin atascos).
+*test_training_mode (eliminada en la reforma)* (150 s con la IA: pases, llegadas al arco, atajadas, sin atascos).
 
 ## IA sin persona: el «controlado» también recibe órdenes (2026-10-31)
 
@@ -326,7 +316,7 @@ gol vuelve a sacar tu equipo. Sirve para probar conducción, pases y tiros al ar
 `AIInput`. Sin persona (`ctx.human_team == -1`), el control lo lleva un `AIInput` y el cerebro ahora le da órdenes de pelota
 suelta y de presión (`TeamBrain._loose`, `_defend`) y `AIInput` lo cuenta como candidato a ir a buscarla. Antes, si el más
 cercano a una pelota suelta era el controlado, nadie iba: medido en el entrenamiento sin persona, 1 de cada 14 partidos de
-25 s con la pelota quieta 7.3 s (`test_pass_receiver_control::test_ai_teams_still_play_without_a_human` falló así en
+25 s con la pelota quieta 7.3 s (*test_pass_receiver_control::test_ai_teams_still_play_without_a_human (eliminada en la reforma)* falló así en
 GitHub Actions); tras el arreglo, 0 de 20.
 
 ## Zona libre del saque: nadie salvo el ejecutor en la carrerilla (2026-10-31)
@@ -347,7 +337,7 @@ Arreglos: compañeros con destino fuera de `CLEAR_RADIUS` y, si ya están cerca,
 dentro salen en línea recta; `AIInput._around_ball`: con la pelota muerta nadie atraviesa la zona, la rodea;
 `MatchScene._on_set_piece_requested` para a todos salvo el ejecutor y despeja también a los compañeros
 (`_clear_zone(..., except)`); el apoyo corto del tiro libre cercano se coloca a `CLEAR_RADIUS + 0.5`. Prueba:
-`test_set_pieces::test_nobody_but_the_taker_enters_the_run_up_zone` (tiro libre en el medio, cerca del área y corner:
+*test_set_pieces::test_nobody_but_the_taker_enters_the_run_up_zone (eliminada en la reforma)* (tiro libre en el medio, cerca del área y corner:
 el más cercano queda a 4.2-4.8 m). Los 38 clips de balón parado conectan en el tiro libre sin ningún atajo de colisiones.
 
 ## IA con los parámetros de UCS (2026-11-06)
