@@ -198,7 +198,7 @@ func _battery_case(cfg: Dictionary) -> Dictionary:
 	src.move = cfg.get("turn", Vector2(1, 0))
 	var sk: Skeleton3D = p.visual.skeleton
 	var toes: Array[int] = [sk.find_bone("mixamorig_LeftToeBase"), sk.find_bone("mixamorig_RightToeBase")]
-	var ev := {"frame": -1, "ball": Vector3.ZERO, "toe": INF, "toe_before": INF, "whiff": "", "count": 0, "rival_first": false}
+	var ev := {"frame": -1, "ball": Vector3.ZERO, "toe": INF, "toe_raw": INF, "toe_before": INF, "whiff": "", "count": 0, "rival_first": false}
 	var on_ev := func(e: GameEvent) -> void:
 		if e.actor_id != p.actor_id:
 			return
@@ -233,16 +233,25 @@ func _battery_case(cfg: Dictionary) -> Dictionary:
 	# que se dibuja junto al impulso del paso N es la que se lee al empezar la fisica del N+1 (medido paso a paso: 0.05 m
 	# en esa imagen, 0.28 m en la anterior, con el pie aun en el armado). La leida dentro del paso N (imagen anterior)
 	# se anota como referencia.
-	for i in 100:
+	# Una preparacion con giro puede consumir las ventanas de aproximacion y espera antes del swing.
+	# Se conserva la observacion minima y se exige finalizar dentro de las ventanas configuradas.
+	var default_frames := int(ceil((BallHandler.PENDING_APPROACH_MAX + BallHandler.PENDING_FIRST_TIME_MAX + BallHandler.TURN_KICK_MAX_LATENCY + Tuning.player.kick_lockout) * 60.0))
+	for i in int(cfg.get("observe_frames", default_frames)):
 		await tree.physics_frame
 		var fr: int = Engine.get_physics_frames()
 		if ev["frame"] >= 0 and fr == int(ev["frame"]) + 1:
 			var key: String = "toe"
 			for k in 2:
 				var tw: Vector3 = sk.global_transform * sk.get_bone_global_pose(toes[k]).origin
+				ev["toe_raw"] = minf(ev["toe_raw"], tw.distance_to(ev["ball"]))
+				var ik: TouchFootIK = p.visual.touch_ik
+				if ik != null and ik.rendered_frame[k] > 0 and ik.rendered_frame[k] >= Engine.get_process_frames() - 1:
+					tw = ik.rendered_toe_world[k]
 				ev[key] = minf(ev[key], tw.distance_to(ev["ball"]))
+		if i >= 99 and p.ball_handler._pending_action == &"" and p.ball_handler._kick_action == &"" and p.ball_handler.lockout <= 0.0:
+			break
 	var bh: BallHandler = p.ball_handler
-	var out := {"kicked": ev["frame"] >= 0, "toe": ev["toe"], "toe_before": ev["toe_before"], "whiff": ev["whiff"], "count": ev["count"], "rival_first": ev["rival_first"],
+	var out := {"kicked": ev["frame"] >= 0, "toe": ev["toe"], "toe_raw": ev["toe_raw"], "toe_before": ev["toe_before"], "whiff": ev["whiff"], "count": ev["count"], "rival_first": ev["rival_first"],
 		# Libre: sin golpeo ni orden colgados y sin una accion que lo retenga. Un movimiento con pelota (toque orientado,
 		# arranque) EMPEZADO DESPUES del golpe no es un bloqueo: el que paso alcanzo su pelota (pase filtrado sin
 		# companero) y sigue jugandola (2026-11-06; antes de esos movimientos cualquier accion contaba como bloqueo).
@@ -294,7 +303,7 @@ func test_kick_battery_fifty_varied_actions() -> void:
 		var line: String
 		if r["kicked"]:
 			kicked += 1
-			line = "%s: GOLPEO con %s, punta del pie a %.3f m de la pelota en la imagen del golpe (%.3f en la anterior)" % [c["name"], r["clip"], r["toe"], r["toe_before"]]
+			line = "%s: GOLPEO con %s, punta visible %.3f m, pose base %.3f m (%.3f en la anterior)" % [c["name"], r["clip"], r["toe"], r["toe_raw"], r["toe_before"]]
 			if r["toe"] > Tuning.player.kick_contact_radius + 0.05:
 				bad_contact.append(c["name"])
 			if r["count"] > 1:
@@ -315,3 +324,21 @@ func test_kick_battery_fifty_varied_actions() -> void:
 	check(double.is_empty(), "una sola salida por golpeo: %s" % str(double))
 	check(stuck.is_empty(), "ningun jugador queda bloqueado tras la accion: %s" % str(stuck))
 	check(kicked >= int(cases.size() * 0.8), "la gran mayoria conecta (%d de %d)" % [kicked, cases.size()])
+
+func test_behind_ball_shot_finishes_after_its_measured_turn_and_pending_window() -> void:
+	if _needs_render():
+		return
+	var frames := int(ceil((BallHandler.PENDING_APPROACH_MAX + BallHandler.PENDING_FIRST_TIME_MAX + BallHandler.TURN_KICK_MAX_LATENCY + Tuning.player.kick_lockout) * 60.0))
+	var r: Dictionary = await _battery_case({"name": "pelota detras", "ball": Vector2(-0.45, 0.1), "action": &"shot", "charge": 40, "observe_frames": frames})
+	note("recuperacion tras giro y ventana de orden: %s" % str(r))
+	check(r["free"], "la orden termina dentro de las ventanas fisicas configuradas: %s" % r["busy"])
+	check(r["count"] <= 1, "el giro no duplica el tiro")
+
+func test_running_shot_under_pressure_has_a_visible_foot_contact() -> void:
+	if _needs_render():
+		return
+	var r: Dictionary = await _battery_case({"name": "bajo presion en carrera", "ball": Vector2(0.5, 0), "action": &"shot", "charge": 10, "run": 1.2, "defender": true})
+	note("contacto bajo presion: %s" % str(r))
+	check(r["free"], "el tirador queda libre")
+	if r["kicked"]:
+		check(r["toe"] <= Tuning.player.kick_contact_radius + 0.05, "el pie visible contacta: %.3f m (base %.3f)" % [r["toe"], r["toe_raw"]])

@@ -47,3 +47,9 @@ La suite parcial encontró un partido de 120 s sin tiros; la serie de tres parti
 El estado exitoso del paso headless era incorrecto: al descargar el artefacto se comprobó el resumen real, 303 pruebas, 8 fallidas, 32 omitidas, 2835 comprobaciones. El run falló después en render. La tubería del paso headless hacia tee carecía de pipefail y ocultaba el código de salida de tools/run_tests.sh. Se corrige el workflow para propagar el fallo y detectar además marcadores FAIL/errores de script. No se considera aprobada esa suite ni se generó un APK.
 
 Fallos headless: arranque a sprint; dirección de caída; control lateral; cuatro pruebas de recepción; distribución de atajadas al palo. Se investigan por separado del render. La corrida local anterior todavía está en curso y contiene además un fallo de coste de planificación bajo carga concurrente.
+
+## Etapa guardada: medición de patadas y recuperación
+
+`tests/test_live_kicks.gd` distingue punta visible final (capturada por TouchFootIK durante el modificador) y pose base. No se aumenta el umbral de distancia. La observación mínima de 100 cuadros se amplía sólo mientras la orden/golpeo sigue pendiente, hasta el plazo derivado de PENDING_APPROACH_MAX, PENDING_FIRST_TIME_MAX, TURN_KICK_MAX_LATENCY y kick_lockout. La prueba exige que la orden termine, sin duplicar impulsos. Resultado ejecutado: 6 pruebas, 0 fallidas, 50 comprobaciones; batería de 50 situaciones: 46 golpeos, 4 órdenes sin golpeo, 0 contactos inválidos y 0 bloqueos. Evidencia: pruebas/patadas_render_revalidacion.log y recuperacion_tiro_detras.log.
+
+Continuar con: ocho fallos headless documentados arriba (arranque ya pasó en la revalidación aislada, pendiente suite completa), contactos de parada, comparación de recepciones contra 0b46c10 y conducción en cancha real. Los cambios experimentales todavía no comprobados siguen separados de esta etapa. El APK permanece pendiente.
