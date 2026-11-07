@@ -61,3 +61,9 @@ Se reprodujo el fallo de zigzag en 0b46c10 (máximo 2,78 m). La traza actual sit
 Se acota el alcance del pie en la parada: SETTLE_STRIKE_SCALE baja de 1,15 a 1,1 (de 0,322 a 0,308 m). La medición conserva distancia de pose base y de pose visible final, sin ampliar el umbral de 0,32 m de la prueba. Resultado: 1 prueba, 0 fallidas, 12 comprobaciones. Evidencia: conduccion_cancha_real.log, parada_contacto.log y zigzag_base_comparacion.log.
 
 Pendientes: recepción rápida sin clip compatible (la revalidación aislada todavía falla), control lateral, distribución de atajadas al palo y suite completa final. Los cambios en Footballer/PlayerActions aún se validan antes de guardarlos como otra etapa.
+
+## Etapa guardada: compatibilidad de transiciones y caídas
+
+Footballer conserva el arranque de sprint existente y distingue joystick real de pasos automáticos de recepción. PlayerActions respeta la pose activa, da prioridad a la trayectoria entrante (incluida pelota alta), conserva la velocidad al terminar una transición y exige desplazamiento para caídas con inercia superior a 3 m/s. No elimina clips: las caídas en el sitio siguen siendo candidatas estando parado.
+
+Revalidaciones ejecutadas: banco y arranque, 6 pruebas/42 comprobaciones/0 fallos; caídas, 5/5/0; pecho, 1/4/0; transiciones, 2/46/0. La revalidación exacta de recepciones corrigió pecho y liberación tras desvío, pero todavía fallan las tres pruebas con receptor en movimiento. Hay una preparación experimental de velocidad constante fuera de este commit: 30 pruebas, 1 fallo pendiente de frenada. También quedan control lateral, comparación estadística de tiros y suite completa sobre snapshot final.

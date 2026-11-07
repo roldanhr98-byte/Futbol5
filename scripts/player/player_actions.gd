@@ -147,6 +147,14 @@ func request_locomotion_transition(id: StringName, desired_dir: Vector3, magnitu
 	return start(&"turn", id)
 
 func try_locomotion_transition(desired_dir: Vector3, magnitude: float) -> bool:
+	if owner.visual != null and owner.visual.current_action != &"":
+		return false
+	if owner.ctx != null and owner.ctx.ball != null:
+		var rel: Vector3 = KickModel.flat(owner.ctx.ball.global_position - owner.global_position)
+		var incoming: Vector3 = KickModel.flat(owner.ctx.ball.linear_velocity - owner.velocity)
+		var eta: float = -rel.dot(incoming) / maxf(incoming.length_squared(), 0.001)
+		if eta > 0.0 and eta < BallHandler.PENDING_FIRST_TIME_MAX and (rel + incoming * eta).length() < owner.ball_handler.possession_radius():
+			return false
 	if not can_start(&"turn") or owner.ball_handler.has_possession() or owner.has_incoming_pass() or not is_inf(owner.ball_handler.incoming_ball_eta()) \
 			or owner.ball_handler.is_kick_in_progress() or owner.ball_handler._pending_action != &"":
 		return false
@@ -270,7 +278,7 @@ func tick(delta: float) -> bool:
 			var t: int = _token
 			kind = &""
 			_token = 0
-			if motion.heading_driven:
+			if motion.heading_driven or ended == &"turn":
 				# Giros y movimientos con pelota terminan en marcha: el cuerpo sigue con la velocidad de salida del clip.
 				loco.velocity = Vector3(wv.x, 0.0, wv.z)
 				loco.speed = loco.velocity.length()
@@ -620,7 +628,7 @@ func suffer_contact(k: StringName, from_dir: Vector3) -> void:
 ## Devuelve el clip ya con el espejo que corresponda; &"" si no hay.
 func _json_fall(speed: float, from_dir: Vector3 = Vector3.ZERO) -> StringName:
 	var room: float = _room_ahead()
-	var lo: float = 1.5 if speed >= FALL_SPRINT_MIN_SPEED else 0.0
+	var lo: float = 1.5 if speed >= FALL_SPRINT_MIN_SPEED else (DIRECTED_IN_PLACE if speed >= 3.0 else 0.0)
 	var hi: float = minf(1.3 if speed < 3.0 else 4.0, room - 0.5) if speed < FALL_SPRINT_MIN_SPEED else minf(8.0, room - 0.5)
 	var pool: Array[StringName] = []
 	for role in [&"fall", &"fall_hit", &"trip"]:

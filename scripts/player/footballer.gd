@@ -427,8 +427,8 @@ func _player_step(delta: float) -> void:
 	var kick_input: bool = frame.pass_held or frame.shoot_held or frame.through_held or frame.cross_held \
 		or frame.pass_pressed or frame.shoot_pressed or frame.through_pressed or frame.cross_pressed \
 		or frame.pass_released or frame.shoot_released or frame.through_released or frame.cross_released
-	if PackLibrary.json_mode() and not is_pressing and not kicking and not kick_input:
-		_json_turn_move(desired_dir, desired_mag, delta)
+	if PackLibrary.json_mode() and not is_pressing and not kicking and not kick_input and not (want_sprint and speed_before < 0.6):
+		_json_turn_move(desired_dir, desired_mag, delta, stick_mag)
 	# Vuelta atras pisando la pelota o giro con toques en curso: el cuerpo lo mueve la accion (llegar, frenar, girar, salir).
 	var scripted: Dictionary = ball_handler.drag_back.body_control()
 	if scripted.is_empty():
@@ -517,10 +517,17 @@ const JSON_TURN_COOLDOWN := 2.5
 const JSON_TURN_COOLDOWN_AI := 4.0
 const JSON_TURN_SPEED_AI := 1.3
 var _turn_cd: float = 0.0
+var _transition_input_started: bool = false
 
-func _json_turn_move(desired_dir: Vector3, desired_mag: float, delta: float) -> void:
+func _json_turn_move(desired_dir: Vector3, desired_mag: float, delta: float, input_mag: float) -> void:
 	_turn_cd = maxf(_turn_cd - delta, 0.0)
-	if _turn_cd <= 0.0 and actions.try_locomotion_transition(desired_dir, desired_mag):
+	if input_mag >= 0.2:
+		_transition_input_started = true
+	elif locomotion.speed < 0.2:
+		_transition_input_started = false
+	# Los pasos automaticos de recepcion/acomodo no son una orden de locomocion nueva.
+	var transition_intent: bool = input_mag >= 0.2 or (_transition_input_started and desired_mag < 0.2)
+	if transition_intent and _turn_cd <= 0.0 and actions.try_locomotion_transition(desired_dir, desired_mag):
 		_turn_cd = JSON_TURN_COOLDOWN if is_human_controlled else JSON_TURN_COOLDOWN_AI
 		return
 	if _turn_cd > 0.0 or desired_mag < 0.5 or desired_dir.length_squared() < 0.01 or not actions.can_start(&"turn") or ball_handler.has_possession():
