@@ -209,13 +209,46 @@ Workflow único: `.github/workflows/android.yml` («Android APK», id 397788632)
   no los permisos de una integración externa. Desde esta sesión el despacho funciona (HTTP 204, run 61, cancelado a
   propósito por ser un duplicado de `ac92f42` sin pruebas). No se tocaron credenciales.
 
-<!-- ACTIONS_RESULTADOS -->
+Ejecuciones de esta etapa (rama `integracion-openai`):
+
+| Run | Commit | Resultado |
+|---|---|---|
+| [60](https://github.com/roldanhr98-byte/Futbol5/actions/runs/42336476941) | `ac92f42` (Codex) | Éxito: primer APK de la rama (`futbol5-v0.1.60.apk`), verificada de forma independiente |
+| [61](https://github.com/roldanhr98-byte/Futbol5/actions/runs/42338568267) | `ac92f42` | Despacho manual de prueba (204); cancelado a propósito |
+| [62](https://github.com/roldanhr98-byte/Futbol5/actions/runs/42339679296) | `65437db` | Éxito: headless 309/0, render 8 baterías 0 fallos, APK `futbol5-v0.1.62.apk` |
+| **[63](https://github.com/roldanhr98-byte/Futbol5/actions/runs/42342768439)** | **`9d4069c`** | **Éxito: headless 310 pruebas / 0 fallidas / 28 omitidas / 2.991 comprobaciones, 0 fugas; render live_feet 7/0, live_kicks 6/0, pack_motion 2/0, json_mode 10/0, physical_dribble 5/0, directional_kicks 3/0, dribble_reference 2/0, test_receive 30/0, 0 fugas; APK `futbol5-v0.1.63.apk`** |
+
+Logs del run 63 copiados en [`claude/pruebas/actions_run63/`](claude/pruebas/actions_run63/).
+
 
 ## 9. Resultado de la compilación y APK
 
-<!-- APK_RESULTADOS -->
+**APK generada y verificada: sí.**
+
+- Artefacto: **`futbol5-apk`** del [run 63](https://github.com/roldanhr98-byte/Futbol5/actions/runs/42342768439)
+  (sección «Artifacts» de esa página; requiere iniciar sesión en GitHub; caduca el 2026-11-21, 14 días). Contiene
+  `futbol5-v0.1.63.apk` y `futbol5-v0.1.63.apk.sha256`.
+- Paquete `com.webmaletin.futbol5`, versionCode 63, versionName 0.1.63; 59.382.290 bytes.
+- SHA-256: `f03473d6cdb05f54bfca1cb16217039200e7fb13e62e2074720f3c368ebd576d`.
+- Verificación independiente (descargada del artefacto y comprobada en este entorno con build-tools 35.0.1):
+  `sha256sum -c` correcto; `apksigner verify`: firma v2 y v3 válidas, 1 firmante (clave de depuración efímera, CN=Android
+  Debug); `aapt2`: `native-code: 'arm64-v8a'` (única ABI), minSdk 24, targetSdk 36, sin permisos; `unzip -t` sin errores;
+  `zipalign -c -P 16 4` correcto; `libgodot_android.so` es ELF 64-bit ARM aarch64.
+- También se exportó localmente con Godot 4.7.2 y la plantilla oficial (APK de 59,4 MB, mismas comprobaciones) para
+  confirmar que la exportación no depende del runner.
+
 
 Comprobaciones **no** realizadas: instalación y ejecución en un dispositivo Android o emulador. El contenedor no tiene
 KVM y es x86_64; el emulador oficial no ejecuta imágenes ARM64 en hosts x86_64, y la APK solo trae `arm64-v8a`.
 Para probarla: descargar el artefacto, desinstalar versiones anteriores (`adb uninstall com.webmaletin.futbol5`) y
 `adb install futbol5-v0.1.N.apk`.
+
+## 10. Commits de esta continuación (rama `integracion-openai`)
+
+| Commit | Contenido |
+|---|---|
+| `65437db` | Fugas de ObjectDB (ciclo `BallHandler`), invasión de la zona de balón parado, semilla del arquero en `test_shot_keeper`, modo de `test_mocap_mode`, pruebas de regresión, workflow (render ampliado, integridad y SHA-256 de la APK), evidencia |
+| `9d4069c` | Segundo ciclo de fugas (señales del `BallHandler`), control de fugas en CI, este documento y evidencia final |
+| (este) | Resultados del run 63 y verificación de la APK descargada |
+
+Los commits de Codex (`a5edf7a` … `ac92f42`) se conservan intactos debajo.
