@@ -1,6 +1,8 @@
 # START HERE — guía rápida para otro chat de Claude
 
-> **Actualización 2026-11-07 — guía maestra de animaciones:** el trabajo en curso está en la rama `integracion-openai` (no tocar `respaldo-f3`). Para continuar leer primero [`docs/integration/CONTINUAR_GUIA_ANIMACIONES.md`](integration/CONTINUAR_GUIA_ANIMACIONES.md).
+> **Actualización 2026-11-07 — reforma a tiros libres y penales (prioridad):** rama `reforma-tiros-penales`; estado y próximos pasos en [`docs/reforma/ESTADO_REFORMA.md`](reforma/ESTADO_REFORMA.md).
+>
+> **Actualización 2026-11-07 — guía maestra de animaciones (en pausa):** el trabajo en curso está en la rama `integracion-openai` (no tocar `respaldo-f3`). Para continuar leer primero [`docs/integration/CONTINUAR_GUIA_ANIMACIONES.md`](integration/CONTINUAR_GUIA_ANIMACIONES.md).
 
 > **Chat nuevo:** primero [`ESTADO_Y_METODOLOGIA.md`](ESTADO_Y_METODOLOGIA.md) (rama de trabajo `respaldo-f3`, fases, reglas y pendientes).
 
