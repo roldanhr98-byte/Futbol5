@@ -166,6 +166,9 @@ Limitaciones:
 4. Las clasificaciones de atajadas usan umbrales medidos (están en el catálogo); algún clip límite puede caer en la
    categoría vecina.
 5. La naturalidad visual no se puede medir: la juzgas tú.
+6. Proporciones de pantalla: el banco se probó en 16:9 (1280 × 720), 4:3 (1024 × 768) y 20:9 (2400 × 1080) con render; el
+   campo no se deforma (cámara con altura fija: en 4:3 se ve menos a los costados). En 4:3 los paneles laterales tapan más
+   campo; es una herramienta de comparación, la interfaz definitiva de los modos se diseña en la Fase 3.
 
 **Decisión que necesito antes de seguir** (no avanzo sin ella):
 

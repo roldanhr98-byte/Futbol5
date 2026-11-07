@@ -14,6 +14,8 @@ const CASES := [
 	["json", "st_penalty", false], ["mixamo", "st_penalty", true], ["mocap", "st_penalty", true],
 ]
 var out_dir: String = "user://capturas"
+## Cantidad maxima de casos (--max N): para revisar rapido otras resoluciones.
+var max_cases: int = 1000
 var bench: AnimBankBench
 var results: Array = []
 
@@ -22,6 +24,8 @@ func _ready() -> void:
 	for i in args.size():
 		if args[i] == "--out" and i + 1 < args.size():
 			out_dir = args[i + 1]
+		if args[i] == "--max" and i + 1 < args.size():
+			max_cases = int(args[i + 1])
 	DirAccess.make_dir_recursive_absolute(out_dir)
 	bench = (load("res://scenes/dev/anim_bank_bench.tscn") as PackedScene).instantiate()
 	get_tree().root.add_child.call_deferred(bench)
@@ -33,7 +37,7 @@ func _frames(n: int) -> void:
 
 func _run() -> void:
 	await _frames(5)
-	for c in CASES:
+	for c in CASES.slice(0, max_cases):
 		bench.repeat = false
 		bench.original_body = c[2]
 		bench.select_bank(c[0])
