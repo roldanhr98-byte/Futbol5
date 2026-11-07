@@ -146,7 +146,10 @@ jobs:
 
       - name: Pruebas headless
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.skip_tests) }}
-        run: tools/run_tests.sh 2>&1 | tee "$RUNNER_TEMP/headless_tests.txt"
+        run: |
+          set -o pipefail
+          tools/run_tests.sh 2>&1 | tee "$RUNNER_TEMP/headless_tests.txt"
+          if grep -q "SCRIPT ERROR\|Parse Error\|\[FAIL\]" "$RUNNER_TEMP/headless_tests.txt"; then exit 1; fi
 
       # Pruebas que necesitan el esqueleto animado (toques de conduccion con el pie real, pie en la pelota al patear):
       # con render en un servidor X virtual.

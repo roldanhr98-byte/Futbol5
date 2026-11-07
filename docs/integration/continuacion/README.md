@@ -41,3 +41,9 @@ La suite completa local se está ejecutando nuevamente. Los resultados parciales
 El render adicional detectó una regresión de pase de primera: la prueba pasó en el checkout independiente 0b46c10 y falló con las transiciones nuevas. La transición podía cancelar una carga antes de que BallHandler registrara la orden. Footballer ahora respeta botones pulsados, mantenidos y liberados; PlayerActions excluye la aproximación física de una pelota. Revalidación con render: 1 prueba, 0 fallidas, 4 comprobaciones. Las 14 transiciones siguen invocándose en sus estados propios y la prueba negativa nueva comprueba que no interrumpan una pelota entrante: 2 pruebas, 0 fallidas, 46 comprobaciones.
 
 La suite parcial encontró un partido de 120 s sin tiros; la serie de tres partidos produjo 8. La exigencia de producir tiros se trasladó a esa serie; cada partido comprueba la lectura si realmente hubo SHOT. La prueba de atajada física independiente conserva su exigencia. Esta revisión de la afirmación estadística está pendiente de resultado completo; no certifica aún la suite.
+
+## Corrección del estado de Actions (run 42329228682)
+
+El estado exitoso del paso headless era incorrecto: al descargar el artefacto se comprobó el resumen real, 303 pruebas, 8 fallidas, 32 omitidas, 2835 comprobaciones. El run falló después en render. La tubería del paso headless hacia tee carecía de pipefail y ocultaba el código de salida de tools/run_tests.sh. Se corrige el workflow para propagar el fallo y detectar además marcadores FAIL/errores de script. No se considera aprobada esa suite ni se generó un APK.
+
+Fallos headless: arranque a sprint; dirección de caída; control lateral; cuatro pruebas de recepción; distribución de atajadas al palo. Se investigan por separado del render. La corrida local anterior todavía está en curso y contiene además un fallo de coste de planificación bajo carga concurrente.
