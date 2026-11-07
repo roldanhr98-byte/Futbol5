@@ -37,3 +37,51 @@ func test_incoming_ball_keeps_the_body_available_for_a_first_time_kick() -> void
 	check(not is_inf(p.ball_handler.incoming_ball_eta()), "la pelota se acerca fisicamente al jugador")
 	check(not p.actions.try_locomotion_transition(Vector3.FORWARD, 1.0), "la transicion no cancela la preparacion de primera")
 	check(not p.actions.active(), "el cuerpo queda disponible para la patada")
+
+## Regresion (test_set_pieces, 4 de 30 repeticiones): con la pelota muerta un rival arrancaba con la raiz de una
+## transicion (jn_start_0468, 4.35 m/s) y cruzaba la zona del tiro libre a 3.79 m. La raiz no puede meterlo en la zona
+## del saque (MatchScene.SET_PIECE_DISTANCE para el rival); con la pelota en juego la misma transicion sigue disponible.
+func test_dead_ball_transition_never_carries_a_player_into_the_set_piece_zone() -> void:
+	var ctx: MatchContext = await make_match(Vector3(0, 100.0, 0))
+	var p: Footballer = add_player(ctx, 1, Vector3.ZERO, 60, ScriptedInput.new(), true)
+	var taker: Footballer = add_player(ctx, 0, Vector3(-12, 0, 8), 60, ScriptedInput.new(), true)
+	p.set_physics_process(false)
+	taker.set_physics_process(false)
+	var tested: int = 0
+	for id in AnimDB.candidates(&"start", {"mirrors": false}):
+		var m: Dictionary = PackLibrary.meta(id)
+		var root: Vector2 = m.get("root_total", Vector2.ZERO)
+		if root.length() < 1.5:
+			continue
+		p.actions.reset()
+		p.global_position = Vector3.ZERO
+		p.locomotion.yaw = 0.0
+		var direction: Vector3 = (p.locomotion.forward() * root.x + p.locomotion.right() * root.y).normalized()
+		p.locomotion.face_override = Locomotion.dir_from_yaw(ActionMotion.heading_rel(m["heading_path"], m["duration"]))
+		p.locomotion.speed = float(m["v_in"])
+		p.locomotion.velocity = direction * p.locomotion.speed
+		# Pelota fuera de la distancia al empezar (5.4 m) y a 3 m del final del recorrido del clip.
+		var end: Vector3 = p.locomotion.forward() * root.x + p.locomotion.right() * root.y
+		var side: Vector3 = Vector3(-direction.z, 0.0, direction.x)
+		var ball_at: Vector3 = end + side * 3.0
+		if ball_at.length() < 5.4:
+			ball_at = end + side * sqrt(maxf(5.4 * 5.4 - end.length_squared(), 9.0))
+		ctx.ball.global_position = ball_at + Vector3(0, 0.11, 0)
+		ctx.dead_ball = false
+		ctx.restart_taker = null
+		var live: float = p.actions.transition_score(id, direction, 1.0)
+		if is_inf(live):
+			continue
+		ctx.dead_ball = true
+		ctx.restart_taker = taker
+		var dead: float = p.actions.transition_score(id, direction, 1.0)
+		var min_d: float = INF
+		for q: Vector2 in m.get("root_path", PackedVector2Array()):
+			min_d = minf(min_d, (p.locomotion.forward() * q.x + p.locomotion.right() * q.y).distance_to(ball_at))
+		if min_d < MatchScene.SET_PIECE_DISTANCE:
+			check(is_inf(dead), "%s: con la pelota muerta no se elige (su raiz pasa a %.2f m de la pelota)" % [id, min_d])
+			tested += 1
+		ctx.dead_ball = false
+		ctx.restart_taker = null
+	note("transiciones de arranque comprobadas con pelota muerta: %d" % tested)
+	check(tested > 0, "al menos una transicion de arranque disponible en juego cruza la zona del saque y se rechaza")

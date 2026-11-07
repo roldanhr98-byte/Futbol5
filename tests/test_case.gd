@@ -7,6 +7,8 @@ var tree: SceneTree
 var failures: Array[String] = []
 var checks: int = 0
 var _spawned: Array[Node] = []
+## Contextos creados por make_match: cleanup() desconecta sus senales (ver alli).
+var _contexts: Array[MatchContext] = []
 ## Una prueba omitida (p. ej. falta un recurso restringido que no se versiona) no cuenta como fallo ni como comprobacion.
 var skipped: bool = false
 var skip_reason: String = ""
@@ -64,6 +66,12 @@ func cleanup() -> void:
 		if is_instance_valid(n):
 			n.queue_free()
 	_spawned.clear()
+	# Las pruebas conectan lambdas a ctx.event_emitted que capturan el propio ctx (o la prueba): MatchContext es
+	# RefCounted y ese ciclo lo dejaba vivo hasta el cierre («ObjectDB instances were leaked»). Se rompe aqui.
+	for c in _contexts:
+		for conn in c.event_emitted.get_connections():
+			c.event_emitted.disconnect(conn["callable"])
+	_contexts.clear()
 	# Interruptores globales que algunas pruebas cambian: cada prueba empieza con los valores por defecto.
 	FootballerVisual.prefer_pack = true
 	BallHandler.clip_kicks_enabled = true
@@ -113,6 +121,7 @@ func make_match(ball_pos: Vector3 = Vector3(0, 0.12, 0)) -> MatchContext:
 	var ctx := MatchContext.new()
 	ctx.ball = w["ball"]
 	ctx.pitch = w["pitch"]
+	_contexts.append(ctx)
 	return ctx
 
 ## Agrega un futbolista con entrada programable. Por defecto atributos neutros (50).

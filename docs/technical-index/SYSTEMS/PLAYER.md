@@ -31,61 +31,61 @@
 <!-- AUTO:params:PlayerTuning -->
 | Parámetro | Defecto | Rango / tipo | Definido en | Dónde se usa (accesos reales) | Descripción |
 |---|---|---|---|---|---|
-| `walk_speed` | `1.8` | float | `scripts/player/player_tuning.gd:7` | `scripts/player/ball_handler.gd:1514`, `scripts/player/ball_handler.gd:1521`, `scripts/player/ball_handler.gd:1531`, `scripts/player/ball_handler.gd:1532` (+9) |  (Velocidades (m/s)) |
-| `jog_speed` | `3.6` | float | `scripts/player/player_tuning.gd:8` | `scripts/player/ball_handler.gd:361`, `scripts/player/ball_handler.gd:1533`, `scripts/player/ball_handler.gd:1534`, `scripts/player/ball_handler.gd:1536` (+13) |  (Velocidades (m/s)) |
+| `walk_speed` | `1.8` | float | `scripts/player/player_tuning.gd:7` | `scripts/player/ball_handler.gd:1526`, `scripts/player/ball_handler.gd:1533`, `scripts/player/ball_handler.gd:1543`, `scripts/player/ball_handler.gd:1544` (+9) |  (Velocidades (m/s)) |
+| `jog_speed` | `3.6` | float | `scripts/player/player_tuning.gd:8` | `scripts/player/ball_handler.gd:373`, `scripts/player/ball_handler.gd:1545`, `scripts/player/ball_handler.gd:1546`, `scripts/player/ball_handler.gd:1548` (+13) |  (Velocidades (m/s)) |
 | `run_speed` | `5.2` | float | `scripts/player/player_tuning.gd:9` | `scripts/player/locomotion.gd:57`, `scripts/player/locomotion.gd:199` |  (Velocidades (m/s)) |
-| `sprint_speed` | `6.8` | float | `scripts/player/player_tuning.gd:10` | `scripts/player/ball_handler.gd:361`, `scripts/player/ball_handler.gd:1536`, `scripts/player/ball_handler.gd:1558`, `scripts/player/locomotion.gd:60` |  (Velocidades (m/s)) |
+| `sprint_speed` | `6.8` | float | `scripts/player/player_tuning.gd:10` | `scripts/player/ball_handler.gd:373`, `scripts/player/ball_handler.gd:1548`, `scripts/player/ball_handler.gd:1570`, `scripts/player/locomotion.gd:60` |  (Velocidades (m/s)) |
 | `backpedal_factor` | `0.72` | float | `scripts/player/player_tuning.gd:11` | **sin uso** |  (Velocidades (m/s)) |
-| `accel` | `6.2` | float | `scripts/player/player_tuning.gd:15` | `scripts/player/ball_handler.gd:2020`, `scripts/player/ball_handler.gd:2623`, `scripts/player/ball_turn.gd:190`, `scripts/player/ball_turn.gd:301` (+6) | Aceleracion al empujar el joystick (m/s^2). (Aceleracion) |
-| `decel` | `9.5` | float | `scripts/player/player_tuning.gd:17` | `scripts/player/ball_handler.gd:2021`, `scripts/player/ball_handler.gd:2363`, `scripts/player/ball_handler.gd:2366`, `scripts/player/locomotion.gd:131` (+3) | Desaceleracion al soltar el joystick. (Aceleracion) |
-| `brake` | `14.0` | float | `scripts/player/player_tuning.gd:19` | `scripts/player/ball_handler.gd:2457`, `scripts/player/locomotion.gd:133`, `scripts/player/locomotion.gd:144` | Desaceleracion cuando el joystick apunta contra el movimiento (frenada). (Aceleracion) |
+| `accel` | `6.2` | float | `scripts/player/player_tuning.gd:15` | `scripts/player/ball_handler.gd:2032`, `scripts/player/ball_handler.gd:2638`, `scripts/player/ball_turn.gd:190`, `scripts/player/ball_turn.gd:301` (+6) | Aceleracion al empujar el joystick (m/s^2). (Aceleracion) |
+| `decel` | `9.5` | float | `scripts/player/player_tuning.gd:17` | `scripts/player/ball_handler.gd:2033`, `scripts/player/ball_handler.gd:2378`, `scripts/player/ball_handler.gd:2381`, `scripts/player/locomotion.gd:131` (+3) | Desaceleracion al soltar el joystick. (Aceleracion) |
+| `brake` | `14.0` | float | `scripts/player/player_tuning.gd:19` | `scripts/player/ball_handler.gd:2472`, `scripts/player/locomotion.gd:133`, `scripts/player/locomotion.gd:144` | Desaceleracion cuando el joystick apunta contra el movimiento (frenada). (Aceleracion) |
 | `lateral_grip` | `9.0` | float | `scripts/player/player_tuning.gd:21` | `scripts/player/locomotion.gd:148` | Agarre lateral: cuanto rapido se elimina la velocidad lateral respecto al cuerpo (1/s). (Aceleracion) |
-| `turn_rate_standing` | `620.0` | float | `scripts/player/player_tuning.gd:25` | `scripts/player/ball_handler.gd:627`, `scripts/player/ball_handler.gd:2043`, `scripts/player/locomotion.gd:106`, `scripts/player/locomotion.gd:194` | Velocidad de giro parado (grados/s). (Giro) |
-| `turn_rate_sprint` | `165.0` | float | `scripts/player/player_tuning.gd:27` | `scripts/player/ball_handler.gd:627`, `scripts/player/ball_handler.gd:2043`, `scripts/player/locomotion.gd:106` | Velocidad de giro a sprint maximo (grados/s). (Giro) |
+| `turn_rate_standing` | `620.0` | float | `scripts/player/player_tuning.gd:25` | `scripts/player/ball_handler.gd:639`, `scripts/player/ball_handler.gd:2055`, `scripts/player/locomotion.gd:106`, `scripts/player/locomotion.gd:194` | Velocidad de giro parado (grados/s). (Giro) |
+| `turn_rate_sprint` | `165.0` | float | `scripts/player/player_tuning.gd:27` | `scripts/player/ball_handler.gd:639`, `scripts/player/ball_handler.gd:2055`, `scripts/player/locomotion.gd:106` | Velocidad de giro a sprint maximo (grados/s). (Giro) |
 | `sharp_turn_angle_deg` | `115.0` | float | `scripts/player/player_tuning.gd:29` | `scripts/player/locomotion.gd:112` | Si el angulo al objetivo supera esto a mas de 70 % de la velocidad maxima, hay que frenar antes de girar. (Giro) |
 | `stamina_drain_sprint` | `0.16` | float | `scripts/player/player_tuning.gd:32` | `scripts/player/locomotion.gd:81` |  (Resistencia) |
 | `stamina_regen` | `0.07` | float | `scripts/player/player_tuning.gd:33` | `scripts/player/locomotion.gd:85`, `scripts/player/locomotion.gd:164`, `scripts/player/locomotion.gd:191` |  (Resistencia) |
 | `stamina_regen_standing` | `0.14` | float | `scripts/player/player_tuning.gd:34` | `scripts/player/locomotion.gd:85`, `scripts/player/locomotion.gd:164`, `scripts/player/locomotion.gd:191` |  (Resistencia) |
 | `exhausted_speed_factor` | `0.82` | float | `scripts/player/player_tuning.gd:36` | `scripts/player/locomotion.gd:62` | Fraccion de velocidad de sprint que aun se mantiene con la resistencia agotada. (Resistencia) |
-| `touch_reach` | `0.95` | float | `scripts/player/player_tuning.gd:40` | `scripts/player/ball_handler.gd:357`, `scripts/player/ball_handler.gd:542`, `scripts/player/ball_handler.gd:1250`, `scripts/player/ball_handler.gd:2931` (+1) | Distancia maxima (m) a la que puede dar un toque. (Conduccion) |
-| `touch_interval_jog` | `0.28` | float | `scripts/player/player_tuning.gd:42` | `scripts/player/ball_handler.gd:1568` | Segundos entre toques (trote). (Conduccion) |
-| `touch_interval_sprint` | `0.38` | float | `scripts/player/player_tuning.gd:44` | `scripts/player/ball_handler.gd:1568` | Segundos entre toques (sprint, toques mas largos y espaciados). (Conduccion) |
-| `carry_gap_stand` | `0.38` | float | `scripts/player/player_tuning.gd:46` | `scripts/player/ball_handler.gd:1556`, `scripts/player/ball_handler.gd:2375`, `scripts/player/ball_handler.gd:2382`, `scripts/player/ball_handler.gd:2418` | Distancia objetivo (m) de la pelota al pie PARADO: es la que define el control cercano. (Conduccion) |
-| `touch_lead_jog` | `0.70` | float | `scripts/player/player_tuning.gd:48` | `scripts/player/ball_handler.gd:1556`, `scripts/player/ball_handler.gd:1558` | Distancia objetivo (m) a la que se coloca la pelota delante del jugador al trotar / sprintar. (Conduccion) |
-| `touch_lead_sprint` | `1.20` | float | `scripts/player/player_tuning.gd:49` | `scripts/player/ball_handler.gd:1558` |  (Conduccion) |
-| `settle_gap` | `0.38` | float | `scripts/player/player_tuning.gd:51` | `scripts/player/ball_handler.gd:2355`, `scripts/player/ball_handler.gd:2364`, `scripts/player/ball_handler.gd:2637`, `scripts/player/ball_handler.gd:2726` (+5) | Distancia (m) a la que queda la pelota al parar (soltar el joystick): pisada / parada. (Conduccion) |
-| `lateral_hold_seconds` | `0.40` | float | `scripts/player/player_tuning.gd:53` | `scripts/player/ball_handler.gd:2674`, `scripts/player/ball_handler.gd:2675` | Segundos que el cuerpo conserva su orientacion tras un control lateral. (Conduccion) |
-| `lateral_max_stick` | `0.5` | float | `scripts/player/player_tuning.gd:56` | `scripts/player/ball_handler.gd:2671` | Intensidad maxima del joystick para que un empuje de costado sea control lateral (mas fuerte = giro normal). 0.5: en el movil el joystick rara vez va a fondo y con 0.75 el jugador se desplazaba de lado en vez de girar. (Conduccion) |
-| `shield_radius` | `2.6` | float | `scripts/player/player_tuning.gd:58` | `scripts/player/ball_handler.gd:2629`, `scripts/player/ball_handler.gd:2664` | Radio (m) dentro del cual un rival hace que el portador proteja la pelota con el cuerpo. (Conduccion) |
-| `touch_overshoot_sprint` | `0.82` | float | `scripts/player/player_tuning.gd:60` | `scripts/player/ball_handler.gd:2192`, `scripts/player/ball_handler.gd:2401` | Desviacion tipica (m) de los toques largos a sprint con control 0 (disminuye con la habilidad). (Conduccion) |
+| `touch_reach` | `0.95` | float | `scripts/player/player_tuning.gd:40` | `scripts/ai/ai_input.gd:131`, `scripts/player/ball_handler.gd:369`, `scripts/player/ball_handler.gd:554`, `scripts/player/ball_handler.gd:1262` (+1) | Distancia maxima (m) a la que puede dar un toque. (Conduccion) |
+| `touch_interval_jog` | `0.28` | float | `scripts/player/player_tuning.gd:42` | `scripts/player/ball_handler.gd:1580` | Segundos entre toques (trote). (Conduccion) |
+| `touch_interval_sprint` | `0.38` | float | `scripts/player/player_tuning.gd:44` | `scripts/player/ball_handler.gd:1580` | Segundos entre toques (sprint, toques mas largos y espaciados). (Conduccion) |
+| `carry_gap_stand` | `0.38` | float | `scripts/player/player_tuning.gd:46` | `scripts/player/ball_handler.gd:1568`, `scripts/player/ball_handler.gd:2390`, `scripts/player/ball_handler.gd:2397`, `scripts/player/ball_handler.gd:2433` | Distancia objetivo (m) de la pelota al pie PARADO: es la que define el control cercano. (Conduccion) |
+| `touch_lead_jog` | `0.70` | float | `scripts/player/player_tuning.gd:48` | `scripts/player/ball_handler.gd:1568`, `scripts/player/ball_handler.gd:1570` | Distancia objetivo (m) a la que se coloca la pelota delante del jugador al trotar / sprintar. (Conduccion) |
+| `touch_lead_sprint` | `1.20` | float | `scripts/player/player_tuning.gd:49` | `scripts/player/ball_handler.gd:1570` |  (Conduccion) |
+| `settle_gap` | `0.38` | float | `scripts/player/player_tuning.gd:51` | `scripts/player/ball_handler.gd:2370`, `scripts/player/ball_handler.gd:2379`, `scripts/player/ball_handler.gd:2652`, `scripts/player/ball_handler.gd:2741` (+5) | Distancia (m) a la que queda la pelota al parar (soltar el joystick): pisada / parada. (Conduccion) |
+| `lateral_hold_seconds` | `0.40` | float | `scripts/player/player_tuning.gd:53` | `scripts/player/ball_handler.gd:2689`, `scripts/player/ball_handler.gd:2690` | Segundos que el cuerpo conserva su orientacion tras un control lateral. (Conduccion) |
+| `lateral_max_stick` | `0.5` | float | `scripts/player/player_tuning.gd:56` | `scripts/player/ball_handler.gd:2686` | Intensidad maxima del joystick para que un empuje de costado sea control lateral (mas fuerte = giro normal). 0.5: en el movil el joystick rara vez va a fondo y con 0.75 el jugador se desplazaba de lado en vez de girar. (Conduccion) |
+| `shield_radius` | `2.6` | float | `scripts/player/player_tuning.gd:58` | `scripts/player/ball_handler.gd:2644`, `scripts/player/ball_handler.gd:2679` | Radio (m) dentro del cual un rival hace que el portador proteja la pelota con el cuerpo. (Conduccion) |
+| `touch_overshoot_sprint` | `0.82` | float | `scripts/player/player_tuning.gd:60` | `scripts/player/ball_handler.gd:2204`, `scripts/player/ball_handler.gd:2416` | Desviacion tipica (m) de los toques largos a sprint con control 0 (disminuye con la habilidad). (Conduccion) |
 | `touch_escape_factor` | `1.05` | float | `scripts/player/player_tuning.gd:62` | **sin uso** | Toque de recuperacion: se adelanta cuando la pelota va a quedar a mas de este multiplo del alcance en 0.14 s. (Conduccion) |
-| `touch_error_deg` | `4.0` | float | `scripts/player/player_tuning.gd:64` | `scripts/player/ball_handler.gd:2216`, `scripts/player/ball_handler.gd:2497` | Error angular base de un toque (grados) con control de balon 50. (Conduccion) |
-| `touch_error_max_deg` | `8.0` | float | `scripts/player/player_tuning.gd:66` | `scripts/player/ball_handler.gd:2504` | Tope (grados) del error angular de un toque aunque se sumen sprint y giro. (Conduccion) |
-| `touch_error_sprint` | `2.0` | float | `scripts/player/player_tuning.gd:68` | `scripts/player/ball_handler.gd:2498` | Error extra por sprint (multiplicador) y por giro brusco. (Conduccion) |
-| `touch_error_turn` | `1.9` | float | `scripts/player/player_tuning.gd:69` | `scripts/player/ball_handler.gd:2499` |  (Conduccion) |
-| `touch_turn_walk_deg` | `150.0` | float | `scripts/player/player_tuning.gd:73` | `scripts/player/ball_handler.gd:1532`, `scripts/player/ball_handler.gd:1534` | Giro maximo (grados) que un toque de conduccion le da a la pelota caminando, al trote y a sprint (BallHandler .touch_turn_max_deg): entre toques la pelota rueda recta y el jugador la sigue; un cambio de rumbo mayor lleva varios toques, como en FTS / Ultimate Clash. (Conduccion) |
-| `touch_turn_jog_deg` | `110.0` | float | `scripts/player/player_tuning.gd:74` | `scripts/player/ball_handler.gd:1534`, `scripts/player/ball_handler.gd:1536` |  (Conduccion) |
-| `touch_turn_sprint_deg` | `70.0` | float | `scripts/player/player_tuning.gd:75` | `scripts/player/ball_handler.gd:1536` |  (Conduccion) |
-| `kick_lockout` | `0.35` | float | `scripts/player/player_tuning.gd:77` | `scripts/player/ball_handler.gd:1341` | Segundos de bloqueo despues de un pase/tiro antes de poder volver a tocar la pelota. (Conduccion) |
-| `possession_radius` | `1.1` | float | `scripts/player/player_tuning.gd:78` | `scripts/player/ball_handler.gd:213`, `scripts/player/ball_handler.gd:3044`, `scripts/player/footballer.gd:333`, `scripts/assistance/press_controller.gd:44` (+3) |  (Conduccion) |
-| `kick_contact_radius` | `0.30` | float | `scripts/player/player_tuning.gd:82` | `scripts/player/ball_handler.gd:2541` | Radio (m) entre el pie (posicion de contacto medida del clip) y el centro de la pelota para que el golpeo cuente. (Patada con animacion del pack) |
-| `json_kick_reach` | `0.65` | float | `scripts/player/player_tuning.gd:87` | `scripts/player/ball_handler.gd:2541` | Modo 4 (Json): alcance (m) con el que el golpeo de un clip sigue contando aunque la pelota se haya corrido del punto previsto; el pie se estira hasta ella (IK) en el ultimo tramo del balanceo. Con 0.30 una de cada cinco patadas del partido de IA se perdia en el aire con la pelota a 0.30-0.47 m («hace la animacion pero no le da al balon»); con 0.55 seguian perdiendose 2-4 por partido a 0.56-0.73 m en jugadas disputadas (el cuerpo empujado 0.4-1.1 m en el balanceo). (Patada con animacion del pack) |
-| `kick_foot_max_height` | `0.25` | float | `scripts/player/player_tuning.gd:90` | `scripts/player/ball_handler.gd:771` | Altura maxima (m) de la punta del pie y velocidad minima de avance (m/s) para que un punto de la trayectoria del clip cuente como golpeo: el pie debe ir bajo y lanzado, no subiendo ni frenando. (Patada con animacion del pack) |
-| `kick_foot_min_speed` | `3.0` | float | `scripts/player/player_tuning.gd:91` | `scripts/player/ball_handler.gd:771` |  (Patada con animacion del pack) |
-| `kick_adjust_max` | `0.30` | float | `scripts/player/player_tuning.gd:94` | `scripts/player/ball_handler.gd:809`, `scripts/player/ball_handler.gd:903` | Ajuste de zancada: desplazamiento maximo (m) del cuerpo hacia la pelota durante la latencia para que el pie llegue. Crece con la velocidad (a sprint la zancada es larga): kick_adjust_max + kick_adjust_sprint * ratio de sprint. (Patada con animacion del pack) |
-| `kick_adjust_sprint` | `0.28` | float | `scripts/player/player_tuning.gd:95` | `scripts/player/ball_handler.gd:809`, `scripts/player/ball_handler.gd:903` |  (Patada con animacion del pack) |
-| `kick_start_residual` | `0.18` | float | `scripts/player/player_tuning.gd:97` | `scripts/player/ball_handler.gd:825`, `scripts/player/ball_handler.gd:826`, `scripts/player/ball_handler.gd:827`, `scripts/player/ball_handler.gd:873` (+5) | Error maximo (m) que se acepta al INICIAR el balanceo, medido tras el ajuste con la pelota y el jugador predichos al contacto. (Patada con animacion del pack) |
-| `kick_latency` | `0.20` | float | `scripts/player/player_tuning.gd:99` | `scripts/player/ball_handler.gd:602`, `scripts/player/ball_handler.gd:942` | Latencia objetivo (s) entre soltar el boton y el golpeo; el clip se acelera/recorta para llegar a ella. (Patada con animacion del pack) |
-| `shot_windup` | `0.12` | float | `scripts/player/player_tuning.gd:103` | `scripts/player/ball_handler.gd:602` | Preparacion extra (s) del TIRO sobre kick_latency (+ shot_windup_charge con la carga al maximo): el clip arranca antes y a velocidad casi natural, asi se ve el balanceo de la pierna hacia atras (prueba03: el tiro duraba 0.17 s en pantalla y no se notaba). Los pases conservan la latencia corta. (Patada con animacion del pack) |
-| `shot_windup_charge` | `0.06` | float | `scripts/player/player_tuning.gd:104` | `scripts/player/ball_handler.gd:602` |  (Patada con animacion del pack) |
-| `kick_clip_speed_max` | `1.6` | float | `scripts/player/player_tuning.gd:106` | `scripts/player/ball_handler.gd:607` | Aceleracion maxima del clip de patada (1 = velocidad original del clip). (Patada con animacion del pack) |
-| `kick_turn_scale` | `0.35` | float | `scripts/player/player_tuning.gd:108` | `scripts/player/ball_handler.gd:624`, `scripts/player/ball_handler.gd:628`, `scripts/player/ball_handler.gd:1127` | Fraccion de la velocidad de giro que se conserva mientras el pie se prepara (el pie de apoyo fija la direccion). (Patada con animacion del pack) |
-| `kick_follow_through` | `0.30` | float | `scripts/player/player_tuning.gd:110` | `scripts/player/ball_handler.gd:1109`, `scripts/player/ball_handler.gd:1138` | Segundos de continuacion del clip tras el golpeo antes de devolver el cuerpo a la marcha. (Patada con animacion del pack) |
-| `first_touch_absorb` | `0.65` | float | `scripts/player/player_tuning.gd:114` | `scripts/player/ball_handler.gd:3087` | Fraccion de energia que absorbe el control orientado (0 = rebote total). (Contacto con balon) |
+| `touch_error_deg` | `4.0` | float | `scripts/player/player_tuning.gd:64` | `scripts/player/ball_handler.gd:2228`, `scripts/player/ball_handler.gd:2512` | Error angular base de un toque (grados) con control de balon 50. (Conduccion) |
+| `touch_error_max_deg` | `8.0` | float | `scripts/player/player_tuning.gd:66` | `scripts/player/ball_handler.gd:2519` | Tope (grados) del error angular de un toque aunque se sumen sprint y giro. (Conduccion) |
+| `touch_error_sprint` | `2.0` | float | `scripts/player/player_tuning.gd:68` | `scripts/player/ball_handler.gd:2513` | Error extra por sprint (multiplicador) y por giro brusco. (Conduccion) |
+| `touch_error_turn` | `1.9` | float | `scripts/player/player_tuning.gd:69` | `scripts/player/ball_handler.gd:2514` |  (Conduccion) |
+| `touch_turn_walk_deg` | `150.0` | float | `scripts/player/player_tuning.gd:73` | `scripts/player/ball_handler.gd:1544`, `scripts/player/ball_handler.gd:1546` | Giro maximo (grados) que un toque de conduccion le da a la pelota caminando, al trote y a sprint (BallHandler .touch_turn_max_deg): entre toques la pelota rueda recta y el jugador la sigue; un cambio de rumbo mayor lleva varios toques, como en FTS / Ultimate Clash. (Conduccion) |
+| `touch_turn_jog_deg` | `110.0` | float | `scripts/player/player_tuning.gd:74` | `scripts/player/ball_handler.gd:1546`, `scripts/player/ball_handler.gd:1548` |  (Conduccion) |
+| `touch_turn_sprint_deg` | `70.0` | float | `scripts/player/player_tuning.gd:75` | `scripts/player/ball_handler.gd:1548` |  (Conduccion) |
+| `kick_lockout` | `0.35` | float | `scripts/player/player_tuning.gd:77` | `scripts/player/ball_handler.gd:1353` | Segundos de bloqueo despues de un pase/tiro antes de poder volver a tocar la pelota. (Conduccion) |
+| `possession_radius` | `1.1` | float | `scripts/player/player_tuning.gd:78` | `scripts/ai/ai_input.gd:627`, `scripts/assistance/press_controller.gd:44`, `scripts/assistance/press_controller.gd:49`, `scripts/assistance/press_controller.gd:51` (+3) |  (Conduccion) |
+| `kick_contact_radius` | `0.30` | float | `scripts/player/player_tuning.gd:82` | `scripts/player/ball_handler.gd:2556` | Radio (m) entre el pie (posicion de contacto medida del clip) y el centro de la pelota para que el golpeo cuente. (Patada con animacion del pack) |
+| `json_kick_reach` | `0.65` | float | `scripts/player/player_tuning.gd:87` | `scripts/player/ball_handler.gd:2556` | Modo 4 (Json): alcance (m) con el que el golpeo de un clip sigue contando aunque la pelota se haya corrido del punto previsto; el pie se estira hasta ella (IK) en el ultimo tramo del balanceo. Con 0.30 una de cada cinco patadas del partido de IA se perdia en el aire con la pelota a 0.30-0.47 m («hace la animacion pero no le da al balon»); con 0.55 seguian perdiendose 2-4 por partido a 0.56-0.73 m en jugadas disputadas (el cuerpo empujado 0.4-1.1 m en el balanceo). (Patada con animacion del pack) |
+| `kick_foot_max_height` | `0.25` | float | `scripts/player/player_tuning.gd:90` | `scripts/player/ball_handler.gd:783` | Altura maxima (m) de la punta del pie y velocidad minima de avance (m/s) para que un punto de la trayectoria del clip cuente como golpeo: el pie debe ir bajo y lanzado, no subiendo ni frenando. (Patada con animacion del pack) |
+| `kick_foot_min_speed` | `3.0` | float | `scripts/player/player_tuning.gd:91` | `scripts/player/ball_handler.gd:783` |  (Patada con animacion del pack) |
+| `kick_adjust_max` | `0.30` | float | `scripts/player/player_tuning.gd:94` | `scripts/player/ball_handler.gd:821`, `scripts/player/ball_handler.gd:915` | Ajuste de zancada: desplazamiento maximo (m) del cuerpo hacia la pelota durante la latencia para que el pie llegue. Crece con la velocidad (a sprint la zancada es larga): kick_adjust_max + kick_adjust_sprint * ratio de sprint. (Patada con animacion del pack) |
+| `kick_adjust_sprint` | `0.28` | float | `scripts/player/player_tuning.gd:95` | `scripts/player/ball_handler.gd:821`, `scripts/player/ball_handler.gd:915` |  (Patada con animacion del pack) |
+| `kick_start_residual` | `0.18` | float | `scripts/player/player_tuning.gd:97` | `scripts/player/ball_handler.gd:837`, `scripts/player/ball_handler.gd:838`, `scripts/player/ball_handler.gd:839`, `scripts/player/ball_handler.gd:885` (+5) | Error maximo (m) que se acepta al INICIAR el balanceo, medido tras el ajuste con la pelota y el jugador predichos al contacto. (Patada con animacion del pack) |
+| `kick_latency` | `0.20` | float | `scripts/player/player_tuning.gd:99` | `scripts/player/ball_handler.gd:614`, `scripts/player/ball_handler.gd:954` | Latencia objetivo (s) entre soltar el boton y el golpeo; el clip se acelera/recorta para llegar a ella. (Patada con animacion del pack) |
+| `shot_windup` | `0.12` | float | `scripts/player/player_tuning.gd:103` | `scripts/player/ball_handler.gd:614` | Preparacion extra (s) del TIRO sobre kick_latency (+ shot_windup_charge con la carga al maximo): el clip arranca antes y a velocidad casi natural, asi se ve el balanceo de la pierna hacia atras (prueba03: el tiro duraba 0.17 s en pantalla y no se notaba). Los pases conservan la latencia corta. (Patada con animacion del pack) |
+| `shot_windup_charge` | `0.06` | float | `scripts/player/player_tuning.gd:104` | `scripts/player/ball_handler.gd:614` |  (Patada con animacion del pack) |
+| `kick_clip_speed_max` | `1.6` | float | `scripts/player/player_tuning.gd:106` | `scripts/player/ball_handler.gd:619` | Aceleracion maxima del clip de patada (1 = velocidad original del clip). (Patada con animacion del pack) |
+| `kick_turn_scale` | `0.35` | float | `scripts/player/player_tuning.gd:108` | `scripts/player/ball_handler.gd:636`, `scripts/player/ball_handler.gd:640`, `scripts/player/ball_handler.gd:1139` | Fraccion de la velocidad de giro que se conserva mientras el pie se prepara (el pie de apoyo fija la direccion). (Patada con animacion del pack) |
+| `kick_follow_through` | `0.30` | float | `scripts/player/player_tuning.gd:110` | `scripts/player/ball_handler.gd:1121`, `scripts/player/ball_handler.gd:1150` | Segundos de continuacion del clip tras el golpeo antes de devolver el cuerpo a la marcha. (Patada con animacion del pack) |
+| `first_touch_absorb` | `0.65` | float | `scripts/player/player_tuning.gd:114` | `scripts/player/ball_handler.gd:3102` | Fraccion de energia que absorbe el control orientado (0 = rebote total). (Contacto con balon) |
 | `receive_contact` | `{` | Dictionary | `scripts/player/player_tuning.gd:118` | `scripts/player/json_receive.gd:670` | Recepcion con clip (modo 4, JsonReceive.contact_velocity), por parte del cuerpo: Vector3(restitucion, conservacion a lo largo de la superficie, empuje hacia delante en m/s). Los dos primeros se escalan con lo que el jugador no amortigua (first_touch_absorb): un buen control deja la pelota muerta. Valores iniciales para ajustar en el juego, no medidos. (Contacto con balon) |
 | `body_mass` | `75.0` | float | `scripts/player/player_tuning.gd:124` | **sin uso** |  (Contacto con balon) |
-| `capsule_radius` | `0.3` | float | `scripts/player/player_tuning.gd:125` | `scripts/player/ball_handler.gd:1626`, `scripts/player/ball_handler.gd:1636`, `scripts/player/footballer.gd:87` |  (Contacto con balon) |
-| `capsule_height` | `1.75` | float | `scripts/player/player_tuning.gd:126` | `scripts/player/ball_handler.gd:1626`, `scripts/player/footballer.gd:88`, `scripts/player/footballer.gd:90` |  (Contacto con balon) |
+| `capsule_radius` | `0.3` | float | `scripts/player/player_tuning.gd:125` | `scripts/player/ball_handler.gd:1638`, `scripts/player/ball_handler.gd:1648`, `scripts/player/footballer.gd:87` |  (Contacto con balon) |
+| `capsule_height` | `1.75` | float | `scripts/player/player_tuning.gd:126` | `scripts/player/ball_handler.gd:1638`, `scripts/player/footballer.gd:88`, `scripts/player/footballer.gd:90` |  (Contacto con balon) |
 <!-- /AUTO -->
 
 ### Riesgos al modificar (con las pruebas que los vigilan)
@@ -119,29 +119,30 @@ Ver la tabla «Valores fijos» de [ARCHITECTURE.md](../ARCHITECTURE.md) (carga d
 | `Footballer.has_incoming_pass()` | 134 | true mientras hay un pase en camino hacia este jugador (y la pelota no la tiene nadie todavia). |
 | `Footballer.pass_meet_point()` | 139 | Punto donde salir a buscar el pase que viene: el primero de la trayectoria PREDICHA de la pelota al que el jugador llega antes que ella (a r |
 | `Footballer.set_attributes(attrs: PlayerAttributes)` | 155 |  |
-| `Footballer._exit_tree()` | 160 |  |
-| `Footballer.set_ball_ghost(on: bool)` | 168 | Durante un golpeo en el aire (cabezazo, volea) la pelota atraviesa el cuerpo hasta el contacto del clip: si no, rebota contra la capsula ant |
-| `Footballer.has_ball()` | 171 |  |
-| `Footballer.on_ball_impact(ball: Ball)` | 175 | Notificacion de una colision fisica real de Jolt; no se usa para fabricar un toque ni mover la pelota. |
-| `Footballer.reset_motion()` | 179 |  |
-| `Footballer.place_at(pos: Vector3, yaw: float)` | 190 |  |
-| `Footballer._physics_process(delta: float)` | 203 |  |
-| `Footballer._player_step(delta: float)` | 208 |  |
-| `Footballer._json_idle(stick_mag: float, delta: float)` | 499 |  |
-| `Footballer._json_turn_move(desired_dir: Vector3, desired_mag: float, delta: float)` | 521 |  |
-| `Footballer._keep_inside(dir: Vector3)` | 557 | Quita la componente que saca al jugador mas alla de las lineas (con medio metro de margen). |
-| `Footballer._ai_commits_tackle(carrier: Footballer)` | 570 | La IA no disputa en cada ocasion: contiene (jockey) y entra cuando la pelota queda expuesta (toque largo del portador, pelota suelta) o, con |
-| `Footballer._skill_is_drag_back(frame: InputFrame)` | 579 | El boton REGATE pide la vuelta pisando la pelota cuando el joystick apunta hacia atras (>= DragBack.MIN_ANGLE grados del frente) con la pelo |
-| `Footballer._json_clip_slides(cur: StringName, delta: float)` | 592 |  |
-| `Footballer._gait_overlays(desired_dir: Vector3, want_sprint: bool, stick_mag: float, speed_before: float, delta: float)` | 603 |  |
-| `Footballer._cancel_reaction()` | 647 |  |
-| `Footballer._on_match_event(e: GameEvent)` | 658 | Reacciones de presentacion a eventos del partido: - Gol: el goleador, el asistente, el resto del equipo y el rival reaccionan distinto (un a |
-| `Footballer._try_block_jump(e: GameEvent)` | 700 |  |
-| `Footballer.rng_delay()` | 715 |  |
-| `Footballer._set_reaction(situation: StringName, wait: float, cut: float)` | 718 |  |
-| `Footballer._update_reaction(delta: float)` | 725 | La reaccion a un gol arranca cuando el jugador casi se ha detenido (o tras REACTION_MAX_WAIT) para no animar un clip en el sitio sobre un cu |
-| `Footballer._check_player_collisions()` | 739 | Un choque a velocidad con otro jugador provoca un tropiezo (presentacion) o, si es fuerte, un golpe de hombro y caida. |
-| `Footballer.capture_state()` | 761 | Datos replicables del jugador (para snapshots de red / pruebas). |
+| `Footballer._notification(what: int)` | 161 | Al liberarse el nodo se rompe el ciclo BallHandler <-> submodulos (RefCounted): si no, quedan vivos en ObjectDB. |
+| `Footballer._exit_tree()` | 165 |  |
+| `Footballer.set_ball_ghost(on: bool)` | 173 | Durante un golpeo en el aire (cabezazo, volea) la pelota atraviesa el cuerpo hasta el contacto del clip: si no, rebota contra la capsula ant |
+| `Footballer.has_ball()` | 176 |  |
+| `Footballer.on_ball_impact(ball: Ball)` | 180 | Notificacion de una colision fisica real de Jolt; no se usa para fabricar un toque ni mover la pelota. |
+| `Footballer.reset_motion()` | 184 |  |
+| `Footballer.place_at(pos: Vector3, yaw: float)` | 195 |  |
+| `Footballer._physics_process(delta: float)` | 208 |  |
+| `Footballer._player_step(delta: float)` | 213 |  |
+| `Footballer._json_idle(stick_mag: float, delta: float)` | 504 |  |
+| `Footballer._json_turn_move(desired_dir: Vector3, desired_mag: float, delta: float, input_mag: float)` | 527 |  |
+| `Footballer._keep_inside(dir: Vector3)` | 569 | Quita la componente que saca al jugador mas alla de las lineas (con medio metro de margen). |
+| `Footballer._ai_commits_tackle(carrier: Footballer)` | 582 | La IA no disputa en cada ocasion: contiene (jockey) y entra cuando la pelota queda expuesta (toque largo del portador, pelota suelta) o, con |
+| `Footballer._skill_is_drag_back(frame: InputFrame)` | 591 | El boton REGATE pide la vuelta pisando la pelota cuando el joystick apunta hacia atras (>= DragBack.MIN_ANGLE grados del frente) con la pelo |
+| `Footballer._json_clip_slides(cur: StringName, delta: float)` | 604 |  |
+| `Footballer._gait_overlays(desired_dir: Vector3, want_sprint: bool, stick_mag: float, speed_before: float, delta: float)` | 615 |  |
+| `Footballer._cancel_reaction()` | 659 |  |
+| `Footballer._on_match_event(e: GameEvent)` | 670 | Reacciones de presentacion a eventos del partido: - Gol: el goleador, el asistente, el resto del equipo y el rival reaccionan distinto (un a |
+| `Footballer._try_block_jump(e: GameEvent)` | 712 |  |
+| `Footballer.rng_delay()` | 727 |  |
+| `Footballer._set_reaction(situation: StringName, wait: float, cut: float)` | 730 |  |
+| `Footballer._update_reaction(delta: float)` | 737 | La reaccion a un gol arranca cuando el jugador casi se ha detenido (o tras REACTION_MAX_WAIT) para no animar un clip en el sitio sobre un cu |
+| `Footballer._check_player_collisions()` | 751 | Un choque a velocidad con otro jugador provoca un tropiezo (presentacion) o, si es fuerte, un golpe de hombro y caida. |
+| `Footballer.capture_state()` | 773 | Datos replicables del jugador (para snapshots de red / pruebas). |
 <!-- /AUTO -->
 
 <!-- AUTO:funcs:scripts/player/locomotion.gd -->
@@ -167,139 +168,140 @@ Ver la tabla «Valores fijos» de [ARCHITECTURE.md](../ARCHITECTURE.md) (carga d
 | Función | Línea | Qué hace |
 |---|---|---|
 | `BallHandler._init(o: Footballer)` | 192 |  |
-| `BallHandler.ball()` | 200 |  |
-| `BallHandler.ball_offset()` | 203 |  |
-| `BallHandler.ball_distance()` | 207 |  |
-| `BallHandler.possession_radius()` | 212 | Radio (m) dentro del cual se considera que el jugador lleva la pelota. Crece con la velocidad: a sprint la pelota va mas adelantada y seguir |
-| `BallHandler.has_possession()` | 215 |  |
-| `BallHandler.is_dribbling()` | 231 | Conduce aunque el ultimo toque largo la haya alejado un poco: fue el ultimo en tocarla, no la pateo (pase/tiro) y sigue cerca. Sirve para no |
-| `BallHandler.seconds_since_kick()` | 239 | Segundos de simulacion desde el ultimo pase o tiro de este jugador. |
-| `BallHandler.incoming_ball_eta(radius: float = 2.5)` | 244 | Segundos hasta que una pelota que se ACERCA pase a menos de radius del jugador (INF si no viene hacia el, va alta o es de otro). Prediccion  |
-| `BallHandler._ball_rolling(b: Ball)` | 267 | La pelota va rodando por el piso (no en el aire ni botando): su avance sigue el modelo de rodadura de Ball. |
-| `BallHandler.ball_travel(b: Ball, t: float)` | 271 | Desplazamiento horizontal de la pelota en t segundos: rodando, con la rodadura de Ball; en el aire, recto. |
-| `BallHandler.incoming_ball_point()` | 279 | Punto (en el suelo) de la trayectoria de la pelota que viene mas cercano al jugador: donde preparar el golpeo de primera. |
-| `BallHandler.loose_ball_chase()` | 296 | Punto (en el suelo) donde el jugador alcanza una pelota suelta: el primero de su recorrido (rodadura de Ball) al que llega corriendo. Vector |
-| `BallHandler.is_waiting_first_time()` | 319 | Hay una orden de pase/tiro esperando una pelota que llega (golpeo de primera, sin control previo). |
-| `BallHandler.ball_owned_by_other()` | 325 | La pelota es de otro jugador (la conduce o la acaba de controlar): no se la puede conducir ni controlar, solo disputar. Un companero que la  |
-| `BallHandler.controls_ball()` | 341 | El equipo del jugador controla la pelota: esta cerca Y fue tocada por ultima vez por su equipo. Una pelota suelta o ultimo tocada por el riv |
-| `BallHandler.can_reach(reach: float)` | 345 |  |
-| `BallHandler.dribble_speed_cap()` | 352 | Alcance efectivo de un toque: el jugador estira mas la pierna a mayor velocidad. Velocidad (m/s) maxima con la pelota al pie: algo menos que |
-| `BallHandler.touch_reach()` | 355 |  |
-| `BallHandler._sprint_ratio()` | 359 |  |
-| `BallHandler.assist_pass_level()` | 363 |  |
-| `BallHandler.assist_shot_level()` | 366 |  |
-| `BallHandler.update(frame: InputFrame, stick_world: Vector3, stick_mag: float, desired_dir: Vector3, dt: float)` | 370 | Paso de simulacion. stick_world: direccion del joystick en el mundo; desired_dir: direccion deseada final. |
-| `BallHandler._update_buttons(frame: InputFrame, stick_world: Vector3, dt: float)` | 451 |  |
-| `BallHandler.curl_from(at_press: Vector3, at_release: Vector3)` | 507 | Efecto pedido con el joystick: angulo (con signo) entre la direccion al pulsar y al soltar. Un giro de 15-60 grados a la derecha del tiro cu |
-| `BallHandler._queue(action: StringName, charge: float, lob: bool, stick_world: Vector3, curl: float = 0.0)` | 516 |  |
-| `BallHandler._try_execute_pending()` | 524 |  |
-| `BallHandler.contact_delay(action: StringName, charge: float)` | 551 | Segundos entre el inicio de la patada y el golpeo (la animacion y el impulso comparten este instante). |
-| `BallHandler.request_kick(action: StringName, stick_world: Vector3, charge: float, lob: bool)` | 555 | Comienza una patada: arranca la animacion y programa el impulso para el instante de contacto. |
-| `BallHandler.is_kick_in_progress()` | 572 |  |
-| `BallHandler.uses_clip_kicks()` | 578 | true si este futbolista patea con los clips del pack (visual con libreria y clips de patada en el sitio). |
-| `BallHandler.foot_contact_world(contact: Dictionary, pos: Vector3, yaw: float)` | 584 | Posicion MUNDIAL de la punta del pie en el golpeo de un clip, para un jugador en pos con orientacion yaw. contact.pos es (adelante, arriba,  |
-| `BallHandler.clip_timing(contact_time: float, action: StringName, charge: float, mocap: bool = false)` | 598 | Velocidad de reproduccion, punto de inicio y latencia real para que el clip llegue a su contacto en kick_latency. La latencia se cuantiza a  |
-| `BallHandler._predicted_yaw(latency: float)` | 620 | Vector (pelota - pie) en el plano, en metros, al instante de contacto del clip, PREDICHO desde el estado actual (jugador y pelota siguen su  |
-| `BallHandler.abort_kick()` | 632 | Aborta una patada en curso y la accion pendiente (caida, barrida): no se aplica ningun impulso. |
-| `BallHandler.cancel_charge()` | 647 | Cancela la carga de pase/tiro en curso sin ejecutar nada (la IA lo usa cuando la pelota se le fue). |
-| `BallHandler.clip_plant_velocity(clip: StringName, contact_time: float, foot: int, playback: float)` | 660 | Velocidad (adelante, derecha) en m/s del cuerpo que deja QUIETO el pie de apoyo de un clip en el sitio en los KICK_PLANT_TIME previos al con |
-| `BallHandler.plant_velocity(contact: Dictionary, yaw: float, v: Vector3)` | 678 | Velocidad del cuerpo (mundo) con el pie de apoyo plantado para un contacto, con orientacion yaw y velocidad previa v. La velocidad del clip  |
-| `BallHandler.kick_body_travel(v: Vector3, latency: float, plant_v: Vector3)` | 688 | Recorrido del cuerpo en las proximas latency s de una patada que empieza (o sigue) con velocidad v: a velocidad constante hasta plantar el p |
-| `BallHandler.kick_nudge_cap(v: Vector3)` | 693 | Ajuste de paso maximo (m/s) a la velocidad de cuerpo v. |
-| `BallHandler.kick_adjust_capacity(v: Vector3, latency: float)` | 697 | Metros de ajuste de paso que caben antes de plantar el pie en una patada de latencia `latency`. |
-| `BallHandler.is_clip_kick_in_progress()` | 701 | true durante una patada con clip (balanceo hasta el contacto). |
-| `BallHandler.kick_body_velocity()` | 705 | Velocidad del cuerpo durante una patada con clip: la de partida, frenada con el pie de apoyo plantado. |
-| `BallHandler._steer_clip_kick()` | 722 | Ajuste de paso en lazo cerrado: cada fotograma se vuelve a predecir donde estara el pie en el contacto y se corrige lo que falta con el cuer |
-| `BallHandler._fast_prediction(latency: float)` | 735 | Lo comun a todos los clips de una accion en predicted_foot_to_ball (misma latencia): giro previsto, pelota prevista y velocidad. |
-| `BallHandler._foot_to_ball_fast(contact: Dictionary, pre: Dictionary)` | 745 | predicted_foot_to_ball con lo precalculado por _fast_prediction (mismas cuentas, sin repetir las comunes). |
-| `BallHandler.predicted_foot_to_ball(contact: Dictionary, latency: float, body_v: Variant = null)` | 750 |  |
-| `BallHandler.contact_samples(contact: Dictionary)` | 762 | Puntos validos de golpeo de un clip: muestras de la trayectoria del pie (adelante, arriba, derecha) con la punta baja y lanzada hacia adelan |
-| `BallHandler.contact_samples_cached(clip: StringName, contact: Dictionary)` | 778 | contact_samples de un clip, con a lo sumo MAX_SAMPLES instantes repartidos por la trayectoria (modo 4), guardado por clip. |
-| `BallHandler.plan_aerial_kick(action: StringName, charge: float)` | 803 | Planifica un golpeo con la pelota en el aire: busca, entre los clips de cabezazo y volea, el instante en que la cabeza o la punta del pie (c |
-| `BallHandler._path_bbox(clip: StringName, key: String, path: PackedVector3Array)` | 879 | Caja (min, max) de la trayectoria `key` de un clip en el marco del cuerpo, entre 0.1 y 1.1 s (lo que prueba el planificador aereo), guardada |
-| `BallHandler.plan_clip_kick(action: StringName, charge: float, lob: bool, preferred_clip: StringName = &"")` | 895 | Elige el mejor clip, pierna E INSTANTE DE CONTACTO para la accion. El instante sale de la trayectoria real del pie del clip (contact_samples |
-| `BallHandler.estimated_kick_dir(action: StringName, stick: Vector3, charge: float, lob: bool)` | 994 | Direccion (plana) en la que saldria la pelota si se golpeara ahora: la misma asistencia que el golpeo real (receptor del pase, arco del tiro |
-| `BallHandler.plan_turn_kick(action: StringName, alpha: float, adjust_max: float)` | 1018 | Modo 4: planifica un golpeo girando hacia un destino a `alpha` grados del frente (+ izquierda). El cuerpo sigue la raiz y el rumbo del clip  |
-| `BallHandler._turn_kick_clip_t()` | 1075 | Golpeo girando en curso: instante del clip ahora. |
-| `BallHandler.kick_body_yaw()` | 1080 | Orientacion del cuerpo durante un golpeo girando (NAN si no hay): la del clip. |
-| `BallHandler._turn_kick_foot_to_ball()` | 1088 | Golpeo girando: donde quedara la punta del pie en el contacto respecto a la pelota prevista, con el cuerpo en su sitio de ahora siguiendo la |
-| `BallHandler._start_clip_kick(action: StringName, plan: Dictionary, stick_world: Vector3, charge: float, lob: bool)` | 1105 |  |
-| `BallHandler._log_kick(action: StringName, result: StringName, extra: Dictionary = {})` | 1142 |  |
-| `BallHandler._contact_toe_now()` | 1161 | Punta del pie del golpeo en curso (esqueleto vivo), o ZERO. |
-| `BallHandler._ball_still_arriving(dt: float, toe: Vector3)` | 1166 |  |
-| `BallHandler._contact_reset()` | 1188 |  |
-| `BallHandler._finish_clip_kick()` | 1195 | Resuelve el golpeo de una patada con clip: valido solo si la pelota esta a kick_contact_radius del pie REAL (posicion de contacto del clip,  |
-| `BallHandler._finish_kick()` | 1243 |  |
-| `BallHandler.perform_action(action: StringName, stick_world: Vector3, charge: float, lob: bool)` | 1258 | Ejecuta el golpeo de una accion (pase, filtrado, centro o tiro) en el instante de contacto. |
-| `BallHandler.perform_through(stick_world: Vector3, charge: float, lob: bool)` | 1273 | Pase filtrado: al espacio por delante del desmarque del receptor. |
-| `BallHandler.perform_cross(stick_world: Vector3, charge: float, low: bool)` | 1286 | Centro al area: con ALTO sale raso; con carga alta, tenso; si no, elevado. |
-| `BallHandler.perform_pass(stick_world: Vector3, charge: float, lob: bool)` | 1300 | Ejecuta un pase ahora mismo (la pelota debe estar a alcance). Devuelve el resultado. |
-| `BallHandler.perform_shot(stick_world: Vector3, charge: float, lob: bool)` | 1316 |  |
-| `BallHandler._after_kick(action: StringName, res: KickModel.KickResult)` | 1335 |  |
-| `BallHandler.get_dt()` | 1384 |  |
-| `BallHandler._sample_feet(dt: float)` | 1389 | Lee las puntas de los pies del esqueleto animado. Si no se mueven (headless, maniqui) feet_live queda en false y la conduccion usa la cadenc |
-| `BallHandler.foot_distance(i: int, ball_pos: Vector3)` | 1429 | Distancia (m) del centro de la pelota al pie i (segmento del tobillo a la punta). |
-| `BallHandler._foot_strike(b: Ball, mode: StringName, close_in: bool = false)` | 1441 | Pie (0 izquierdo, 1 derecho) que puede tocar la pelota ahora: punta baja, a FOOT_CONTACT de la pelota, por detras de ella y yendo hacia dela |
-| `BallHandler._ball_at_foot(off: Vector3, fwd: Vector3, mode: StringName)` | 1505 |  |
-| `BallHandler.touch_turn_max_deg(speed: float)` | 1528 | Giro maximo (grados) que un toque puede dar a la pelota a esta velocidad: caminando casi cualquiera, a sprint poco (un cambio de rumbo mayor |
-| `BallHandler.turn_toward(from: Vector3, to: Vector3, max_rad: float)` | 1540 | Gira `from` hacia `to` como mucho `max_rad` (en el plano). |
-| `BallHandler.carry_gap(speed: float, skill: float)` | 1552 | Distancia (m) a la que el jugador quiere la pelota respecto al pie a una velocidad dada. Ley de tres tramos (parado / trote / sprint) con lo |
-| `BallHandler._carry_skill()` | 1561 |  |
-| `BallHandler._touch_interval(ratio: float)` | 1566 | Segundos entre toques. Con el pack, la cadencia sigue a la de los pasos de la animacion (uno por apoyo a trote, uno cada dos apoyos a carrer |
-| `BallHandler.nearest_opponent(radius: float)` | 1580 | Rival mas cercano a este jugador dentro de `radius` (o null). Lo usan la proteccion y el calculo de presion. |
-| `BallHandler._touch_mode(desired_dir: Vector3, stick_mag: float, turn_angle: float)` | 1596 | Modo del proximo toque segun la intencion del joystick y el estado del cuerpo. |
-| `BallHandler._shrug_resting_ball()` | 1619 |  |
-| `BallHandler._body_partner(b: Ball, radius: float)` | 1653 | Otro jugador (de cualquier equipo) con la pelota apoyada tambien en su cuerpo (a menos de radius en el plano), o null. |
-| `BallHandler.reset_caches()` | 1726 | Vacia los datos calculados con la libreria de clips (cambian al cambiar de modo). |
-| `BallHandler.touch_candidates(base: StringName)` | 1771 |  |
-| `BallHandler.uses_clip_touches()` | 1832 |  |
-| `BallHandler.is_clip_touch_in_progress()` | 1837 | true si hay un toque de clip en curso (entre el disparo y el contacto). |
-| `BallHandler._body_coords(p: Vector3)` | 1841 | Punto p respecto al cuerpo: (adelante, altura, derecha) en metros. |
-| `BallHandler._toe_body(i: int)` | 1846 | Punta del pie i respecto al cuerpo: (adelante, altura, derecha) en metros. |
-| `BallHandler._clip_driving()` | 1851 | Conduccion por toques de clip en marcha: con esqueleto vivo y fuera de la arrancada. Fuera de esto la conduccion por pisadas funciona exacta |
-| `BallHandler._launching()` | 1856 | Arrancada: SPRINT pedido lejos de la velocidad punta. Mandan los toques largos de arrancada de siempre (la pelota al espacio y el jugador ac |
-| `BallHandler.clip_touch_gap(speed: float)` | 1862 | Distancia (m) por delante del cuerpo a la que los toques de clip dejan la pelota a esta velocidad (centro de la pelota en el punto al que ap |
-| `BallHandler._tight()` | 1872 | Conduccion con la pelota pegada y toques de cualquier pie: en curva o en control cercano. |
-| `BallHandler._clip_touch_update(desired_dir: Vector3, stick_mag: float)` | 1875 |  |
-| `BallHandler._plan_clip_touch(c: Dictionary, scale: float, b: Ball, track: PackedVector3Array)` | 1978 | Recorre la punta del clip c (en el cuerpo) frente a la pelota prevista y devuelve el primer punto de la ventana en que la alcanza: {time (s  |
-| `BallHandler._predict_body(base_period: float, max_time: float, keep_track: bool = false, braked_turn: bool = false)` | 2017 | Cuerpo previsto con la misma ley que Locomotion: la velocidad va hacia la pedida (_touch_target_speed) con su aceleracion y el rumbo gira ha |
-| `BallHandler._body_point(pos: Vector3, yaw: float, fwd: float, side: float)` | 2058 | Punto del plano a `fwd` metros por delante y `side` a la derecha de un cuerpo en pos con rumbo yaw. |
-| `BallHandler._foot_ik()` | 2062 |  |
-| `BallHandler._ik_fwd()` | 2066 |  |
-| `BallHandler._plan_lat_tol()` | 2071 | En recta la pelota va en el carril del pie que la toca (un toque por zancada con el mismo pie, como en el video de referencia); en curva el  |
-| `BallHandler.toe_world(i: int)` | 2075 | Punta del pie i en el mundo tal como se dibuja (con la correccion del IK del toque). |
-| `BallHandler._update_touch_ik(a: Dictionary, b: Ball)` | 2082 | Correccion del pie del toque en curso: del punto de contacto planeado del clip (sobre el cuerpo previsto en ese instante) al punto real de l |
-| `BallHandler._fade_touch_ik()` | 2109 | Tras el toque la correccion se suelta en TOUCH_IK_OUT s (el pie vuelve al gesto del clip sin saltos). |
-| `BallHandler._release_touch_ik(a: Dictionary)` | 2122 |  |
-| `BallHandler._clip_touch_step()` | 2127 | Un paso del toque de clip en curso: contacto cuando la punta viva llega a la pelota dentro de la ventana. |
-| `BallHandler.force_dribble_touch(dir: Vector3)` | 2234 | Un toque de conduccion en la direccion dada (lo usa una accion con raiz, que no pasa por update()). |
-| `BallHandler._catching_ball(off: Vector3, fwd: Vector3, body_v: Vector3, ball_v: Vector3)` | 2242 | El cuerpo se acerca a la pelota que va delante (mas rapido que ella) y en CATCH_LEAD s la tendra al alcance del pie. |
-| `BallHandler._try_dribble_touch(desired_dir: Vector3, stick_mag: float)` | 2247 |  |
-| `BallHandler._json_kicks()` | 2536 | true si este jugador patea con los clips del modo 4 (Json). |
-| `BallHandler.kick_reach()` | 2540 | Distancia (m) maxima entre el pie del clip y la pelota para que el golpeo cuente. |
-| `BallHandler._json_kick_ik()` | 2543 |  |
-| `BallHandler._json_touch_ik_start(foot: int, push: Vector3, max_reach: float = JSON_TOUCH_IK_MAX)` | 2561 |  |
-| `BallHandler._json_touch_ik_step(dt: float)` | 2573 |  |
-| `BallHandler._steer_angle(b: Ball, desired_dir: Vector3)` | 2598 | Angulo (grados) entre el camino de la pelota (su velocidad, o hacia donde esta si va quieta) y el rumbo pedido. |
-| `BallHandler._steer_touch_ready(b: Ball, desired_dir: Vector3, stick_mag: float, interval: float)` | 2607 |  |
-| `BallHandler._carry_speed_after_turn(stick_mag: float, turn_angle: float)` | 2617 | Velocidad a la que el jugador podra llevar la pelota tras el giro (en un giro cerrado el cuerpo frena antes de acelerar hacia el rumbo nuevo |
-| `BallHandler._shield_dir(dist: float)` | 2628 | Direccion en la que conviene colocar la pelota al pararla: lejos del rival mas cercano (proteccion). Cero si no hay rival a quien proteger l |
-| `BallHandler.plan_carry(desired_dir: Vector3, stick_mag: float, dt: float)` | 2648 | Decide, ANTES de que el cuerpo gire, hacia donde mira el jugador mientras lleva la pelota. Lo llama el futbolista al principio del paso de f |
-| `BallHandler.settle_steer()` | 2684 | Frenar con la pelota: con el joystick suelto, si la pelota propia sigue rodando lejos del pie, el jugador la acompana hasta tenerla al alcan |
-| `BallHandler._settle_close(b: Ball, off: Vector3, bv: Vector3)` | 2742 | settle_steer con la pelota al alcance: [direccion, magnitud, hacia donde mirar] para que el cuerpo quede de frente a la pelota con ella a se |
-| `BallHandler._magnitude_for_speed(speed: float)` | 2777 | Inversa de Locomotion.speed_for_magnitude (magnitud del joystick para ir a `speed` m/s). |
-| `BallHandler.kick_approach_steer()` | 2789 | Golpeo pedido (cargando o en espera) con la pelota PROPIA por delante (o suelta, para el jugador de la persona), fuera del alcance del pie y |
-| `BallHandler.holding_for_kick()` | 2822 | Golpeo pedido que todavia no puede salir (bloqueo tras un movimiento con pelota o una recepcion) con la pelota propia al pie: el jugador se  |
-| `BallHandler.is_approaching_for_kick()` | 2829 | true si hay un golpeo en espera y el jugador se esta acercando de verdad a su pelota (ver kick_approach_steer). |
-| `BallHandler.carry_turn_scale(desired_dir: Vector3)` | 2842 | Escala del giro del cuerpo mientras conduce. Con la pelota al alcance pero NO hacia el rumbo pedido (un cambio de direccion grande), el cuer |
-| `BallHandler._curve_turn_scale(want: Vector3, off: Vector3)` | 2871 |  |
-| `BallHandler.carry_steer(desired_dir: Vector3)` | 2910 |  |
-| `BallHandler.carry_catch_up_mag(desired_dir: Vector3)` | 2945 | Pelota propia por delante en el rumbo pedido pero mas lejos que la distancia de conduccion (un toque largo, frenar con la pelota rodando): i |
-| `BallHandler.follow_steer(desired_dir: Vector3, stick_mag: float, sprint: bool)` | 2976 |  |
-| `BallHandler.carry_face()` | 3029 | Direccion a la que debe mirar el cuerpo mientras conduce (control lateral o proteccion). Cero = libre. |
-| `BallHandler._try_first_touch(desired_dir: Vector3)` | 3035 |  |
-| `BallHandler.first_touch_absorb(off: Vector3)` | 3086 | Fraccion (0.15-0.93) de la velocidad de la pelota que amortigua el primer toque: control del jugador, pelota por detras (off: pelota respect |
-| `BallHandler.attempt_tackle(carrier: Footballer)` | 3098 | Intenta quitar la pelota. No esta garantizado: depende de distancia, orientacion, equilibrio, velocidad relativa y atributos de ambos jugado |
+| `BallHandler.dispose()` | 203 | Rompe el ciclo de referencias entre el BallHandler y sus submodulos (todos RefCounted y cada uno con `handler` apuntando de vuelta): sin est |
+| `BallHandler.ball()` | 212 |  |
+| `BallHandler.ball_offset()` | 215 |  |
+| `BallHandler.ball_distance()` | 219 |  |
+| `BallHandler.possession_radius()` | 224 | Radio (m) dentro del cual se considera que el jugador lleva la pelota. Crece con la velocidad: a sprint la pelota va mas adelantada y seguir |
+| `BallHandler.has_possession()` | 227 |  |
+| `BallHandler.is_dribbling()` | 243 | Conduce aunque el ultimo toque largo la haya alejado un poco: fue el ultimo en tocarla, no la pateo (pase/tiro) y sigue cerca. Sirve para no |
+| `BallHandler.seconds_since_kick()` | 251 | Segundos de simulacion desde el ultimo pase o tiro de este jugador. |
+| `BallHandler.incoming_ball_eta(radius: float = 2.5)` | 256 | Segundos hasta que una pelota que se ACERCA pase a menos de radius del jugador (INF si no viene hacia el, va alta o es de otro). Prediccion  |
+| `BallHandler._ball_rolling(b: Ball)` | 279 | La pelota va rodando por el piso (no en el aire ni botando): su avance sigue el modelo de rodadura de Ball. |
+| `BallHandler.ball_travel(b: Ball, t: float)` | 283 | Desplazamiento horizontal de la pelota en t segundos: rodando, con la rodadura de Ball; en el aire, recto. |
+| `BallHandler.incoming_ball_point()` | 291 | Punto (en el suelo) de la trayectoria de la pelota que viene mas cercano al jugador: donde preparar el golpeo de primera. |
+| `BallHandler.loose_ball_chase()` | 308 | Punto (en el suelo) donde el jugador alcanza una pelota suelta: el primero de su recorrido (rodadura de Ball) al que llega corriendo. Vector |
+| `BallHandler.is_waiting_first_time()` | 331 | Hay una orden de pase/tiro esperando una pelota que llega (golpeo de primera, sin control previo). |
+| `BallHandler.ball_owned_by_other()` | 337 | La pelota es de otro jugador (la conduce o la acaba de controlar): no se la puede conducir ni controlar, solo disputar. Un companero que la  |
+| `BallHandler.controls_ball()` | 353 | El equipo del jugador controla la pelota: esta cerca Y fue tocada por ultima vez por su equipo. Una pelota suelta o ultimo tocada por el riv |
+| `BallHandler.can_reach(reach: float)` | 357 |  |
+| `BallHandler.dribble_speed_cap()` | 364 | Alcance efectivo de un toque: el jugador estira mas la pierna a mayor velocidad. Velocidad (m/s) maxima con la pelota al pie: algo menos que |
+| `BallHandler.touch_reach()` | 367 |  |
+| `BallHandler._sprint_ratio()` | 371 |  |
+| `BallHandler.assist_pass_level()` | 375 |  |
+| `BallHandler.assist_shot_level()` | 378 |  |
+| `BallHandler.update(frame: InputFrame, stick_world: Vector3, stick_mag: float, desired_dir: Vector3, dt: float)` | 382 | Paso de simulacion. stick_world: direccion del joystick en el mundo; desired_dir: direccion deseada final. |
+| `BallHandler._update_buttons(frame: InputFrame, stick_world: Vector3, dt: float)` | 463 |  |
+| `BallHandler.curl_from(at_press: Vector3, at_release: Vector3)` | 519 | Efecto pedido con el joystick: angulo (con signo) entre la direccion al pulsar y al soltar. Un giro de 15-60 grados a la derecha del tiro cu |
+| `BallHandler._queue(action: StringName, charge: float, lob: bool, stick_world: Vector3, curl: float = 0.0)` | 528 |  |
+| `BallHandler._try_execute_pending()` | 536 |  |
+| `BallHandler.contact_delay(action: StringName, charge: float)` | 563 | Segundos entre el inicio de la patada y el golpeo (la animacion y el impulso comparten este instante). |
+| `BallHandler.request_kick(action: StringName, stick_world: Vector3, charge: float, lob: bool)` | 567 | Comienza una patada: arranca la animacion y programa el impulso para el instante de contacto. |
+| `BallHandler.is_kick_in_progress()` | 584 |  |
+| `BallHandler.uses_clip_kicks()` | 590 | true si este futbolista patea con los clips del pack (visual con libreria y clips de patada en el sitio). |
+| `BallHandler.foot_contact_world(contact: Dictionary, pos: Vector3, yaw: float)` | 596 | Posicion MUNDIAL de la punta del pie en el golpeo de un clip, para un jugador en pos con orientacion yaw. contact.pos es (adelante, arriba,  |
+| `BallHandler.clip_timing(contact_time: float, action: StringName, charge: float, mocap: bool = false)` | 610 | Velocidad de reproduccion, punto de inicio y latencia real para que el clip llegue a su contacto en kick_latency. La latencia se cuantiza a  |
+| `BallHandler._predicted_yaw(latency: float)` | 632 | Vector (pelota - pie) en el plano, en metros, al instante de contacto del clip, PREDICHO desde el estado actual (jugador y pelota siguen su  |
+| `BallHandler.abort_kick()` | 644 | Aborta una patada en curso y la accion pendiente (caida, barrida): no se aplica ningun impulso. |
+| `BallHandler.cancel_charge()` | 659 | Cancela la carga de pase/tiro en curso sin ejecutar nada (la IA lo usa cuando la pelota se le fue). |
+| `BallHandler.clip_plant_velocity(clip: StringName, contact_time: float, foot: int, playback: float)` | 672 | Velocidad (adelante, derecha) en m/s del cuerpo que deja QUIETO el pie de apoyo de un clip en el sitio en los KICK_PLANT_TIME previos al con |
+| `BallHandler.plant_velocity(contact: Dictionary, yaw: float, v: Vector3)` | 690 | Velocidad del cuerpo (mundo) con el pie de apoyo plantado para un contacto, con orientacion yaw y velocidad previa v. La velocidad del clip  |
+| `BallHandler.kick_body_travel(v: Vector3, latency: float, plant_v: Vector3)` | 700 | Recorrido del cuerpo en las proximas latency s de una patada que empieza (o sigue) con velocidad v: a velocidad constante hasta plantar el p |
+| `BallHandler.kick_nudge_cap(v: Vector3)` | 705 | Ajuste de paso maximo (m/s) a la velocidad de cuerpo v. |
+| `BallHandler.kick_adjust_capacity(v: Vector3, latency: float)` | 709 | Metros de ajuste de paso que caben antes de plantar el pie en una patada de latencia `latency`. |
+| `BallHandler.is_clip_kick_in_progress()` | 713 | true durante una patada con clip (balanceo hasta el contacto). |
+| `BallHandler.kick_body_velocity()` | 717 | Velocidad del cuerpo durante una patada con clip: la de partida, frenada con el pie de apoyo plantado. |
+| `BallHandler._steer_clip_kick()` | 734 | Ajuste de paso en lazo cerrado: cada fotograma se vuelve a predecir donde estara el pie en el contacto y se corrige lo que falta con el cuer |
+| `BallHandler._fast_prediction(latency: float)` | 747 | Lo comun a todos los clips de una accion en predicted_foot_to_ball (misma latencia): giro previsto, pelota prevista y velocidad. |
+| `BallHandler._foot_to_ball_fast(contact: Dictionary, pre: Dictionary)` | 757 | predicted_foot_to_ball con lo precalculado por _fast_prediction (mismas cuentas, sin repetir las comunes). |
+| `BallHandler.predicted_foot_to_ball(contact: Dictionary, latency: float, body_v: Variant = null)` | 762 |  |
+| `BallHandler.contact_samples(contact: Dictionary)` | 774 | Puntos validos de golpeo de un clip: muestras de la trayectoria del pie (adelante, arriba, derecha) con la punta baja y lanzada hacia adelan |
+| `BallHandler.contact_samples_cached(clip: StringName, contact: Dictionary)` | 790 | contact_samples de un clip, con a lo sumo MAX_SAMPLES instantes repartidos por la trayectoria (modo 4), guardado por clip. |
+| `BallHandler.plan_aerial_kick(action: StringName, charge: float)` | 815 | Planifica un golpeo con la pelota en el aire: busca, entre los clips de cabezazo y volea, el instante en que la cabeza o la punta del pie (c |
+| `BallHandler._path_bbox(clip: StringName, key: String, path: PackedVector3Array)` | 891 | Caja (min, max) de la trayectoria `key` de un clip en el marco del cuerpo, entre 0.1 y 1.1 s (lo que prueba el planificador aereo), guardada |
+| `BallHandler.plan_clip_kick(action: StringName, charge: float, lob: bool, preferred_clip: StringName = &"")` | 907 | Elige el mejor clip, pierna E INSTANTE DE CONTACTO para la accion. El instante sale de la trayectoria real del pie del clip (contact_samples |
+| `BallHandler.estimated_kick_dir(action: StringName, stick: Vector3, charge: float, lob: bool)` | 1006 | Direccion (plana) en la que saldria la pelota si se golpeara ahora: la misma asistencia que el golpeo real (receptor del pase, arco del tiro |
+| `BallHandler.plan_turn_kick(action: StringName, alpha: float, adjust_max: float)` | 1030 | Modo 4: planifica un golpeo girando hacia un destino a `alpha` grados del frente (+ izquierda). El cuerpo sigue la raiz y el rumbo del clip  |
+| `BallHandler._turn_kick_clip_t()` | 1087 | Golpeo girando en curso: instante del clip ahora. |
+| `BallHandler.kick_body_yaw()` | 1092 | Orientacion del cuerpo durante un golpeo girando (NAN si no hay): la del clip. |
+| `BallHandler._turn_kick_foot_to_ball()` | 1100 | Golpeo girando: donde quedara la punta del pie en el contacto respecto a la pelota prevista, con el cuerpo en su sitio de ahora siguiendo la |
+| `BallHandler._start_clip_kick(action: StringName, plan: Dictionary, stick_world: Vector3, charge: float, lob: bool)` | 1117 |  |
+| `BallHandler._log_kick(action: StringName, result: StringName, extra: Dictionary = {})` | 1154 |  |
+| `BallHandler._contact_toe_now()` | 1173 | Punta del pie del golpeo en curso (esqueleto vivo), o ZERO. |
+| `BallHandler._ball_still_arriving(dt: float, toe: Vector3)` | 1178 |  |
+| `BallHandler._contact_reset()` | 1200 |  |
+| `BallHandler._finish_clip_kick()` | 1207 | Resuelve el golpeo de una patada con clip: valido solo si la pelota esta a kick_contact_radius del pie REAL (posicion de contacto del clip,  |
+| `BallHandler._finish_kick()` | 1255 |  |
+| `BallHandler.perform_action(action: StringName, stick_world: Vector3, charge: float, lob: bool)` | 1270 | Ejecuta el golpeo de una accion (pase, filtrado, centro o tiro) en el instante de contacto. |
+| `BallHandler.perform_through(stick_world: Vector3, charge: float, lob: bool)` | 1285 | Pase filtrado: al espacio por delante del desmarque del receptor. |
+| `BallHandler.perform_cross(stick_world: Vector3, charge: float, low: bool)` | 1298 | Centro al area: con ALTO sale raso; con carga alta, tenso; si no, elevado. |
+| `BallHandler.perform_pass(stick_world: Vector3, charge: float, lob: bool)` | 1312 | Ejecuta un pase ahora mismo (la pelota debe estar a alcance). Devuelve el resultado. |
+| `BallHandler.perform_shot(stick_world: Vector3, charge: float, lob: bool)` | 1328 |  |
+| `BallHandler._after_kick(action: StringName, res: KickModel.KickResult)` | 1347 |  |
+| `BallHandler.get_dt()` | 1396 |  |
+| `BallHandler._sample_feet(dt: float)` | 1401 | Lee las puntas de los pies del esqueleto animado. Si no se mueven (headless, maniqui) feet_live queda en false y la conduccion usa la cadenc |
+| `BallHandler.foot_distance(i: int, ball_pos: Vector3)` | 1441 | Distancia (m) del centro de la pelota al pie i (segmento del tobillo a la punta). |
+| `BallHandler._foot_strike(b: Ball, mode: StringName, close_in: bool = false)` | 1453 | Pie (0 izquierdo, 1 derecho) que puede tocar la pelota ahora: punta baja, a FOOT_CONTACT de la pelota, por detras de ella y yendo hacia dela |
+| `BallHandler._ball_at_foot(off: Vector3, fwd: Vector3, mode: StringName)` | 1517 |  |
+| `BallHandler.touch_turn_max_deg(speed: float)` | 1540 | Giro maximo (grados) que un toque puede dar a la pelota a esta velocidad: caminando casi cualquiera, a sprint poco (un cambio de rumbo mayor |
+| `BallHandler.turn_toward(from: Vector3, to: Vector3, max_rad: float)` | 1552 | Gira `from` hacia `to` como mucho `max_rad` (en el plano). |
+| `BallHandler.carry_gap(speed: float, skill: float)` | 1564 | Distancia (m) a la que el jugador quiere la pelota respecto al pie a una velocidad dada. Ley de tres tramos (parado / trote / sprint) con lo |
+| `BallHandler._carry_skill()` | 1573 |  |
+| `BallHandler._touch_interval(ratio: float)` | 1578 | Segundos entre toques. Con el pack, la cadencia sigue a la de los pasos de la animacion (uno por apoyo a trote, uno cada dos apoyos a carrer |
+| `BallHandler.nearest_opponent(radius: float)` | 1592 | Rival mas cercano a este jugador dentro de `radius` (o null). Lo usan la proteccion y el calculo de presion. |
+| `BallHandler._touch_mode(desired_dir: Vector3, stick_mag: float, turn_angle: float)` | 1608 | Modo del proximo toque segun la intencion del joystick y el estado del cuerpo. |
+| `BallHandler._shrug_resting_ball()` | 1631 |  |
+| `BallHandler._body_partner(b: Ball, radius: float)` | 1665 | Otro jugador (de cualquier equipo) con la pelota apoyada tambien en su cuerpo (a menos de radius en el plano), o null. |
+| `BallHandler.reset_caches()` | 1738 | Vacia los datos calculados con la libreria de clips (cambian al cambiar de modo). |
+| `BallHandler.touch_candidates(base: StringName)` | 1783 |  |
+| `BallHandler.uses_clip_touches()` | 1844 |  |
+| `BallHandler.is_clip_touch_in_progress()` | 1849 | true si hay un toque de clip en curso (entre el disparo y el contacto). |
+| `BallHandler._body_coords(p: Vector3)` | 1853 | Punto p respecto al cuerpo: (adelante, altura, derecha) en metros. |
+| `BallHandler._toe_body(i: int)` | 1858 | Punta del pie i respecto al cuerpo: (adelante, altura, derecha) en metros. |
+| `BallHandler._clip_driving()` | 1863 | Conduccion por toques de clip en marcha: con esqueleto vivo y fuera de la arrancada. Fuera de esto la conduccion por pisadas funciona exacta |
+| `BallHandler._launching()` | 1868 | Arrancada: SPRINT pedido lejos de la velocidad punta. Mandan los toques largos de arrancada de siempre (la pelota al espacio y el jugador ac |
+| `BallHandler.clip_touch_gap(speed: float)` | 1874 | Distancia (m) por delante del cuerpo a la que los toques de clip dejan la pelota a esta velocidad (centro de la pelota en el punto al que ap |
+| `BallHandler._tight()` | 1884 | Conduccion con la pelota pegada y toques de cualquier pie: en curva o en control cercano. |
+| `BallHandler._clip_touch_update(desired_dir: Vector3, stick_mag: float)` | 1887 |  |
+| `BallHandler._plan_clip_touch(c: Dictionary, scale: float, b: Ball, track: PackedVector3Array)` | 1990 | Recorre la punta del clip c (en el cuerpo) frente a la pelota prevista y devuelve el primer punto de la ventana en que la alcanza: {time (s  |
+| `BallHandler._predict_body(base_period: float, max_time: float, keep_track: bool = false, braked_turn: bool = false)` | 2029 | Cuerpo previsto con la misma ley que Locomotion: la velocidad va hacia la pedida (_touch_target_speed) con su aceleracion y el rumbo gira ha |
+| `BallHandler._body_point(pos: Vector3, yaw: float, fwd: float, side: float)` | 2070 | Punto del plano a `fwd` metros por delante y `side` a la derecha de un cuerpo en pos con rumbo yaw. |
+| `BallHandler._foot_ik()` | 2074 |  |
+| `BallHandler._ik_fwd()` | 2078 |  |
+| `BallHandler._plan_lat_tol()` | 2083 | En recta la pelota va en el carril del pie que la toca (un toque por zancada con el mismo pie, como en el video de referencia); en curva el  |
+| `BallHandler.toe_world(i: int)` | 2087 | Punta del pie i en el mundo tal como se dibuja (con la correccion del IK del toque). |
+| `BallHandler._update_touch_ik(a: Dictionary, b: Ball)` | 2094 | Correccion del pie del toque en curso: del punto de contacto planeado del clip (sobre el cuerpo previsto en ese instante) al punto real de l |
+| `BallHandler._fade_touch_ik()` | 2121 | Tras el toque la correccion se suelta en TOUCH_IK_OUT s (el pie vuelve al gesto del clip sin saltos). |
+| `BallHandler._release_touch_ik(a: Dictionary)` | 2134 |  |
+| `BallHandler._clip_touch_step()` | 2139 | Un paso del toque de clip en curso: contacto cuando la punta viva llega a la pelota dentro de la ventana. |
+| `BallHandler.force_dribble_touch(dir: Vector3)` | 2246 | Un toque de conduccion en la direccion dada (lo usa una accion con raiz, que no pasa por update()). |
+| `BallHandler._catching_ball(off: Vector3, fwd: Vector3, body_v: Vector3, ball_v: Vector3)` | 2254 | El cuerpo se acerca a la pelota que va delante (mas rapido que ella) y en CATCH_LEAD s la tendra al alcance del pie. |
+| `BallHandler._try_dribble_touch(desired_dir: Vector3, stick_mag: float)` | 2259 |  |
+| `BallHandler._json_kicks()` | 2551 | true si este jugador patea con los clips del modo 4 (Json). |
+| `BallHandler.kick_reach()` | 2555 | Distancia (m) maxima entre el pie del clip y la pelota para que el golpeo cuente. |
+| `BallHandler._json_kick_ik()` | 2558 |  |
+| `BallHandler._json_touch_ik_start(foot: int, push: Vector3, max_reach: float = JSON_TOUCH_IK_MAX)` | 2576 |  |
+| `BallHandler._json_touch_ik_step(dt: float)` | 2588 |  |
+| `BallHandler._steer_angle(b: Ball, desired_dir: Vector3)` | 2613 | Angulo (grados) entre el camino de la pelota (su velocidad, o hacia donde esta si va quieta) y el rumbo pedido. |
+| `BallHandler._steer_touch_ready(b: Ball, desired_dir: Vector3, stick_mag: float, interval: float)` | 2622 |  |
+| `BallHandler._carry_speed_after_turn(stick_mag: float, turn_angle: float)` | 2632 | Velocidad a la que el jugador podra llevar la pelota tras el giro (en un giro cerrado el cuerpo frena antes de acelerar hacia el rumbo nuevo |
+| `BallHandler._shield_dir(dist: float)` | 2643 | Direccion en la que conviene colocar la pelota al pararla: lejos del rival mas cercano (proteccion). Cero si no hay rival a quien proteger l |
+| `BallHandler.plan_carry(desired_dir: Vector3, stick_mag: float, dt: float)` | 2663 | Decide, ANTES de que el cuerpo gire, hacia donde mira el jugador mientras lleva la pelota. Lo llama el futbolista al principio del paso de f |
+| `BallHandler.settle_steer()` | 2699 | Frenar con la pelota: con el joystick suelto, si la pelota propia sigue rodando lejos del pie, el jugador la acompana hasta tenerla al alcan |
+| `BallHandler._settle_close(b: Ball, off: Vector3, bv: Vector3)` | 2757 | settle_steer con la pelota al alcance: [direccion, magnitud, hacia donde mirar] para que el cuerpo quede de frente a la pelota con ella a se |
+| `BallHandler._magnitude_for_speed(speed: float)` | 2792 | Inversa de Locomotion.speed_for_magnitude (magnitud del joystick para ir a `speed` m/s). |
+| `BallHandler.kick_approach_steer()` | 2804 | Golpeo pedido (cargando o en espera) con la pelota PROPIA por delante (o suelta, para el jugador de la persona), fuera del alcance del pie y |
+| `BallHandler.holding_for_kick()` | 2837 | Golpeo pedido que todavia no puede salir (bloqueo tras un movimiento con pelota o una recepcion) con la pelota propia al pie: el jugador se  |
+| `BallHandler.is_approaching_for_kick()` | 2844 | true si hay un golpeo en espera y el jugador se esta acercando de verdad a su pelota (ver kick_approach_steer). |
+| `BallHandler.carry_turn_scale(desired_dir: Vector3)` | 2857 | Escala del giro del cuerpo mientras conduce. Con la pelota al alcance pero NO hacia el rumbo pedido (un cambio de direccion grande), el cuer |
+| `BallHandler._curve_turn_scale(want: Vector3, off: Vector3)` | 2886 |  |
+| `BallHandler.carry_steer(desired_dir: Vector3)` | 2925 |  |
+| `BallHandler.carry_catch_up_mag(desired_dir: Vector3)` | 2960 | Pelota propia por delante en el rumbo pedido pero mas lejos que la distancia de conduccion (un toque largo, frenar con la pelota rodando): i |
+| `BallHandler.follow_steer(desired_dir: Vector3, stick_mag: float, sprint: bool)` | 2991 |  |
+| `BallHandler.carry_face()` | 3044 | Direccion a la que debe mirar el cuerpo mientras conduce (control lateral o proteccion). Cero = libre. |
+| `BallHandler._try_first_touch(desired_dir: Vector3)` | 3050 |  |
+| `BallHandler.first_touch_absorb(off: Vector3)` | 3101 | Fraccion (0.15-0.93) de la velocidad de la pelota que amortigua el primer toque: control del jugador, pelota por detras (off: pelota respect |
+| `BallHandler.attempt_tackle(carrier: Footballer)` | 3113 | Intenta quitar la pelota. No esta garantizado: depende de distancia, orientacion, equilibrio, velocidad relativa y atributos de ambos jugado |
 <!-- /AUTO -->
 
 <!-- AUTO:signals:scripts/player/ball_handler.gd -->
@@ -634,6 +636,20 @@ Ahora (`BallHandler`):
   Pendiente: darle a la IA una orden en ese instante y quitarle también el imán.
 - Lo que no cambio: con el joystick, la conduccion (`carry`, `redirect`, `lateral`), la frenada desde carrera con los clips
   `ball_stop` del banco (2.6-4.6 m/s), la pisada con REGATE + atras y los giros con pelota.
+
+## Ciclo de vida del manejo de pelota y transiciones con pelota muerta (2026-11-07)
+
+- **Ciclo de referencias (fuga de ObjectDB).** `BallHandler` y sus submódulos `DragBack`, `BallTurn`, `JsonBallMove` y
+  `JsonReceive` son `RefCounted` y se apuntan mutuamente (`handler`). Sin romper el ciclo, cada futbolista liberado dejaba
+  vivos los cinco objetos y su `RandomNumberGenerator` hasta el cierre («ObjectDB instances were leaked», «resources still in
+  use at exit»). `Footballer._notification(NOTIFICATION_PREDELETE)` llama a `BallHandler.dispose()`, que suelta los
+  submódulos. No cambia el juego mientras el jugador existe. Prueba: `test_resource_cleanup`.
+- **Transiciones con pelota muerta.** `PlayerActions._keeps_set_piece_clear` (desde `transition_score`): con
+  `ctx.dead_ball`, la raíz de una transición de locomoción no puede llevar a un jugador que no es el ejecutor dentro de
+  `SetPiece.CLEAR_RADIUS` (equipo que saca) o `MatchScene.SET_PIECE_DISTANCE` (rival; 2 m en saque de banda). La IA ya
+  rodeaba esa zona (`AIInput._around_ball`), pero la raíz del clip va recta: medido, `jn_start_0468` llevaba a un rival a
+  3,79 m de un tiro libre en 4 de 30 repeticiones. Se recorre toda la `root_path`; si ya está dentro, solo se permite lo
+  que no lo acerca. Prueba: `test_transition_connections::test_dead_ball_transition_never_carries_a_player_into_the_set_piece_zone`.
 
 ## Historial
 

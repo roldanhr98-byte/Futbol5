@@ -158,7 +158,8 @@ jobs:
         run: |
           set -o pipefail
           sudo apt-get update -q > /dev/null && sudo apt-get install -y -q xvfb libgl1-mesa-dri > /dev/null
-          for f in live_feet live_kicks pack_motion json_mode physical_dribble directional_kicks; do
+          # dribble_reference y test_receive (pie vivo en la recepcion) tambien necesitan el esqueleto animado: en headless se omiten.
+          for f in live_feet live_kicks pack_motion json_mode physical_dribble directional_kicks dribble_reference test_receive; do
             xvfb-run -a godot --display-driver x11 --rendering-driver opengl3 --fixed-fps 60 --path . res://tests/run_tests.tscn -- --filter "$f" 2>&1 \
               | sed 's/\x1b\[[0-9;]*m//g' | tee "$RUNNER_TEMP/render_$f.txt"
             if grep -q "SCRIPT ERROR\|\[FAIL\]" "$RUNNER_TEMP/render_$f.txt"; then exit 1; fi
@@ -234,8 +235,20 @@ jobs:
           unzip -l "$APK" | grep -q "animations/footballer_clips.res" || { echo "::error::faltan los clips de Tripo (respaldo)"; exit 1; }
           if unzip -l "$APK" | grep -E -q "\.fbx"; then echo "::error::la APK contiene FBX fuente"; exit 1; fi
 
+          # Integridad y arquitectura reales del binario (no solo lo que declara el manifiesto).
+          unzip -tq "$APK"
+          "$BT/zipalign" -c -P 16 4 "$APK"
+          SIZE=$(stat -c %s "$APK")
+          [ "$SIZE" -gt 20000000 ] || { echo "::error::APK demasiado pequena ($SIZE bytes)"; exit 1; }
+          LIBS=$(unzip -Z1 "$APK" | grep '^lib/' | cut -d/ -f2 | sort -u | tr '\n' ' ')
+          [ "$LIBS" = "arm64-v8a " ] || { echo "::error::ABIs inesperadas en la APK: $LIBS"; exit 1; }
+          unzip -p "$APK" lib/arm64-v8a/libgodot_android.so > "$RUNNER_TEMP/libgodot.so"
+          file "$RUNNER_TEMP/libgodot.so" | grep -q "ARM aarch64" || { echo "::error::libgodot_android.so no es ARM64"; exit 1; }
+          "$BT/aapt2" dump xmltree --file AndroidManifest.xml "$APK" | grep -E "minSdkVersion|targetSdkVersion"
+
           NAME="futbol5-v${VERSION_NAME}.apk"
           cp "$APK" "build/$NAME"
+          (cd build && sha256sum "$NAME" > "$NAME.sha256")
           echo "APK_NAME=$NAME" >> "$GITHUB_ENV"
           echo "APK_SIZE=$(stat -c %s "build/$NAME")" >> "$GITHUB_ENV"
           {
@@ -245,12 +258,15 @@ jobs:
             echo "- Animaciones: $( [ "$PACK_INCLUDED" = true ] && echo 'pack de Mixamo (133 clips de campo y arquero, librerias verificadas dentro de la APK) + respaldo Tripo' || echo 'SIN el pack: Tripo + patada procedural')"
             echo "- Modo 4 (Json): librerias y humanoide incluidos; invocacion y muestreo de poses por clip en el artefacto animation-audit. La inclusion no certifica conexion situacional ni verificacion visual individual."
             echo "- Commit: \`${GITHUB_SHA::7}\`"
+            echo "- SHA-256 de la APK: \`$(cut -d' ' -f1 "build/$NAME.sha256")\` · zip integro y alineado · libgodot_android.so ELF aarch64"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Subir artefacto
         uses: actions/upload-artifact@v4
         with:
           name: futbol5-apk
-          path: build/${{ env.APK_NAME }}
+          path: |
+            build/${{ env.APK_NAME }}
+            build/${{ env.APK_NAME }}.sha256
           retention-days: 14
           if-no-files-found: error

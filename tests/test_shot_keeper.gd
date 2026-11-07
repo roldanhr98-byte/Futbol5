@@ -54,6 +54,10 @@ func _series(w: Dictionary, ball_pos: Vector3, stick_deg: float, charge: float, 
 		var c0: int = int(k.stats["catches"])
 		var r0: int = int(k.stats["parries"])
 		p.ball_handler.rng.seed = seed0 + i
+		# El arquero tambien con semilla fija: Goalkeeper.setup() la aleatoriza y la serie cambiaba en cada ejecucion
+		# (medido 2026-11-07, 18 m potente: 1-5 goles por serie de 80 con 10 semillas, 35 de 800; con semilla libre a veces
+		# salian 0 y la comprobacion «a veces entra» fallaba por azar, no por el juego).
+		k.rng.seed = seed0 + 1000 + i
 		p.ball_handler.lockout = 0.0
 		p.ball_handler.perform_shot(to_goal.rotated(Vector3.UP, deg_to_rad(-stick_deg)), charge, false)
 		# Bloqueo con el cuerpo (sin atajada registrada): la pelota llega al arquero y sale rebotada hacia el campo.

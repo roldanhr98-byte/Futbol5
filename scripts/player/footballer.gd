@@ -157,6 +157,11 @@ func set_attributes(attrs: PlayerAttributes) -> void:
 	if locomotion != null:
 		locomotion.attributes = attrs
 
+## Al liberarse el nodo se rompe el ciclo BallHandler <-> submodulos (RefCounted): si no, quedan vivos en ObjectDB.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE and ball_handler != null:
+		ball_handler.dispose()
+
 func _exit_tree() -> void:
 	if ctx != null:
 		ctx.unregister_footballer(self)

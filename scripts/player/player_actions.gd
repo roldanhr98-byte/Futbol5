@@ -115,6 +115,8 @@ func transition_score(id: StringName, desired_dir: Vector3, magnitude: float) ->
 		return INF
 	if owner.ctx.ball == null or KickModel.flat(owner.ctx.ball.global_position - owner.global_position).length() < 2.0 or not _lands_inside(id):
 		return INF
+	if not _keeps_set_piece_clear(id):
+		return INF
 	var loco: Locomotion = owner.locomotion
 	var dv: float = absf(loco.speed - float(m.get("v_in", 0.0)))
 	if dv > 1.0:
@@ -724,6 +726,39 @@ func _lands_inside(id: StringName) -> bool:
 		rt.y = -rt.y
 	var end: Vector3 = owner.global_position + owner.locomotion.forward() * rt.x + owner.locomotion.right() * rt.y
 	return ctx.pitch.contains_xz(end, -LAND_MARGIN)
+
+## Con la pelota muerta, la raiz de una transicion no puede meter al jugador en la zona del saque. La IA rodea esa zona
+## (AIInput._around_ball), pero el clip va recto: medido, un rival arrancando con jn_start_0468 a 4.35 m/s cruzaba a
+## 3.79 m de un tiro libre (4 de 30 repeticiones de test_set_pieces). Radio: SetPiece.CLEAR_RADIUS para el equipo que
+## saca (sin limite en el saque de banda) y MatchScene.SET_PIECE_DISTANCE para el rival (2 m en el saque de banda).
+## Se recorre toda la raiz del clip; si el jugador ya esta dentro, solo se permite lo que no lo acerque mas.
+func _keeps_set_piece_clear(id: StringName) -> bool:
+	var ctx: MatchContext = owner.ctx
+	if ctx == null or not ctx.dead_ball or ctx.ball == null:
+		return true
+	var taker: Node = ctx.restart_taker
+	if taker == null or taker == owner:
+		return true
+	var same_team: bool = int(taker.get("team")) == owner.team
+	var sp: SetPiece = taker.get("set_piece") as SetPiece
+	var throw_in: bool = sp != null and sp.kind == SetPiece.Kind.THROW_IN
+	var radius: float = (0.0 if throw_in else SetPiece.CLEAR_RADIUS) if same_team else (2.0 if throw_in else MatchScene.SET_PIECE_DISTANCE)
+	if radius <= 0.0:
+		return true
+	var base: StringName = StringName(String(id).trim_suffix("_mirror"))
+	var path: PackedVector2Array = PackLibrary.meta(base).get("root_path", PackedVector2Array())
+	var mirror: float = -1.0 if String(id).ends_with("_mirror") else 1.0
+	var bp: Vector3 = KickModel.flat(ctx.ball.global_position)
+	var origin: Vector3 = KickModel.flat(owner.global_position)
+	var now_d: float = origin.distance_to(bp)
+	var fwd: Vector3 = owner.locomotion.forward()
+	var right: Vector3 = owner.locomotion.right()
+	for q in path:
+		var at: Vector3 = origin + fwd * q.x + right * (q.y * mirror)
+		var d: float = KickModel.flat(at).distance_to(bp)
+		if d < radius and d < now_d - 0.05:
+			return false
+	return true
 
 ## Metros libres por delante del jugador hasta el borde del area de juego (lineas + area exterior).
 func _room_ahead() -> float:

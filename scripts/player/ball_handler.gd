@@ -197,6 +197,18 @@ func _init(o: Footballer) -> void:
 	json_move = JsonBallMove.new(self)
 	receive = JsonReceive.new(self)
 
+## Rompe el ciclo de referencias entre el BallHandler y sus submodulos (todos RefCounted y cada uno con `handler`
+## apuntando de vuelta): sin esto ninguno se libera nunca y cada futbolista deja objetos vivos en ObjectDB al salir.
+## Lo llama Footballer al liberarse (NOTIFICATION_PREDELETE); no cambia nada del juego mientras el jugador existe.
+func dispose() -> void:
+	for sub: RefCounted in [drag_back, ball_turn, json_move, receive]:
+		if sub != null:
+			sub.set(&"handler", null)
+	drag_back = null
+	ball_turn = null
+	json_move = null
+	receive = null
+
 func ball() -> Ball:
 	return owner.ctx.ball if owner.ctx != null else null
 

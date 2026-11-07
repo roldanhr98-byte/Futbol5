@@ -8,6 +8,12 @@ extends TestCase
 
 const START := Vector3(-10.0, 0.0, 0.0)
 
+## Sistema de un modo descartado (2, mocap): la prueba corre en el modo 1, que carga el pack con los clips de mocap
+## (PackLibrary agrega mocap_clips.res a la libreria de campo fuera del modo 4); cada prueba cambia luego al modo que mide.
+## Sin esto el runner la ejecutaba en el modo 4 y las seis pruebas se omitian aunque la libreria existe.
+func gameplay_mode() -> int:
+	return 1
+
 func _skip_if_missing() -> bool:
 	PackLibrary.reload()
 	if not PackLibrary.available() or not PackLibrary.has_clip(&"mc_side_foot_pass"):

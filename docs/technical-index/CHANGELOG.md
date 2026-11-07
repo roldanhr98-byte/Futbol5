@@ -11,6 +11,18 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-11-07 — Continuación (Claude): fugas al cerrar, invasión en balón parado, pruebas no deterministas y workflow
+
+Rama `integracion-openai`, sobre `ac92f42` (Codex). Godot 4.7.2 oficial (`ed1daf0bf`).
+
+- **Fugas de ObjectDB / recursos al cerrar Godot.** Causa: ciclo `BallHandler` ↔ `DragBack`/`BallTurn`/`JsonBallMove`/`JsonReceive` (todos `RefCounted`). `BallHandler.dispose()` llamado desde `Footballer._notification(NOTIFICATION_PREDELETE)`. En pruebas, además, lambdas conectadas a `ctx.event_emitted` que capturaban `ctx`: `TestCase.cleanup()` las desconecta. Suite completa: de 6272 instancias filtradas y 12 recursos en uso a **0 y 0**. Prueba nueva `test_resource_cleanup` (falla sin la corrección: 6 objetos vivos).
+- **Invasión de la zona de balón parado.** Reproducido 4/30: la raíz de `jn_start_0468` llevaba a un rival a 3,79 m de un tiro libre. `PlayerActions._keeps_set_piece_clear` rechaza transiciones cuya `root_path` entra en la zona con pelota muerta. Tras el cambio: 30/30 ≥ 4,13 m. Prueba nueva en `test_transition_connections` (falla sin la corrección en 3 clips).
+- **`test_shot_keeper` no determinista.** El RNG del arquero se aleatorizaba; «18 m potente» medido con 10 semillas: 35 goles en 800 (1-5 por serie), a veces 0. Semilla fija por tiro como la del tirador; sin cambiar umbrales; dos ejecuciones idénticas.
+- **`test_mocap_mode` omitida sin motivo.** El runner la corría en modo 4 (sin `mocap_clips.res` cargado): declara `gameplay_mode() = 1`. 7/0, 79 comprobaciones.
+- **Workflow:** pruebas con render también para `dribble_reference` y `test_receive`; verificación de integridad (zip, alineado, ABI única arm64-v8a, ELF aarch64, tamaño) y SHA-256 publicado con la APK.
+
+Verificación: suite headless 309 pruebas / 2991 comprobaciones / 1 fallo (el de `test_shot_keeper`, corregido después y revalidado aislado 1/10/0); render: live_feet 7/0, live_kicks 6/0, pack_motion 2/0, json_mode 10/0, physical_dribble 5/0, directional_kicks 3/0, dribble_reference 2/0, receive (pie vivo) 1/0. Evidencia: [`docs/integration/claude/pruebas/`](../integration/claude/pruebas/). Estado completo: [`ESTADO_ACTUAL_PARA_CLAUDE.md`](../integration/ESTADO_ACTUAL_PARA_CLAUDE.md).
+
 ## 2026-11-07 — Conexiones verificadas y compilación Android por artefacto
 
 Rama integracion-openai. Se conservan los tres commits previos. 262 de 338 tramos tienen conexión con invocación comprobada; 76 pendientes. Cambios en AnimDB/JsonCatalog, MatchPresentation/MatchScene, PlayerActions/Footballer, BallHandler/BallTurn, SetPiece, Goalkeeper y diagnóstico TouchFootIK. Nuevas pruebas por consumidor y corrección de las dos pruebas de render anteriores. Workflow sin publicación de Releases. Suite completa en curso, todavía sin declarar aprobada. [Informe y evidencia](../integration/continuacion/README.md).
