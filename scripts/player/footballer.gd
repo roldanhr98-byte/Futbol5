@@ -424,7 +424,10 @@ func _player_step(delta: float) -> void:
 	if ball_handler.is_dribbling() and ball_handler.ball_distance() <= ball_handler.possession_radius() and approach.is_empty():
 		cap = ball_handler.dribble_speed_cap()
 	var speed_before: float = locomotion.speed
-	if PackLibrary.json_mode() and not is_pressing and not kicking:
+	var kick_input: bool = frame.pass_held or frame.shoot_held or frame.through_held or frame.cross_held \
+		or frame.pass_pressed or frame.shoot_pressed or frame.through_pressed or frame.cross_pressed \
+		or frame.pass_released or frame.shoot_released or frame.through_released or frame.cross_released
+	if PackLibrary.json_mode() and not is_pressing and not kicking and not kick_input:
 		_json_turn_move(desired_dir, desired_mag, delta)
 	# Vuelta atras pisando la pelota o giro con toques en curso: el cuerpo lo mueve la accion (llegar, frenar, girar, salir).
 	var scripted: Dictionary = ball_handler.drag_back.body_control()

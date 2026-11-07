@@ -35,3 +35,9 @@ Se habilitó push para integracion-openai y se eliminaron la opción y el paso d
 ## Validación pendiente
 
 La suite completa local se está ejecutando nuevamente. Los resultados parciales no se presentan como aprobación completa. Las 76 filas restantes incluyen recepciones y contactos sin sincronización validada, acciones con objetos o participantes secundarios y poses de referencia. Son trabajo pendiente; no se consideran imposibles sólo por faltar JSON fuente. No se eliminan ni se declaran conectadas por el mero registro en el banco.
+
+## Revisión posterior al commit 7cc6d0a
+
+El render adicional detectó una regresión de pase de primera: la prueba pasó en el checkout independiente 0b46c10 y falló con las transiciones nuevas. La transición podía cancelar una carga antes de que BallHandler registrara la orden. Footballer ahora respeta botones pulsados, mantenidos y liberados; PlayerActions excluye la aproximación física de una pelota. Revalidación con render: 1 prueba, 0 fallidas, 4 comprobaciones. Las 14 transiciones siguen invocándose en sus estados propios y la prueba negativa nueva comprueba que no interrumpan una pelota entrante: 2 pruebas, 0 fallidas, 46 comprobaciones.
+
+La suite parcial encontró un partido de 120 s sin tiros; la serie de tres partidos produjo 8. La exigencia de producir tiros se trasladó a esa serie; cada partido comprueba la lectura si realmente hubo SHOT. La prueba de atajada física independiente conserva su exigencia. Esta revisión de la afirmación estadística está pendiente de resultado completo; no certifica aún la suite.

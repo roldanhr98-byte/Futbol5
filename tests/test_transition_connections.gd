@@ -27,3 +27,13 @@ func test_all_previously_unrouted_transitions_can_start_in_their_own_state() -> 
 			check(p.global_position.is_finite(), "%s aplica su raiz sin valores invalidos" % id)
 			count += 1
 	check(count == 14, "14 transiciones del selector (13 pendientes historicas y una existente)")
+
+func test_incoming_ball_keeps_the_body_available_for_a_first_time_kick() -> void:
+	var ctx: MatchContext = await make_match(Vector3(4, 0.11, 0))
+	var p: Footballer = add_player(ctx, 0, Vector3.ZERO, 60, ScriptedInput.new(), true)
+	p.set_physics_process(false)
+	ctx.ball.reset_at(Vector3(4, 0.11, 0), Vector3(-6, 0, 0))
+	await physics_frames(2)
+	check(not is_inf(p.ball_handler.incoming_ball_eta()), "la pelota se acerca fisicamente al jugador")
+	check(not p.actions.try_locomotion_transition(Vector3.FORWARD, 1.0), "la transicion no cancela la preparacion de primera")
+	check(not p.actions.active(), "el cuerpo queda disponible para la patada")

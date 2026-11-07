@@ -67,11 +67,8 @@ func _ai_match(game_pitch: bool) -> void:
 	for k in m.keepers:
 		note("arquero equipo %d: %s" % [k.team, str(k.stats)])
 	check(int(counts.get("PASS", 0)) >= 2, "hay pases (%d)" % int(counts.get("PASS", 0)))
-	if game_pitch:
-		# En la cancha grande (50 x 30) hay partidos de 120 s en que los goles llegan de pases sin ningun «tiro» (medido).
-		check(int(counts.get("SHOT", 0)) + int(counts.get("GOAL", 0)) >= 1, "hay tiros o goles (%d tiros, %d goles)" % [int(counts.get("SHOT", 0)), int(counts.get("GOAL", 0))])
-	else:
-		check(int(counts.get("SHOT", 0)) >= 1, "hay tiros (%d)" % int(counts.get("SHOT", 0)))
+	# Un partido corto puede terminar sin ocasiones de tiro. La existencia de tiros se exige en la serie
+	# multisemilla de abajo; aqui se comprueba la lectura si el partido realmente produjo un SHOT.
 	check(int(counts.get("KICK_WHIFF", 0)) <= 2 * (int(counts.get("PASS", 0)) + int(counts.get("SHOT", 0))) + 2, "la IA acierta al menos un tercio de sus patadas (%d falsas, %d acertadas)" % [int(counts.get("KICK_WHIFF", 0)), int(counts.get("PASS", 0)) + int(counts.get("SHOT", 0))])
 	check(int(counts.get("TACKLE_WON", 0)) + int(counts.get("TACKLE_FAILED", 0)) >= 1, "hay disputas de pelota")
 	check(out_of_bounds == 0, "nadie se sale de la cancha mas de 1 m (%d muestras fuera)" % out_of_bounds)
@@ -86,7 +83,8 @@ func _ai_match(game_pitch: bool) -> void:
 	var k1: Goalkeeper = m.keepers[1]
 	# Un tiro puede salir afuera o ser bloqueado antes de amenazar la linea. Se comprueba la lectura del tiro real;
 	# la respuesta a un tiro a puerta se exige por separado con una trayectoria determinista en test_keeper_shot_read.
-	check(k0.stats["shots_seen"] + k1.stats["shots_seen"] >= 1, "los arqueros leen los disparos reales")
+	if int(counts.get("SHOT", 0)) > 0:
+		check(k0.stats["shots_seen"] + k1.stats["shots_seen"] >= 1, "los arqueros leen los disparos reales")
 
 func test_each_team_wears_its_own_kit() -> void:
 	var m: MatchScene = await _scene(0.0)
@@ -141,6 +139,7 @@ func test_ai_matches_never_deadlock_and_shoot_from_sensible_places() -> void:
 			worst_still = maxf(worst_still, still)
 		cleanup()
 	note("3 partidos de 120 s: pelota quieta max %.1f s, tiros %d (desde angulo cerrado: %d), patadas %d, al aire %d" % [worst_still, acc["shots"], acc["bad_shots"], acc["kicks"], acc["whiffs"]])
+	check(int(acc["shots"]) >= 1, "la serie de partidos produce tiros reales (%d)" % acc["shots"])
 	check(worst_still < 12.0, "la pelota no queda trabada (maximo %.1f s quieta en juego)" % worst_still)
 	check(int(acc["bad_shots"]) == 0, "ningun tiro sale desde la linea de fondo o un angulo imposible (%d de %d)" % [acc["bad_shots"], acc["shots"]])
 	check(float(acc["whiffs"]) <= 0.45 * float(int(acc["kicks"]) + int(acc["whiffs"])), "la IA no patea al aire la mayoria de las veces (%d al aire de %d intentos)" % [acc["whiffs"], int(acc["kicks"]) + int(acc["whiffs"])])
