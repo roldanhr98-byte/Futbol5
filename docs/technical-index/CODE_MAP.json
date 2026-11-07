@@ -2830,7 +2830,7 @@
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud.show_message",
-          "line": 321,
+          "line": 323,
           "kind": "func"
         },
         {
@@ -2842,19 +2842,19 @@
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud._cycle_assist",
-          "line": 271,
+          "line": 273,
           "kind": "func"
         },
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud._cycle_graphics",
-          "line": 267,
+          "line": 269,
           "kind": "func"
         },
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud._toggle_diagnostics",
-          "line": 279,
+          "line": 281,
           "kind": "func"
         },
         {
@@ -5426,7 +5426,7 @@
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud._cycle_gameplay_mode",
-          "line": 244,
+          "line": 246,
           "kind": "func"
         },
         {
@@ -5854,6 +5854,77 @@
         "MATCH"
       ],
       "documentation": "docs/technical-index/SYSTEMS/JSON_MODE.md",
+      "last_verified": "2026-11-07"
+    },
+    {
+      "id": "reforma.anim_bank_bench",
+      "system": "REFORMA",
+      "description": "Reforma a tiros libres y penales, Fase 1: menu de desarrollo (entrada del juego; abre el banco de pruebas o el partido de futbol 5 anterior) y banco de pruebas que compara los bancos de animacion JSON original, Mixamo y Mocap por separado sobre el mismo jugador (selector que carga solo el banco elegido, categorias de tirador, barrera y arquero, sin clip en este banco, golpe en el contacto del clip, mediciones en vivo, cuerpo original de diagnostico).",
+      "keywords": [
+        "reforma",
+        "tiros libres",
+        "tiro libre",
+        "penales",
+        "penal",
+        "banco",
+        "bancos",
+        "mixamo",
+        "mocap",
+        "json",
+        "comparacion",
+        "comparar",
+        "selector",
+        "menu de desarrollo",
+        "barrera",
+        "arquero",
+        "catalogo",
+        "procedencia"
+      ],
+      "files": [
+        "scripts/dev/anim_bank_bench.gd",
+        "scripts/dev/anim_bank_catalog.gd",
+        "scripts/dev/dev_menu.gd"
+      ],
+      "symbols": [
+        {
+          "file": "scripts/dev/anim_bank_bench.gd",
+          "name": "AnimBankBench.select_bank",
+          "line": 127,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/dev/anim_bank_bench.gd",
+          "name": "AnimBankBench.play_current",
+          "line": 206,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/dev/anim_bank_bench.gd",
+          "name": "AnimBankBench._kick",
+          "line": 383,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/dev/anim_bank_catalog.gd",
+          "name": "AnimBankCatalog.clips",
+          "line": 53,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/dev/dev_menu.gd",
+          "name": "DevMenu.open",
+          "line": 45,
+          "kind": "func"
+        }
+      ],
+      "parameters": [],
+      "dependencies": [
+        "ANIMATION_PACK",
+        "JSON_MODE",
+        "BALL",
+        "PITCH"
+      ],
+      "documentation": "docs/technical-index/SYSTEMS/REFORMA.md",
       "last_verified": "2026-11-07"
     }
   ]

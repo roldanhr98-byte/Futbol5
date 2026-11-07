@@ -10,7 +10,7 @@ name: Android APK
 
 on:
   push:
-    branches: [main, master, ccr-f4fb4f85-olnklr, ccr-a6c53cd2-uoxpk0, integracion-openai]
+    branches: [main, master, ccr-f4fb4f85-olnklr, ccr-a6c53cd2-uoxpk0, integracion-openai, reforma-tiros-penales]
     paths-ignore: ["docs/**", "**.md"]
   workflow_dispatch:
     inputs:

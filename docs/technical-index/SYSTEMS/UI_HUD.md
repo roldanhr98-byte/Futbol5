@@ -26,9 +26,9 @@ No hay recursos de parámetros. Constantes y valores fijos reales:
 | Constante / enum / uniform | Valor | Línea | Descripción |
 |---|---|---|---|
 | `Hud.LEVEL_NAMES` | `["Desactivada", "Baja", "Media", "Alta"]` | 15 |  |
-| `Hud.TOUCH_SCALES` | `[0.85, 1.0, 1.2]` | 214 | Tamano de la botonera y sensibilidad del joystick (preferencias tactiles; se guardan con las demas). |
-| `Hud.JOY_SENS` | `[0.8, 1.0, 1.3]` | 215 |  |
-| `Hud.THREE_NAMES` | `["Bajo", "Normal", "Alto"]` | 216 |  |
+| `Hud.TOUCH_SCALES` | `[0.85, 1.0, 1.2]` | 216 | Tamano de la botonera y sensibilidad del joystick (preferencias tactiles; se guardan con las demas). |
+| `Hud.JOY_SENS` | `[0.8, 1.0, 1.3]` | 217 |  |
+| `Hud.THREE_NAMES` | `["Bajo", "Normal", "Alto"]` | 218 |  |
 <!-- /AUTO -->
 
 - Tamaños de fuente: marcador y reloj 30, mensaje central 68 (color `(1, 0.95, 0.4)` con contorno), pista inferior 18 (`set_hint`), título de pausa 38; botones del menú de 56 px de alto mínimo y fuente 22; panel de pausa de 760 px de ancho (2 columnas). Desde el 2026-11-05 la cuadrícula va dentro de un `ScrollContainer` de 540 px de alto (se desplaza con el dedo): con «Imágenes por segundo» y «Sombras» (ver [PERFORMANCE](PERFORMANCE.md#tirones-de-cpu-y-opciones-de-rendimiento-2026-11-05)) los botones ya no cabían en 720 de alto.
@@ -56,27 +56,27 @@ No hay recursos de parámetros. Constantes y valores fijos reales:
 | `Hud._build_scoreboard(root: Control)` | 85 |  |
 | `Hud._build_message(root: Control)` | 102 |  |
 | `Hud._build_pause_menu(root: Control)` | 125 |  |
-| `Hud._add_menu_button(parent: Container, key: String, text: String, action: Callable)` | 173 |  |
-| `Hud._level_index(v: float)` | 184 |  |
-| `Hud._refresh_menu_labels()` | 194 |  |
-| `Hud._nearest_index(values: Array, v: float)` | 218 |  |
-| `Hud._cycle_touch(kind: StringName)` | 225 |  |
-| `Hud._cycle_camera_zoom()` | 236 | Zoom de la camara (se aplica en el acto, con el suavizado de la camara, y se guarda). |
-| `Hud._cycle_gameplay_mode()` | 244 | Modo de jugabilidad entre los jugables (Tuning.PLAYABLE_MODES; hoy solo el 4, y el boton no se muestra): se guarda y el partido se vuelve a  |
-| `Hud._toggle_sound()` | 252 | Sonido del partido: se apaga o enciende en el acto (publico incluido) y se guarda. |
-| `Hud._cycle_minutes()` | 259 | Duracion del partido: se guarda y se aplica al reiniciar el partido (el reloj del partido en curso no cambia). |
-| `Hud._cycle_graphics()` | 267 |  |
-| `Hud._cycle_assist(kind: String)` | 271 |  |
-| `Hud._toggle_diagnostics()` | 279 |  |
-| `Hud._close_pause()` | 285 |  |
-| `Hud._on_pause_pressed()` | 289 |  |
-| `Hud.show_replay(on: bool)` | 293 |  |
-| `Hud._input(event: InputEvent)` | 301 |  |
-| `Hud._unhandled_input(event: InputEvent)` | 307 |  |
-| `Hud._on_state_changed(s: int)` | 312 |  |
-| `Hud._on_score(home: int, away: int)` | 318 |  |
-| `Hud.show_message(text: String, seconds: float)` | 321 |  |
-| `Hud.set_hint(text: String)` | 330 |  |
+| `Hud._add_menu_button(parent: Container, key: String, text: String, action: Callable)` | 175 |  |
+| `Hud._level_index(v: float)` | 186 |  |
+| `Hud._refresh_menu_labels()` | 196 |  |
+| `Hud._nearest_index(values: Array, v: float)` | 220 |  |
+| `Hud._cycle_touch(kind: StringName)` | 227 |  |
+| `Hud._cycle_camera_zoom()` | 238 | Zoom de la camara (se aplica en el acto, con el suavizado de la camara, y se guarda). |
+| `Hud._cycle_gameplay_mode()` | 246 | Modo de jugabilidad entre los jugables (Tuning.PLAYABLE_MODES; hoy solo el 4, y el boton no se muestra): se guarda y el partido se vuelve a  |
+| `Hud._toggle_sound()` | 254 | Sonido del partido: se apaga o enciende en el acto (publico incluido) y se guarda. |
+| `Hud._cycle_minutes()` | 261 | Duracion del partido: se guarda y se aplica al reiniciar el partido (el reloj del partido en curso no cambia). |
+| `Hud._cycle_graphics()` | 269 |  |
+| `Hud._cycle_assist(kind: String)` | 273 |  |
+| `Hud._toggle_diagnostics()` | 281 |  |
+| `Hud._close_pause()` | 287 |  |
+| `Hud._on_pause_pressed()` | 291 |  |
+| `Hud.show_replay(on: bool)` | 295 |  |
+| `Hud._input(event: InputEvent)` | 303 |  |
+| `Hud._unhandled_input(event: InputEvent)` | 309 |  |
+| `Hud._on_state_changed(s: int)` | 314 |  |
+| `Hud._on_score(home: int, away: int)` | 320 |  |
+| `Hud.show_message(text: String, seconds: float)` | 323 |  |
+| `Hud.set_hint(text: String)` | 332 |  |
 <!-- /AUTO -->
 
 <!-- AUTO:signals:scripts/ui/hud.gd -->

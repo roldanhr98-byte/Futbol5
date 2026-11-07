@@ -7,7 +7,7 @@ config_version=5
 
 config/name="Futbol 5"
 config/description="Juego original de futbol 5 / futsal con control asistido y fisicas propias."
-run/main_scene="res://scenes/main/match.tscn"
+run/main_scene="res://scenes/dev/dev_menu.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 run/max_fps=0
 config/icon="res://icon.svg"

@@ -11,6 +11,25 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-11-07 — Reforma a tiros libres y penales, Fase 1: banco de pruebas de los tres bancos de animación
+
+Rama `reforma-tiros-penales` (desde `integracion-openai` en `9c6f82a`).
+
+- Menú de desarrollo como escena principal (`scenes/dev/dev_menu.tscn`): abre el banco de pruebas o el partido de fútbol 5
+  anterior, que se conserva entero; el menú de pausa del partido tiene «Menú de desarrollo».
+- Banco de pruebas (`scenes/dev/anim_bank_bench.tscn`, `AnimBankBench`): selector JSON original / Mixamo / Mocap que carga
+  solo el banco elegido, cuerpo común (humano JSON) o cuerpo original del banco (diagnóstico), 25 acciones de tirador,
+  barrera y arquero, «sin clip en este banco», golpe de referencia en el contacto del clip, mediciones en vivo, secuencia
+  con transiciones, tres cámaras fijas. Catálogo por procedencia (`resources/animation/catalogo_bancos.json`,
+  `tools/reforma/build_bank_catalog.gd`) y medición de compatibilidad (`tools/reforma/bank_compat.gd`).
+- Hallazgo medido y documentado (sin corregir, a decidir por el usuario): Mixamo y Mocap se convirtieron para el futbolista
+  y sus reposos de hueso difieren hasta 177° de los del humano JSON; sobre él los pies flotan ~27 cm y el contacto queda a
+  1,2 m. Informe: `docs/reforma/FASE1_INFORME.md`.
+- Verificación: `test_anim_bank_bench` 7/0 sin render (1 omitida) y 7/0 con render (104 comprobaciones, sin fugas); suite
+  headless 327 / 3361 / **1 fallo** intermitente del partido de fútbol 5 (pelota quieta 16,5 s; aislada 6/6 en esta rama y
+  6/6 en la base; ticket `docs/integration/tickets/F9-002_pelota_quieta_en_partido.md`); 8 baterías con render 0 fallos,
+  0 fugas.
+
 ## 2026-11-07 — Fase 2 de la guía (abierta): diagnóstico de los 322 y 54 golpeos laterales habilitados
 
 - `JsonCatalog.kick_clean_failures` y `KICK_LATERAL_MAX = 0.75`: `kick_clip_rejection` admite los golpeos no limpios cuyo

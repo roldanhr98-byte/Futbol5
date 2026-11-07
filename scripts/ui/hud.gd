@@ -167,6 +167,8 @@ func _build_pause_menu(root: Control) -> void:
 	_add_menu_button(grid, "camera_zoom", "", func() -> void: _cycle_camera_zoom())
 	_add_menu_button(grid, "sound", "", func() -> void: _toggle_sound())
 	_add_menu_button(grid, "gameplay_mode", "", func() -> void: _cycle_gameplay_mode())
+	# Reforma (tiros libres y penales): vuelta al menu de desarrollo, desde donde se abre el banco de pruebas.
+	_add_menu_button(grid, "dev_menu", "Menú de desarrollo", func() -> void: _close_pause(); get_tree().paused = false; get_tree().change_scene_to_file(DevMenu.SCENE))
 	_add_menu_button(grid, "quit", "Salir", func() -> void: _close_pause(); quit_requested.emit())
 	_refresh_menu_labels()
 
