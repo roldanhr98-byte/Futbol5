@@ -72,3 +72,11 @@ Rutas `res://` de recursos importados, compresión de texturas (ETC2/ASTC) del G
 ## Historial
 
 Ver [CHANGELOG.md](../CHANGELOG.md): «Base del juego» (ajustes de proyecto).
+
+## Integración 2026-11-07
+
+El workflow conserva Godot 4.7.2 y sus plantillas Android oficiales. Antes de exportar ejecuta
+`tools/integration/audit_bank.tscn`; sube JSON y log como `animation-audit`, incluso si falla la auditoría.
+Las pruebas con render son bloqueantes y usan X11 explícito con Xvfb. El APK sigue siendo artefacto de prueba;
+`publish_release` permanece desactivado por defecto. En esta sesión el dispatch fue rechazado por GitHub con HTTP 403
+(`Resource not accessible by integration`); no hay ejecución ni APK nuevos. Detalle en `docs/integration/INFORME.md`.

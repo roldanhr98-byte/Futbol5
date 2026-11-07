@@ -89,3 +89,10 @@ Comandos: ver [`START_HERE.md`](START_HERE.md). Render: `TEST_GAMEPLAY_MODE=4 xv
 --fixed-fps 60 --path . res://tests/run_tests.tscn -- --filter <archivo>`; visor de recepción: `ANGLE=0 SPEED=12 [ARRIVE_Y=0.6]
 [PASS=1] OUT=/ruta.png xvfb-run -a godot --rendering-driver opengl3 --fixed-fps 60 --path . res://tools/json_anim/receive_view.tscn`;
 auditar un clip: `CLIP=<id> [PART=…] [T=…]` con el mismo visor (ver `tools/json_anim/README.md`).
+
+## Misión de integración — 2026-11-07
+
+Para esta misión prevalece la orden actual del usuario: **trabajar en `integracion-openai`**, conservar `respaldo-f3`
+intacta y avanzar con implementación, pruebas, commits y APK sin solicitar aprobaciones de fase adicionales.
+Los nombres de rama y restricciones por fases de las secciones históricas anteriores describen sesiones previas.
+Estado comprobado y limitaciones actuales: [`integration/INFORME.md`](integration/INFORME.md).

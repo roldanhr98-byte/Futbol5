@@ -151,7 +151,7 @@ jobs:
 
       - name: Pruebas headless
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.skip_tests) }}
-        run: tools/run_tests.sh
+        run: tools/run_tests.sh 2>&1 | tee "$RUNNER_TEMP/headless_tests.txt"
 
       # Pruebas que necesitan el esqueleto animado (toques de conduccion con el pie real, pie en la pelota al patear):
       # con render en un servidor X virtual.
@@ -161,10 +161,20 @@ jobs:
           set -o pipefail
           sudo apt-get update -q > /dev/null && sudo apt-get install -y -q xvfb libgl1-mesa-dri > /dev/null
           for f in live_feet live_kicks pack_motion json_mode physical_dribble directional_kicks; do
-            xvfb-run -a godot --rendering-driver opengl3 --fixed-fps 60 --path . res://tests/run_tests.tscn -- --filter "$f" 2>&1 \
+            xvfb-run -a godot --display-driver x11 --rendering-driver opengl3 --fixed-fps 60 --path . res://tests/run_tests.tscn -- --filter "$f" 2>&1 \
               | sed 's/\x1b\[[0-9;]*m//g' | tee "$RUNNER_TEMP/render_$f.txt"
             if grep -q "SCRIPT ERROR\|\[FAIL\]" "$RUNNER_TEMP/render_$f.txt"; then exit 1; fi
           done
+
+      - name: Conservar resultados de pruebas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            ${{ runner.temp }}/headless_tests.txt
+            ${{ runner.temp }}/render_*.txt
+          if-no-files-found: warn
 
       - name: Version
         run: |

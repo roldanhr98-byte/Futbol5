@@ -89,3 +89,35 @@ no se implementó todavía la carga individual con liberación por clip. Los rec
 - Obtener las fuentes originales si se necesita analizar o regenerar los 2.022 JSON completos.
 
 Los resultados finales de la suite ampliada y GitHub Actions se añaden al terminar su ejecución.
+
+## GitHub Actions y APK
+
+- Commit inicial subido: `a5edf7a`, rama `integracion-openai` (rama remota creada sin push forzado).
+- Workflow consultado: `Android APK`, id `397788632`, activo.
+- Se intentó `gh workflow run android.yml --ref integracion-openai` con `skip_tests=false`,
+  `publish_release=false`, `allow_without_pack=false`.
+- GitHub respondió **HTTP 403: Resource not accessible by integration** al endpoint de dispatch. La credencial disponible
+  permite leer Actions y hacer push, pero no iniciar este workflow manualmente.
+- No se generó una ejecución nueva ni un APK nuevo; no hay enlace de descarga nuevo. No se publicó ninguna release.
+- Para iniciar desde una cuenta con permisos: [Android APK](https://github.com/roldanhr98-byte/Futbol5/actions/workflows/android.yml),
+  **Run workflow**, rama **integracion-openai**, sin saltar pruebas y con **publish_release desactivado**.
+  La ejecución debe superar las pruebas y exportación; recién entonces estará disponible el artefacto `futbol5-apk`.
+
+## Verificación ampliada y defectos observados
+
+- `live_feet`, con Xvfb/X11/OpenGL y el humanoide animado: **7 pruebas, 2 fallidas, 66 comprobaciones**.
+  Fallos: el cuerpo coincide con la pelota durante el 12 % del escenario de giros; giro de sprint de 180° avanza
+  1,40 m y no supera su condición de aceptación. Las otras cinco pruebas de esa suite pasaron.
+- Comparación ejecutada en una copia temporal del commit anterior (`a5edf7a^`): el caso de giros también falla
+  con **12 %**, mismos 33/10 toques en curva/aceleración. Ese defecto está comprobado como preexistente.
+- La suite completa detectó además `test_ai_match::test_ai_teams_play_a_real_match_without_getting_stuck`:
+  los arqueros no enfrentan disparos. Se conserva como fallo observado, sin ocultarlo ni modificar la prueba.
+- Evidencia de las ejecuciones en [`pruebas/`](pruebas/). Los avisos de audio sin dispositivo y recursos retenidos
+  al salir están conservados en los logs. Muestreo de poses no equivale a revisión visual de imágenes.
+- Índice técnico: **58 entradas, 0 errores, 0 avisos**. `bash -n`, compilación Python y `git diff --check` sin errores.
+
+Comparación adicional sobre el commit anterior: el giro de sprint de 180° también falla con **1,40 m**
+(`pruebas/cambio_direccion_antes.log`): los dos fallos de `live_feet` son reproducibles antes de estos cambios.
+La prueba aislada de IA pasó en el commit anterior (1/0, 5 comprobaciones); una sola corrida no establece una tasa de
+fallo ni demuestra por sí sola una regresión o su ausencia. No se modificaron las pruebas ni las mecánicas para ocultar
+estos resultados. Sintaxis del workflow validada mediante PyYAML.

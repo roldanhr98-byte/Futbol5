@@ -1176,3 +1176,12 @@ contra personas.
 - Workflow: informe por clip como artefacto, fallo de render bloqueante, errores de importación ya no ignorados.
 - Pruebas iniciales: catálogo 2/0 (78 comprobaciones), integración del banco 6/0 (42), ejemplos del ZIP 38 sin errores.
   Resultados ampliados y pendientes: `docs/integration/INFORME.md`.
+
+### Evidencia ampliada de esta sesión
+
+- `live_feet` con render: 7 pruebas, 2 fallidas, 66 comprobaciones. Ambos fallos reproducidos sobre el commit anterior:
+  giros con 12 % de superposición cuerpo/pelota y avance de 1,40 m en giro de sprint de 180°. Logs en `docs/integration/pruebas`.
+- Dispatch Android intentado con pruebas activas y releases desactivadas: GitHub rechazó con HTTP 403
+  `Resource not accessible by integration`. No hay APK ni ejecución nuevos. No se publicó una release.
+- CI conserva también logs headless/render como artefacto `test-results`; el ejecutor entrega salida sin buffering.
+- `docs_index.py check`: 58 entradas, 0 errores y 0 avisos.

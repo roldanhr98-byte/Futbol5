@@ -5,7 +5,7 @@
 - **Responsabilidad exacta:** el futbolista de campo, controlado únicamente a través de `InputFrame`: movimiento con aceleración progresiva y giro dependiente de la velocidad (`Locomotion`), conducción por toques físicos, control de primer toque, posesión, robo (`BallHandler`), y la patada de pase/tiro cuyo impulso se aplica en el instante de contacto de la animación. La presión defensiva y las asistencias de pase/tiro viven en [ASSISTANCE](ASSISTANCE.md); el modelo y las animaciones en [ANIMATIONS](ANIMATIONS.md).
 - **Estado:** implementado para **un** jugador humano por equipo. No hay IA ni cambio de jugador.
 - **Última verificación:** <!-- AUTO:verified -->
-2026-11-06
+2026-11-07
 <!-- /AUTO -->
 
 ## Archivos responsables
@@ -47,7 +47,7 @@
 | `stamina_regen` | `0.07` | float | `scripts/player/player_tuning.gd:33` | `scripts/player/locomotion.gd:85`, `scripts/player/locomotion.gd:164`, `scripts/player/locomotion.gd:191` |  (Resistencia) |
 | `stamina_regen_standing` | `0.14` | float | `scripts/player/player_tuning.gd:34` | `scripts/player/locomotion.gd:85`, `scripts/player/locomotion.gd:164`, `scripts/player/locomotion.gd:191` |  (Resistencia) |
 | `exhausted_speed_factor` | `0.82` | float | `scripts/player/player_tuning.gd:36` | `scripts/player/locomotion.gd:62` | Fraccion de velocidad de sprint que aun se mantiene con la resistencia agotada. (Resistencia) |
-| `touch_reach` | `0.95` | float | `scripts/player/player_tuning.gd:40` | `scripts/ai/ai_input.gd:131`, `scripts/player/ball_handler.gd:357`, `scripts/player/ball_handler.gd:542`, `scripts/player/ball_handler.gd:1245` (+1) | Distancia maxima (m) a la que puede dar un toque. (Conduccion) |
+| `touch_reach` | `0.95` | float | `scripts/player/player_tuning.gd:40` | `scripts/player/ball_handler.gd:357`, `scripts/player/ball_handler.gd:542`, `scripts/player/ball_handler.gd:1245`, `scripts/player/ball_handler.gd:2916` (+1) | Distancia maxima (m) a la que puede dar un toque. (Conduccion) |
 | `touch_interval_jog` | `0.28` | float | `scripts/player/player_tuning.gd:42` | `scripts/player/ball_handler.gd:1561` | Segundos entre toques (trote). (Conduccion) |
 | `touch_interval_sprint` | `0.38` | float | `scripts/player/player_tuning.gd:44` | `scripts/player/ball_handler.gd:1561` | Segundos entre toques (sprint, toques mas largos y espaciados). (Conduccion) |
 | `carry_gap_stand` | `0.38` | float | `scripts/player/player_tuning.gd:46` | `scripts/player/ball_handler.gd:1549`, `scripts/player/ball_handler.gd:2364`, `scripts/player/ball_handler.gd:2371`, `scripts/player/ball_handler.gd:2407` | Distancia objetivo (m) de la pelota al pie PARADO: es la que define el control cercano. (Conduccion) |
@@ -67,7 +67,7 @@
 | `touch_turn_jog_deg` | `110.0` | float | `scripts/player/player_tuning.gd:74` | `scripts/player/ball_handler.gd:1527`, `scripts/player/ball_handler.gd:1529` |  (Conduccion) |
 | `touch_turn_sprint_deg` | `70.0` | float | `scripts/player/player_tuning.gd:75` | `scripts/player/ball_handler.gd:1529` |  (Conduccion) |
 | `kick_lockout` | `0.35` | float | `scripts/player/player_tuning.gd:77` | `scripts/player/ball_handler.gd:1336` | Segundos de bloqueo despues de un pase/tiro antes de poder volver a tocar la pelota. (Conduccion) |
-| `possession_radius` | `1.1` | float | `scripts/player/player_tuning.gd:78` | `scripts/ai/ai_input.gd:627`, `scripts/assistance/press_controller.gd:44`, `scripts/assistance/press_controller.gd:49`, `scripts/assistance/press_controller.gd:51` (+3) |  (Conduccion) |
+| `possession_radius` | `1.1` | float | `scripts/player/player_tuning.gd:78` | `scripts/player/ball_handler.gd:213`, `scripts/player/ball_handler.gd:3029`, `scripts/player/footballer.gd:328`, `scripts/assistance/press_controller.gd:44` (+3) |  (Conduccion) |
 | `kick_contact_radius` | `0.30` | float | `scripts/player/player_tuning.gd:82` | `scripts/player/ball_handler.gd:2526` | Radio (m) entre el pie (posicion de contacto medida del clip) y el centro de la pelota para que el golpeo cuente. (Patada con animacion del pack) |
 | `json_kick_reach` | `0.65` | float | `scripts/player/player_tuning.gd:87` | `scripts/player/ball_handler.gd:2526` | Modo 4 (Json): alcance (m) con el que el golpeo de un clip sigue contando aunque la pelota se haya corrido del punto previsto; el pie se estira hasta ella (IK) en el ultimo tramo del balanceo. Con 0.30 una de cada cinco patadas del partido de IA se perdia en el aire con la pelota a 0.30-0.47 m («hace la animacion pero no le da al balon»); con 0.55 seguian perdiendose 2-4 por partido a 0.56-0.73 m en jugadas disputadas (el cuerpo empujado 0.4-1.1 m en el balanceo). (Patada con animacion del pack) |
 | `kick_foot_max_height` | `0.25` | float | `scripts/player/player_tuning.gd:90` | `scripts/player/ball_handler.gd:771` | Altura maxima (m) de la punta del pie y velocidad minima de avance (m/s) para que un punto de la trayectoria del clip cuente como golpeo: el pie debe ir bajo y lanzado, no subiendo ni frenando. (Patada con animacion del pack) |

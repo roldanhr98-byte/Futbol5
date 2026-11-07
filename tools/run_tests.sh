@@ -21,7 +21,7 @@ fi
 rm -f "$IMPORT_OUT"
 OUT="$(mktemp)"
 "$GODOT_BIN" --headless --fixed-fps 60 --path . res://tests/run_tests.tscn "${FILTER_ARGS[@]}" 2>&1 \
-  | sed 's/\x1b\[[0-9;]*m//g' | grep -v '^Picked up' | tee "$OUT"
+  | sed -u 's/\x1b\[[0-9;]*m//g' | grep --line-buffered -v '^Picked up' | tee "$OUT"
 STATUS="${PIPESTATUS[0]}"
 # Un error de script aborta la prueba a medias pero el ejecutor podria darla por buena: se trata como fallo.
 if grep -q "SCRIPT ERROR" "$OUT"; then
