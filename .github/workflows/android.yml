@@ -6,12 +6,11 @@ name: Android APK
 # pack heredado fijan su modo con TestCase.gameplay_mode()). Firmada con un keystore de DEPURACION estandar de Android
 # (alias androiddebugkey, contrasena android) creado en cada ejecucion: no hay secretos ni clave permanente.
 # Consecuencia: cada APK tiene una firma distinta, asi que hay que desinstalar la anterior antes de instalar la nueva.
-# Se publica como artefacto del workflow y, si se pide al lanzarlo a mano (publish_release), tambien como pre-release de
-# PRUEBA con el APK adjunto para que cualquiera lo descargue sin cuenta (no es una release de produccion).
+# APK de prueba disponible exclusivamente como artefacto descargable; no publica Releases.
 
 on:
   push:
-    branches: [main, master, ccr-f4fb4f85-olnklr, ccr-a6c53cd2-uoxpk0]
+    branches: [main, master, ccr-f4fb4f85-olnklr, ccr-a6c53cd2-uoxpk0, integracion-openai]
     paths-ignore: ["docs/**", "**.md"]
   workflow_dispatch:
     inputs:
@@ -23,17 +22,13 @@ on:
         description: "Saltar las pruebas headless (solo para compilar rapido)"
         type: boolean
         default: false
-      publish_release:
-        description: "Publicar el APK como pre-release de prueba (descarga publica, no gasta la cuota de artefactos)"
-        type: boolean
-        default: false
 
 concurrency:
   group: android-apk-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
-  contents: write   # solo para publicar la pre-release de prueba (publish_release)
+  contents: read
 
 env:
   GODOT_VERSION: "4.7.2"
@@ -249,19 +244,7 @@ jobs:
             echo "- Commit: \`${GITHUB_SHA::7}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Publicar pre-release de prueba
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_release }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          TAG="apk-prueba-${{ github.run_number }}"
-          gh release create "$TAG" "build/$APK_NAME" --prerelease --target "$GITHUB_SHA" \
-            --title "Futbol 5 - APK de prueba ${VERSION_NAME}" \
-            --notes "APK de PRUEBA (arm64, firma de depuracion, sin permisos). Commit ${GITHUB_SHA::7}. Desinstala la version anterior antes de instalar esta."
-          echo "- Descarga publica: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${TAG}" >> "$GITHUB_STEP_SUMMARY"
-
       - name: Subir artefacto
-        continue-on-error: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_release }}
         uses: actions/upload-artifact@v4
         with:
           name: futbol5-apk
