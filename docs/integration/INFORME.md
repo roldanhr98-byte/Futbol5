@@ -88,7 +88,7 @@ no se implementó todavía la carga individual con liberación por clip. Los rec
 - Streaming de poses por clip y medición de CPU/GPU/memoria en Android físico.
 - Obtener las fuentes originales si se necesita analizar o regenerar los 2.022 JSON completos.
 
-Los resultados finales de la suite ampliada y GitHub Actions se añaden al terminar su ejecución.
+Resultado final de la suite ampliada y de GitHub Actions: secciones siguientes.
 
 ## GitHub Actions y APK
 
@@ -121,3 +121,23 @@ Comparación adicional sobre el commit anterior: el giro de sprint de 180° tamb
 La prueba aislada de IA pasó en el commit anterior (1/0, 5 comprobaciones); una sola corrida no establece una tasa de
 fallo ni demuestra por sí sola una regresión o su ausencia. No se modificaron las pruebas ni las mecánicas para ocultar
 estos resultados. Sintaxis del workflow validada mediante PyYAML.
+
+Lista de archivos creados y modificados respecto del inicio: [`archivos_cambiados.txt`](archivos_cambiados.txt).
+Se consultaron también referencias e historial Git de archivos ZIP/7z/RAR; no se encontró el banco original completo.
+
+## Resultado final de la suite completa
+
+`tools/run_tests.sh` terminó: **292 pruebas totales, 1 fallida, 32 omitidas, 1.800 comprobaciones**,
+1.382,3 segundos. No se encontraron `SCRIPT ERROR`. La ejecución devolvió estado no cero y **no se declara aprobada**.
+El único fallo fue `test_ai_match::test_ai_teams_play_a_real_match_without_getting_stuck`:
+«los arqueros enfrentan disparos». Las otras 259 pruebas ejecutadas pasaron; 32 quedaron omitidas por sus condiciones.
+Los cuatro partidos simulados de 3, 5, 7 y 10 minutos pasaron. También pasaron las series de tiros/atajadas y las pruebas
+de reglas, balón, pases, recepciones, controles y entrenamiento que figuran en el log.
+
+Log íntegro: [`pruebas/suite_completa.log`](pruebas/suite_completa.log).
+La suite `live_feet` ejecutada aparte con render mantiene sus dos fallos preexistentes (7 totales, 2 fallidas).
+El catálogo nuevo también se repitió sobre el código final: 2 pruebas, 0 fallidas, 78 comprobaciones.
+
+**Estado de entrega: parcial.** No están completadas las 338 conexiones pendientes del inventario histórico,
+la validación visual individual, el traslado completo de reglas del ZIP, el streaming por clip ni la prueba Android física.
+GitHub rechazó el dispatch con HTTP 403; no existe APK nuevo ni enlace de descarga nuevo.

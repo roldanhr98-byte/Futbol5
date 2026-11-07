@@ -1185,3 +1185,11 @@ contra personas.
   `Resource not accessible by integration`. No hay APK ni ejecución nuevos. No se publicó una release.
 - CI conserva también logs headless/render como artefacto `test-results`; el ejecutor entrega salida sin buffering.
 - `docs_index.py check`: 58 entradas, 0 errores y 0 avisos.
+
+### Cierre de las comprobaciones locales de integración
+
+Suite completa: 292 pruebas totales, 1 fallida, 32 omitidas, 1.800 comprobaciones, sin SCRIPT ERROR (1.382,3 s).
+Fallo observado: partido de IA sin disparos enfrentados por los arqueros. No se considera aprobada.
+Los cuatro partidos largos pasaron. El catálogo nuevo volvió a pasar 2/0 (78 comprobaciones).
+Informe y evidencia íntegra: `docs/integration/INFORME.md`, `docs/integration/pruebas/`.
+Integración total y APK pendientes; no se publicó ninguna release.
