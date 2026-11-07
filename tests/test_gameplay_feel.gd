@@ -222,6 +222,10 @@ func test_lateral_control_moves_the_ball_sideways_without_turning_the_body() -> 
 	var f: Footballer = r["f"]
 	var yaw0: float = f.locomotion.yaw
 	var z0: float = ctx.ball.global_position.z
+	var contact_trace: Array = []
+	f.ball_handler.touched_ball.connect(func(kind: StringName) -> void:
+		contact_trace.append({"kind": kind, "mode": f.ball_handler.last_touch_mode, "speed": f.locomotion.speed, "position": ctx.ball.global_position}))
+	note("conduccion al pedir control lateral: %s, velocidad %.2f, pelota %s, jugador %s" % [str(JsonCatalog.gait_points(true)), f.locomotion.speed, str(ctx.ball.global_position), str(f.global_position)])
 	src.move = Vector2(0.0, 0.5)       # pantalla abajo = +Z en el mundo (perpendicular al avance)
 	var held_body := false
 	var moved_side := 0.0
@@ -232,6 +236,7 @@ func test_lateral_control_moves_the_ball_sideways_without_turning_the_body() -> 
 		moved_side = ctx.ball.global_position.z - z0
 	var d: float = Vector2(ctx.ball.global_position.x - f.global_position.x, ctx.ball.global_position.z - f.global_position.z).length()
 	note("control lateral: la pelota se desplazo %.2f m de lado en 0.5 s manteniendo el cuerpo (%.0f grados de giro), distancia %.2f m" % [moved_side, rad_to_deg(absf(wrapf(f.locomotion.yaw - yaw0, -PI, PI))), d])
+	note("contactos durante control lateral: %s" % str(contact_trace))
 	check(held_body, "el cuerpo conserva su orientacion durante el control lateral")
 	check(moved_side > 0.25, "la pelota se va de verdad hacia el lado elegido (%.2f m)" % moved_side)
 	check(d < 1.0, "y sigue bajo control (%.2f m)" % d)

@@ -2290,6 +2290,9 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 	# acomoda al llegar.
 	var at_foot: bool = _ball_at_foot(off, fwd, mode)
 	var strike: int = -1
+	# El primer apoyo lateral es una accion nueva, como el de cambio de rumbo: puede entrar
+	# tras la separacion minima entre toques, sin esperar todo el ciclo anterior de carrera.
+	var lateral_entry: bool = mode == &"lateral" and last_touch_mode != &"lateral" and at_foot and touch_timer < interval - REVERSAL_TOUCH_GAP
 	if feet_live:
 		# Con el esqueleto animado el toque lo da un PIE: cuando una punta de pie baja llega a la pelota. Media vuelta (giro
 		# de mas de 100 grados) con la pelota al pie: el toque de giro no espera a la cadencia de la carrera.
@@ -2301,7 +2304,7 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 		# espera a la cadencia, si no el jugador la pisaba (medido: de caminar a correr, cuerpo a 0.07 m de la pelota).
 		# Solo conduciendo: con un golpeo pedido (setup) el toque de preparacion tiene sus reglas (kick_approach_steer).
 		var catching: bool = mode == &"carry" and _catching_ball(off, fwd, body_v, ball_v)
-		if touch_timer > interval * 0.45 and not reversal and not steer_now and not catching:
+		if touch_timer > interval * 0.45 and not reversal and not steer_now and not catching and not lateral_entry:
 			return
 		var close_in: bool = off.dot(fwd) < _foot_reach * 0.9 and (mode == &"carry" or mode == &"setup")
 		strike = _foot_strike(b, mode, close_in)
@@ -2326,7 +2329,7 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 			if not no_foot_ok or _foot_wait <= wait_max:
 				return
 	else:
-		if touch_timer > 0.0 and not (mode == &"redirect" and turn_angle > 100.0 and touch_timer < interval * 0.9 - REVERSAL_TOUCH_GAP):
+		if touch_timer > 0.0 and not lateral_entry and not (mode == &"redirect" and turn_angle > 100.0 and touch_timer < interval * 0.9 - REVERSAL_TOUCH_GAP):
 			return
 		if not at_foot:
 			return

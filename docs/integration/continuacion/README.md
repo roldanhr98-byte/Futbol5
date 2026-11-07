@@ -67,3 +67,9 @@ Pendientes: recepción rápida sin clip compatible (la revalidación aislada tod
 Footballer conserva el arranque de sprint existente y distingue joystick real de pasos automáticos de recepción. PlayerActions respeta la pose activa, da prioridad a la trayectoria entrante (incluida pelota alta), conserva la velocidad al terminar una transición y exige desplazamiento para caídas con inercia superior a 3 m/s. No elimina clips: las caídas en el sitio siguen siendo candidatas estando parado.
 
 Revalidaciones ejecutadas: banco y arranque, 6 pruebas/42 comprobaciones/0 fallos; caídas, 5/5/0; pecho, 1/4/0; transiciones, 2/46/0. La revalidación exacta de recepciones corrigió pecho y liberación tras desvío, pero todavía fallan las tres pruebas con receptor en movimiento. Hay una preparación experimental de velocidad constante fuera de este commit: 30 pruebas, 1 fallo pendiente de frenada. También quedan control lateral, comparación estadística de tiros y suite completa sobre snapshot final.
+
+## Etapa guardada: primer apoyo de control lateral
+
+BallHandler trata la entrada en control lateral como cambio de acción y conserva REVERSAL_TOUCH_GAP antes del primer apoyo. Con pies vivos exige el pie y la geometría existentes; no amplía el alcance ni mueve la pelota por código. La espera del ciclo de carrera anterior retrasaba el único toque casi hasta el final de la ventana lateral. Se conserva traza de acción, velocidad y posición en la prueba. Revalidaciones: headless 1 prueba/3 comprobaciones/0 fallos; render 1/3/0. Evidencia: lateral_headless.log y lateral_render.log.
+
+Pendientes de esta etapa: comprobar las demás pruebas de conducción en la suite final, además de la recepción rápida, la distribución de atajadas y el APK.
