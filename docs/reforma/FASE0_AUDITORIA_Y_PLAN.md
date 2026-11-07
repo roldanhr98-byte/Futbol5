@@ -26,7 +26,7 @@ Supabase.
 6. Faltan por completo: **disparo por trazo del dedo**, **barrera organizada que salte sincronizada** (hoy solo hay una
    reacción de «plantarse en barrera»), **cámaras detrás del tirador**, **cancha de fútbol 11** (las marcas actuales
    son de futsal), **menú de los dos modos**, **experiencia y niveles**, **estado de partida por turnos** para 1 contra 1.
-7. **Tus referencias son verticales (1080 × 1920) y el juego es horizontal (1280 × 720).** Es una decisión tuya (§8).
+7. Las referencias son verticales (1080 × 1920); **el usuario decidió orientación horizontal obligatoria** (§9).
 
 ## 2. Git y ramas
 
@@ -141,11 +141,33 @@ autorización**.
 
 ## 8. Decisiones que necesito de ti antes de la Fase 1
 
-1. **Orientación:** ¿vertical como tus referencias (1080 × 1920) u horizontal como hoy (1280 × 720)? Cambia cámaras,
-   interfaz y el trazo.
+1. ~~Orientación~~ — **decidido: horizontal obligatoria** (ver §9).
 2. **Rama:** propongo crear `reforma-tiros-penales` a partir de `integracion-openai` para que la reforma sea
    reversible y el partido actual quede intacto en `integracion-openai`. ¿La creo, o sigo en `integracion-openai`?
 3. **Jugador de la comparación:** propongo el humano del modo JSON (`json_human.scn`, el cuerpo que el juego usa hoy) y
    comprobar sobre él los otros dos bancos; la alternativa es el futbolista `player_base.glb`, sobre el que se
    retargetearon Mixamo y Mocap.
 4. **Partido de fútbol 5:** ¿lo dejo accesible desde un menú de desarrollo mientras dura la reforma, o solo en el código?
+
+## 9. Decisiones tomadas
+
+### 9.1 Orientación horizontal obligatoria (usuario, 2026-11-07)
+
+Tiros libres y penales se desarrollan **solo en horizontal**. Interfaz, cámaras y controles se diseñan para **16:9** y
+deben funcionar en otras relaciones de aspecto **sin deformar el campo**. No se usa orientación vertical. Las
+referencias verticales se usan solo como guía de perspectiva y secuencia, recompuestas para horizontal.
+
+Estado actual del proyecto frente a esta decisión (comprobado en `project.godot` y `match_camera.gd`):
+
+| Aspecto | Hoy | Qué cumple | Qué falta (fases 3–5) |
+|---|---|---|---|
+| Orientación | `window/handheld/orientation=0` (horizontal fija) | horizontal | opcional: horizontal con sensor (las dos rotaciones horizontales, valor 4), sin permitir vertical |
+| Tamaño base | 1280 × 720 (16:9) | 16:9 | — |
+| Interfaz | `stretch/mode="canvas_items"`, `aspect="expand"` | no se deforma: en pantallas más anchas o más altas se agrega espacio | anclar los controles a los bordes y a la zona segura (muescas en 19,5:9 y 20:9); controles del trazo sin tapar balón, barrera ni arco |
+| Cámaras 3D | `keep_aspect = KEEP_HEIGHT` | el campo nunca se estira: en pantallas más anchas que 16:9 se ve más a los costados | en pantallas más angostas que 16:9 (16:10, 4:3) se pierde campo a los costados: las cámaras nuevas deben corregir la distancia o el campo de visión para que **arco, barrera, pelota y tirador** queden siempre dentro del cuadro |
+| Trazo del dedo | no existe | — | se mide en coordenadas de pantalla normalizadas por la altura (igual en cualquier relación de aspecto) y se proyecta a la cancha con la cámara |
+
+Pruebas a agregar en las fases de cámaras e interfaz: encuadre de tiro libre y de penal en 4:3, 16:10, 16:9, 19,5:9 y
+21:9 (arco, barrera y pelota visibles, sin estiramiento: la relación entre ancho y alto de los postes se mantiene) y
+controles dentro de la pantalla en cada una.
+
