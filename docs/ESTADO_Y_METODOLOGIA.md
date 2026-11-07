@@ -1,5 +1,7 @@
 # Estado del proyecto y metodología de trabajo (traspaso entre chats)
 
+> **Actualización 2026-11-07 — guía maestra de animaciones:** el trabajo en curso está en la rama `integracion-openai` (no tocar `respaldo-f3`). Para continuar leer primero [`docs/integration/CONTINUAR_GUIA_ANIMACIONES.md`](integration/CONTINUAR_GUIA_ANIMACIONES.md).
+
 > Leer esto ANTES de tocar nada, junto con [`START_HERE.md`](START_HERE.md) y el índice técnico. Última actualización:
 > programa maestro E1-E6 (estabilización, auditoría del banco completo, conducción, golpeo, defensa y arquero, predicción
 > aérea, APK por GitHub Actions), 2026-10-31. Informe: [`fases/E_programa_maestro_informe.md`](fases/E_programa_maestro_informe.md).

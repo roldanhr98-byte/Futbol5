@@ -42,14 +42,16 @@ Herramienta: `fase0/medicion/medir_linea_base.py` (partidos IA contra IA de 10 m
 |---|---|---|
 | Fase 1 vs base, semillas 101–606 (6 + 6) | supera solo «% pérdida tras recepción animada»: 32,5 % frente a 28,1 % (límite 29,5 %) | [`comparacion_metricas.md`](comparacion_metricas.md) |
 | Fase 1 vs base, semillas 101–1212 (12 + 12) | sigue superándolo: 30,8 % frente a 25,6 % (límite 26,9 %), p = 0,17; el resto dentro | [`comparacion_metricas_12.md`](comparacion_metricas_12.md) |
+| Fase 1 vs base, semillas 101–1616 (16 + 16; la ampliación a 24 + 24 se cortó por un reinicio de la sesión tras 4 semillas más) | sigue superándolo: 30,0 % frente a 25,8 % (límite 27,1 %), p = 0,17; el resto dentro | [`comparacion_metricas_16.md`](comparacion_metricas_16.md) |
 | **Base vs base** (mismo código `04ed110`, semillas 101–606 frente a 707–1212) | la misma métrica cambia −4,9 pp (28,1 → 23,2 %) sin ningún cambio de código; «% golpeos sin contacto» da p = 0,013 | [`../fase0/comparacion_base_vs_base_s707_1212.md`](../fase0/comparacion_base_vs_base_s707_1212.md) |
 
 Dispersión por partido de la métrica: ±8,5 pp (base) y ±9,4 pp (Fase 1) con 12 partidos; el error típico de la
 diferencia de medias es ≈ 3,7 pp, del orden del umbral (+5 % relativo ≈ 1,3 pp).
 
-Estado: el umbral de la métrica está superado en la comparación de 12 partidos. Siguiendo el §10 («antes de declarar un
-aborto, repetir con más semillas»), se amplía la comparación a 24 + 24 partidos (semillas 1313–2424 en los dos
-commits). El cierre de la fase depende de ese resultado; ver `SEGUIMIENTO_ANIMACIONES.md`, etapa 1.
+Estado: el umbral de la métrica está superado con 12 y con 16 partidos por lado (p = 0,17 en ambos casos: la diferencia
+no se distingue del ruido entre partidos, pero el umbral se informa como superado). Siguiendo el §10 («antes de declarar
+un aborto, repetir con más semillas») quedan por medir las semillas 1717–2424 en los dos commits para llegar a 24 + 24.
+**La fase no está cerrada.** Instrucciones exactas: [`../CONTINUAR_GUIA_ANIMACIONES.md`](../CONTINUAR_GUIA_ANIMACIONES.md) §5.1.
 
 ## 4. Integridad
 

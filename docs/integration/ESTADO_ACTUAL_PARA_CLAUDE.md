@@ -1,5 +1,7 @@
 # Estado actual para Claude — Fútbol 5 (Godot 4.7.2)
 
+> **Actualización 2026-11-07 — guía maestra de animaciones:** el trabajo en curso está en la rama `integracion-openai` (no tocar `respaldo-f3`). Para continuar leer primero [`docs/integration/CONTINUAR_GUIA_ANIMACIONES.md`](CONTINUAR_GUIA_ANIMACIONES.md).
+
 Fecha: 2026-11-07. Rama de trabajo: `integracion-openai` (la rama `respaldo-f3` no se tocó). Este documento resume el
 estado **verificado** del proyecto después del trabajo de Codex (commits hasta `ac92f42`) y de la continuación de Claude
 (desde `65437db`). Toda cifra de pruebas sale de una ejecución real cuyo log está en

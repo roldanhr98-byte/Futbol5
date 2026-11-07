@@ -42,13 +42,38 @@ Pruebas de bloqueo y umbrales: [`AUDITORIA_PRE_IMPLEMENTACION.md`](AUDITORIA_PRE
    árbitro nuevo.
 6. **Pruebas:** suite headless 318/0 (28 omitidas, 3.036 comprobaciones, 0 fugas); 8 baterías con render 0 fallidas
    (`fase1/pruebas/`); `test_anim_trace` 8/0 (incluye «la traza no cambia ninguna decisión» y un partido real de 90 s).
-7. **Comparación:** [`fase1/FASE1_VERIFICACION.md`](fase1/FASE1_VERIFICACION.md). Con 6 y con 12 partidos por lado,
-   todo dentro de los umbrales salvo «% pérdida tras recepción animada» (12 + 12: 30,8 % frente a 25,6 %, límite
-   26,9 %, p = 0,17). La base contra sí misma (mismo código, otras semillas) mueve esa métrica −4,9 pp.
-8. **Criterios de aborto:** umbral superado en una métrica → la fase **no se cierra** todavía; confirmación con
-   24 + 24 partidos (semillas 1313–2424) en curso. Herramientas nuevas: `comparar_con_base.py` (umbrales + p de
+7. **Comparación:** [`fase1/FASE1_VERIFICACION.md`](fase1/FASE1_VERIFICACION.md). Con 6, 12 y 16 partidos por lado,
+   todo dentro de los umbrales salvo «% pérdida tras recepción animada» (16 + 16: 30,0 % frente a 25,8 %, límite
+   27,1 %, p = 0,17). La base contra sí misma (mismo código, otras semillas) mueve esa métrica −4,9 pp.
+8. **Criterios de aborto:** umbral superado en una métrica → la fase **no se cierra** todavía; falta completar 24 + 24
+   (semillas 1717–2424; la medición se cortó por un reinicio de la sesión tras 1313–1616). Herramientas nuevas: `comparar_con_base.py` (umbrales + p de
    permutación, varios archivos por lado) y `medir_linea_base.py --recalcular` (métricas nuevas de contacto p95,
    ≤ 0,20 m, ≤ 0,30 m recalculadas sobre los mismos partidos de la base; las métricas existentes no cambian).
-9. **Pendientes:** resultado de los 24 + 24 partidos; subir el tag `pre-audit-phase-0` (proxy).
+9. **Pendientes:** semillas 1717–2424 en `04ed110` y `5511cfe` y decisión de cierre (ver `CONTINUAR_GUIA_ANIMACIONES.md` §5.1); subir el tag `pre-audit-phase-0` (proxy).
 10. **Integridad:** originales 2.023/2.023; recursos 46/47 (solo `json_catalog.gd`, cambio de código); `respaldo-f3` = `3d47a07`.
 11. **Commit:** `5511cfe` (código) y el commit de esta verificación.
+
+---
+
+## Etapa 2 — Los 322 segmentos conectados pero no seleccionables (ABIERTA)
+
+1. **Estado inicial:** `5511cfe` (Fase 1, verificación pendiente de cierre).
+2. **Problema confirmado:** 322 tramos con rol y consumidor que el filtro del consumidor descarta siempre: 176 por raíz o
+   duración (situaciones), 121 por contacto no limpio, 13 sin toques medidos, 12 golpeos girando con el pie alto.
+3. **Archivos involucrados:** `scripts/animation/json_catalog.gd`; `tests/test_kick_recovery.gd` (nuevo);
+   `docs/integration/fase2/` (tabla, generador, informe).
+4. **Cambio realizado:** tabla por segmento con dato, valor, umbral, causa, acción, decisión y estado
+   ([`fase2/FASE2_DIAGNOSTICO_322.md`](fase2/FASE2_DIAGNOSTICO_322.md), `fase2/diagnostico_322.csv`). Habilitados 54
+   golpeos (108 variantes) que solo fallaban por el costado (contacto 0,50–0,72 m): `JsonCatalog.KICK_LATERAL_MAX = 0.75`
+   solo para ellos; `kick_clean_failures` detalla la condición que falla. Resto: 1 válido por otro consumidor,
+   163 válidos con contexto (149 raíz, 14 bucles), 33 con evento alternativo, 50 incompatibles, 21 pendientes de
+   revisión visual. Ninguno borrado ni desconectado.
+5. **Sistemas reutilizados:** `BallHandler.plan_clip_kick` sin cambios (sigue exigiendo que el pie llegue).
+6. **Pruebas ejecutadas:** `test_kick_recovery` headless 2/0 (54 exactos; 108/108 planificados, aceptados, contacto
+   validado e impulso; peor distancia 0,151 m); `test_anim_trace` 8/0 con el cambio. **No ejecutadas todavía:** suite
+   completa, 8 baterías con render, `test_kick_recovery` con render (pie vivo), métricas de partido.
+7. **Comparación:** pendiente (partidos con el commit de la Fase 2 contra la base de 16 o 24 partidos).
+8. **Criterios de aborto:** los del §10; especialmente p90 de contacto y % golpeos sin contacto (habilita golpeos).
+9. **Pendientes:** todo el punto 6 «no ejecutadas» y el punto 7; ver `CONTINUAR_GUIA_ANIMACIONES.md` §5.2.
+10. **Integridad:** originales 2.023/2.023 (comprobado en esta etapa); recursos 46/47 (solo `json_catalog.gd`).
+11. **Commit:** el commit «Phase 2 (open)…» que agrega este registro.

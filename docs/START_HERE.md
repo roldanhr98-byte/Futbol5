@@ -1,5 +1,7 @@
 # START HERE — guía rápida para otro chat de Claude
 
+> **Actualización 2026-11-07 — guía maestra de animaciones:** el trabajo en curso está en la rama `integracion-openai` (no tocar `respaldo-f3`). Para continuar leer primero [`docs/integration/CONTINUAR_GUIA_ANIMACIONES.md`](integration/CONTINUAR_GUIA_ANIMACIONES.md).
+
 > **Chat nuevo:** primero [`ESTADO_Y_METODOLOGIA.md`](ESTADO_Y_METODOLOGIA.md) (rama de trabajo `respaldo-f3`, fases, reglas y pendientes).
 
 > Fútbol 5 / futsal para Android. **Godot 4.7.2**, GDScript, renderer GL Compatibility, física **Jolt a 60 Hz**.
