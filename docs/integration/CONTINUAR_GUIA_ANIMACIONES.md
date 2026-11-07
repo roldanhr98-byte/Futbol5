@@ -1,5 +1,8 @@
 # Cómo continuar la guía maestra de animaciones (traspaso entre chats)
 
+> **2026-11-07, más tarde:** el usuario pidió una reforma del juego a **tiros libres y penales**, que pasa a ser la prioridad.
+> Auditoría y plan: [`../reforma/FASE0_AUDITORIA_Y_PLAN.md`](../reforma/FASE0_AUDITORIA_Y_PLAN.md). Esta guía de animaciones del partido de fútbol 5 queda en pausa.
+
 Última actualización: 2026-11-07. Escrito para que otro chat retome el trabajo sin el historial de la conversación.
 **Leer entero antes de tocar nada.**
 
