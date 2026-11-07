@@ -14,9 +14,11 @@ func test_real_shot_is_read_and_an_on_target_ball_triggers_a_save_plan() -> void
 	await physics_frames(6)
 	var v := Vector3(18.0, 0.0, 0.0)
 	ctx.ball.kick(v, ctx.ball.rolling_spin(v), shooter)
+	var windup_before: float = keeper._kick_seen_since
 	var event := GameEvent.make(GameEvent.Type.SHOT, shooter.actor_id, 0, {"dir": [1.0, 0.0], "speed": 18.0})
 	ctx.emit_event(event)
 	ctx.emit_event(event)
+	check(keeper._kick_seen_since == windup_before, "el aviso no inventa ni borra anticipacion anterior al golpe")
 	check(keeper.stats["shots_seen"] == 1, "el tiro real se lee una vez, incluso con notificacion duplicada")
 	var planned: bool = false
 	for i in 90:

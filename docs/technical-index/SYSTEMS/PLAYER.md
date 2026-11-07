@@ -127,21 +127,21 @@ Ver la tabla «Valores fijos» de [ARCHITECTURE.md](../ARCHITECTURE.md) (carga d
 | `Footballer.place_at(pos: Vector3, yaw: float)` | 190 |  |
 | `Footballer._physics_process(delta: float)` | 203 |  |
 | `Footballer._player_step(delta: float)` | 208 |  |
-| `Footballer._json_idle(stick_mag: float, delta: float)` | 496 |  |
-| `Footballer._json_turn_move(desired_dir: Vector3, desired_mag: float, delta: float)` | 518 |  |
-| `Footballer._keep_inside(dir: Vector3)` | 554 | Quita la componente que saca al jugador mas alla de las lineas (con medio metro de margen). |
-| `Footballer._ai_commits_tackle(carrier: Footballer)` | 567 | La IA no disputa en cada ocasion: contiene (jockey) y entra cuando la pelota queda expuesta (toque largo del portador, pelota suelta) o, con |
-| `Footballer._skill_is_drag_back(frame: InputFrame)` | 576 | El boton REGATE pide la vuelta pisando la pelota cuando el joystick apunta hacia atras (>= DragBack.MIN_ANGLE grados del frente) con la pelo |
-| `Footballer._json_clip_slides(cur: StringName, delta: float)` | 589 |  |
-| `Footballer._gait_overlays(desired_dir: Vector3, want_sprint: bool, stick_mag: float, speed_before: float, delta: float)` | 600 |  |
-| `Footballer._cancel_reaction()` | 644 |  |
-| `Footballer._on_match_event(e: GameEvent)` | 655 | Reacciones de presentacion a eventos del partido: - Gol: el goleador, el asistente, el resto del equipo y el rival reaccionan distinto (un a |
-| `Footballer._try_block_jump(e: GameEvent)` | 697 |  |
-| `Footballer.rng_delay()` | 712 |  |
-| `Footballer._set_reaction(situation: StringName, wait: float, cut: float)` | 715 |  |
-| `Footballer._update_reaction(delta: float)` | 722 | La reaccion a un gol arranca cuando el jugador casi se ha detenido (o tras REACTION_MAX_WAIT) para no animar un clip en el sitio sobre un cu |
-| `Footballer._check_player_collisions()` | 736 | Un choque a velocidad con otro jugador provoca un tropiezo (presentacion) o, si es fuerte, un golpe de hombro y caida. |
-| `Footballer.capture_state()` | 758 | Datos replicables del jugador (para snapshots de red / pruebas). |
+| `Footballer._json_idle(stick_mag: float, delta: float)` | 499 |  |
+| `Footballer._json_turn_move(desired_dir: Vector3, desired_mag: float, delta: float)` | 521 |  |
+| `Footballer._keep_inside(dir: Vector3)` | 557 | Quita la componente que saca al jugador mas alla de las lineas (con medio metro de margen). |
+| `Footballer._ai_commits_tackle(carrier: Footballer)` | 570 | La IA no disputa en cada ocasion: contiene (jockey) y entra cuando la pelota queda expuesta (toque largo del portador, pelota suelta) o, con |
+| `Footballer._skill_is_drag_back(frame: InputFrame)` | 579 | El boton REGATE pide la vuelta pisando la pelota cuando el joystick apunta hacia atras (>= DragBack.MIN_ANGLE grados del frente) con la pelo |
+| `Footballer._json_clip_slides(cur: StringName, delta: float)` | 592 |  |
+| `Footballer._gait_overlays(desired_dir: Vector3, want_sprint: bool, stick_mag: float, speed_before: float, delta: float)` | 603 |  |
+| `Footballer._cancel_reaction()` | 647 |  |
+| `Footballer._on_match_event(e: GameEvent)` | 658 | Reacciones de presentacion a eventos del partido: - Gol: el goleador, el asistente, el resto del equipo y el rival reaccionan distinto (un a |
+| `Footballer._try_block_jump(e: GameEvent)` | 700 |  |
+| `Footballer.rng_delay()` | 715 |  |
+| `Footballer._set_reaction(situation: StringName, wait: float, cut: float)` | 718 |  |
+| `Footballer._update_reaction(delta: float)` | 725 | La reaccion a un gol arranca cuando el jugador casi se ha detenido (o tras REACTION_MAX_WAIT) para no animar un clip en el sitio sobre un cu |
+| `Footballer._check_player_collisions()` | 739 | Un choque a velocidad con otro jugador provoca un tropiezo (presentacion) o, si es fuerte, un golpe de hombro y caida. |
+| `Footballer.capture_state()` | 761 | Datos replicables del jugador (para snapshots de red / pruebas). |
 <!-- /AUTO -->
 
 <!-- AUTO:funcs:scripts/player/locomotion.gd -->

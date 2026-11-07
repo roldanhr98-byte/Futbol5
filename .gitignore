@@ -36,3 +36,4 @@ scratch/
 
 # Salidas de la firma/exportacion Android
 *.keystore.base64.txt
+node_modules/

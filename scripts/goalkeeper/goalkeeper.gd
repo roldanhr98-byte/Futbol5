@@ -1347,7 +1347,8 @@ func _notice_real_shot(event: GameEvent) -> void:
 		return
 	_last_shot_notice = key
 	stats["shots_seen"] += 1
-	_kick_seen_since = _clock
+	# El aviso confirma el disparo; no es una anticipacion del armado anterior al golpe.
+	# Se conserva el tiempo observado por _watch_kickers, si existio.
 	_next_plan_at = -1.0
 	if state == State.TURNING:
 		_motion.stop()
@@ -1397,7 +1398,12 @@ func start_orientation_turn(id: StringName) -> bool:
 	return true
 
 func _tick_turn(delta: float) -> void:
-	if ctx.ball.ground_speed() >= _tune.shot_min_speed or global_position.distance_to(ctx.ball.global_position) < 4.0:
+	# Una reposicion o un cambio de trayectoria invalida el destino del giro en curso.
+	# Se compara el rumbo final planificado, no todo el giro con el rumbo ya avanzado.
+	var target_yaw: float = Locomotion.yaw_from_dir(KickModel.flat(ctx.ball.global_position - global_position).normalized())
+	var planned_yaw: float = _motion.yaw0 + _motion.heading_at(_motion.length)
+	var target_changed: bool = absf(wrapf(target_yaw - planned_yaw, -PI, PI)) > deg_to_rad(12.0)
+	if target_changed or ctx.ball.ground_speed() >= _tune.shot_min_speed or global_position.distance_to(ctx.ball.global_position) < 4.0:
 		_motion.stop()
 		visual.stop_current_action()
 		state = State.POSITION

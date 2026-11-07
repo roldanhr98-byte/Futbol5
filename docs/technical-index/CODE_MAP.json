@@ -825,7 +825,7 @@
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer.capture_state",
-          "line": 758,
+          "line": 761,
           "kind": "func"
         }
       ],
@@ -2517,7 +2517,9 @@
       "files": [
         "scripts/gameplay/match_manager.gd",
         "scripts/gameplay/match_scene.gd",
-        "scenes/main/match.tscn"
+        "scenes/main/match.tscn",
+        "scripts/gameplay/match_presentation.gd",
+        "resources/animation/environment_routes.json"
       ],
       "symbols": [
         {
@@ -3590,7 +3592,7 @@
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer._on_match_event",
-          "line": 655,
+          "line": 658,
           "kind": "func"
         }
       ],
@@ -5025,7 +5027,7 @@
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer._skill_is_drag_back",
-          "line": 576,
+          "line": 579,
           "kind": "func"
         }
       ],
@@ -5722,13 +5724,13 @@
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer._json_turn_move",
-          "line": 518,
+          "line": 521,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer._json_idle",
-          "line": 496,
+          "line": 499,
           "kind": "func"
         },
         {

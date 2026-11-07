@@ -527,7 +527,7 @@ func _json_turn_move(desired_dir: Vector3, desired_mag: float, delta: float, inp
 		_transition_input_started = false
 	# Los pasos automaticos de recepcion/acomodo no son una orden de locomocion nueva.
 	var transition_intent: bool = input_mag >= 0.2 or (_transition_input_started and desired_mag < 0.2)
-	if transition_intent and _turn_cd <= 0.0 and actions.try_locomotion_transition(desired_dir, desired_mag):
+	if transition_intent and _turn_cd <= 0.0 and actions.try_locomotion_transition(desired_dir, input_mag):
 		_turn_cd = JSON_TURN_COOLDOWN if is_human_controlled else JSON_TURN_COOLDOWN_AI
 		return
 	if _turn_cd > 0.0 or desired_mag < 0.5 or desired_dir.length_squared() < 0.01 or not actions.can_start(&"turn") or ball_handler.has_possession():

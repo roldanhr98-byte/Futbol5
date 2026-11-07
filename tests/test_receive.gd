@@ -22,6 +22,19 @@ func _restore() -> void:
 	Tuning.gameplay_mode = 1
 	PackLibrary.reload()
 
+## Las trayectorias de estas pruebas apuntan a velocidad constante. Se espera la estabilizacion real
+## despues del arranque con raiz antes de calcular el punto de llegada de la pelota.
+func _steady_run(p: Footballer) -> void:
+	var previous: Vector3 = p.velocity
+	var stable: int = 0
+	for i in 120:
+		await tree.physics_frame
+		stable = stable + 1 if p.velocity.distance_to(previous) < 0.02 and not p.actions.active() else 0
+		previous = p.velocity
+		if stable >= 6:
+			break
+	check(stable >= 6, "el receptor alcanza una carrera estable antes del lanzamiento")
+
 ## Escena: un jugador en ME mirando a +X (con un compañero a +X a 8 m para los pases), la pelota sale rodando desde `ang`
 ## grados (respecto al frente, + izquierda) a `dist` m, apuntada adonde estara el jugador. run: joystick de marcha previa
 ## hacia +X; stick: joystick durante la recepcion (coordenadas de pantalla = x, z del mundo).
@@ -29,7 +42,7 @@ func _setup(ang: float, spd: float, seed: int, run: float = 0.0, stick: Vector2 
 	_mode4()
 	var from: Vector3 = FACE.rotated(Vector3.UP, deg_to_rad(ang))
 	var start: Vector3 = ME + from * dist
-	var ctx: MatchContext = await make_match(start + Vector3(0, 0.11, 0))
+	var ctx: MatchContext = await make_match(start + Vector3(0, 100.0 if run > 0.0 else 0.11, 0))
 	var src := ScriptedInput.new()
 	var p: Footballer = add_player(ctx, 0, ME, 60, src, true)
 	var mate: Footballer = add_player(ctx, 0, ME + Vector3(8.0, 0.0, 3.0), 60, ScriptedInput.new(), true)
@@ -41,7 +54,18 @@ func _setup(ang: float, spd: float, seed: int, run: float = 0.0, stick: Vector2 
 	if run > 0.0:
 		src.move = Vector2(run, 0.0)
 		await physics_frames(40)
-	var t_arrive: float = start.distance_to(p.global_position) / spd
+		await _steady_run(p)
+		# La pelota no participa del calentamiento: se coloca delante de la posicion ACTUAL del receptor.
+		start = p.global_position + from * dist
+		ctx.ball.reset_at(start + Vector3(0, 0.11, 0))
+		await physics_frames(1)
+	var rel: Vector3 = KickModel.flat(p.global_position - start)
+	var rv: Vector3 = KickModel.flat(p.velocity)
+	var qa: float = rv.length_squared() - spd * spd
+	var qb: float = 2.0 * rel.dot(rv)
+	var discriminant: float = qb * qb - 4.0 * qa * rel.length_squared()
+	var t_arrive: float = (-qb - sqrt(maxf(discriminant, 0.0))) / (2.0 * qa)
+	check(discriminant >= 0.0 and t_arrive > 0.0, "el lanzamiento intercepta la trayectoria del receptor")
 	var aim: Vector3 = p.global_position + p.velocity * t_arrive + Vector3(-from.z, 0.0, from.x) * lat
 	var dir: Vector3 = KickModel.flat(aim - start).normalized()
 	ctx.ball.kick(dir * spd, ctx.ball.rolling_spin(dir * spd), null)
@@ -55,7 +79,7 @@ func _run(s: Dictionary, frames: int, stop_after: int = 0) -> Dictionary:
 	var ctx: MatchContext = s["ctx"]
 	var p: Footballer = s["p"]
 	var rv: JsonReceive = p.ball_handler.receive
-	var r := {"clip": &"", "start": -1, "contact": -1, "bpos": [], "bvel": [], "pspeed": [], "levels": [], "plan": {}, "planned_ft": 0, "physical_ft": 0}
+	var r := {"clip": &"", "start": -1, "contact": -1, "bpos": [], "bvel": [], "pspeed": [], "states": [], "levels": [], "plan": {}, "planned_ft": 0, "physical_ft": 0}
 	ctx.event_emitted.connect(func(e: GameEvent) -> void:
 		if e.type == GameEvent.Type.FIRST_TOUCH and e.actor_id == p.actor_id:
 			if e.data.get("planned", false):
@@ -73,6 +97,7 @@ func _run(s: Dictionary, frames: int, stop_after: int = 0) -> Dictionary:
 		(r["bpos"] as Array).append(ctx.ball.global_position)
 		(r["bvel"] as Array).append(ctx.ball.linear_velocity)
 		(r["pspeed"] as Array).append(p.locomotion.speed)
+		(r["states"] as Array).append({"action": p.actions.kind, "clip": p.actions.motion.clip, "turn": p.ball_handler.ball_turn.active(), "touch": p.ball_handler.last_touch_mode, "position": p.global_position, "ball": ctx.ball.global_position})
 		(r["levels"] as Array).append(p.arbiter.level)
 		if stop_after > 0 and r["contact"] >= 0 and i >= int(r["contact"]) + stop_after:
 			break
@@ -121,8 +146,12 @@ func _moving_without_compatible_clip(run: float, label: String) -> void:
 	var r: Dictionary = await _run(s, 150)
 	var dv: float = float(r["plan"].get("dv", 0.0))
 	var min_speed: float = 99.0
+	var min_state := {}
 	for i in mini((r["pspeed"] as Array).size(), 60):
-		min_speed = minf(min_speed, float(r["pspeed"][i]))
+		if float(r["pspeed"][i]) < min_speed:
+			min_speed = float(r["pspeed"][i])
+			min_state = r["states"][i]
+	note("estado de minima velocidad en recepcion: %s" % str(min_state))
 	note("%s a %.2f m/s: clip %s, primer toque fisico %d, del clip %d, velocidad minima %.2f m/s, pelota a %.2f m" % [label, speed0, r["clip"], r["physical_ft"], r["planned_ft"], min_speed, _ball_dist(s)])
 	check(r["clip"] == &"" or dv <= JsonReceive.MAX_DV, "no se fuerza un clip de otra carrera (%s, diferencia %.2f)" % [r["clip"], dv])
 	check(r["physical_ft"] + r["planned_ft"] >= 1, "la pelota se controla igual (primer toque)")
@@ -499,7 +528,7 @@ func test_live_foot_meets_the_ball() -> void:
 func _setup_air(h: float, vh: float, dist: float, ang: float, seed: int, run: float = 0.0) -> Dictionary:
 	_mode4()
 	var from: Vector3 = FACE.rotated(Vector3.UP, deg_to_rad(ang))
-	var ctx: MatchContext = await make_match(ME + from * dist + Vector3(0, 0.11, 0))
+	var ctx: MatchContext = await make_match(ME + from * dist + Vector3(0, 100.0 if run > 0.0 else 0.11, 0))
 	var src := ScriptedInput.new()
 	var p: Footballer = add_player(ctx, 0, ME, 60, src, true)
 	var mate: Footballer = add_player(ctx, 0, ME + Vector3(8.0, 0.0, 3.0), 60, ScriptedInput.new(), true)
@@ -509,6 +538,9 @@ func _setup_air(h: float, vh: float, dist: float, ang: float, seed: int, run: fl
 	if run > 0.0:
 		src.move = Vector2(run, 0.0)
 		await physics_frames(40)
+		await _steady_run(p)
+		ctx.ball.reset_at(p.global_position + from * dist + Vector3(0, 0.11, 0))
+		await physics_frames(1)
 	var tt: float = dist / vh
 	var start: Vector3 = ctx.ball.global_position
 	var dir: Vector3 = KickModel.flat(p.global_position + p.velocity * tt - start).normalized()

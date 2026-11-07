@@ -110,7 +110,7 @@ func react_to_ball_impact(ball: Ball) -> bool:
 func transition_score(id: StringName, desired_dir: Vector3, magnitude: float) -> float:
 	var m: Dictionary = PackLibrary.meta(id)
 	var role := StringName(String(m.get("role", "")))
-	if not LOCOMOTION_TRANSITIONS.has(role) or not can_start(&"turn") or owner.ball_handler.has_possession() \
+	if not LOCOMOTION_TRANSITIONS.has(role) or not can_start(&"turn") or owner.ball_handler.is_dribbling() \
 			or owner.has_incoming_pass() or not is_inf(owner.ball_handler.incoming_ball_eta()) or owner.ball_handler.is_kick_in_progress() or owner.ball_handler._pending_action != &"":
 		return INF
 	if owner.ctx.ball == null or KickModel.flat(owner.ctx.ball.global_position - owner.global_position).length() < 2.0 or not _lands_inside(id):
@@ -155,7 +155,7 @@ func try_locomotion_transition(desired_dir: Vector3, magnitude: float) -> bool:
 		var eta: float = -rel.dot(incoming) / maxf(incoming.length_squared(), 0.001)
 		if eta > 0.0 and eta < BallHandler.PENDING_FIRST_TIME_MAX and (rel + incoming * eta).length() < owner.ball_handler.possession_radius():
 			return false
-	if not can_start(&"turn") or owner.ball_handler.has_possession() or owner.has_incoming_pass() or not is_inf(owner.ball_handler.incoming_ball_eta()) \
+	if not can_start(&"turn") or owner.ball_handler.is_dribbling() or owner.has_incoming_pass() or not is_inf(owner.ball_handler.incoming_ball_eta()) \
 			or owner.ball_handler.is_kick_in_progress() or owner.ball_handler._pending_action != &"":
 		return false
 	if magnitude < 0.2 and owner.locomotion.speed < 0.2:
