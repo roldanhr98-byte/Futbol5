@@ -126,7 +126,7 @@ func _build_pause_menu(root: Control) -> void:
 	_pause_panel = PanelContainer.new()
 	_pause_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	_pause_panel.custom_minimum_size = Vector2(760, 0)
-	_pause_panel.position = Vector2(-380, -290)
+	_pause_panel.position = Vector2(-380, -320)
 	_pause_panel.visible = false
 	root.add_child(_pause_panel)
 	var vb := VBoxContainer.new()
@@ -137,17 +137,26 @@ func _build_pause_menu(root: Control) -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 38)
 	vb.add_child(title)
+	# Con las opciones de rendimiento los botones ya no caben en 720 de alto: la grilla se desplaza con el dedo.
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(740, 540)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vb.add_child(scroll)
 	var grid := GridContainer.new()
 	grid.columns = 2
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	grid.add_theme_constant_override("h_separation", 10)
 	grid.add_theme_constant_override("v_separation", 8)
-	vb.add_child(grid)
+	scroll.add_child(grid)
 	_add_menu_button(grid, "resume", "Continuar", func() -> void: manager.toggle_pause())
 	_add_menu_button(grid, "restart_play", "Reiniciar jugada", func() -> void: _close_pause(); restart_play_requested.emit())
 	_add_menu_button(grid, "restart_match", "Reiniciar partido", func() -> void: _close_pause(); restart_match_requested.emit())
 	_add_menu_button(grid, "training", "", func() -> void: _close_pause(); training_toggle_requested.emit())
 	_add_menu_button(grid, "practice", "Práctica de animaciones", func() -> void: _close_pause(); practice_requested.emit())
 	_add_menu_button(grid, "graphics", "", func() -> void: _cycle_graphics())
+	_add_menu_button(grid, "resolution", "", func() -> void: GraphicsSettings.cycle_resolution(); _refresh_menu_labels())
+	_add_menu_button(grid, "fps_cap", "", func() -> void: GraphicsSettings.cycle_fps_cap(); _refresh_menu_labels())
+	_add_menu_button(grid, "shadows", "", func() -> void: GraphicsSettings.cycle_shadows(); _refresh_menu_labels())
 	_add_menu_button(grid, "diagnostics", "", func() -> void: _toggle_diagnostics())
 	_add_menu_button(grid, "assist_pass", "", func() -> void: _cycle_assist("pass"))
 	_add_menu_button(grid, "assist_shot", "", func() -> void: _cycle_assist("shot"))
@@ -184,6 +193,9 @@ func _level_index(v: float) -> int:
 
 func _refresh_menu_labels() -> void:
 	(_pause_buttons["graphics"] as Button).text = "Gráficos: %s (res. 3D %d %%)" % [GraphicsSettings.profile_name(), int(round(get_tree().root.scaling_3d_scale * 100.0))]
+	(_pause_buttons["resolution"] as Button).text = "Resolución: %d %%" % int(round(GraphicsSettings.resolution_override * 100.0))
+	(_pause_buttons["fps_cap"] as Button).text = "Imágenes por segundo: %d%s" % [GraphicsSettings.fps_cap, " (estables)" if GraphicsSettings.fps_cap < 60 else ""]
+	(_pause_buttons["shadows"] as Button).text = "Sombras: %s" % ["No", "Sí", "según gráficos (%s)" % ("sí" if GraphicsSettings.shadows_enabled() else "no")][GraphicsSettings.shadows_mode if GraphicsSettings.shadows_mode >= 0 else 2]
 	(_pause_buttons["assist_pass"] as Button).text = "Asistencia de pase: %s" % LEVEL_NAMES[_level_index(Tuning.assist.pass_assist)]
 	(_pause_buttons["assist_shot"] as Button).text = "Asistencia de tiro: %s" % LEVEL_NAMES[_level_index(Tuning.assist.shot_assist)]
 	(_pause_buttons["assist_press"] as Button).text = "Asistencia de presión: %s" % LEVEL_NAMES[_level_index(Tuning.assist.press_assist)]
@@ -193,6 +205,8 @@ func _refresh_menu_labels() -> void:
 	(_pause_buttons["camera_zoom"] as Button).text = "Zoom de cámara: %s" % Tuning.CAMERA_ZOOM_NAMES[_nearest_index(Tuning.CAMERA_ZOOMS, Tuning.camera_zoom)]
 	(_pause_buttons["sound"] as Button).text = "Sonido: %s" % ("Sí" if Tuning.sound_on else "No")
 	(_pause_buttons["gameplay_mode"] as Button).text = "Modo de juego: %s" % Tuning.GAMEPLAY_MODE_NAMES.get(Tuning.gameplay_mode, str(Tuning.gameplay_mode))
+	# Con un solo modo jugable no hay nada que elegir: el boton no se muestra (no ofrece los modos descartados).
+	(_pause_buttons["gameplay_mode"] as Button).visible = Tuning.PLAYABLE_MODES.size() > 1
 	(_pause_buttons["training"] as Button).text = "Volver al partido" if MatchScene.training_mode else "Entrenamiento sin rivales"
 	(_pause_buttons["diagnostics"] as Button).text = "Diagnóstico: %s" % ("ACTIVADO" if Tuning.show_diagnostics else "desactivado")
 
@@ -225,10 +239,10 @@ func _cycle_camera_zoom() -> void:
 	Tuning.save_user_settings()
 	_refresh_menu_labels()
 
-## Modo de jugabilidad (1 pack actual / 2 mocap de futbol / 3 Tripo): se guarda y el partido se vuelve a montar (cada
-## modo tiene sus modelos y clips).
+## Modo de jugabilidad entre los jugables (Tuning.PLAYABLE_MODES; hoy solo el 4, y el boton no se muestra): se guarda y el
+## partido se vuelve a montar (cada modo tiene sus modelos y clips).
 func _cycle_gameplay_mode() -> void:
-	var opts: Array = Tuning.GAMEPLAY_MODES
+	var opts: Array = Tuning.PLAYABLE_MODES
 	Tuning.gameplay_mode = opts[(opts.find(Tuning.gameplay_mode) + 1) % opts.size()]
 	Tuning.save_user_settings()
 	_refresh_menu_labels()

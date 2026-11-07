@@ -2,6 +2,10 @@ extends TestCase
 ## Sistema de animacion unico: marcha y acciones con el pack de Mixamo si la libreria local existe, y Tripo como
 ## respaldo. Las pruebas del camino del pack se OMITEN sin la libreria (recurso restringido, no versionado).
 
+## Sistema del modo 1 (pack de Mixamo / Tripo), descartado como modo de juego pero todavia en el codigo: se prueba en su modo.
+func gameplay_mode() -> int:
+	return 1
+
 func _visual_player(use_pack: bool) -> Dictionary:
 	FootballerVisual.prefer_pack = use_pack
 	var ctx: MatchContext = await make_match(Vector3(30.0, 0.11, 5.0))

@@ -26,8 +26,9 @@ const KICK_SAFE_TIME := 0.18
 const DESPERATE_SECONDS := 0.9
 ## Distancia (m) de un rival a partir de la cual el portador busca pase inmediato.
 const PASS_PRESSURE_DIST := 3.0
-## Segundos conduciendo tras los que se suelta la pelota aunque no haya presion (futbol de toque, no de carreras).
-const CARRY_PATIENCE := 2.2
+## Segundos conduciendo tras los que se suelta la pelota aunque no haya presion (futbol de toque, no de carreras): el bot
+## de UCS golpea entre 0.5 y 2 s despues de tener la pelota (BotMinKickFrames / BotMaxKickFrames, UcsParams).
+const CARRY_PATIENCE := UcsParams.BOT_MAX_KICK_S
 ## Segundos con la pelota muerta tras los que la jugada se considera atascada y todos van a por ella.
 const BALL_STALL_SECONDS := 1.5
 
@@ -311,7 +312,9 @@ func _follow_order(f: Footballer, ctx: MatchContext, order: Dictionary, carrier:
 	var target: Vector3 = order["target"]
 	match role:
 		&"press", &"chase":
-			# A por la pelota / al portador: la presion calcula el punto de intercepcion, la contencion y el robo.
+			# A por la pelota / al portador: la presion calcula el punto de intercepcion, la contencion y el robo. (El 95 % de
+			# PressureSpeedRate de UCS como velocidad de carrera cambiaba los tiros con un defensor encima, test_shot_keeper;
+			# su significado es inferido y no se aplica a la velocidad.)
 			var to_ball: Vector3 = bpos - pos
 			_dir = to_ball.normalized() if to_ball.length() > 0.2 else Vector3.ZERO
 			_mag = 1.0
@@ -340,6 +343,13 @@ func _follow_order(f: Footballer, ctx: MatchContext, order: Dictionary, carrier:
 			_move_to(f, target, 1.0)
 			_sprint = bool(order["sprint"])
 			_make_way(f, carrier)
+			return true
+		&"press2":
+			# Segundo en presionar (UCS: hasta dos presionan, uno solo entra): cierra el camino al arco junto al portador,
+			# sin entrar.
+			_run_left = 0.0
+			_move_to(f, target, 1.0)
+			_sprint = bool(order["sprint"])
 			return true
 		&"cover", &"block", &"hold":
 			_run_left = 0.0
@@ -432,14 +442,42 @@ func _decide_dead_ball(f: Footballer, ctx: MatchContext, atk: Vector3, pos: Vect
 	var target: Vector3
 	if taker_team == f.team:
 		target = _support_spot(f, taker as Footballer, atk) if taker is Footballer else _anchor(f, true)
+		# Nadie salvo el ejecutor dentro de la carrerilla: el apoyo corto se ofrece desde fuera de SetPiece.CLEAR_RADIUS
+		# (antes el companero se acercaba a 1.9 m de la pelota y se metia en la carrera del ejecutor).
+		var off: Vector3 = target - bpos
+		var mine: Vector3 = pos - bpos
+		if mine.length() < SetPiece.CLEAR_RADIUS + 1.0:
+			# Ya esta cerca: sale en linea recta alejandose de la pelota (ir a un apoyo del otro lado cruzaria la carrerilla).
+			target = bpos + (mine.normalized() if mine.length() > 0.1 else -atk) * (SetPiece.CLEAR_RADIUS + 1.0)
+		elif off.length() < SetPiece.CLEAR_RADIUS + 0.3:
+			target = bpos + (off.normalized() if off.length() > 0.1 else mine.normalized()) * (SetPiece.CLEAR_RADIUS + 0.3)
 	else:
 		var mark: Vector3 = _mark_spot(f, ctx, atk)
 		target = mark if mark.length_squared() > 0.01 else _anchor(f, false)
 		var away: Vector3 = target - bpos
 		if away.length() < 5.2:
 			target = bpos + (away.normalized() if away.length() > 0.1 else -atk) * 5.2
+		var mine_r: Vector3 = pos - bpos
+		if mine_r.length() < 5.0:
+			# Dentro de la distancia: sale en linea recta alejandose de la pelota.
+			target = bpos + (mine_r.normalized() if mine_r.length() > 0.1 else -atk) * 5.4
+	# Con la pelota muerta nadie cruza la zona de la pelota para llegar a su sitio: la rodea (antes un rival atravesaba
+	# la carrerilla a 2.7 m de la pelota camino de su marca).
+	var keep: float = (SetPiece.CLEAR_RADIUS + 0.3) if taker_team == f.team else 5.2
+	target = _around_ball(pos, target, bpos, keep)
 	target = ctx.pitch.clamp_to_pitch(target, 0.6)
 	_move_to(f, target, 0.7)
+
+## Si el camino recto de pos a target pasa a menos de `radius` de la pelota, devuelve un punto intermedio sobre el
+## circulo de ese radio, avanzando alrededor de la pelota hacia el lado del objetivo (como mucho ~50 grados por decision).
+func _around_ball(pos: Vector3, target: Vector3, bpos: Vector3, radius: float) -> Vector3:
+	var c: Vector3 = Geometry3D.get_closest_point_to_segment(bpos, pos, target)
+	if KickModel.flat(c - bpos).length() >= radius - 0.05:
+		return target
+	var a0: float = atan2(pos.z - bpos.z, pos.x - bpos.x)
+	var a1: float = atan2(target.z - bpos.z, target.x - bpos.x)
+	var a: float = a0 + clampf(wrapf(a1 - a0, -PI, PI), -0.9, 0.9)
+	return bpos + Vector3(cos(a), 0.0, sin(a)) * (radius + 0.2)
 
 func _decide_with_ball(f: Footballer, ctx: MatchContext, atk: Vector3) -> void:
 	var pos: Vector3 = _flat(f.global_position)
@@ -498,7 +536,7 @@ func _decide_with_ball(f: Footballer, ctx: MatchContext, atk: Vector3) -> void:
 			var want: bool = false
 			if desperate or opp_near < PASS_PRESSURE_DIST:
 				want = true                                   # con un rival encima, la pelota circula
-			elif gain > 2.0 and _carry_time > 0.6:
+			elif gain > 2.0 and _carry_time > UcsParams.BOT_MIN_KICK_S:
 				want = rng.randf() < 0.45 * (0.6 + skill)     # el companero progresa la jugada
 			elif _carry_time > CARRY_PATIENCE:
 				want = true                                   # lleva demasiado con la pelota
@@ -602,7 +640,7 @@ func _chaser(f: Footballer, ctx: MatchContext) -> Footballer:
 			continue
 		# El jugador que maneja la persona decide por si mismo: la IA nunca cuenta con el para ir a buscar la pelota
 		# (si no, el equipo se queda parado esperando a un companero que quiza no se mueve).
-		if p.is_human_controlled:
+		if TeamBrain.person_drives(p):
 			continue
 		var t: float = Vector2(p.global_position.x - target.x, p.global_position.z - target.z).length() / maxf(p.locomotion.max_run_speed(), 1.0)
 		# El cierre solo sale si la pelota esta en su mitad o muy cerca.

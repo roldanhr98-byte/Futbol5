@@ -119,12 +119,21 @@ func test_save_rate_depends_on_speed_and_placement() -> void:
 			var ty: float = r.randf_range(0.2, 1.8)
 			var from := Vector3(10.0, 0.15 + r.randf_range(0.0, 0.8), r.randf_range(-3.0, 3.0))
 			await _shoot(ctx, from, Vector3(20.6, ty, tz), speed)
-			await wait_seconds(1.6)
-			if k.stats["catches"] + k.stats["parries"] > 0:
+			# Tiros al arco: los que el arquero ataja o los que cruzan la linea entre los palos. Uno lento que se frena antes
+			# del arco no es un tiro al arco (antes contaba como no atajado).
+			var crossed: bool = false
+			for i in 96:
+				await tree.physics_frame
+				var bp: Vector3 = ctx.ball.global_position
+				if bp.x > 20.0 and absf(bp.z) < ctx.pitch.config.half_goal() and bp.y < ctx.pitch.config.goal_height:
+					crossed = true
+			var saved: bool = k.stats["catches"] + k.stats["parries"] > 0
+			if saved:
 				saved_n += 1
-			n += 1
+			if saved or crossed:
+				n += 1
 			cleanup()
-		results[speed] = float(saved_n) / n
+		results[speed] = float(saved_n) / maxf(n, 1)
 		note("velocidad %.0f m/s: el arquero detiene %d de %d tiros al arco (%.0f %%)" % [speed, saved_n, n, 100.0 * results[speed]])
 	check(results[9.0] >= 0.6, "los tiros suaves se detienen en su mayoria (%.0f %%)" % (100.0 * results[9.0]))
 	check(results[24.0] < results[9.0], "un tiro mas fuerte es mas dificil de detener")

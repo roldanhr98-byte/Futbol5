@@ -26,18 +26,25 @@ func test_training_has_only_my_team_and_the_rival_keeper() -> void:
 	var worst := 0.0
 	var set_piece_teams := {}
 	m.manager.set_piece_requested.connect(func(kind: String, team: int, _p: Vector3) -> void: set_piece_teams["%s/%d" % [kind, team]] = true)
+	var play_s := 0.0
 	for i in 150 * 60:
 		await tree.physics_frame
 		if m.replay.playing:
 			continue
+		if m.manager.state == MatchManager.State.PLAYING:
+			play_s += 1.0 / 60.0
 		if m.manager.state == MatchManager.State.PLAYING and m.ball.linear_velocity.length() < 0.6 and not m.ball.is_held():
 			still += 1.0 / 60.0
 		else:
 			still = 0.0
 		worst = maxf(worst, still)
-	note("150 s de entrenamiento: eventos %s | marcador %s | saques %s | pelota quieta max %.1f s" % [str(counts), str(m.manager.score), str(set_piece_teams.keys()), worst])
+	note("150 s de entrenamiento (%.0f s en juego): eventos %s | marcador %s | saques %s | pelota quieta max %.1f s" % [play_s, str(counts), str(m.manager.score), str(set_piece_teams.keys()), worst])
 	check(m.manager.state != MatchManager.State.FULL_TIME, "el entrenamiento no termina solo")
-	check(int(counts.get("PASS", 0)) >= 5, "hay pases (%d)" % int(counts.get("PASS", 0)))
+	# Pases por minuto EN JUEGO (2/min = los 5 en 150 s de antes): cada gol se lleva su repeticion, el festejo y el saque,
+	# asi que con un arquero que ya no lo ataja todo (6 goles en 9 tiros) contar sobre los 150 s castigaba los goles.
+	var passes: int = int(counts.get("PASS", 0))
+	var per_min: float = float(passes) * 60.0 / maxf(play_s, 1.0)
+	check(passes >= 3 and per_min >= 2.0, "hay pases (%d en %.0f s de juego: %.1f por minuto)" % [passes, play_s, per_min])
 	# Llegadas al arco: tiros, goles y pelotas que el arquero ataja o se lleva en el mano a mano (sin rivales la IA suele
 	# llegar hasta el arquero, que sale a achicar, en vez de tirar de lejos).
 	var attempts: int = int(counts.get("SHOT", 0)) + int(counts.get("GOAL", 0)) + int(counts.get("SAVE", 0))

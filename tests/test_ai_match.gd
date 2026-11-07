@@ -12,8 +12,19 @@ func _scene(duration: float) -> MatchScene:
 	return m
 
 func test_ai_teams_play_a_real_match_without_getting_stuck() -> void:
+	await _ai_match(false)
+
+## La misma prueba en la cancha del juego (futbol 7 de 50 x 30 con arcos de 5 m): las demas pruebas usan la de futsal.
+func test_ai_match_on_the_game_pitch() -> void:
+	use_game_pitch()
+	await _ai_match(true)
+
+func _ai_match(game_pitch: bool) -> void:
 	PackLibrary.reload()
 	var m: MatchScene = await _scene(0.0)
+	if game_pitch:
+		note("cancha: %.0f x %.0f m, arcos de %.1f m" % [m.pitch.config.length, m.pitch.config.width, m.pitch.config.goal_width])
+		check(m.pitch.config.length >= 50.0 and m.pitch.config.goal_width >= 5.0, "el partido usa la cancha de futbol 7")
 	# Los 8 jugadores de campo los lleva la IA: esta prueba mide como juega la IA, no que pasa si la persona no toca
 	# el mando (eso lo cubre test_idle_human_carrier_loses_the_ball_to_the_press).
 	m.home[0].input_source = AIInput.new(3, 0.6)
@@ -56,7 +67,11 @@ func test_ai_teams_play_a_real_match_without_getting_stuck() -> void:
 	for k in m.keepers:
 		note("arquero equipo %d: %s" % [k.team, str(k.stats)])
 	check(int(counts.get("PASS", 0)) >= 2, "hay pases (%d)" % int(counts.get("PASS", 0)))
-	check(int(counts.get("SHOT", 0)) >= 1, "hay tiros (%d)" % int(counts.get("SHOT", 0)))
+	if game_pitch:
+		# En la cancha grande (50 x 30) hay partidos de 120 s en que los goles llegan de pases sin ningun «tiro» (medido).
+		check(int(counts.get("SHOT", 0)) + int(counts.get("GOAL", 0)) >= 1, "hay tiros o goles (%d tiros, %d goles)" % [int(counts.get("SHOT", 0)), int(counts.get("GOAL", 0))])
+	else:
+		check(int(counts.get("SHOT", 0)) >= 1, "hay tiros (%d)" % int(counts.get("SHOT", 0)))
 	check(int(counts.get("KICK_WHIFF", 0)) <= 2 * (int(counts.get("PASS", 0)) + int(counts.get("SHOT", 0))) + 2, "la IA acierta al menos un tercio de sus patadas (%d falsas, %d acertadas)" % [int(counts.get("KICK_WHIFF", 0)), int(counts.get("PASS", 0)) + int(counts.get("SHOT", 0))])
 	check(int(counts.get("TACKLE_WON", 0)) + int(counts.get("TACKLE_FAILED", 0)) >= 1, "hay disputas de pelota")
 	check(out_of_bounds == 0, "nadie se sale de la cancha mas de 1 m (%d muestras fuera)" % out_of_bounds)

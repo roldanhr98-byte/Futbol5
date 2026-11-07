@@ -11,6 +11,11 @@ var _spawned: Array[Node] = []
 var skipped: bool = false
 var skip_reason: String = ""
 
+## Modo de juego en que corre la prueba: 0 = el del juego (Tuning.DEFAULT_GAMEPLAY_MODE, el 4, o TEST_GAMEPLAY_MODE). Las
+## pruebas de los sistemas de los modos descartados (pack de Mixamo, Tripo, mocap), que siguen en el codigo, devuelven su modo.
+func gameplay_mode() -> int:
+	return 0
+
 func skip(reason: String) -> void:
 	skipped = true
 	skip_reason = reason
@@ -66,6 +71,26 @@ func cleanup() -> void:
 	Input.flush_buffered_events()
 	for action in InputMap.get_actions():
 		Input.action_release(action)
+
+## Las pruebas se escribieron para la cancha de futsal de 40 x 20 con arcos de 3 m (posiciones fijas en metros); el
+## partido real usa la de futbol 7 de 50 x 30 (PitchConfig). El runner llama begin() antes de cada prueba: Tuning.pitch
+## pasa a ser la de futsal hasta end(). Una prueba que quiere la cancha del juego llama use_game_pitch() al empezar.
+var _game_pitch: PitchConfig = null
+
+func begin() -> void:
+	if _game_pitch == null:
+		_game_pitch = Tuning.pitch
+		Tuning.pitch = PitchConfig.futsal()
+
+func use_game_pitch() -> void:
+	if _game_pitch != null:
+		Tuning.pitch = _game_pitch
+
+## Lo llama el runner al terminar la prueba (despues de cleanup): devuelve la cancha del juego.
+func end() -> void:
+	if _game_pitch != null:
+		Tuning.pitch = _game_pitch
+		_game_pitch = null
 
 ## Crea cancha + pelota listas para simular.
 func make_world(ball_pos: Vector3 = Vector3(0, 0.5, 0)) -> Dictionary:

@@ -26,6 +26,9 @@ const COVER_DIST := 6.5
 ## Distancia minima (m) a la pelota de todo jugador que no sea el portador, el presionador o el que va a por ella: con
 ## cuatro jugadores dentro de 4 m la jugada se convierte en un amontonamiento.
 const CLEAR_OF_BALL := 5.0
+## Segundo en presionar (UCS MaxActivePresses = 2): distancia al portador del lado del arco y tiempo maximo para llegar.
+const PRESS2_DIST := 2.5
+const PRESS2_MAX_TIME := 1.2
 
 enum Phase { ATTACK, DEFEND, LOOSE }
 
@@ -152,7 +155,8 @@ func _attack(ctx: MatchContext, carrier: Footballer, mates: Array[Footballer]) -
 	var sup := cp + Vector3(-atk.x * 2.0, 0.0, -side * SUPPORT_DIST)
 	slots[&"support"] = sup
 	# Amplitud: banda contraria a la pelota, pegado a la linea, un poco por delante.
-	slots[&"width"] = Vector3(cp.x + atk.x * 4.0, 0.0, -side * (hw - 1.6))
+	# Amplitud: en juego abierto el equipo ocupa el 60 % del ancho (WidthOpenPlay de UCS), no pegado a la linea.
+	slots[&"width"] = Vector3(cp.x + atk.x * 4.0, 0.0, -side * minf(hw - 1.6, hw * UcsParams.WIDTH_OPEN_PLAY))
 	# Profundidad: a la altura del ultimo defensor (o un poco detras si la pelota esta lejos), en el carril del centro.
 	var depth_x: float = clampf(last_line - 0.5, cp.x * atk.x + 5.0, hl - 3.0) * atk.x
 	slots[&"depth"] = Vector3(depth_x, 0.0, clampf(-cp.z * 0.4, -3.0, 3.0))
@@ -321,7 +325,7 @@ func _defend(ctx: MatchContext, carrier: Footballer, mates: Array[Footballer]) -
 	# Presionador: el que llega antes. Si es el que maneja la persona, la presion es suya: la IA no manda a otro.
 	var by_time: Array[Footballer] = mates.duplicate()
 	by_time.sort_custom(func(a: Footballer, b: Footballer) -> bool: return _time_to(a, intercept) < _time_to(b, intercept))
-	var human_first: bool = by_time[0].is_human_controlled
+	var human_first: bool = person_drives(by_time[0])
 	presser = by_time[0]
 	# Cobertura: no el segundo mas cercano al portador (estaria a su lado y amontonaria), sino el que llega antes al
 	# punto de cobertura, entre la pelota y el arco propio.
@@ -337,9 +341,14 @@ func _defend(ctx: MatchContext, carrier: Footballer, mates: Array[Footballer]) -
 	if not human_first:
 		var d: float = _flat(presser.global_position).distance_to(cp)
 		orders[presser] = {"role": &"press", "target": intercept, "press": true, "sprint": d > 4.0}
-	# Cobertura: entre el portador y el arco, detras del presionador.
+	# Cobertura: entre el portador y el arco, detras del presionador. Como en UCS (MaxActivePresses = 2), si llega pronto
+	# es el segundo en presionar: cierra el camino al arco a 2.5 m del portador, sin entrar (MaxActiveTackles = 1).
 	if cover != null:
-		orders[cover] = {"role": &"cover", "target": cover_point, "press": false, "sprint": _flat(cover.global_position).distance_to(cover_point) > 4.0}
+		var tight: Vector3 = ctx.pitch.clamp_to_pitch(cp + (own_goal - cp).normalized() * PRESS2_DIST, 1.0)
+		if UcsParams.MAX_ACTIVE_PRESSES >= 2 and not human_first and _time_to(cover, tight) <= PRESS2_MAX_TIME:
+			orders[cover] = {"role": &"press2", "target": tight, "press": false, "sprint": _flat(cover.global_position).distance_to(tight) > 4.0}
+		else:
+			orders[cover] = {"role": &"cover", "target": cover_point, "press": false, "sprint": _flat(cover.global_position).distance_to(cover_point) > 4.0}
 	# Bloque: linea defensiva que retrocede con la pelota (repliegue) y cierra la linea de pase al rival mas peligroso.
 	var ball_depth: float = (cp.x - own_goal.x) * atk.x          # metros desde el arco propio
 	var line_depth: float = clampf(ball_depth - 7.0, 2.5, 13.0)
@@ -392,6 +401,11 @@ func _spread_defense(ctx: MatchContext, cp: Vector3) -> void:
 
 # --- Pelota suelta ---------------------------------------------------------------------------------------------
 
+## El jugador lo maneja una persona (no basta con ser el «controlado»: sin persona, el control lo lleva un AIInput y la IA
+## tiene que darle ordenes; si no, una pelota suelta junto a el se quedaba quieta: medido 7.3 s en entrenamiento).
+static func person_drives(f: Footballer) -> bool:
+	return f.is_human_controlled and not (f.input_source is AIInput)
+
 func _loose(ctx: MatchContext, mates: Array[Footballer]) -> void:
 	var ball: Ball = ctx.ball
 	# Dentro de la cancha: una pelota que sale no arrastra al perseguidor detras del arco.
@@ -404,7 +418,7 @@ func _loose(ctx: MatchContext, mates: Array[Footballer]) -> void:
 	var lt: Footballer = ball.last_toucher as Footballer
 	if lt != null and mates.has(lt) and _flat(lt.global_position).distance_to(_flat(ball.global_position)) < 3.0:
 		chaser = lt
-	if not chaser.is_human_controlled:
+	if not person_drives(chaser):
 		orders[chaser] = {"role": &"chase", "target": bp, "press": true, "sprint": _flat(chaser.global_position).distance_to(bp) > 3.0}
 	# Los demas: si la ultima fase fue nuestra, mantienen sus puestos de ataque; si no, se ordenan en defensa respecto a
 	# la pelota (un rival la tomara enseguida).

@@ -40,10 +40,6 @@ func _series(w: Dictionary, ball_pos: Vector3, stick_deg: float, charge: float, 
 	var out := {"n": n, "goal": 0, "save": 0, "post": 0, "miss": 0, "catch": 0, "parry": 0, "block": 0}
 	var to_goal: Vector3 = KickModel.flat(Vector3(20.0, 0.0, 0.0) - ball_pos).normalized()
 	for i in n:
-		var g0: int = goals[0]
-		var p0: int = posts[0]
-		var c0: int = int(k.stats["catches"])
-		var r0: int = int(k.stats["parries"])
 		p.place_at(ball_pos - to_goal * 0.5, Locomotion.yaw_from_dir(to_goal))
 		if d != null:
 			d.place_at(ball_pos + Vector3(0.2, 0.0, 0.7), Locomotion.yaw_from_dir(-to_goal))
@@ -51,6 +47,12 @@ func _series(w: Dictionary, ball_pos: Vector3, stick_deg: float, charge: float, 
 		ctx.ball.reset_at(ball_pos)
 		k.reset_position()
 		await physics_frames(20)
+		# Los contadores se toman con la pelota ya recolocada: Ball.reset_at se aplica en el paso fisico siguiente y, con el
+		# cerrojo del arco ya reiniciado, la pelota del gol anterior aun en la red contaba un gol fantasma para este tiro.
+		var g0: int = goals[0]
+		var p0: int = posts[0]
+		var c0: int = int(k.stats["catches"])
+		var r0: int = int(k.stats["parries"])
 		p.ball_handler.rng.seed = seed0 + i
 		p.ball_handler.lockout = 0.0
 		p.ball_handler.perform_shot(to_goal.rotated(Vector3.UP, deg_to_rad(-stick_deg)), charge, false)
@@ -116,6 +118,10 @@ func test_shots_go_at_goal_and_the_keeper_saves_what_he_reaches() -> void:
 	# goles por el flotado (ataja 70 %).
 	# 2026-10-29, tiro mas fuerte (12-30 m/s con la carga^1.5) y 80 tiros: al palo derecho ataja 80 %, al izquierdo 54 %,
 	# al arquero 79 %; con rival encima 4 goles (frente a 12); el de 85 marca 20 al palo derecho (frente a 12).
+	# 2026-10-31, sin goles fantasma (contadores tomados con la pelota ya recolocada), contacto continuo de las manos, clips
+	# del arquero a velocidad humana (dive_speed_max 1.15) y limite humano de las manos (hand_latency + distancia /
+	# hand_speed): al palo derecho ataja 69 %, al izquierdo 76 %, al arquero 84 %; con rival encima 0 goles; el de 85 marca
+	# 40 y 44 de 80 (ataja 32-36 %); 18 m potente ataja 96 %.
 	check(on.call(r[0]) >= 0.6, "apuntando al palo la mayoria va al arco (%d %%)" % int(on.call(r[0]) * 100.0))
 	check(on.call(r[2]) >= 0.6, "con el joystick de lado tambien va al arco (%d %%)" % int(on.call(r[2]) * 100.0))
 	check(on.call(r[1]) >= 0.85, "sin lado pedido casi todo va al arco (%d %%)" % int(on.call(r[1]) * 100.0))
@@ -123,7 +129,12 @@ func test_shots_go_at_goal_and_the_keeper_saves_what_he_reaches() -> void:
 	# al palo del que la aleja, si.
 	check(save_rate.call(r[0]) <= save_rate.call(r[1]) + 0.05 and save_rate.call(r[7]) < save_rate.call(r[1]),
 		"colocarla junto a un palo no le facilita la atajada y al palo del que la aleja le gana (ataja %d y %d %% frente a %d %%)" % [int(save_rate.call(r[0]) * 100.0), int(save_rate.call(r[7]) * 100.0), int(save_rate.call(r[1]) * 100.0)])
-	check(save_rate.call(r[7]) < save_rate.call(r[0]) - 0.15, "y mas al palo del que el empeine la aleja del arquero (ataja %d %% frente a %d %%)" % [int(save_rate.call(r[7]) * 100.0), int(save_rate.call(r[0]) * 100.0)])
+	# 2026-10-31: el «-15 puntos» al palo del que el empeine la aleja salia de que BallPredictor no tenia efecto Magnus (el
+	# arquero preveia mal toda pelota con efecto: errores de 1.4-5 m en vuelo). Con la prediccion fisica y el efecto leido a
+	# medida que la pelota se desvia (KeeperTuning.spin_read_time), la curva medida de estos tiros es de 0.05-0.17 m en 11 m:
+	# los dos palos quedan dentro del ruido de la serie (69-76 %). Se exige que el palo del que la aleja no sea mas facil
+	# que el otro mas alla del ruido (10 puntos con 80 tiros).
+	check(save_rate.call(r[7]) <= save_rate.call(r[0]) + 0.10, "al palo del que el empeine la aleja no se ataja mas que al otro (ataja %d %% frente a %d %%)" % [int(save_rate.call(r[7]) * 100.0), int(save_rate.call(r[0]) * 100.0)])
 	# Al palo del que la aleja, el de 85 y el de 60 marcan casi la mitad (18 y 21 de 40: ruido de la serie): la curva le
 	# gana al arquero a los dos. Al palo dificil se nota el tirador (apunta mas cerca del palo, con menos error).
 	check(int(r[6]["goal"]) >= int(r[0]["goal"]), "al palo dificil el buen tirador marca mas (%d frente a %d)" % [r[6]["goal"], r[0]["goal"]])

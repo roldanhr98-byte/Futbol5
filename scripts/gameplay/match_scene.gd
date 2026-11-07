@@ -126,6 +126,10 @@ func _ready() -> void:
 	Sfx.crowd(true)
 	camera.watch_shots(ball)
 	GraphicsSettings.apply()
+	# Datos fijos de los clips de recepcion (modo 4) y de atajada calculados ahora y no en la primera pelota que llega (tirones).
+	if PackLibrary.json_mode():
+		JsonReceive.warm_cache()
+	KeeperPlanner.warm_cache()
 	manager.start_match()
 
 ## Rol tactico (0 cierre, 1 ala izquierda, 2 ala derecha, 3 pivote) segun el puesto en la formacion de saque.
@@ -315,6 +319,15 @@ func _on_set_piece_requested(kind: String, team: int, pos: Vector3) -> void:
 		"penalty":
 			k_kind = SetPiece.Kind.PENALTY
 	ball.reset_at(Vector3(pos.x, 0.12, pos.z))
+	# Pelota muerta: nadie sigue corriendo con la inercia de la jugada (ni con un giro de clip a medias). Si no, durante la
+	# preparacion (entrada desactivada) un companero que venia a la carrera se metia en la carrerilla del ejecutor.
+	for f in home + away:
+		if f == taker:
+			continue
+		if f.actions != null and f.actions.kind == &"turn":
+			f.actions.reset()
+		f.locomotion.stop()
+		f.velocity = Vector3.ZERO
 	var sp := SetPiece.new(k_kind, team, pos, taker, ctx)
 	taker.set_piece = sp
 	sp.place_taker()
@@ -323,6 +336,9 @@ func _on_set_piece_requested(kind: String, team: int, pos: Vector3) -> void:
 	if kind == "corner" or kind == "penalty" or (kind == "free_kick" and absf(pos.x - gx) < 16.0):
 		_arrange_box(kind, team, pos, taker)
 	_clear_zone(pos, team, SET_PIECE_DISTANCE if kind != "throw_in" else 2.0)
+	if kind != "throw_in":
+		# Tambien los companeros: nadie salvo el ejecutor dentro de la carrerilla (SetPiece.CLEAR_RADIUS).
+		_clear_zone(pos, 1 - team, SetPiece.CLEAR_RADIUS, taker)
 	# La persona saca con su equipo: toma al ejecutor.
 	if team == 0 and taker.team == 0 and controlled != null and controlled_keeper == null and taker != controlled:
 		_give_control(taker)
@@ -335,8 +351,11 @@ func _focus_after_set_piece(taker: Footballer) -> void:
 		camera.snap_to_target()
 
 ## Aleja a los rivales del equipo que saca a `radius` metros de la pelota (direccion radial, dentro de la cancha).
-func _clear_zone(pos: Vector3, team: int, radius: float) -> void:
+## `except`: jugador que no se mueve (el ejecutor, al despejar a sus companeros).
+func _clear_zone(pos: Vector3, team: int, radius: float, except: Footballer = null) -> void:
 	for f in (away if team == 0 else home):
+		if f == except:
+			continue
 		var d := Vector3(f.global_position.x - pos.x, 0.0, f.global_position.z - pos.z)
 		if d.length() >= radius:
 			continue
@@ -377,7 +396,8 @@ func _arrange_box(kind: String, team: int, pos: Vector3, taker: Footballer) -> v
 	]
 	if kind == "free_kick":
 		# Tiro libre cercano: atacantes repartidos por el area, uno de apoyo corto.
-		spots[3] = pos + Vector3(inward * 2.5, 0.0, -side * 2.5)
+		# A SetPiece.CLEAR_RADIUS + 0.5 m de la pelota: fuera de la carrerilla del ejecutor.
+		spots[3] = pos + Vector3(inward, 0.0, -side).normalized() * (SetPiece.CLEAR_RADIUS + 0.5)
 	for i in attackers.size():
 		var sp: Vector3 = spots[i % spots.size()]
 		attackers[i].place_at(pitch.clamp_to_pitch(sp + Vector3(inward * 1.2, 0.0, 0.0), 0.5), att_yaw)
@@ -446,7 +466,7 @@ const RECEIVER_STEP := 0.1
 ## trayectoria predicha de la pelota a ras de piso o a la altura de la cabeza. Si nadie llega a tiempo, el mas cercano a
 ## donde se detiene la pelota. Devuelve [Footballer, punto de encuentro] o [] si no hay companeros.
 func pass_receiver(passer: Footballer) -> Array:
-	var traj: PackedVector3Array = BallPredictor.trajectory(ball.global_position, ball.linear_velocity, RECEIVER_HORIZON, RECEIVER_STEP)
+	var traj: PackedVector3Array = BallPredictor.trajectory(ball.global_position, ball.linear_velocity, RECEIVER_HORIZON, RECEIVER_STEP, ball.angular_velocity)
 	var best: Footballer = null
 	var best_t: float = INF
 	var best_p := Vector3.ZERO
@@ -547,6 +567,11 @@ func _update_rings() -> void:
 	pass_ring.follow(target)
 
 func _physics_process(delta: float) -> void:
+	Prof.begin(&"escena (marcadores, cambio)")
+	_scene_step(delta)
+	Prof.end(&"escena (marcadores, cambio)")
+
+func _scene_step(delta: float) -> void:
 	if marker != null:
 		marker.follow(human_actor(), delta)
 		next_marker.follow(switch_candidate() if (controlled != null and home.size() > 1) else null, delta)

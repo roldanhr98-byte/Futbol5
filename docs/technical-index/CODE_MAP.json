@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "generated_by": "tools/docs_index.py (sync); campos curados a mano: id, system, description, keywords, files, nombres de symbols/parameters, dependencies, documentation",
-  "last_verified": "2026-10-29",
+  "last_verified": "2026-11-06",
   "entries": [
     {
       "id": "ball.physics",
@@ -74,7 +74,7 @@
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball._integrate_forces",
-          "line": 339,
+          "line": 349,
           "kind": "func"
         },
         {
@@ -122,7 +122,7 @@
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball._on_body_entered",
-          "line": 569,
+          "line": 584,
           "kind": "func"
         },
         {
@@ -158,49 +158,49 @@
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.roll_decel",
-          "line": 436,
+          "line": 451,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.roll_speed",
-          "line": 459,
+          "line": 474,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.roll_distance",
-          "line": 470,
+          "line": 485,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.roll_speed_for",
-          "line": 488,
+          "line": 503,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.roll_time",
-          "line": 524,
+          "line": 539,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.roll_start_speed",
-          "line": 541,
+          "line": 556,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball.roll_catch_time",
-          "line": 555,
+          "line": 570,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball.gd",
           "name": "Ball._roll_step",
-          "line": 455,
+          "line": 470,
           "kind": "func"
         }
       ],
@@ -309,7 +309,7 @@
         "TUNING"
       ],
       "documentation": "docs/technical-index/SYSTEMS/BALL.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "ball.state",
@@ -363,7 +363,7 @@
         "BALL"
       ],
       "documentation": "docs/technical-index/SYSTEMS/NETWORK.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "pitch.layout",
@@ -480,80 +480,80 @@
         {
           "file": "scripts/pitch/pitch_config.gd",
           "name": "PitchConfig.length",
-          "default": "40.0",
-          "line": 10
+          "default": "50.0",
+          "line": 11
         },
         {
           "file": "scripts/pitch/pitch_config.gd",
           "name": "PitchConfig.width",
-          "default": "20.0",
-          "line": 11
+          "default": "30.0",
+          "line": 12
         },
         {
           "file": "scripts/pitch/pitch_config.gd",
           "name": "PitchConfig.line_width",
           "default": "0.08",
-          "line": 20
-        },
-        {
-          "file": "scripts/pitch/pitch_config.gd",
-          "name": "PitchConfig.center_circle_radius",
-          "default": "3.0",
           "line": 21
         },
         {
           "file": "scripts/pitch/pitch_config.gd",
-          "name": "PitchConfig.penalty_area_radius",
+          "name": "PitchConfig.center_circle_radius",
           "default": "6.0",
-          "line": 23
+          "line": 22
         },
         {
           "file": "scripts/pitch/pitch_config.gd",
-          "name": "PitchConfig.penalty_mark_distance",
-          "default": "6.0",
+          "name": "PitchConfig.penalty_area_radius",
+          "default": "8.0",
           "line": 24
         },
         {
           "file": "scripts/pitch/pitch_config.gd",
+          "name": "PitchConfig.penalty_mark_distance",
+          "default": "8.0",
+          "line": 25
+        },
+        {
+          "file": "scripts/pitch/pitch_config.gd",
           "name": "PitchConfig.second_penalty_mark_distance",
-          "default": "10.0",
-          "line": 26
+          "default": "12.0",
+          "line": 27
         },
         {
           "file": "scripts/pitch/pitch_config.gd",
           "name": "PitchConfig.corner_arc_radius",
           "default": "0.25",
-          "line": 27
+          "line": 28
         },
         {
           "file": "scripts/pitch/pitch_config.gd",
           "name": "PitchConfig.substitution_zone_length",
           "default": "5.0",
-          "line": 28
+          "line": 29
         },
         {
           "file": "scripts/pitch/pitch_config.gd",
           "name": "PitchConfig.boundary_mode",
           "default": "BoundaryMode.WALLS",
-          "line": 31
+          "line": 32
         },
         {
           "file": "scripts/pitch/pitch_config.gd",
           "name": "PitchConfig.wall_height",
           "default": "3.0",
-          "line": 33
+          "line": 34
         },
         {
           "file": "scripts/pitch/pitch_config.gd",
           "name": "PitchConfig.barrier_visible_height",
           "default": "1.0",
-          "line": 35
+          "line": 36
         },
         {
           "file": "scripts/pitch/pitch_config.gd",
           "name": "PitchConfig.run_off",
           "default": "2.5",
-          "line": 36
+          "line": 37
         }
       ],
       "dependencies": [
@@ -562,7 +562,7 @@
         "TUNING"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PITCH.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "pitch.goal",
@@ -622,13 +622,13 @@
         {
           "file": "scripts/pitch/goal.gd",
           "name": "Goal.is_ball_in_goal",
-          "line": 121,
+          "line": 126,
           "kind": "func"
         },
         {
           "file": "scripts/pitch/goal.gd",
           "name": "Goal.aim_point",
-          "line": 134,
+          "line": 139,
           "kind": "func"
         },
         {
@@ -642,26 +642,26 @@
         {
           "file": "scripts/pitch/pitch_config.gd",
           "name": "PitchConfig.goal_width",
-          "default": "3.0",
-          "line": 14
+          "default": "5.0",
+          "line": 15
         },
         {
           "file": "scripts/pitch/pitch_config.gd",
           "name": "PitchConfig.goal_height",
           "default": "2.0",
-          "line": 15
+          "line": 16
         },
         {
           "file": "scripts/pitch/pitch_config.gd",
           "name": "PitchConfig.goal_depth",
           "default": "1.0",
-          "line": 16
+          "line": 17
         },
         {
           "file": "scripts/pitch/pitch_config.gd",
           "name": "PitchConfig.post_radius",
           "default": "0.04",
-          "line": 17
+          "line": 18
         }
       ],
       "dependencies": [
@@ -669,7 +669,7 @@
         "MATCH"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PITCH.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "pitch.goal_net",
@@ -710,19 +710,19 @@
         {
           "file": "scripts/pitch/goal_net.gd",
           "name": "GoalNet._ball_contact",
-          "line": 153,
+          "line": 158,
           "kind": "func"
         },
         {
           "file": "scripts/pitch/goal_net.gd",
           "name": "GoalNet._press",
-          "line": 225,
+          "line": 230,
           "kind": "func"
         },
         {
           "file": "scripts/pitch/goal_net.gd",
           "name": "GoalNet._step",
-          "line": 246,
+          "line": 251,
           "kind": "func"
         }
       ],
@@ -769,7 +769,7 @@
         "PITCH"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PITCH.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "player.controller",
@@ -795,37 +795,37 @@
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer.setup",
-          "line": 102,
+          "line": 108,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer._physics_process",
-          "line": 189,
+          "line": 198,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer.place_at",
-          "line": 176,
+          "line": 185,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer.set_attributes",
-          "line": 148,
+          "line": 155,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer.has_ball",
-          "line": 164,
+          "line": 171,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer.capture_state",
-          "line": 565,
+          "line": 750,
           "kind": "func"
         }
       ],
@@ -837,7 +837,7 @@
         "MATCH"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "player.locomotion",
@@ -1022,7 +1022,7 @@
         "TUNING"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "player.ball_handling",
@@ -1071,49 +1071,49 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.update",
-          "line": 336,
+          "line": 370,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._try_dribble_touch",
-          "line": 1747,
+          "line": 2236,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._try_first_touch",
-          "line": 2242,
+          "line": 3020,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.attempt_tackle",
-          "line": 2302,
+          "line": 3083,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.has_possession",
-          "line": 181,
+          "line": 215,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.controls_ball",
-          "line": 307,
+          "line": 341,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.can_reach",
-          "line": 311,
+          "line": 345,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.touch_reach",
-          "line": 321,
+          "line": 355,
           "kind": "func"
         }
       ],
@@ -1176,37 +1176,37 @@
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.kick_lockout",
           "default": "0.35",
-          "line": 71
+          "line": 77
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.possession_radius",
           "default": "1.1",
-          "line": 72
+          "line": 78
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.first_touch_absorb",
           "default": "0.65",
-          "line": 103
+          "line": 114
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.body_mass",
           "default": "75.0",
-          "line": 104
+          "line": 124
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.capsule_radius",
           "default": "0.3",
-          "line": 105
+          "line": 125
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.capsule_height",
           "default": "1.75",
-          "line": 106
+          "line": 126
         }
       ],
       "dependencies": [
@@ -1216,7 +1216,7 @@
         "TUNING"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "player.kick_timing",
@@ -1251,49 +1251,49 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._update_buttons",
-          "line": 394,
+          "line": 451,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._try_execute_pending",
-          "line": 467,
+          "line": 524,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.contact_delay",
-          "line": 488,
+          "line": 551,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.request_kick",
-          "line": 492,
+          "line": 555,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._finish_kick",
-          "line": 836,
+          "line": 1238,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.perform_pass",
-          "line": 893,
+          "line": 1295,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.perform_shot",
-          "line": 909,
+          "line": 1311,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._after_kick",
-          "line": 928,
+          "line": 1330,
           "kind": "func"
         }
       ],
@@ -1302,13 +1302,13 @@
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.kick_lockout",
           "default": "0.35",
-          "line": 71
+          "line": 77
         },
         {
           "file": "scripts/ball/ball_tuning.gd",
           "name": "BallTuning.shot_charge_time",
           "default": "0.9",
-          "line": 69
+          "line": 71
         }
       ],
       "dependencies": [
@@ -1317,7 +1317,7 @@
         "BALL"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "assist.pass",
@@ -1351,13 +1351,13 @@
         {
           "file": "scripts/assistance/pass_assist.gd",
           "name": "PassAssist.compute",
-          "line": 41,
+          "line": 53,
           "kind": "func"
         },
         {
           "file": "scripts/assistance/pass_assist.gd",
           "name": "PassAssist._lane_clearance",
-          "line": 280,
+          "line": 295,
           "kind": "func"
         }
       ],
@@ -1371,50 +1371,50 @@
         {
           "file": "scripts/assistance/assist_tuning.gd",
           "name": "AssistTuning.pass_cone_deg",
-          "default": "52.0",
+          "default": "60.0",
           "line": 18
         },
         {
           "file": "scripts/assistance/assist_tuning.gd",
           "name": "AssistTuning.pass_max_distance",
           "default": "24.0",
-          "line": 20
+          "line": 22
         },
         {
           "file": "scripts/assistance/assist_tuning.gd",
           "name": "AssistTuning.pass_max_correction_deg",
-          "default": "18.0",
-          "line": 22
+          "default": "30.0",
+          "line": 25
         },
         {
           "file": "scripts/assistance/assist_tuning.gd",
           "name": "AssistTuning.pass_weight_angle",
           "default": "1.0",
-          "line": 23
+          "line": 26
         },
         {
           "file": "scripts/assistance/assist_tuning.gd",
           "name": "AssistTuning.pass_weight_distance",
           "default": "0.35",
-          "line": 24
+          "line": 27
         },
         {
           "file": "scripts/assistance/assist_tuning.gd",
           "name": "AssistTuning.pass_weight_lane",
           "default": "0.8",
-          "line": 25
+          "line": 28
         },
         {
           "file": "scripts/assistance/assist_tuning.gd",
           "name": "AssistTuning.pass_lane_block_radius",
           "default": "0.8",
-          "line": 27
+          "line": 30
         },
         {
           "file": "scripts/assistance/assist_tuning.gd",
           "name": "AssistTuning.pass_error_deg",
           "default": "2.6",
-          "line": 29
+          "line": 32
         }
       ],
       "dependencies": [
@@ -1424,7 +1424,7 @@
         "TUNING"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ASSISTANCE.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "assist.shot",
@@ -1502,67 +1502,67 @@
           "file": "scripts/assistance/assist_tuning.gd",
           "name": "AssistTuning.shot_assist",
           "default": "0.55",
-          "line": 32
+          "line": 35
         },
         {
           "file": "scripts/assistance/assist_tuning.gd",
           "name": "AssistTuning.shot_cone_deg",
           "default": "38.0",
-          "line": 33
+          "line": 36
         },
         {
           "file": "scripts/assistance/assist_tuning.gd",
           "name": "AssistTuning.shot_max_correction_deg",
           "default": "10.0",
-          "line": 34
+          "line": 37
         },
         {
           "file": "scripts/assistance/assist_tuning.gd",
           "name": "AssistTuning.shot_post_margin",
           "default": "0.28",
-          "line": 36
+          "line": 39
         },
         {
           "file": "scripts/assistance/assist_tuning.gd",
           "name": "AssistTuning.shot_error_deg",
           "default": "2.2",
-          "line": 37
+          "line": 40
         },
         {
           "file": "scripts/ball/ball_tuning.gd",
           "name": "BallTuning.shot_speed_min",
           "default": "12.0",
-          "line": 66
+          "line": 68
         },
         {
           "file": "scripts/ball/ball_tuning.gd",
           "name": "BallTuning.shot_speed_max",
           "default": "30.0",
-          "line": 67
+          "line": 69
         },
         {
           "file": "scripts/ball/ball_tuning.gd",
           "name": "BallTuning.shot_charge_time",
           "default": "0.9",
-          "line": 69
+          "line": 71
         },
         {
           "file": "scripts/ball/ball_tuning.gd",
           "name": "BallTuning.shot_loft_low_deg",
           "default": "4.0",
-          "line": 70
+          "line": 72
         },
         {
           "file": "scripts/ball/ball_tuning.gd",
           "name": "BallTuning.shot_loft_high_deg",
           "default": "22.0",
-          "line": 71
+          "line": 73
         },
         {
           "file": "scripts/ball/ball_tuning.gd",
           "name": "BallTuning.shot_spin_factor",
           "default": "14.0",
-          "line": 73
+          "line": 75
         }
       ],
       "dependencies": [
@@ -1572,7 +1572,7 @@
         "TUNING"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ASSISTANCE.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "assist.press",
@@ -1629,43 +1629,43 @@
           "file": "scripts/assistance/assist_tuning.gd",
           "name": "AssistTuning.press_assist",
           "default": "0.7",
-          "line": 40
+          "line": 43
         },
         {
           "file": "scripts/assistance/assist_tuning.gd",
           "name": "AssistTuning.press_lookahead",
           "default": "0.55",
-          "line": 42
+          "line": 45
         },
         {
           "file": "scripts/assistance/assist_tuning.gd",
           "name": "AssistTuning.press_standoff",
           "default": "1.4",
-          "line": 44
+          "line": 47
         },
         {
           "file": "scripts/assistance/assist_tuning.gd",
           "name": "AssistTuning.press_tackle_range",
           "default": "0.90",
-          "line": 46
+          "line": 49
         },
         {
           "file": "scripts/assistance/assist_tuning.gd",
           "name": "AssistTuning.press_speed_factor",
           "default": "0.93",
-          "line": 49
+          "line": 52
         },
         {
           "file": "scripts/assistance/assist_tuning.gd",
           "name": "AssistTuning.press_stick_influence",
           "default": "0.55",
-          "line": 51
+          "line": 54
         },
         {
           "file": "scripts/assistance/assist_tuning.gd",
           "name": "AssistTuning.press_tackle_cooldown",
           "default": "1.3",
-          "line": 53
+          "line": 56
         }
       ],
       "dependencies": [
@@ -1674,7 +1674,7 @@
         "TUNING"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ASSISTANCE.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "assist.kick_model",
@@ -1768,7 +1768,7 @@
         "PROGRESSION"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ASSISTANCE.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "anim.visual",
@@ -1807,55 +1807,55 @@
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.build",
-          "line": 168,
+          "line": 176,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual._setup_animation_tree",
-          "line": 252,
+          "line": 286,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.play_action",
-          "line": 405,
+          "line": 451,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.stop_action",
-          "line": 551,
+          "line": 606,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.update_motion",
-          "line": 568,
+          "line": 643,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.start_kick",
-          "line": 560,
+          "line": 615,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.set_kit",
-          "line": 237,
+          "line": 252,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.default_kit",
-          "line": 152,
+          "line": 160,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.keeper_kit",
-          "line": 163,
+          "line": 171,
           "kind": "func"
         },
         {
@@ -1902,7 +1902,7 @@
         "GODOT"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ANIMATIONS.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "anim.procedural_kick",
@@ -1937,7 +1937,7 @@
         {
           "file": "scripts/animation/procedural_pose.gd",
           "name": "ProceduralPose.apply_at",
-          "line": 70,
+          "line": 75,
           "kind": "func"
         },
         {
@@ -1949,13 +1949,13 @@
         {
           "file": "scripts/animation/procedural_pose.gd",
           "name": "ProceduralPose.kick_angles",
-          "line": 100,
+          "line": 105,
           "kind": "func"
         },
         {
           "file": "scripts/animation/procedural_pose.gd",
           "name": "ProceduralPose.envelope",
-          "line": 137,
+          "line": 142,
           "kind": "func"
         },
         {
@@ -1983,7 +1983,7 @@
         "PLAYER"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ANIMATIONS.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "anim.pose_sampler",
@@ -2026,7 +2026,7 @@
         "ANIMATIONS"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ANIMATIONS.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "anim.library",
@@ -2091,7 +2091,7 @@
         "TRIPO"
       ],
       "documentation": "docs/technical-index/SYSTEMS/TOOLS_AND_ASSETS.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "anim.kit",
@@ -2135,7 +2135,7 @@
         "TOOLS"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ANIMATIONS.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "camera.match",
@@ -2200,37 +2200,37 @@
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera._target_focus",
-          "line": 112,
+          "line": 117,
           "kind": "func"
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera._target_distance",
-          "line": 166,
+          "line": 171,
           "kind": "func"
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera._apply_transform",
-          "line": 179,
+          "line": 184,
           "kind": "func"
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.screen_to_world_dir",
-          "line": 197,
+          "line": 202,
           "kind": "func"
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.punch",
-          "line": 90,
+          "line": 95,
           "kind": "func"
         },
         {
           "file": "scripts/camera/match_camera.gd",
           "name": "MatchCamera.watch_shots",
-          "line": 94,
+          "line": 99,
           "kind": "func"
         },
         {
@@ -2301,7 +2301,7 @@
         "PITCH"
       ],
       "documentation": "docs/technical-index/SYSTEMS/CAMERA.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "input.frame",
@@ -2388,7 +2388,7 @@
         "NETWORK"
       ],
       "documentation": "docs/technical-index/SYSTEMS/INPUTS.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "input.touch",
@@ -2487,7 +2487,7 @@
         "PLAYER"
       ],
       "documentation": "docs/technical-index/SYSTEMS/UI_HUD.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "match.flow",
@@ -2559,13 +2559,13 @@
         {
           "file": "scripts/gameplay/match_manager.gd",
           "name": "MatchManager._physics_process",
-          "line": 117,
+          "line": 118,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_manager.gd",
           "name": "MatchManager._on_goal",
-          "line": 269,
+          "line": 275,
           "kind": "func"
         },
         {
@@ -2577,19 +2577,19 @@
         {
           "file": "scripts/gameplay/match_scene.gd",
           "name": "MatchScene._spawn_teams",
-          "line": 137,
+          "line": 141,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_scene.gd",
           "name": "MatchScene.kickoff_positions",
-          "line": 211,
+          "line": 215,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_scene.gd",
           "name": "MatchScene._on_kickoff_requested",
-          "line": 220,
+          "line": 224,
           "kind": "func"
         }
       ],
@@ -2645,7 +2645,7 @@
         "NETWORK"
       ],
       "documentation": "docs/technical-index/SYSTEMS/MATCH.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "match.context",
@@ -2723,7 +2723,7 @@
         "NETWORK"
       ],
       "documentation": "docs/technical-index/SYSTEMS/MATCH.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "network.events",
@@ -2776,7 +2776,7 @@
         "MATCH"
       ],
       "documentation": "docs/technical-index/SYSTEMS/NETWORK.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "ui.hud",
@@ -2828,7 +2828,7 @@
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud.show_message",
-          "line": 307,
+          "line": 321,
           "kind": "func"
         },
         {
@@ -2840,19 +2840,19 @@
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud._cycle_assist",
-          "line": 257,
+          "line": 271,
           "kind": "func"
         },
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud._cycle_graphics",
-          "line": 253,
+          "line": 267,
           "kind": "func"
         },
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud._toggle_diagnostics",
-          "line": 265,
+          "line": 279,
           "kind": "func"
         },
         {
@@ -2888,7 +2888,7 @@
         "TUNING"
       ],
       "documentation": "docs/technical-index/SYSTEMS/UI_HUD.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "perf.graphics",
@@ -2913,7 +2913,11 @@
         "medio",
         "alto",
         "optimización",
-        "optimizacion"
+        "optimizacion",
+        "tope de fps",
+        "30 fps",
+        "60 fps",
+        "imagenes por segundo"
       ],
       "files": [
         "scripts/diagnostics/graphics_settings.gd",
@@ -2923,25 +2927,25 @@
         {
           "file": "scripts/diagnostics/graphics_settings.gd",
           "name": "GraphicsSettings.apply",
-          "line": 83,
+          "line": 109,
           "kind": "func"
         },
         {
           "file": "scripts/diagnostics/graphics_settings.gd",
           "name": "GraphicsSettings.set_profile",
-          "line": 59,
-          "kind": "func"
-        },
-        {
-          "file": "scripts/diagnostics/graphics_settings.gd",
-          "name": "GraphicsSettings.set_resolution_override",
           "line": 65,
           "kind": "func"
         },
         {
           "file": "scripts/diagnostics/graphics_settings.gd",
+          "name": "GraphicsSettings.set_resolution_override",
+          "line": 79,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/diagnostics/graphics_settings.gd",
           "name": "GraphicsSettings.detect_default_profile",
-          "line": 49,
+          "line": 56,
           "kind": "func"
         },
         {
@@ -2964,7 +2968,56 @@
         "ANDROID"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PERFORMANCE.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
+    },
+    {
+      "id": "perf.prof",
+      "system": "PERFORMANCE",
+      "description": "Costo de CPU por sistema (Prof) y herramienta perf_probe: tirones, lag, imágenes lentas con su desglose; el diagnóstico del juego lo muestra en el teléfono.",
+      "keywords": [
+        "lag",
+        "tirones",
+        "se traba",
+        "trabas",
+        "costo de cpu",
+        "perfilador",
+        "profiler",
+        "milisegundos",
+        "imagen lenta",
+        "perf_probe",
+        "prof",
+        "cpu",
+        "stutter",
+        "spikes"
+      ],
+      "files": [
+        "scripts/diagnostics/prof.gd",
+        "tools/perf_probe.gd",
+        "tools/perf_probe.tscn"
+      ],
+      "symbols": [
+        {
+          "file": "scripts/diagnostics/prof.gd",
+          "name": "Prof.begin",
+          "line": 13,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/diagnostics/prof.gd",
+          "name": "Prof.end",
+          "line": 17,
+          "kind": "func"
+        }
+      ],
+      "parameters": [],
+      "dependencies": [
+        "UI_HUD",
+        "PLAYER",
+        "GOALKEEPER",
+        "JSON_MODE"
+      ],
+      "documentation": "docs/technical-index/SYSTEMS/PERFORMANCE.md",
+      "last_verified": "2026-11-06"
     },
     {
       "id": "perf.diagnostics",
@@ -2992,13 +3045,13 @@
         {
           "file": "scripts/diagnostics/diagnostics_overlay.gd",
           "name": "DiagnosticsOverlay.build_report",
-          "line": 60,
+          "line": 88,
           "kind": "func"
         },
         {
           "file": "scripts/diagnostics/diagnostics_overlay.gd",
           "name": "DiagnosticsOverlay.frame_stats",
-          "line": 80,
+          "line": 111,
           "kind": "func"
         },
         {
@@ -3013,7 +3066,7 @@
         "UI_HUD"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PERFORMANCE.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "tuning.registry",
@@ -3046,25 +3099,25 @@
         {
           "file": "scripts/gameplay/tuning.gd",
           "name": "Tuning.reload",
-          "line": 48,
+          "line": 54,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/tuning.gd",
           "name": "Tuning.load_user_settings",
-          "line": 57,
+          "line": 63,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/tuning.gd",
           "name": "Tuning.save_user_settings",
-          "line": 74,
+          "line": 82,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/tuning.gd",
           "name": "Tuning._load_or_default",
-          "line": 90,
+          "line": 98,
           "kind": "func"
         },
         {
@@ -3107,7 +3160,7 @@
         "GOALKEEPER"
       ],
       "documentation": "docs/technical-index/SYSTEMS/TUNING.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "progression.attributes",
@@ -3193,7 +3246,7 @@
         "ASSISTANCE"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PROGRESSION.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "android.partial",
@@ -3242,7 +3295,7 @@
         "GODOT"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ANDROID.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "tests.framework",
@@ -3274,7 +3327,7 @@
         "GODOT"
       ],
       "documentation": "docs/technical-index/SYSTEMS/TESTING.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "tools.tripo",
@@ -3317,7 +3370,7 @@
         "GODOT"
       ],
       "documentation": "docs/technical-index/SYSTEMS/TOOLS_AND_ASSETS.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "anim.pack_eval",
@@ -3421,7 +3474,7 @@
         "TOOLS"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ANIMATION_PACK.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "anim.pack_integration",
@@ -3471,73 +3524,73 @@
         {
           "file": "scripts/animation/animation_catalog.gd",
           "name": "AnimationCatalog.resolve",
-          "line": 86,
+          "line": 88,
           "kind": "func"
         },
         {
           "file": "scripts/animation/animation_catalog.gd",
           "name": "AnimationCatalog.kick_candidates",
-          "line": 104,
+          "line": 115,
           "kind": "func"
         },
         {
           "file": "scripts/animation/animation_catalog.gd",
           "name": "AnimationCatalog.step_interval",
-          "line": 118,
+          "line": 131,
           "kind": "func"
         },
         {
           "file": "scripts/animation/pack_library.gd",
           "name": "PackLibrary.available",
-          "line": 46,
+          "line": 153,
           "kind": "func"
         },
         {
           "file": "scripts/animation/pack_library.gd",
           "name": "PackLibrary.clip",
-          "line": 57,
+          "line": 167,
           "kind": "func"
         },
         {
           "file": "scripts/animation/pack_library.gd",
           "name": "PackLibrary.meta",
-          "line": 77,
+          "line": 194,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.play_pack_clip",
-          "line": 504,
+          "line": 559,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.play_situation",
-          "line": 528,
+          "line": 583,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.stop_current_action",
-          "line": 539,
+          "line": 594,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.gait_scale_for",
-          "line": 438,
+          "line": 484,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.step_interval_for",
-          "line": 485,
+          "line": 535,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer._on_match_event",
-          "line": 468,
+          "line": 647,
           "kind": "func"
         }
       ],
@@ -3549,7 +3602,7 @@
         "TOOLS"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ANIMATION_PACK.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "player.clip_kick",
@@ -3590,43 +3643,43 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.plan_clip_kick",
-          "line": 741,
+          "line": 895,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.contact_samples",
-          "line": 669,
+          "line": 762,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.foot_contact_world",
-          "line": 521,
+          "line": 584,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.predicted_foot_to_ball",
-          "line": 657,
+          "line": 750,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.clip_timing",
-          "line": 535,
+          "line": 598,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.uses_clip_kicks",
-          "line": 515,
+          "line": 578,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._finish_clip_kick",
-          "line": 802,
+          "line": 1190,
           "kind": "func"
         }
       ],
@@ -3634,61 +3687,61 @@
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.kick_contact_radius",
-          "line": 76,
+          "line": 82,
           "default": "0.30"
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.kick_latency",
-          "line": 88,
+          "line": 99,
           "default": "0.20"
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.kick_clip_speed_max",
-          "line": 95,
+          "line": 106,
           "default": "1.6"
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.kick_turn_scale",
-          "line": 97,
+          "line": 108,
           "default": "0.35"
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.kick_follow_through",
-          "line": 99,
+          "line": 110,
           "default": "0.30"
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.kick_foot_max_height",
-          "line": 79,
+          "line": 90,
           "default": "0.25"
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.kick_foot_min_speed",
-          "line": 80,
+          "line": 91,
           "default": "3.0"
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.kick_adjust_max",
-          "line": 83,
+          "line": 94,
           "default": "0.30"
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.kick_adjust_sprint",
-          "line": 84,
+          "line": 95,
           "default": "0.28"
         },
         {
           "file": "scripts/player/player_tuning.gd",
           "name": "PlayerTuning.kick_start_residual",
-          "line": 86,
+          "line": 97,
           "default": "0.18"
         }
       ],
@@ -3700,7 +3753,7 @@
         "TUNING"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "goalkeeper.entity",
@@ -3737,37 +3790,37 @@
         {
           "file": "scripts/goalkeeper/goalkeeper.gd",
           "name": "Goalkeeper.setup",
-          "line": 127,
+          "line": 156,
           "kind": "func"
         },
         {
           "file": "scripts/goalkeeper/goalkeeper.gd",
           "name": "Goalkeeper.reset_position",
-          "line": 161,
+          "line": 190,
           "kind": "func"
         },
         {
           "file": "scripts/goalkeeper/keeper_planner.gd",
           "name": "KeeperPlanner.path_world",
-          "line": 35,
+          "line": 55,
           "kind": "func"
         },
         {
           "file": "scripts/goalkeeper/keeper_planner.gd",
           "name": "KeeperPlanner.path_world_at_body",
-          "line": 46,
+          "line": 66,
           "kind": "func"
         },
         {
           "file": "scripts/goalkeeper/keeper_planner.gd",
           "name": "KeeperPlanner.peak_speed_time",
-          "line": 60,
+          "line": 80,
           "kind": "func"
         },
         {
           "file": "scripts/goalkeeper/keeper_planner.gd",
           "name": "KeeperPlanner.hands_world",
-          "line": 73,
+          "line": 93,
           "kind": "func"
         }
       ],
@@ -3779,7 +3832,7 @@
         "MATCH"
       ],
       "documentation": "docs/technical-index/SYSTEMS/GOALKEEPER.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "ball.predictor",
@@ -3802,13 +3855,13 @@
         {
           "file": "scripts/ball/ball_predictor.gd",
           "name": "BallPredictor.trajectory",
-          "line": 13,
+          "line": 19,
           "kind": "func"
         },
         {
           "file": "scripts/ball/ball_predictor.gd",
           "name": "BallPredictor.crossing_x",
-          "line": 47,
+          "line": 76,
           "kind": "func"
         }
       ],
@@ -3817,7 +3870,7 @@
         "BALL"
       ],
       "documentation": "docs/technical-index/SYSTEMS/BALL.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "ai.teams",
@@ -3849,7 +3902,8 @@
         "scripts/ai/ai_input.gd",
         "scripts/ai/team_brain.gd",
         "scripts/network/input_frame.gd",
-        "scripts/network/scripted_input.gd"
+        "scripts/network/scripted_input.gd",
+        "scripts/ai/ucs_params.gd"
       ],
       "symbols": [],
       "parameters": [],
@@ -3859,7 +3913,7 @@
         "BALL"
       ],
       "documentation": "docs/technical-index/SYSTEMS/MATCH.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "player.actions",
@@ -3891,61 +3945,61 @@
         {
           "file": "scripts/player/player_actions.gd",
           "name": "PlayerActions.start",
-          "line": 72,
+          "line": 97,
           "kind": "func"
         },
         {
           "file": "scripts/player/player_actions.gd",
           "name": "PlayerActions.try_slide_tackle",
-          "line": 129,
+          "line": 211,
           "kind": "func"
         },
         {
           "file": "scripts/player/player_actions.gd",
           "name": "PlayerActions.suffer_contact",
-          "line": 328,
+          "line": 482,
           "kind": "func"
         },
         {
           "file": "scripts/player/player_actions.gd",
           "name": "PlayerActions.try_skill",
-          "line": 389,
+          "line": 663,
           "kind": "func"
         },
         {
           "file": "scripts/player/player_actions.gd",
           "name": "PlayerActions.stumble",
-          "line": 405,
+          "line": 679,
           "kind": "func"
         },
         {
           "file": "scripts/animation/action_motion.gd",
           "name": "ActionMotion.start",
-          "line": 18,
+          "line": 27,
           "kind": "func"
         },
         {
           "file": "scripts/animation/action_motion.gd",
           "name": "ActionMotion.step",
-          "line": 33,
+          "line": 63,
           "kind": "func"
         },
         {
           "file": "scripts/animation/action_motion.gd",
           "name": "ActionMotion.sample_velocity",
-          "line": 44,
+          "line": 74,
           "kind": "func"
         },
         {
           "file": "scripts/animation/action_motion.gd",
           "name": "ActionMotion.stop",
-          "line": 51,
+          "line": 81,
           "kind": "func"
         },
         {
           "file": "scripts/animation/action_motion.gd",
           "name": "ActionMotion.offset_between",
-          "line": 55,
+          "line": 85,
           "kind": "func"
         }
       ],
@@ -3956,7 +4010,307 @@
         "BALL"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
+    },
+    {
+      "id": "player.action_arbiter",
+      "system": "PLAYER",
+      "description": "Árbitro de acciones del futbolista (modo 4): autoridad única sobre cuerpo y pose, con niveles de prioridad, testigos, interrupción completa, caducidad y poses en el sitio según la velocidad del clip.",
+      "keywords": [
+        "árbitro",
+        "arbitro de acciones",
+        "prioridad",
+        "prioridades",
+        "interrupción",
+        "interrupcion",
+        "conflicto de animaciones",
+        "animaciones superpuestas",
+        "pose",
+        "testigo",
+        "arbiter",
+        "priority",
+        "interrupt",
+        "token",
+        "action conflict"
+      ],
+      "files": [
+        "scripts/player/action_arbiter.gd",
+        "scripts/player/player_actions.gd",
+        "scripts/player/ball_handler.gd",
+        "scripts/player/footballer.gd",
+        "scripts/player/footballer_visual.gd",
+        "scripts/player/json_ball_move.gd",
+        "tests/test_action_arbiter.gd"
+      ],
+      "symbols": [
+        {
+          "file": "scripts/player/action_arbiter.gd",
+          "name": "ActionArbiter.request",
+          "line": 69,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/action_arbiter.gd",
+          "name": "ActionArbiter.play",
+          "line": 88,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/action_arbiter.gd",
+          "name": "ActionArbiter.play_situation",
+          "line": 102,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/action_arbiter.gd",
+          "name": "ActionArbiter.release",
+          "line": 135,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/action_arbiter.gd",
+          "name": "ActionArbiter.handover",
+          "line": 124,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/action_arbiter.gd",
+          "name": "ActionArbiter.relevel",
+          "line": 147,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/action_arbiter.gd",
+          "name": "ActionArbiter.cut_pose",
+          "line": 155,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/action_arbiter.gd",
+          "name": "ActionArbiter.reset",
+          "line": 164,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/action_arbiter.gd",
+          "name": "ActionArbiter.holds_pose",
+          "line": 175,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/action_arbiter.gd",
+          "name": "ActionArbiter.current_level",
+          "line": 58,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/action_arbiter.gd",
+          "name": "ActionArbiter.can_start",
+          "line": 64,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/action_arbiter.gd",
+          "name": "ActionArbiter.fits_in_place",
+          "line": 179,
+          "kind": "func"
+        }
+      ],
+      "parameters": [
+        {
+          "file": "scripts/player/action_arbiter.gd",
+          "name": "ActionArbiter.IN_PLACE_SLACK",
+          "default": "1.8",
+          "line": 35
+        }
+      ],
+      "dependencies": [
+        "PLAYER",
+        "ANIMATIONS",
+        "BALL"
+      ],
+      "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
+      "last_verified": "2026-11-06"
+    },
+    {
+      "id": "player.json_receive",
+      "system": "PLAYER",
+      "description": "Recepción y control de pelota del modo 4 (F3 corregido): perfiles de contacto por clip (parte del cuerpo e instante del primer contacto real), plan con la trayectoria 3D de la pelota, anticipación del receptor, contacto cuando la pelota llega a la parte del cuerpo animada y respuesta física por parte.",
+      "keywords": [
+        "recepción",
+        "recepcion",
+        "recibir",
+        "control",
+        "primer toque",
+        "control orientado",
+        "amortiguar",
+        "pase recibido",
+        "receive",
+        "reception",
+        "first touch",
+        "ball control",
+        "trap"
+      ],
+      "files": [
+        "scripts/player/json_receive.gd",
+        "scripts/player/receive_profiles.gd",
+        "scripts/player/json_ball_move.gd",
+        "scripts/player/ball_handler.gd",
+        "scripts/player/footballer.gd",
+        "tests/test_receive.gd",
+        "tools/json_anim/receive_view.gd",
+        "tools/json_anim/make_receive_profiles.py"
+      ],
+      "symbols": [
+        {
+          "file": "scripts/player/json_receive.gd",
+          "name": "JsonReceive.consider",
+          "line": 341,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/json_receive.gd",
+          "name": "JsonReceive.plan",
+          "line": 402,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/json_receive.gd",
+          "name": "JsonReceive.profile",
+          "line": 113,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/json_receive.gd",
+          "name": "JsonReceive.selectable",
+          "line": 128,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/json_receive.gd",
+          "name": "JsonReceive.contact_point",
+          "line": 176,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/json_receive.gd",
+          "name": "JsonReceive.path_point",
+          "line": 241,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/json_receive.gd",
+          "name": "JsonReceive.contact_velocity",
+          "line": 647,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/json_receive.gd",
+          "name": "JsonReceive.contact_offset",
+          "line": 634,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/json_receive.gd",
+          "name": "JsonReceive.ended",
+          "line": 700,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/json_ball_move.gd",
+          "name": "JsonBallMove.start_receive",
+          "line": 444,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/ball_handler.gd",
+          "name": "BallHandler.first_touch_absorb",
+          "line": 3071,
+          "kind": "func"
+        }
+      ],
+      "parameters": [
+        {
+          "file": "scripts/player/json_receive.gd",
+          "name": "JsonReceive.MIN_CLOSING",
+          "default": "1.0",
+          "line": 31
+        },
+        {
+          "file": "scripts/player/json_receive.gd",
+          "name": "JsonReceive.MAX_LEAD",
+          "default": "1.0",
+          "line": 36
+        },
+        {
+          "file": "scripts/player/json_receive.gd",
+          "name": "JsonReceive.MAX_DV",
+          "default": "1.2",
+          "line": 43
+        },
+        {
+          "file": "scripts/player/json_receive.gd",
+          "name": "JsonReceive.TURN_TOL",
+          "default": "50.0",
+          "line": 49
+        },
+        {
+          "file": "scripts/player/json_receive.gd",
+          "name": "JsonReceive.DIR_TOL",
+          "default": "60.0",
+          "line": 51
+        },
+        {
+          "file": "scripts/player/json_receive.gd",
+          "name": "JsonReceive.BODY_CLEAR",
+          "default": "0.44",
+          "line": 57
+        },
+        {
+          "file": "scripts/player/json_receive.gd",
+          "name": "JsonReceive.CONTACT_EARLY",
+          "default": "0.12",
+          "line": 69
+        },
+        {
+          "file": "scripts/player/json_receive.gd",
+          "name": "JsonReceive.CONTACT_LATE",
+          "default": "0.25",
+          "line": 70
+        },
+        {
+          "file": "scripts/player/json_receive.gd",
+          "name": "JsonReceive.APPROACH_MAX",
+          "default": "2.5",
+          "line": 74
+        },
+        {
+          "file": "scripts/player/json_receive.gd",
+          "name": "JsonReceive.REBOUND",
+          "default": "0.6",
+          "line": 64
+        },
+        {
+          "file": "scripts/player/json_receive.gd",
+          "name": "JsonReceive.TRAJ_DRIFT",
+          "default": "0.35",
+          "line": 80
+        },
+        {
+          "file": "scripts/player/json_receive.gd",
+          "name": "JsonReceive.TRAJ_DV",
+          "default": "1.0",
+          "line": 83
+        }
+      ],
+      "dependencies": [
+        "PLAYER",
+        "ANIMATIONS",
+        "BALL",
+        "JSON_MODE"
+      ],
+      "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
+      "last_verified": "2026-11-06"
     },
     {
       "id": "match.referee",
@@ -3982,7 +4336,7 @@
         "MATCH"
       ],
       "documentation": "docs/technical-index/SYSTEMS/MATCH.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "practice.scene",
@@ -4011,43 +4365,43 @@
         {
           "file": "scripts/gameplay/practice_scene.gd",
           "name": "PracticeScene.clip_ids",
-          "line": 74,
+          "line": 102,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/practice_scene.gd",
           "name": "PracticeScene.grouped",
-          "line": 86,
+          "line": 114,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/practice_scene.gd",
           "name": "PracticeScene.play",
-          "line": 189,
+          "line": 219,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/practice_scene.gd",
           "name": "PracticeScene.toggle_juggle",
-          "line": 210,
+          "line": 240,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/juggle_controller.gd",
           "name": "JuggleController.start",
-          "line": 73,
+          "line": 80,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/juggle_controller.gd",
           "name": "JuggleController.stop",
-          "line": 85,
+          "line": 95,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/juggle_controller.gd",
           "name": "JuggleController.tick",
-          "line": 92,
+          "line": 102,
           "kind": "func"
         }
       ],
@@ -4058,7 +4412,7 @@
         "UI_HUD"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ANIMATIONS.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "match.set_pieces",
@@ -4093,43 +4447,43 @@
         {
           "file": "scripts/gameplay/set_piece.gd",
           "name": "SetPiece.execute",
-          "line": 241,
+          "line": 249,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/set_piece.gd",
           "name": "SetPiece.ai_execute",
-          "line": 188,
+          "line": 196,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/set_piece.gd",
           "name": "SetPiece.force",
-          "line": 287,
+          "line": 298,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_manager.gd",
           "name": "MatchManager._check_out_of_play",
-          "line": 177,
+          "line": 183,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_manager.gd",
           "name": "MatchManager._begin_set_piece",
-          "line": 224,
+          "line": 230,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/match_scene.gd",
           "name": "MatchScene._on_set_piece_requested",
-          "line": 277,
+          "line": 281,
           "kind": "func"
         },
         {
           "file": "scripts/goalkeeper/goalkeeper.gd",
           "name": "Goalkeeper.start_goal_kick",
-          "line": 902,
+          "line": 1047,
           "kind": "func"
         }
       ],
@@ -4141,7 +4495,7 @@
         "PITCH"
       ],
       "documentation": "docs/technical-index/SYSTEMS/MATCH.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "match.replay",
@@ -4163,19 +4517,19 @@
         {
           "file": "scripts/gameplay/goal_replay.gd",
           "name": "GoalReplay.start",
-          "line": 117,
+          "line": 122,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/goal_replay.gd",
           "name": "GoalReplay.skip",
-          "line": 148,
+          "line": 153,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/goal_replay.gd",
           "name": "GoalReplay.mark_goal",
-          "line": 113,
+          "line": 118,
           "kind": "func"
         }
       ],
@@ -4186,7 +4540,7 @@
         "CAMERA"
       ],
       "documentation": "docs/technical-index/SYSTEMS/MATCH.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "assistance.cross_through",
@@ -4226,7 +4580,7 @@
         {
           "file": "scripts/assistance/pass_assist.gd",
           "name": "PassAssist.compute_through",
-          "line": 142,
+          "line": 157,
           "kind": "func"
         }
       ],
@@ -4236,7 +4590,7 @@
         "PLAYER"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ASSISTANCE.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "ball.curl",
@@ -4286,7 +4640,7 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.curl_from",
-          "line": 450,
+          "line": 507,
           "kind": "func"
         },
         {
@@ -4302,7 +4656,7 @@
         "ASSISTANCE"
       ],
       "documentation": "docs/technical-index/SYSTEMS/BALL.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "ball.visual_spin",
@@ -4354,7 +4708,7 @@
         "BALL"
       ],
       "documentation": "docs/technical-index/SYSTEMS/BALL.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "player.foot_sync",
@@ -4381,19 +4735,19 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._sample_feet",
-          "line": 980,
+          "line": 1382,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._foot_strike",
-          "line": 1032,
+          "line": 1434,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._try_dribble_touch",
-          "line": 1747,
+          "line": 2236,
           "kind": "func"
         }
       ],
@@ -4403,7 +4757,7 @@
         "BALL"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "player.clip_touches",
@@ -4451,61 +4805,61 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._clip_touch_update",
-          "line": 1386,
+          "line": 1865,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._plan_clip_touch",
-          "line": 1489,
+          "line": 1968,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._clip_touch_step",
-          "line": 1638,
+          "line": 2117,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._predict_body",
-          "line": 1528,
+          "line": 2007,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._update_touch_ik",
-          "line": 1593,
+          "line": 2072,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler._curve_turn_scale",
-          "line": 2169,
+          "line": 2856,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.touch_candidates",
-          "line": 1282,
+          "line": 1761,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.clip_touch_gap",
-          "line": 1373,
+          "line": 1852,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.dribble_speed_cap",
-          "line": 318,
+          "line": 352,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.toe_world",
-          "line": 1586,
+          "line": 2065,
           "kind": "func"
         },
         {
@@ -4517,7 +4871,7 @@
         {
           "file": "scripts/animation/touch_foot_ik.gd",
           "name": "TouchFootIK.ik_toe",
-          "line": 106,
+          "line": 111,
           "kind": "func"
         },
         {
@@ -4529,13 +4883,13 @@
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.play_touch",
-          "line": 373,
+          "line": 417,
           "kind": "func"
         },
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.carry_phase",
-          "line": 383,
+          "line": 427,
           "kind": "func"
         },
         {
@@ -4552,7 +4906,7 @@
         "BALL"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "player.drag_back",
@@ -4641,19 +4995,19 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.carry_steer",
-          "line": 2208,
+          "line": 2895,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.settle_steer",
-          "line": 2074,
+          "line": 2669,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.ball_travel",
-          "line": 237,
+          "line": 271,
           "kind": "func"
         },
         {
@@ -4671,7 +5025,7 @@
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer._skill_is_drag_back",
-          "line": 417,
+          "line": 568,
           "kind": "func"
         }
       ],
@@ -4682,7 +5036,7 @@
         "ANIMATIONS"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "inputs.bindings",
@@ -4717,7 +5071,7 @@
         "UI_HUD"
       ],
       "documentation": "docs/technical-index/SYSTEMS/INPUTS.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "player.ball_turn",
@@ -4813,7 +5167,7 @@
         {
           "file": "scripts/player/footballer_visual.gd",
           "name": "FootballerVisual.turn_crouch",
-          "line": 143,
+          "line": 147,
           "kind": "var"
         }
       ],
@@ -4824,7 +5178,7 @@
         "ANIMATIONS"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "player.loose_ball_chase",
@@ -4854,19 +5208,19 @@
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.loose_ball_chase",
-          "line": 262,
+          "line": 296,
           "kind": "func"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.LOOSE_CHASE_RANGE",
-          "line": 255,
+          "line": 289,
           "kind": "const"
         },
         {
           "file": "scripts/player/footballer.gd",
           "name": "Footballer.LOOSE_SNAP_DEG",
-          "line": 39,
+          "line": 41,
           "kind": "const"
         },
         {
@@ -4883,7 +5237,7 @@
         "MATCH"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "audio.sfx",
@@ -4973,7 +5327,7 @@
         "UI_HUD"
       ],
       "documentation": "docs/technical-index/SYSTEMS/AUDIO.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
     },
     {
       "id": "animation.mocap_mode",
@@ -5022,55 +5376,55 @@
         {
           "file": "scripts/animation/animation_catalog.gd",
           "name": "AnimationCatalog.mocap_mode",
-          "line": 67,
+          "line": 69,
           "kind": "func"
         },
         {
           "file": "scripts/animation/animation_catalog.gd",
           "name": "AnimationCatalog.MOCAP_KICKS",
-          "line": 51,
+          "line": 53,
           "kind": "const"
         },
         {
           "file": "scripts/animation/animation_catalog.gd",
           "name": "AnimationCatalog.kick_candidates",
-          "line": 104,
+          "line": 115,
           "kind": "func"
         },
         {
           "file": "scripts/animation/animation_catalog.gd",
           "name": "AnimationCatalog.resolve",
-          "line": 86,
+          "line": 88,
           "kind": "func"
         },
         {
           "file": "scripts/animation/pack_library.gd",
           "name": "PackLibrary.MOCAP_PATH",
-          "line": 13,
+          "line": 19,
           "kind": "const"
         },
         {
           "file": "scripts/player/ball_handler.gd",
           "name": "BallHandler.clip_timing",
-          "line": 535,
+          "line": 598,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/set_piece.gd",
           "name": "SetPiece._kick_clip",
-          "line": 336,
+          "line": 353,
           "kind": "func"
         },
         {
           "file": "scripts/gameplay/tuning.gd",
           "name": "Tuning.gameplay_mode",
-          "line": 39,
+          "line": 45,
           "kind": "var"
         },
         {
           "file": "scripts/ui/hud.gd",
           "name": "Hud._cycle_gameplay_mode",
-          "line": 230,
+          "line": 244,
           "kind": "func"
         },
         {
@@ -5100,7 +5454,300 @@
         "UI_HUD"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ANIMATION_PACK.md",
-      "last_verified": "2026-10-29"
+      "last_verified": "2026-11-06"
+    },
+    {
+      "id": "animation.json_mode",
+      "system": "JSON_MODE",
+      "description": "Modo 4 «Json» de jugabilidad: las 2 022 animaciones de animaciones_futbol5_JSON (posiciones de 19 articulaciones) convertidas a rotaciones sobre un esqueleto canónico (JsonRig, retarget por marcos con IK de dos huesos) y conectadas por rol (3 223 clips con espejos) sobre el humanoide propio (el GLB de Tripo adaptado se descartó). Marcha con ciclos de tiempo común, conducción con toques dados con el pie (IK al toque, toques de rumbo en diagonal), giros con pelota / vuelta pisando la pelota / regates / frenadas con los clips y sus toques (JsonBallMove), golpeo girando hacia un destino a un costado o detrás (no patea de espaldas), giros sin pelota con raíz y rumbo del clip, pases/tiros/cabezazos/voleas, barridas, caídas con levantarse en la misma postura, festejos y escenas por rol, barrera, arquero (estiradas y levantarse), técnicos, mascota y público.",
+      "keywords": [
+        "modo 4",
+        "modo json",
+        "json",
+        "animaciones json",
+        "animaciones futbol5",
+        "modelo json",
+        "humanoide",
+        "humanoide realista",
+        "esqueleto canonico",
+        "retarget",
+        "posiciones a rotaciones",
+        "json mode",
+        "json clips",
+        "json_clips",
+        "conduccion",
+        "pases fluidos",
+        "modelo del jugador",
+        "jugador realista",
+        "json animation",
+        "tools/json_anim",
+        "gameplay mode 4",
+        "giro con pelota",
+        "girar con la pelota",
+        "vuelta atras",
+        "pisar la pelota",
+        "drag back",
+        "arrastre",
+        "regate",
+        "toques en diagonal",
+        "toques de conduccion",
+        "patear de espaldas",
+        "patada girando",
+        "girar y patear",
+        "turn kick",
+        "todas las animaciones",
+        "2000 animaciones",
+        "festejos",
+        "tecnico",
+        "mascota",
+        "publico",
+        "barrera",
+        "levantarse",
+        "escenas",
+        "ball move",
+        "turn with ball",
+        "auditoria del banco",
+        "reclasificacion",
+        "inventario de animaciones",
+        "clip roles overlay",
+        "alias de clips",
+        "bank audit"
+      ],
+      "files": [
+        "scripts/animation/json_rig.gd",
+        "scripts/animation/json_retarget.gd",
+        "scripts/animation/json_catalog.gd",
+        "scripts/animation/pack_library.gd",
+        "scripts/animation/animation_catalog.gd",
+        "scripts/player/footballer_visual.gd",
+        "scripts/player/ball_handler.gd",
+        "scripts/player/player_actions.gd",
+        "scripts/goalkeeper/keeper_planner.gd",
+        "scripts/gameplay/set_piece.gd",
+        "scripts/gameplay/referee.gd",
+        "scripts/gameplay/tuning.gd",
+        "tools/json_anim/build_json_library.gd",
+        "tools/json_anim/build_json_human.gd",
+        "tools/json_anim/json_clip_data.gd",
+        "tools/json_anim/make_selection.py",
+        "tools/json_anim/retarget_check.gd",
+        "tools/json_anim/model_preview.gd",
+        "tools/json_anim/play_view.gd",
+        "tools/json_anim/keeper_view.gd",
+        "tools/json_anim/match_shot.gd",
+        "assets/characters/json/json_kit.gdshader",
+        "tests/test_json_mode.gd",
+        "scripts/player/json_ball_move.gd",
+        "scripts/animation/action_motion.gd",
+        "scripts/player/footballer.gd",
+        "scripts/goalkeeper/goalkeeper.gd",
+        "scripts/gameplay/match_scene.gd",
+        "scripts/gameplay/match_manager.gd",
+        "scripts/gameplay/practice_scene.gd",
+        "scripts/animation/clip_roles_overlay.gd",
+        "tools/json_anim/analyze_bank.py",
+        "scripts/animation/anim_db.gd",
+        "tools/json_anim/make_animdb.py",
+        "tools/json_anim/dump_ball_pools.gd"
+      ],
+      "symbols": [
+        {
+          "file": "scripts/animation/json_rig.gd",
+          "name": "JsonRig.rest_positions",
+          "line": 55,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/animation/json_rig.gd",
+          "name": "JsonRig.build_skeleton",
+          "line": 148,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/animation/json_retarget.gd",
+          "name": "JsonRetarget.solve",
+          "line": 144,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/animation/json_retarget.gd",
+          "name": "JsonRetarget._limb",
+          "line": 219,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/animation/json_catalog.gd",
+          "name": "JsonCatalog.GAIT",
+          "line": 13,
+          "kind": "const"
+        },
+        {
+          "file": "scripts/animation/json_catalog.gd",
+          "name": "JsonCatalog.CARRY",
+          "line": 17,
+          "kind": "const"
+        },
+        {
+          "file": "scripts/animation/json_catalog.gd",
+          "name": "JsonCatalog.cycles_per_second",
+          "line": 86,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/animation/json_catalog.gd",
+          "name": "JsonCatalog.kick_candidates",
+          "line": 108,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/animation/pack_library.gd",
+          "name": "PackLibrary.json_mode",
+          "line": 37,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/animation/pack_library.gd",
+          "name": "PackLibrary.resolve",
+          "line": 124,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/animation/pack_library.gd",
+          "name": "PackLibrary.by_role",
+          "line": 199,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/footballer_visual.gd",
+          "name": "FootballerVisual._json_cycle_node",
+          "line": 272,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/gameplay/tuning.gd",
+          "name": "Tuning.GAMEPLAY_MODES",
+          "line": 40,
+          "kind": "const"
+        },
+        {
+          "file": "scripts/player/ball_handler.gd",
+          "name": "BallHandler.JSON_KICK_VARIETY",
+          "line": 39,
+          "kind": "const"
+        },
+        {
+          "file": "scripts/player/ball_handler.gd",
+          "name": "BallHandler.JSON_PLANT_MISMATCH_COST",
+          "line": 42,
+          "kind": "const"
+        },
+        {
+          "file": "scripts/goalkeeper/keeper_planner.gd",
+          "name": "KeeperPlanner.JSON_ROLE_RADIUS",
+          "line": 20,
+          "kind": "const"
+        },
+        {
+          "file": "scripts/player/json_ball_move.gd",
+          "name": "JsonBallMove.consider",
+          "line": 204,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/json_ball_move.gd",
+          "name": "JsonBallMove.plan_move",
+          "line": 315,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/json_ball_move.gd",
+          "name": "JsonBallMove.turn_for_kick",
+          "line": 302,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/json_ball_move.gd",
+          "name": "JsonBallMove.step",
+          "line": 475,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/ball_handler.gd",
+          "name": "BallHandler.plan_turn_kick",
+          "line": 1013,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/ball_handler.gd",
+          "name": "BallHandler.estimated_kick_dir",
+          "line": 989,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/ball_handler.gd",
+          "name": "BallHandler._json_touch_ik_step",
+          "line": 2558,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/ball_handler.gd",
+          "name": "BallHandler._steer_touch_ready",
+          "line": 2592,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/animation/pack_library.gd",
+          "name": "PackLibrary.vary_aliases",
+          "line": 216,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/animation/json_catalog.gd",
+          "name": "JsonCatalog.situation_clip",
+          "line": 169,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/animation/action_motion.gd",
+          "name": "ActionMotion.heading_rel",
+          "line": 49,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/player_actions.gd",
+          "name": "PlayerActions.start_move",
+          "line": 133,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/footballer.gd",
+          "name": "Footballer._json_turn_move",
+          "line": 513,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/player/footballer.gd",
+          "name": "Footballer._json_idle",
+          "line": 491,
+          "kind": "func"
+        },
+        {
+          "file": "scripts/goalkeeper/goalkeeper.gd",
+          "name": "Goalkeeper._json_getup",
+          "line": 1252,
+          "kind": "func"
+        }
+      ],
+      "parameters": [],
+      "dependencies": [
+        "ANIMATION_PACK",
+        "ANIMATIONS",
+        "PLAYER",
+        "GOALKEEPER",
+        "TUNING"
+      ],
+      "documentation": "docs/technical-index/SYSTEMS/JSON_MODE.md",
+      "last_verified": "2026-11-06"
     }
   ]
 }

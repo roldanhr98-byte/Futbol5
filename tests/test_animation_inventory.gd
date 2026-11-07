@@ -5,6 +5,10 @@ extends TestCase
 ## cuerpo = toque de conduccion visible) y apoyos. No se juzga ningun clip por su nombre.
 ## Con la variable INVENTORY_OUT escribe el informe (docs/technical-index/ANIMATION_INVENTORY.md).
 
+## Sistema del modo 1 (pack de Mixamo / Tripo), descartado como modo de juego pero todavia en el codigo: se prueba en su modo.
+func gameplay_mode() -> int:
+	return 1
+
 func _ids() -> Array:
 	return Array(PackLibrary.field().get_animation_list()) + Array(PackLibrary.keeper().get_animation_list())
 

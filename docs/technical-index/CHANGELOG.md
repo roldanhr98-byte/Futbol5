@@ -11,6 +11,497 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-11-06 — Documentación de transferencia de la integración (sin cambios de código de juego)
+
+Rama `respaldo-f3`. Pedido: documentación técnica completa para transferir el proyecto. Carpeta nueva
+[`docs/transferencia_integracion_completa/`](../transferencia_integracion_completa/README_MAESTRO.md):
+
+- 10 documentos: README_MAESTRO, MAPA_ANIMACIONES, DATOS_UCS, FISICAS_BALON, FISICAS_JUGADOR, ACCIONES_FUTBOLISTICAS,
+  IA_UCS_Y_FUTBOL5, PARAMETROS_UCS, MAPA_CODIGO y PENDIENTES_INTEGRACION;
+- `INVENTARIO_ANIMACIONES.csv`: 2024 clips × 59 columnas, con el filtro real de cada sistema;
+- `PARAMETROS_UCS.csv`: 211 parámetros.
+
+- **Herramientas** (`tools/transfer/`, no tocan el juego): `dump_library_meta`, `make_inventory.py`,
+  `adb_field_stats.py`, `ucs_params_extract.py`, `make_params_doc.py`, `make_symbol_index.py` y `check_references.py`.
+- **Correcciones de datos de UCS** (no cambian el juego: esos datos no se leen):
+  - el campo 3 de `animdb.adb` es el byte de la cabecera del `.sat` (1832/1832), no el cuadro del toque; el contacto
+    de los golpeos está en el campo 24 [deducido];
+  - varios campos cambian de significado por familia;
+  - en `E4_parametros_ucs.csv`, 9 valores estaban mal o vacíos y faltaba `Version` (211 parámetros).
+- **Notas añadidas** al final de `docs/fases/E3_conduccion_ucs.md` y `docs/fases/E4_integracion_ucs.md`. El CSV de E4
+  se conserva.
+- **Verificación:**
+  - `python3 tools/transfer/check_references.py`: 0 errores (456 rutas, 193 citas de línea, 1293 símbolos, 240
+    líneas de función, 23 enlaces);
+  - `python3 tools/docs_index.py check`;
+  - no se ejecutaron pruebas del juego, porque no hubo cambios de código de juego.
+
+## 2026-11-06 — E4: integración al nivel de UCS (IA con sus parámetros, golpeo de primera sincronizado con el pie animado)
+
+Rama `respaldo-f3`. Pedido: integrar todo como UCS con autorización completa. Informe:
+[`docs/fases/E4_integracion_ucs.md`](../fases/E4_integracion_ucs.md) ·
+[MATCH](SYSTEMS/MATCH.md#ia-con-los-parámetros-de-ucs-2026-11-06) ·
+[PLAYER](SYSTEMS/PLAYER.md#golpeo-de-primera-el-impulso-sale-cuando-la-pelota-llega-al-pie-animado-2026-11-06).
+
+- **UCS, comprobado:**
+  - `libMPX.so` carga 210 parámetros de juego con valores por defecto enteros (`docs/fases/E4_parametros_ucs.csv`,
+    leídos del código ARM64);
+  - en `animdb.adb`, los vectores de pelota de las recepciones no son el punto de contacto (son el destino tras el toque).
+- **IA:** hasta 2 presionan y 1 entra (`MaxActivePresses`/`MaxActiveTackles`, rol `press2`); amplitud al 60 %
+  (`WidthOpenPlay`); el portador pasa sin presión entre 0.5 y 2 s (`BotMin/MaxKickFrames`).
+- **Probado y descartado:**
+  - la reacción del arquero de UCS y la presión al 95 % (fallaba `test_shot_keeper`);
+  - la ventana del joystick en giros grandes.
+- **Golpeo de primera:** el impulso sale en el paso con la punta del pie animado más cerca de la pelota que llega
+  (`BallHandler._ball_still_arriving`). Medido 0.264/0.268 → 0.172/0.162 m.
+- **Toque orientado:**
+  - hasta 5 m/s, con la salida orientada menos cuanto más rápido;
+  - no arranca durante 1.2 s tras un golpe propio;
+  - espera propia, corta tras un arranque.
+- **Pruebas:**
+  - suite headless completa 290/0 (1725 comprobaciones);
+  - `test_live_kicks` (render) 4/0, con 50/50 golpeos con contacto;
+  - `test_physical_dribble` (render) 5/0;
+  - grupos con el código final sin fallos (ver el informe).
+- **Pendiente:** la sensación en el teléfono.
+
+## 2026-11-05 — Conducción como UCS: toque orientado con los clips de conducción de UCS y botines proporcionados
+
+Rama `respaldo-f3`. Pedido del usuario, con el video de UCS (`Screenrecorder-20261105-145139`) y el paquete de recursos
+de UCS:
+
+- analizar la conducción cuadro por cuadro;
+- «el pie izquierdo toca para doblar hacia la derecha; si voy a doblar a la izquierda, el pie derecho orienta la pelota…
+  o con el exterior del pie»;
+- «hay animaciones que no están conectadas»;
+- mirar el APK de UCS;
+- los pies y botines son muy grandes.
+
+Informe completo: [`docs/fases/E3_conduccion_ucs.md`](../fases/E3_conduccion_ucs.md) ·
+[JSON_MODE](SYSTEMS/JSON_MODE.md#conducción) · [TESTING](SYSTEMS/TESTING.md#toque-orientado-con-clips-de-ucs-y-botines-2026-11-05).
+
+- **Dónde está en UCS:** `animdb.adb` (APK de UCS, carpeta de animaciones junto a `anims.pak`) tiene un registro de 104 bytes por clip, en el orden de los `.sat`
+  y de nuestros JSON (2022/2022 coinciden en cuadros). Cada registro guarda:
+  - el cuadro del toque de pelota;
+  - el pie (bit 128 izquierdo, bit 256 derecho);
+  - el destino de la pelota (mm);
+  - el giro del clip;
+  - la ventana del joystick en la que se elige (sectores de 11.25°);
+  - las velocidades de entrada y salida.
+
+  Tabla de los 78 clips de conducción: `docs/fases/E3_conduccion_ucs_animdb.csv`. El código que los lee (`libMPX.so`) no
+  se descompiló.
+- **Video, 2099 cuadros revisados:** el giro lo da un toque en el momento de girar. Con la pelota al centro, el interior
+  del pie de afuera (izquierdo para la derecha, derecho para la izquierda). Con la pelota del lado del giro, el exterior de
+  ese pie. Un toque cada 0.26-0.39 s al trote, con la pelota 0.5-1.0 m delante. Notas:
+  `docs/fases/E3_video_conduccion_notas.md`.
+- **Qué faltaba conectar:** los 78 clips están en el banco. Los de avance con giro chico solo salían con REGATE. Las
+  diagonales «45» solo entraban con el joystick a ≥ 50°. Por debajo de 50° giraba un impulso físico con el pie más cercano.
+- **Cambio, toque orientado** (`JsonBallMove`, intención `steer`, solo el jugador de la persona):
+  - con el joystick a 14-50° del frente, uno de los 41 clips de conducción de UCS (y sus espejos; 82 en total) que gira hacia ese lado;
+  - lo planifica cada paso, prefiere el pie de afuera y se corta tras su segundo toque, que deja la pelota hacia el
+    joystick;
+  - si ninguno encaja, sigue el toque de rumbo físico;
+  - `PlayerActions.start_move` acepta el corte;
+  - `JsonBallMove.reset_caches` se llama desde `PackLibrary._reset_caches`.
+- **Cambio, botines** (`tools/json_anim/build_json_human.gd`, `assets/characters/json/json_human.scn` regenerado): de
+  ~0.40 m a ~0.26 m, de 6 cm detrás a 18.3 cm delante del tobillo. Es el pie de una persona de 1.74 m, la talla del
+  esqueleto, que es el de UCS. Mecánica sin cambios: los toques usan los huesos, no la malla.
+- **Medido** (`play_view`, render Xvfb):
+  - `steps` (±35°): 3 toques orientados y 1 giro por corrida, a los dos lados, error del pie ≤ 0.07 m, 0 cortes;
+    pelota-cuerpo mediana 0.52-0.55 m;
+  - `zigzag`: 4 toques orientados (antes 2 giros), mediana 0.51 m (antes 0.53), p90 0.90 (0.92);
+  - `diag`: p90 0.96 m (antes 0.52), dentro de los 0.5-1.0 m de UCS;
+  - curva lenta: sin cambios (el cuerpo sigue al joystick y no hace falta clip).
+- **Pruebas:**
+  - Suite headless completa con el código del commit `0dbdc63`: **290 pruebas, 0 fallidas, 32 omitidas (render), 1722
+    comprobaciones**, 852.7 s.
+  - `tools/run_tests.sh mode4_dribble` con el código de esta entrada: 9 pruebas, 0 fallidas, 59 comprobaciones. La nueva
+    `test_oriented_touch_with_ucs_dribble_clips` dio 4 de 4 cambios de 35° con un clip de UCS, error del pie ≤ 0.16 m,
+    pelota a ≤ 9° del joystick y máximo 0.96 m.
+- **animdb propio y arranque con pelota (segundo pedido del mismo día):**
+  - `assets/animations/animdb.json` (`tools/json_anim/make_animdb.py`, lo lee `AnimDB`; se exporta en el APK) tiene
+    todas las animaciones por acción, con su estado y los datos de UCS de cada clip.
+  - El toque orientado solo usa clips cuya ventana del joystick de UCS contiene el pedido.
+  - Nuevo arranque con pelota desde parado (`JsonBallMove`, intención `start`): rol `ball_start` (antes sin sistema) y
+    clips de conducción de UCS que entran casi quietos. En `play_view` arranca con `0544` (espejo), toques a 1-2 cm,
+    pelota a ≤ 0.65 m.
+  - Segunda suite completa (con el arranque): 290 pruebas, **2 fallidas**.
+    - `test_ball_turn::test_wide_turn_and_sprint` falló por el arranque con sprint apretado. Ahora con sprint el arranque
+      es el de siempre y pasa.
+    - `test_ai_match::test_ai_teams_play_a_real_match_without_getting_stuck`: el control pasaba al receptor con la entrada
+      de la IA. El toque orientado y el arranque ahora son solo del mando de la persona, así que la IA ejecuta el mismo
+      código que antes.
+    - Partido de IA medido: con el código anterior (`dc90567`) falló 1 de 3 corridas y con el final 1 de 3 (antes del
+      guardia, 2 de 3). Es la inestabilidad ya documentada (sin semillas fijas).
+    - Con el código final, sin fallos: `mode4_dribble` 9, `ball_turn` 4, `gameplay_feel` 10, `json_mode` 10, `receive`
+      30, `player_actions` 4, `action_arbiter` 9.
+  - Quedan sin conectar 250 de presentación y fuera de la cancha y ~85 de juego (motivos en el animdb y en
+    [E3 §7](../fases/E3_conduccion_ucs.md#7-nuestro-animdb-y-animaciones-que-faltaban-conectar-segundo-pedido-2026-11-05)).
+- **Pendiente:** probarlo con el joystick real en el teléfono (APK). La IA no usa el toque orientado. No se decodificaron
+  las mallas de `models.pak` ni la cola de `animdb.adb`.
+
+## 2026-11-05 — Tirones de CPU (recepción, arquero), opciones de rendimiento y joystick suelto: el jugador va a la pelota
+
+Rama `respaldo-f3`. Pedido del usuario con dos videos (05-11 04:42:20 del juego y la referencia): «se traba mucho, mucho
+lag, dame más opciones de optimización» y «la pelota se acomoda al jugador en vez del jugador a la pelota». Detalle:
+[PERFORMANCE](SYSTEMS/PERFORMANCE.md#tirones-de-cpu-y-opciones-de-rendimiento-2026-11-05) ·
+[PLAYER](SYSTEMS/PLAYER.md#joystick-suelto-el-jugador-va-a-la-pelota-2026-11-05) ·
+[GOALKEEPER](SYSTEMS/GOALKEEPER.md#planificador-de-atajadas-mas-rapido-mismo-plan-2026-11-05) ·
+[JSON_MODE](SYSTEMS/JSON_MODE.md#recepción-sin-tirones-candidatos-precalculados-2026-11-05) · [TESTING](SYSTEMS/TESTING.md#rendimiento-y-joystick-suelto-2026-11-05).
+
+- **Medición:** `Prof` (nuevo, `scripts/diagnostics/prof.gd`) en cada sistema y `tools/perf_probe.tscn` (partido IA
+  contra IA, tiempo real de cada imagen). Tirones encontrados: `JsonReceive.consider` 10-60 ms en una imagen, el arquero
+  (`KeeperPlanner.plan_save`) 25 ms de media por llamada y picos de 47 ms, la IA preparando pases hasta 20 ms.
+- **Arreglos exactos (mismo resultado):** candidatos de recepción precalculados al cargar el partido y cota de alcance
+  (salida de las 34 pruebas de `test_receive` idéntica); planificador del arquero con caché, grupos con caja y cota del
+  puntaje (116 llamadas reales grabadas dan el mismo plan; 2-2.5 veces más rápido); carrera de entrada en la caché de
+  golpeos; parámetros de animación escritos solo si cambian.
+- **Resultado** (partido IA de 90 s, dos corridas por versión): imágenes de más de 12 ms 108-118 → 14; peor imagen 42-87
+  → 18-24 ms; p95 8.4-8.9 → 6.8-7.4 ms; media igual (~4 ms). **No medido en un teléfono.**
+- **Opciones nuevas:** «Imágenes por segundo: 60 / 30 (estables)», «Sombras: según gráficos / no / sí», menú de pausa con
+  desplazamiento; «Diagnóstico» muestra el costo de cada sistema (ms por paso) en el dispositivo; como mucho 3 pasos de
+  física por imagen (`project.godot`: sin cascada de imágenes lentas tras un tirón).
+- **Joystick suelto:** el jugador se gira y da los pasos hacia la pelota (o gira en el sitio si está pegada), la sigue si
+  rueda y la para con un pie que llega de verdad, dejándola quieta; ya no se mueve sola al frente del cuerpo. Prueba nueva
+  `physical_dribble::released_stick` (con el código anterior: jugador 0.00 m y toques sin pie en los 4 casos; ahora 0
+  toques sin pie y la pelota queda quieta delante en 0.08-0.62 s).
+- Prueba con medida corregida (dicho, no ocultado): `physical_dribble::pass_to_a_mate_behind` medía la dirección al
+  compañero desde la posición final de los dos jugadores; ahora desde la pelota al salir. La pelota sale igual con el código
+  anterior y el nuevo.
+- Archivos: `scripts/player/json_receive.gd`, `ball_handler.gd`, `footballer.gd`, `footballer_visual.gd`,
+  `scripts/goalkeeper/keeper_planner.gd`, `goalkeeper.gd`, `scripts/animation/json_catalog.gd`, `pack_library.gd`,
+  `procedural_pose.gd`, `touch_foot_ik.gd`, `scripts/gameplay/match_scene.gd` (y etiquetas `Prof` en `ball.gd`, `referee.gd`,
+  `match_manager.gd`, `goal_replay.gd`, `match_camera.gd`, `goal.gd`, `goal_net.gd`), `scripts/diagnostics/prof.gd`,
+  `graphics_settings.gd`, `diagnostics_overlay.gd`, `scripts/ui/hud.gd`, `project.godot`, `tools/perf_probe.*`,
+  `tools/json_anim/receive_view.gd`, `tests/test_physical_dribble.gd`.
+- Verificación (render, modo 4): `physical_dribble` 5/0, `live_feet` 7/0, `pack_motion` 2/0, `json_mode` 10/0 (1 omitida),
+  `directional_kicks` 3/0, `ball_turn` 4/0, `drag_back` 4/0, `dribble_reference` 2/0, `kick_reach` 2/0, `receive` 34/0
+  (1 omitida), `mode4_dribble` 8/0, `pack_dribble_metrics` 2/0, `audio` 3/0; `live_kicks` 3/1 en dos de cuatro corridas
+  (batería de 50 golpeos, «pase bajo presión en carrera» con la punta a 0.42-0.43 m): repetido 16 veces, el pie queda a más
+  de 0.3 m en 9 de 16 con el código anterior y 9 de 16 con el nuevo (defecto previo, pendiente).
+- Suite headless completa: **289 pruebas, 2 fallos intermitentes** (`test_json_mode::test_ai_match_in_json_mode`, 0 tiros
+  en 90 s; `test_training_mode::test_teammates_do_not_crowd_the_dribbler`), 32 omitidas, 1 691 comprobaciones, 0 SCRIPT
+  ERROR; repetidas 3 veces cada una, pasan 3 de 3. Tiros por partido IA de 90 s: media 2.0 (7 corridas) con el código
+  nuevo y 3.0 (6) con el anterior, con mucha variación (0-5): no concluyente, a vigilar.
+- Pruebas ajustadas (dicho, no ocultado): `test_pack_kick` coloca la pelota al final de la espera inicial, justo antes del
+  pedido (con el joystick suelto el jugador ahora se acomoda a una pelota al alcance que no tiene delante, y la pelota
+  «detrás» o «algo lejos del pie» ya no estaba ahí); el acomodo no actúa con un golpeo pedido o cargándose.
+- Pendiente: picos de la IA al preparar pases (hasta 13-20 ms), peor caso del arquero (16-20 ms), imágenes ocasionales de
+  50-85 ms cerca de las repeticiones de gol, costo medio de los jugadores; medir en un teléfono; pase bajo presión a la
+  carrera con el pie lejos de la pelota (9 de 16).
+- **GitHub Actions #46 falló** en `test_shared_ball_mechanics::test_every_touch_of_an_ai_carrier_comes_from_its_ball_handler`
+  (un impulso de la IA sin evento de su `BallHandler`). Causa previa: la recepción con muslo, rodilla, pecho o pie en el
+  aire (`JsonBallMove._touch`) impulsaba la pelota sin `touched_ball`; solo pasa si la IA recibe una pelota a media
+  altura (1 de 30 corridas de la prueba con el código nuevo, 0 de 30 con el anterior: depende de la jugada). Ahora avisa
+  el toque como `body`. Verificado: 40 corridas sin toques sueltos; `shared_ball_mechanics` 2/0, `receive` 34/0,
+  `json_mode` 10/0 (headless).
+- **GitHub Actions #47** (con el arreglo) falló en `test_full_match::test_three_minute_match…` («hay tiros»: 1, pide ≥ 2).
+  Partido de 3 min con IA, 5 corridas de cada versión: tiros 8, 7, 4, 4, 7 (media 6.0) con el código nuevo y 3, 7, 9, 10, 3
+  (media 6.4) con `0baf375`; en las suites locales del código nuevo hubo además partidos con 2 y 1 tiros. Distribuciones
+  parecidas con mucho azar: se relanzó una vez; si vuelve a fallar por pocos tiros, se revisa la IA con el acomodo nuevo.
+- **Reintento de #47** falló en `test_ai_match::test_ai_teams_play_a_real_match_without_getting_stuck` (un jugador de la IA
+  a más de 1 m fuera de la cancha). Con el código anterior las pruebas de partidos de IA pasaban; con el acomodo para
+  todos, cada suite tuvo alguna falla de partido de IA. Causa: el acomodo cercano movía también a la IA y su dirección no
+  pasaba por `Footballer._keep_inside` (seguía la pelota que se iba afuera). Ahora el acomodo cercano es solo para el
+  jugador de la persona; las reglas del toque siguen para todos. Verificado: `test_ai_teams_play_a_real_match…` 6 de 6
+  con el código nuevo y 6 de 6 con `0baf375` (tiros que enfrentan los arqueros parecidos); `physical_dribble` 5/0
+  (render), `pack_kick` 8/0, `receive` 34/0.
+- **GitHub Actions #48** falló en `test_json_mode::test_ai_match_in_json_mode` (0 tiros) y
+  `test_training_mode::test_teammates_do_not_crowd_the_dribbler`. Se acotaron también al jugador de la persona las reglas
+  nuevas del toque de parada (la IA conserva el de antes). Medido después con el código anterior (`0baf375`): esas dos
+  pruebas fallan 1 de 4 veces igual que con el nuevo, así que las fallas de #47-#48 son inestabilidad previa de las
+  pruebas de IA, no regresiones (la atribución al acomodo de la IA en #47 no quedó probada). Ver TESTING.
+- Suite headless completa con este código: **289 pruebas, 0 fallos**, 32 omitidas, 1 693 comprobaciones (local).
+  APK de prueba compilado en GitHub Actions con `skip_tests` (las pruebas, corridas localmente sobre el mismo commit).
+  Con render: `physical_dribble` 5/0, `pack_kick` 8/0, `receive` 34/0, `shared_ball_mechanics` 2/0.
+
+## 2026-11-05 — Conducción física sin «hilo», golpeos en todas direcciones con el banco, cancha de fútbol 7 y 60 fps
+
+Rama `respaldo-f3` (corrección del trabajo pedida por el usuario; continúa el programa maestro). Detalle:
+[PLAYER](SYSTEMS/PLAYER.md#conducción-física-y-golpeos-en-todas-direcciones-2026-11-05) ·
+[JSON_MODE](SYSTEMS/JSON_MODE.md#golpeos-hacia-cualquier-dirección-con-el-banco-2026-11-05) · [PERFORMANCE](SYSTEMS/PERFORMANCE.md) ·
+[TESTING](SYSTEMS/TESTING.md).
+
+- **Conducción física** (`BallHandler`): toque solo con el pie en la pelota (zona del pie, sin toques a distancia), giro
+  máximo por toque (`touch_turn_max_deg`: 150° caminando, 110° al trote, 70° a sprint; los giros mayores, con los giros con
+  pelota del banco como antes), la pelota sale recta y el jugador la **sigue** (`follow_steer`). Medido con la sonda en el
+  código anterior (render): a sprint la mitad de los toques eran sin pie, uno a 1.28 m del cuerpo, jugador hasta 71°
+  apartado de su pelota; ahora pelota ≤ 1.0 m y jugador ≤ 25° en la misma diagonal.
+- **Golpeos en todas direcciones con el banco** (`tests/test_directional_kicks.gd`, nuevo): pases a 0/45/90/135/180°
+  parado y al trote 10 de 10, con `kick_pass`, `kick_turn` (golpeo girando), **`kick_back` (taco) a 180° parado** y giro con
+  pelota + golpeo; tiros 9 de 10. **Corregido:** tras un giro con pelota para golpear (`turn_for_kick`) la orden caducaba
+  a los 0.5 s con el giro en curso (pase a 180° al trote sin golpeo); ahora espera al final del giro.
+- **Pase o tiro tras recibir:** con la orden esperando el fin del bloqueo (0.3 s tras la recepción) el jugador se queda
+  sobre la pelota (`holding_for_kick`); antes caminaba hacia el joystick, la dejaba detrás y el pase caducaba (lo mostró
+  `test_receive::test_reception_then_pass` en la suite y en GitHub Actions #44; ahora pasa: golpeo a los 0.32 s).
+- **Centros:** los 2 clips `kick_cross` del banco (y espejos) entran en los candidatos del centro; el planificador los usa
+  solo si el pie llega (en la prueba, los 3 centros salieron con `kick_pass` y cayeron en el área).
+- **Cancha de fútbol 7** (`PitchConfig`): 50 × 30 m, arcos 5 × 2, círculo 6 m, área y penal a 8 m; `PitchConfig.futsal()`
+  conserva la de 40 × 20 para las pruebas de mecánica (`TestCase.begin/end/use_game_pitch`, `run_tests.gd`).
+- **60 fps**: escalas 3D más bajas por perfil, tope de 60 imágenes en el teléfono, el teléfono arranca en «Bajo», botón
+  «Resolución 100/85/70/55 %» en la pausa. **No medido en un teléfono.**
+- Pisada pedida con REGATE (`DragBack.REQUEST_HOLD`) 0.3 → 0.6 s: a la carrera la pelota va ~1 m por delante.
+- Pruebas ajustadas por el cambio de mecánica (dicho, no ocultado): `test_live_feet` a sprint pide ≥ 40 % de toques con la
+  punta medida (medido 4–7 de 9–10; antes 8 de 9: sin toques a distancia el cuerpo alcanza la pelota empujada);
+  `test_pack_kick` (pelota a 1.3 m: el jugador camina hasta ella en vez del toque a distancia);
+  `test_pack_dribble_metrics` (pegada < 5 % al trote); nuevas `test_physical_dribble` (render) y
+  `test_ai_match::test_ai_match_on_the_game_pitch`.
+- Archivos: `scripts/player/ball_handler.gd`, `footballer.gd`, `player_tuning.gd`, `drag_back.gd`,
+  `scripts/animation/json_catalog.gd`, `scripts/pitch/pitch_config.gd`, `pitch.gd`, `scripts/diagnostics/graphics_settings.gd`,
+  `scripts/ui/hud.gd`, `tests/*` (arriba), `.github/workflows/android.yml` (render: `physical_dribble`).
+- Verificación (con render, modo 4): `live_feet` 7/0, `live_kicks` 4/0 (50 de 50 golpeos con contacto), `json_mode` 10/0
+  (1 omitida), `pack_motion` 2/0, `physical_dribble` 4/0, `directional_kicks` 3/0, `ball_turn` 4/0, `drag_back` 4/0;
+  headless `test_mode4_dribble` 8/0, `test_ai_match` (incluida la cancha de fútbol 7), `test_pack_kick` 8/0 y `test_receive`
+  30/0 (2 omitidas). Suite headless completa con el primer commit (`6d483ea`): 288 pruebas, 1 fallo
+  (`test_receive::test_reception_then_pass`, corregido arriba); GitHub Actions #44 falló por la misma prueba.
+  Suite completa tras la corrección (`481ded7`): **288 pruebas, 0 fallos**, 31 omitidas, 1 690 comprobaciones (local).
+- Pendiente: tiro a 180° al trote a veces sin tiro en 4 s (encadena giros); medir 60 fps en Android; los `kick_cross`
+  necesitan la pelota al costado (no se usan conduciendo).
+
+## 2026-10-31 — Programa maestro E1-E6: banco completo, conducción, caídas, arquero realista, predicción aérea
+
+Rama `respaldo-f3`. Informe: [`fases/E_programa_maestro_informe.md`](../fases/E_programa_maestro_informe.md).
+
+- **E1 estabilización**: suite por defecto en el modo 4 (`TestCase.gameplay_mode()`, `run_tests.gd` pone el modo y recarga
+  `PackLibrary` por prueba; las pruebas del pack heredado fijan el 1). Franjas de altura de la recepción decididas con la
+  geometría medida (muslo 0.78-0.98 m, pecho desde 1.10 m; rodilla 0.83-0.88 m): `test_receive` 30 / 0.
+  `JsonReceive.UNVERIFIED_PENALTY`; perfil 0204 verificado. `docs/.gdignore` (Godot importaba el CSV como traducción).
+- **E2 banco completo**: `tools/json_anim/analyze_bank.py` → `docs/fases/E2_inventario_banco.csv` (2 024 filas, 2 022
+  archivos: 1 682 útiles, 317 descartados con motivo, 25 pendientes) y `scripts/animation/clip_roles_overlay.gd` (67
+  reclasificaciones, 7 exclusiones medidas de balón parado, 3 alias) aplicado por `PackLibrary`. `PlayerActions.avoid_tackle` (clips `avoid`).
+  `JuggleController.available()` (sin malabares en el banco: el botón se oculta).
+- **E3 conducción**: `BallHandler.carry_catch_up_mag` (recupera la pelota adelantada), `BallHandler._catching_ball` (toque
+  al alcanzar la pelota al acelerar: «encima» 5 % → 0 % en `test_live_feet`). `test_mode4_dribble` (8).
+- **E4 golpeo**: batería con render `test_live_kicks` en el modo 4: 50 acciones, 49 con contacto, 0 contactos inválidos,
+  0 bloqueos. `Soccer_Spin` no existe en el banco: el regate usa `ball_skill` (55 clips).
+- **E5 caídas y arquero**: `PlayerActions._directed_pick` / `push_dir_local` (caídas y trastabillones según inercia y
+  empujón; `test_falls_direction` 4). Arquero: percepción con error decreciente y efecto leído al desviarse
+  (`perception_error_ratio`, `perception_time`, `spin_read_time`), contacto continuo (`CONTACT_WINDOW`), clips a velocidad
+  humana (`dive_speed_max` 1.15), límite humano de las manos (`hand_latency`, `hand_speed`, `KeeperPlanner.READY_HANDS`),
+  `CENTER_HOLD_TIME`, `LATE_COMMIT`, `DURATION_COST`, `contact_scale`; `plan_save` 42 → 11 ms y `PLAN_RETRY`.
+  `test_shot_keeper`: ataja 66-71 % a los palos, 89 % al arquero, 32-37 % al tirador de 85 (antes, sin goles fantasma,
+  91-96 %).
+- **E6 predicción aérea**: `BallPredictor.trajectory(..., spin)` con arrastre completo en el aire, Magnus y bote con
+  fricción y giro: error 1.4-5.3 m → 0.06-0.19 m (`test_ball_prediction`, 7).
+- **Pruebas corregidas** (no umbrales): goles fantasma en `test_shot_keeper` / `test_shooting` (contadores tomados antes de
+  que `Ball.reset_at` se aplicara); `test_action_arbiter` (los 3 nombres que ahora tienen clip); `test_practice` (malabares
+  omitida sin clips); la comparación «palo del que la aleja −15 puntos» reformulada con la curva medida (0.05-0.17 m).
+- **IA sin persona** (`TeamBrain.person_drives`, `team_brain.gd`, `ai_input.gd`): el controlado sin persona (con
+  `AIInput`) recibe órdenes de pelota suelta y presión; antes la pelota podía quedarse quieta 7-9 s (falló en GitHub
+  Actions; reproducido 1 de 14, tras el arreglo 0 de 20).
+- **Balón parado**: 5 clips cuyo pie nunca llega a la pelota y 2 saques de banda sin lanzamiento, medidos forzando cada
+  clip, pasan a `setpiece_miss` (`analyze_bank.SETPIECE_MISS`); `PackLibrary` redirige el alias que apuntaba a uno
+  (`soccer_penalty_kick`). `test_set_pieces` 6 de 6 (antes corner ~1/9 y banda ~2/6 fallaban).
+  `test_bank_integration::test_set_piece_clips_that_miss_the_ball_are_never_chosen`.
+- **Zona libre del saque** (`SetPiece.CLEAR_RADIUS` 4 m, `AIInput._decide_dead_ball` / `_around_ball`,
+  `MatchScene._on_set_piece_requested` / `_clear_zone`): nadie salvo el ejecutor entra en la carrerilla. Antes un compañero
+  de la IA se acercaba a 1.8 m de la pelota (apoyo corto sin distancia mínima, inercia durante la preparación) y un rival
+  cruzaba la zona camino de su marca: el ejecutor se desviaba y el pie no llegaba (tiro libre, 2 de 38 clips). Ahora 0 de
+  38 sin atajos (una primera versión quitaba las colisiones del ejecutor durante la carrera; se retiró: escondía el
+  problema). `test_set_pieces::test_nobody_but_the_taker_enters_the_run_up_zone`.
+- `test_training_mode::…has_only…`: pases por minuto en juego (2/min, lo mismo que 5 en 150 s) en vez de sobre los 150 s:
+  cada gol se lleva repetición, festejo y saque (en juego quedan 81-96 s) y con el arquero realista hay más goles.
+- **Caídas junto a la banda** (`PlayerActions._lands_inside`, `LAND_MARGIN`): la caída dirigida y el esquive descartan
+  los clips cuyo recorrido terminaría fuera de la cancha (sin el filtro 17 de 40 elecciones junto a la banda; con él 0).
+  Probable causa del fallo «nadie se sale de la cancha más de 1 m» de `test_ai_match` en GitHub Actions.
+- `test_player_actions::test_fall…`: la caída se comprueba al empezar, no a los 0.5 s (las caídas del banco duran
+  0.67-1.85 s).
+- **Workflow** `android.yml`: cabecera actualizada (modo 4 predeterminado); sin otros cambios.
+- Verificación: suite headless 279 / 0 (local y en GitHub Actions); con render `live_feet` 7/0, `live_kicks` 4/0,
+  `pack_motion` 2/0, `json_mode` 9/0; APK `futbol5-v0.1.43.apk` de GitHub Actions #43 (firma v2 verificada, arm64-v8a),
+  artefacto `futbol5-apk`. Detalle en el informe.
+
+## 2026-10-30 — F3 continuación: verificación visual de los 70 pendientes, fallos de F3 y F2, modo 4 predeterminado
+
+Rama `respaldo-f3`, sin commit (pendiente de autorización).
+
+- **Herramienta** `tools/json_anim/receive_view.gd`: `CLIP=<id>` (con `PART`, `T`, `ANGLE`, `SPEED`, `DIST`, `VIEW`, `COLS`,
+  `DEBUG`) reproduce un clip excluido de la selección automática y lanza la pelota con la física real (tiros de calibración con
+  el jugador apartado) a la parte del cuerpo supuesta en el instante supuesto; el jugador no se mueve ni gira antes del clip.
+  Tira antes/durante/después del contacto con trayectoria prevista y punto de contacto, rótulo por fotograma, y por consola
+  la parte del esqueleto vivo más cercana, el primer paso a < 0.12 m de cada parte, la geometría de la pierna y el desvío del
+  cuerpo. No toca la mecánica.
+- **Verificación visual** de los 70 `pending` (informe [`fases/F3_verificacion_visual_70.md`](../fases/F3_verificacion_visual_70.md)):
+  45 confirmados (19 muslo, 15 pecho, 7 pie en el aire, 4 pie; 12 con una parte distinta de la supuesta por la cinemática) y 25 sin
+  confirmar (11 con el instante estimado al final del clip o después). Generador `make_receive_profiles.py`: tablas `VISUAL`
+  y `VISUAL_NOT`; perfiles regenerados con el zip de JSON originales (sin editar a mano): 50 / 45 / 25 / 4 (antes 23 / 27 / 70
+  / 4); solo cambian las 70 entradas pendientes.
+- **Regresión de F2** (`test_pack_reactions::test_tripo_fallback…`, pasaba en F0 `9980f2b`, fallaba desde F2 `3e035b4`):
+  `ActionArbiter.play_situation` rechazaba toda situación cuya fuente no fuera `pack`; antes de F2 `FootballerVisual.play_situation`
+  reproducía los clips de Tripo con `play_action`. Ahora el árbitro hace la misma solicitud (nivel, testigo, en el sitio) y los
+  reproduce en la ranura de Tripo. No afecta al modo 4 (`AnimationCatalog.resolve` no devuelve clips de Tripo en el modo 4).
+- **F3 `test_lob_received_while_running`**: el receptor en carrera (2.3 m/s) no tenía clip (todos los utilizables entraban a
+  ≤ 1.1 m/s). Con los clips verificados la anticipación lo lleva a un control de pecho (frena y lo usa casi parado). Pasa.
+- **F3 `test_turn_reception_follows_the_stick`**: el clip se elegía bien, pero en el contacto el rebote no amortiguado del pie
+  (`JsonReceive.contact_velocity`) siempre volvía hacia el pasador y anulaba la salida orientada (0.37 m/s). Ahora se refleja
+  por la cara del pie, orientada entre la llegada y la salida: de frente igual que antes; orientado, sigue la salida (la pelota
+  avanza 1.63 m hacia el joystick). Pasa.
+- **Anticipación** (`Footballer`, `JsonReceive.approach_face`): al colocarse para una recepción el receptor conserva la
+  orientación con la que se calculó el sitio (`Locomotion.face_override`). Antes se giraba hacia donde caminaba, el objetivo
+  cambiaba y ningún clip encajaba (con los clips nuevos, la pelota a 0.70 m desde −20° quedaba sin clip; ahora muslo, 3162).
+- **Modo 4 predeterminado** (cambio aparte, hecho después de presentar la verificación): `Tuning.DEFAULT_GAMEPLAY_MODE = 4`,
+  `PLAYABLE_MODES = [4]`; preferencias guardadas con 1-3 pasan al 4 conservando el resto; el menú de pausa no muestra «Modo de
+  juego»; `load_user_settings(path)` admite otra ruta (pruebas). Modos 1-3 siguen en el código. Prueba nueva
+  `tests/test_gameplay_mode_default.gd` (3/3). Arranque real verificado con Xvfb: instalación limpia y preferencias antiguas
+  con modo 1 → modo 4, los 8 jugadores con modelo y clips JSON.
+- **Pruebas corregidas (declarado):** `test_receive::test_reception_with_a_pass_in_the_clip_uses_the_real_pass_once` contaba
+  como segundo pase el control del compañero que recibe el pase (ahora solo impulsos del receptor);
+  `test_profiles_follow_the_audit…` fija la clasificación nueva (50 / 45 / 25 / 4).
+- **Verificación:** ver «Resultados» en [`ESTADO_Y_METODOLOGIA.md`](../ESTADO_Y_METODOLOGIA.md) §6 (cifras reales de esta
+  sesión). Sin prueba en Android. Sin APK.
+- **Pendiente / decisión del usuario:** 3 pruebas de `test_receive` fallan porque el clip elegido usa otra parte que la que la
+  prueba asocia a la altura (1.06 m → muslo 3162 en vez de pecho; 0.91 m → rodilla 0204 en vez de muslo), con la pelota
+  controlada en los tres casos; `BallPredictor` usa la mitad del arrastre en el aire (la pelota real llega más baja y más
+  tarde en vuelos largos).
+
+## 2026-10-30 — F3 corregido: recepción por perfiles de contacto, trayectoria 3D y partes del cuerpo
+
+- **Error corregido:** la recepción tomaba el primer `ball_touches` como primer contacto y descartaba por nombre los controles
+  aéreos. Ahora usa perfiles de contacto (`scripts/player/receive_profiles.gd`, generado por
+  `tools/json_anim/make_receive_profiles.py` con la auditoría de los 124 clips: 23 / 27 / 70 / 4).
+- `JsonReceive`: plan con `BallPredictor.trajectory` (rasante, bote, aire), punto y trayectoria de la parte del cuerpo por
+  cinemática del clip, dirección de llegada del nombre (lado invertido), condiciones por clip, anticipación (`approach`) y
+  respuesta física por parte (`PlayerTuning.receive_contact`). Se quitaron `usable`/`EXCLUDED_TAGS` y `pre_touch_lift` (los
+  reemplaza el perfil: estado y parte del primer contacto).
+- `JsonBallMove`: contacto cuando la pelota llega a la parte del cuerpo animada, cuerpo fantasma solo en la ventana, toques
+  posteriores solo si la pelota llega (si no, se corta), corte antes del pase del clip (lo da el sistema de pase).
+- `Footballer`: el receptor va a `JsonReceive.approach` (persona: joystick suelto).
+- Corte por desvío: si antes del contacto la pelota se aparta de la trayectoria prevista (> 0.35 m o > 1 m/s), la recepción se
+  corta y actúa el control físico (antes una pelota que patinaba dejaba al jugador sin control).
+- `tests/test_receive.gd`: la prueba de cobertura pateaba dos veces en el mismo paso (los impulsos se sumaban); ahora una.
+- `receive_view`: pelotas por el aire (`ARRIVE_Y`) y pase cargado (`PASS`).
+
+## 2026-10-30 — F3: recepción y control de pelota con clips (`JsonReceive`)
+
+- **Nuevo** `scripts/player/json_receive.gd`: planifica la recepción de una pelota que llega rodando con los clips de recepción (el
+  pie del primer toque del clip en la pelota en su instante de toque) y modela el toque (amortiguación según control, equilibrio y
+  carrera; lo no amortiguado vuelve como rebote).
+- **Cambiado** `JsonBallMove`: intención `&"receive"` (`start_receive`): cuerpo no fantasma hasta el toque, pelota desviada corta la
+  recepción, botones leídos durante el clip (golpeo de primera antes del toque, golpeo tras el control después), toque y pie al
+  toque con el lado por donde llega la pelota. `BallHandler`: crea `JsonReceive`, la consulta en `update` y comparte la
+  amortiguación (`first_touch_absorb`, misma fórmula que antes).
+- **Herramienta** `tools/json_anim/receive_view.tscn`: escena reproducible (render) con tira de imágenes y medida del pie animado.
+- **Árbitro:** sin cambios de contrato (la recepción es una acción `ball_move`, nivel `BALL_MOVE`).
+- Pruebas: `tests/test_receive.gd` (21; 20 headless + 1 con render). Clasificación de los 124 clips en el informe de F3.
+
+## 2026-10-30 — F2: árbitro de acciones del futbolista (`ActionArbiter`)
+
+- **Nuevo** `scripts/player/action_arbiter.gd`: autoridad única sobre cuerpo y pose, con niveles, testigos, interrupción
+  completa, caducidad, poses en el sitio según la velocidad del clip y registro de decisiones.
+- **Integrado en** `PlayerActions` (`start`, `start_move`, `stop`, `interrupt`, `can_start`, gestos, caída, tropiezo),
+  `BallHandler` (golpeo con testigo; tras el contacto baja a capa), `Footballer` (crea el árbitro; espera, capas, recepción,
+  bloqueo, reacciones, colocación y cortes por el árbitro), `FootballerVisual` (la pose de una acción con raíz dura lo que la
+  raíz), `JsonBallMove` (el corte libera su lugar). Se quitó la constante PlayerActions.GESTURE_MAX_SPEED, sustituida por
+  `ActionArbiter.fits_in_place`.
+- **Corrige (demostrado):** una falta no derribaba a un jugador en un movimiento con pelota de clip; un festejo sustituía la
+  pose de una caída en curso; pose huérfana tras `PlayerActions.reset`; pose apagada una imagen antes que la raíz (237 → 0
+  imágenes en 3 × 180 s); gestos en el sitio iniciados corriendo (242 → 118 imágenes, cortados en ≤ 8).
+- **Cambio de comportamiento:** las situaciones sin clip JSON ya no usan Tripo (`test_pack_reactions::test_tripo_fallback…`,
+  modo descartado, falla por eso).
+- Pruebas: `tests/test_action_arbiter.gd` (9/9). Suites: ver el informe de F2.
+
+## 2026-10-30 — Modo 4: jugadores que se deslizaban sin animación («estatuas»), sobre todo al presionar
+
+- **Causa**: la mezcla direccional (marcaje/presión mirando al rival, arquero, árbitro) no tenía clips en el modo 4 (buscaba los
+  del pack de Mixamo): pose fija mientras el cuerpo se movía. **Arreglo**: `JsonCatalog.dir_points` / `dir_ref_speed` y su uso en
+  `FootballerVisual._setup_animation_tree` / `drive_motion`.
+- Gestos en el sitio con el cuerpo corriendo: se cortan (`Footballer._json_clip_slides`) y solo empiezan casi frenado
+  (PlayerActions.GESTURE_MAX_SPEED (retirada en F2)).
+- Medido (60 s de partido de IA con render): imágenes con los pies quietos corriendo 808 → 81. Prueba nueva en
+  `test_json_mode::test_model_builds_and_animates`. Detalle: [JSON_MODE](SYSTEMS/JSON_MODE.md).
+
+## 2026-10-30 — Jugabilidad del modo 4: pases al compañero y tensos, golpeo que le da al balón, presión con disputa, cancha despejada
+
+Pedido (vídeo de la 0.1.34): conducción insegura, pases débiles que no buscan compañero, presión sin animación, pase con animación
+pero sin tocar la pelota; quitar público y lo de alrededor de la cancha; estudiar First Touch (xapk) y Dream League Soccer.
+Detalle y medidas: [JSON_MODE](SYSTEMS/JSON_MODE.md#segunda-tanda-2026-10-30-pases-golpeo-que-no-le-daba-al-balón-presión-y-cancha-despejada).
+
+- **Pases** (`PassAssist`, `AssistTuning`, `BallTuning`): con asistencia media o alta el pase va al compañero elegido (antes ~65 % del
+  ángulo, tope 11.7°); cono 52 → 60° y cono de respaldo de 85°; llegada 4.5 → 6 m/s, mínimo 4 → 7 m/s; pase al espacio más largo y vivo.
+- **Receptor** (`Footballer._recv_stick_lock`): el joystick que se traía del pase no lo aleja de la pelota.
+- **Golpeo** (`BallHandler._json_kick_ik`, `kick_reach`, `PlayerTuning.json_kick_reach` = 0.65): pie llevado a la pelota (IK, hasta 0.55 m) al
+  final del balanceo y golpeo válido hasta 0.65 m en el modo 4; golpeos en falso por partido de IA 5–6 → 0 (4 de 4 partidos).
+- **Giros con pelota** (`JsonBallMove.MAX_LEAD` = 0.4 s): menos primeros toques errados por interferencia; `history` para diagnóstico.
+- **Presión** (`PlayerActions.press_gesture`, `JsonCatalog` «press_duel»): forcejeo al presionar pegado sin entrar (IA y persona);
+  `Footballer.AI_TACKLE_COMMIT` 0.3 → 0.45.
+- **Cancha** (`Pitch._build_ambient`, `MatchScene`): en el modo 4 sin gradas, bancos ni torres; borrado json_sideline.gd (JsonSideline).
+- Pruebas nuevas: `test_passing::test_medium_assist_pass_goes_to_the_chosen_teammate_firmly`; `test_json_mode::test_ai_match_in_json_mode`
+  comprueba ≤ 2 golpeos en falso.
+- Verificación: suite completa headless 216 / 1 425 / 0 fallos (16 omitidas); con render `json_mode` 10/10 y
+  `LIVE_KICKS_MODE=4 live_kicks` 4/4. Sin prueba en Android.
+
+## 2026-10-30 — Modo 4 «Json»: las 2 022 animaciones conectadas, giros con pelota, vuelta pisando la pelota, golpeo girando y toques con el pie
+
+Pedido: conducción con toques visibles al avanzar y en diagonal, giro con la pelota, pisar la pelota y volver atrás sin errarla, no
+patear de espaldas (girarse y patear), conectar todas las animaciones del zip; y descartar el GLB de Tripo adaptado (se deformaba).
+Detalle: [JSON_MODE](SYSTEMS/JSON_MODE.md).
+
+- **Modelo**: solo el humanoide propio. Quitados json_tripo.scn, la herramienta build_json_tripo, el botón «Modelo Json» del
+  menú (`Hud`) y `json_model` de `Tuning` (y de `settings.cfg`).
+- **Todas las animaciones**: `make_selection.py` clasifica los 2 022 clips (listas curadas + reglas por categoría, nombre y geometría
+  medida); `build_json_library.gd` genera `json_clips.res` (2 125 clips), `json_keeper.res` (476) y `json_scenes.res` (622, nueva),
+  con rumbo «turn» (el juego gira al jugador con el clip), `ball_touches`, giro del golpeo (`kick_turn`), golpeo limpio (`clean`) y
+  postura tendida (`lie`). ~39 MB en total.
+- **Movimientos con pelota** (`scripts/player/json_ball_move.gd`, nuevo): giros con pelota, vuelta pisando la pelota (REGATE + atrás),
+  regates (REGATE), frenadas y giro previo a un golpeo hacia atrás, con el clip moviendo y girando al cuerpo y la pelota yendo de un toque
+  del clip al siguiente (impulsos), con IK del pie al toque.
+- **Golpeo girando** (`BallHandler.plan_turn_kick`, `estimated_kick_dir`, `kick_body_yaw`; `Footballer`): con el destino a ≥ 50° del
+  frente, clip de girar y patear con el cuerpo siguiendo su raíz y rumbo; a ≥ 100° sin clip que llegue, giro con pelota y después el golpeo.
+- **Conducción**: IK del pie hasta la pelota en cada toque (`_json_touch_ik_*`), pie más cercano estirado en lugar del toque de rescate,
+  toque de rumbo en diagonal/zigzag (`_steer_touch_ready`, `STEER_TOUCH_DEG`).
+- **Acciones con rumbo** (`ActionMotion.heading_rel`, `PlayerActions.start_move`): giros sin pelota con clip (`Footballer._json_turn_move`).
+- **Resto conectado**: festejos/lamentos/gestos/calentamiento/barrera/espera por rol (`JsonCatalog.situation_clip`, `AnimationCatalog`),
+  reparto de alias en cada balón parado y saque inicial (`PackLibrary.vary_aliases`, `SetPiece`, `MatchManager`), caídas por carrera con
+  levantarse de la misma postura (`PlayerActions._json_fall/_json_getup`), gesto de entrada de pie, levantarse y gestos del arquero
+  (`Goalkeeper._json_getup`), técnicos/mascota/público (json_sideline.gd, nuevo, borrado en la entrada siguiente; `MatchScene`), nombres de rol en la
+  galería (`PracticeScene.ROLE_NAMES`).
+- **Rendimiento**: planificar un golpeo evalúa los 24 candidatos que mejor encajan (2.4 ms con cientos de clips); cajas de trayectoria en
+  el planificador aéreo (15–18 ms). La IA usa los giros de clip con límites (con pelota ≥ 110° cada 3 s; sin pelota solo desde parado):
+  sin límites pasaba de 14–17 a 6–12 pases en 90 s.
+- **Verificación**: suite headless 215 / 1 416 / 0 fallos (16 omitidas, render); con render como en CI `live_feet` 7/7, `live_kicks`
+  4/4, `pack_motion` 2/2, `json_mode` 10/10; en modo 4 `live_kicks` 4/4 (48–49 de 50 golpeos con contacto) y `live_feet` 6/7 (el fallo,
+  «encima de la pelota al acelerar» 5 %, ya existía). Detalle en la tabla de JSON_MODE. `test_json_mode.gd` ajustado a un solo modelo.
+  Sin prueba en Android.
+
+## 2026-10-29 — Modo 4 «Json»: las animaciones JSON sobre un esqueleto canónico, con dos modelos (Tripo adaptado y humanoide realista)
+
+Detalle: [JSON_MODE](SYSTEMS/JSON_MODE.md) · herramientas: `tools/json_anim/README.md`.
+
+- **Datos**: `animaciones_futbol5_JSON_limpios.zip` (2 022 clips; solo posiciones de 19 articulaciones, fotogramas clave irregulares,
+  raíz y metadatos de golpeo/toques/apoyos). No se versiona el zip; se versiona el resultado.
+- **Retarget** (`JsonRig`, `JsonRetarget`): esqueleto canónico de 23 huesos con los nombres del futbolista y las longitudes medidas de los
+  datos; cada hueso toma un marco (dirección + eje de bisagra / lateral / arriba) calculado igual en el reposo de cada modelo y en cada
+  instante, e IK de dos huesos para brazos y piernas porque en los datos rodilla–tobillo (0.31–0.42 m) y codo–muñeca (0.18–0.35 m) no
+  son rígidos. Tobillos, muñecas y puntas quedan a **0.0 cm** del dato; pecho 1–3 cm, cabeza 4–5 cm.
+- **Conversor** (`tools/json_anim/build_json_library.gd`, selección `make_selection.py`): `json_clips.res` (263 clips de campo) y
+  `json_keeper.res` (155 del arquero), 5.5 MB (`Animation.compress`; manos y puntas sin pista). Quita el rumbo del clip, recorta ciclos de
+  marcha y conducción entre dos apoyos del mismo pie (empiezan en el izquierdo), mide el contacto de cada patada a 120 Hz, las
+  trayectorias del pie/cabeza/manos, la suelta de los lanzamientos y la velocidad natural; cada clip declara los nombres del pack de
+  Mixamo que sustituye (`alias`).
+- **Modelos**: `json_tripo.scn` (la malla, UV y pesos de `player_base.glb` sin cambios sobre el esqueleto canónico en pose T) y
+  `json_human.scn` (humanoide de ~7 200 triángulos con zonas de kit en `COLOR.r`, oclusión en `COLOR.g`, cara, manos y botines;
+  `json_kit.gdshader`). Selector en el menú de pausa («Modelo Json», json_model; quitados el 2026-10-30 con el modelo de Tripo).
+- **Juego**: `Tuning.gameplay_mode = 4`; `PackLibrary` (librerías JSON, `resolve` por alias, `by_role`, recarga al cambiar de modo);
+  `JsonCatalog` (escalones de marcha, direcciones, candidatos de patada por potencia); `FootballerVisual` (ciclos con línea de
+  tiempo común, sin clips de Tripo, menos inclinación propia); `BallHandler` (variedad entre patadas que encajan igual, coste de
+  deslizamiento del pie de apoyo y de ajuste de zancada propios del modo, cabezazos/voleas por rol); `KeeperPlanner` (candidatos por
+  rol); `SetPiece` (suelta del saque medida), `Referee` (marcha JSON), `PlayerActions` (el cuerpo no sale del área con la raíz de una
+  caída), `Hud`.
+- Archivos nuevos: `scripts/animation/json_{rig,retarget,catalog}.gd`, `assets/characters/json/*`, `assets/animations/json_*.res`,
+  `tools/json_anim/*`, `tests/test_json_mode.gd`; modificados: ver la ficha. CI: `android.yml` verifica las librerías JSON dentro de la
+  APK y corre `json_mode` con render. `tests/run_tests.gd`: `TEST_GAMEPLAY_MODE` ejecuta cualquier prueba en otro modo.
+- Verificación (real, no estimada): `test_json_mode` 10/192/0 (headless; el de render 24 comprobaciones más); con render
+  `LIVE_KICKS_MODE=4 test_live_kicks` **49 de 50 golpeos con contacto**, punta del pie a 0.01–0.06 m de la pelota, pie de apoyo
+  ≤ 0.7 m/s; conducción con el esqueleto animado (los dos modelos) pelota a 0.41–0.64 m del cuerpo de mediana y ≤ 0.96 m de
+  máximo en trote, carrera, sprint y zigzag; `TEST_GAMEPLAY_MODE=4 test_live_feet` 6 de 7 (el séptimo: «pisa la pelota» 5 % frente a
+  un límite de 5 % calibrado para el modo 1). Atajada con estirada, barrida, caída, levantarse, festejo y partido completo revisados en
+  imágenes. Suite headless completa (modos 1–3 sin cambios de comportamiento): 215 pruebas, 1342 comprobaciones, 0 fallos (16 omitidas, las de render).
+- Pendiente: nada se probó en Android ni en un dispositivo; los toques de conducción no usan los eventos `touches` del JSON; sin clips
+  de giro, de regate ni de arranque en este modo.
+
+---
+
 ## 2026-10-29 — Modelo propio del modo 2 (Newton), saque y tarjeta de la captura, modo 3 «Tripo» y rodilla en la pisada
 
 Detalle: [ANIMATION_PACK](SYSTEMS/ANIMATION_PACK.md#modo-2-de-jugabilidad-mocap-pack-05-soccer-2026-10-29) ·

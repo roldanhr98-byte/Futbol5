@@ -89,10 +89,14 @@ var mesh_instances: Array[MeshInstance3D] = []
 var kit_material: ShaderMaterial = null
 var is_placeholder: bool = false
 var current_action: StringName = &""
+## Arbitro de acciones del futbolista (null en el arquero y el arbitro, que manejan su pose ellos mismos).
+var arbiter: ActionArbiter = null
 ## true si este futbolista usa los clips del pack (si no, Tripo + patada procedural).
 var uses_pack: bool = false
 ## true para el arquero: carga ademas la libreria de sus clips y usa su reposo como centro de la mezcla direccional.
 var keeper_mode: bool = false
+## Velocidad (m/s) de referencia de la mezcla direccional (DIR_REF_SPEED con el pack; la de los clips en el modo 4).
+var _dir_ref: float = DIR_REF_SPEED
 ## El dueño pide la mezcla direccional (velocidad local (adelante, derecha) en m/s).
 var directional: bool = false
 ## true mientras el futbolista lleva la pelota: mezcla los clips de conduccion sobre la marcha normal.
@@ -143,6 +147,10 @@ const CARRY_CROUCH := 0.13
 var turn_crouch: float = 0.0
 ## Modelo propio del modo 2 (MocapRig) o null.
 var mocap_rig: MocapRig = null
+## Modo 4 (Json): modelo sobre el esqueleto JsonRig con la libreria de clips JSON (ver JsonCatalog). json_human: el humanoide
+## propio (colores de equipo por zonas en COLOR.r); si no, el Tripo adaptado (misma textura y mascaras que el original).
+var json_mode: bool = false
+var json_human: bool = false
 var _kit: Dictionary = {}
 var _phase: float = 0.0
 var _legs: Array[MeshInstance3D] = []
@@ -170,12 +178,15 @@ func build(kit: Dictionary) -> bool:
 		c.queue_free()
 	_legs.clear()
 	mesh_instances.clear()
-	var scene: PackedScene = load(MODEL_PATH) as PackedScene
-	var clips: AnimationLibrary = load(CLIPS_PATH) as AnimationLibrary
-	if scene == null or clips == null:
-		push_warning("FootballerVisual: faltan recursos (%s / %s); se usa un maniqui." % [MODEL_PATH, CLIPS_PATH])
+	json_mode = Tuning.gameplay_mode == 4 and JsonCatalog.active() and JsonCatalog.model_path() != ""
+	var model_path: String = JsonCatalog.model_path() if json_mode else MODEL_PATH
+	var scene: PackedScene = load(model_path) as PackedScene
+	var clips: AnimationLibrary = null if json_mode else (load(CLIPS_PATH) as AnimationLibrary)
+	if scene == null or (clips == null and not json_mode):
+		push_warning("FootballerVisual: faltan recursos (%s / %s); se usa un maniqui." % [model_path, CLIPS_PATH])
 		_build_placeholder(kit.get("jersey", Color.RED))
 		return false
+	json_human = json_mode and JsonCatalog.is_human_model(model_path)
 	is_placeholder = false
 	rig = Node3D.new()
 	rig.name = "Rig"
@@ -190,8 +201,9 @@ func build(kit: Dictionary) -> bool:
 	anim_player = AnimationPlayer.new()
 	anim_player.name = "AnimationPlayer"
 	model_root.add_child(anim_player)
-	anim_player.add_animation_library("", clips)
-	# Modo 3 de jugabilidad: solo Tripo (sus clips prefijados y la patada procedural), sin el pack.
+	if clips != null:
+		anim_player.add_animation_library("", clips)
+	# Modo 3 de jugabilidad: solo Tripo (sus clips prefijados y la patada procedural), sin el pack. Modo 4: la libreria JSON.
 	uses_pack = prefer_pack and PackLibrary.available() and Tuning.gameplay_mode != 3
 	if uses_pack:
 		anim_player.add_animation_library(PACK_LIB, PackLibrary.field())
@@ -225,10 +237,13 @@ func build(kit: Dictionary) -> bool:
 
 func _apply_kit(kit: Dictionary) -> void:
 	kit_material = ShaderMaterial.new()
-	kit_material.shader = KIT_SHADER
-	kit_material.set_shader_parameter("albedo_tex", load(ALBEDO_PATH))
-	kit_material.set_shader_parameter("mask_a", load(MASK_A_PATH))
-	kit_material.set_shader_parameter("mask_b", load(MASK_B_PATH))
+	if json_human:
+		kit_material.shader = load(JsonCatalog.KIT_SHADER_PATH) as Shader
+	else:
+		kit_material.shader = KIT_SHADER
+		kit_material.set_shader_parameter("albedo_tex", load(ALBEDO_PATH))
+		kit_material.set_shader_parameter("mask_a", load(MASK_A_PATH))
+		kit_material.set_shader_parameter("mask_b", load(MASK_B_PATH))
 	set_kit(kit)
 	for mi in mesh_instances:
 		mi.material_override = kit_material
@@ -243,18 +258,43 @@ func set_kit(kit: Dictionary) -> void:
 	for key in ["jersey", "shorts", "socks", "boots", "skin", "hair"]:
 		if kit.has(key):
 			kit_material.set_shader_parameter("%s_color" % key, kit[key])
+	# El ribete (cuello, mangas, borde de las medias) del humanoide lleva el color del short.
+	if json_human and kit.has("shorts"):
+		kit_material.set_shader_parameter("trim_color", kit["shorts"])
 
 func _anim_node(clip: StringName) -> AnimationNodeAnimation:
 	var n := AnimationNodeAnimation.new()
 	n.animation = clip
 	return n
 
+## Modo 4: ciclo de marcha con una linea de tiempo comun de UN ciclo (todos empiezan en un apoyo del pie izquierdo), asi las
+## fases de los clips que se mezclan coinciden; la cadencia la da el TimeScale (ciclos por segundo, ver JsonCatalog).
+func _json_cycle_node(id: StringName) -> AnimationNodeAnimation:
+	var n := AnimationNodeAnimation.new()
+	n.animation = PackLibrary.anim_path(id)
+	n.use_custom_timeline = true
+	n.timeline_length = 1.0
+	n.stretch_time_scale = true
+	n.loop_mode = Animation.LOOP_LINEAR
+	return n
+
+## Vacia los datos calculados con la libreria de clips (cambian al cambiar de modo).
+static func reset_caches() -> void:
+	_gait_cache = []
+	_carry_cache = []
+
 func _setup_animation_tree() -> void:
 	var space := AnimationNodeBlendSpace1D.new()
 	space.min_space = 0.0
 	space.max_space = 7.5
 	space.sync = true
-	if uses_pack:
+	if json_mode:
+		var jidx := 0
+		for pt in JsonCatalog.gait_points(false):
+			space.add_blend_point(_json_cycle_node(pt[0]), float(pt[1]), -1, StringName("g%d" % jidx))
+			jidx += 1
+			_gait_max_natural = maxf(_gait_max_natural, float(pt[1]))
+	elif uses_pack:
 		var idx := 0
 		for pt in (TWIN_GAIT_POINTS if twin_rig else PACK_GAIT_POINTS):
 			var clip: StringName = pt[0]
@@ -277,9 +317,12 @@ func _setup_animation_tree() -> void:
 		dir.min_space = Vector2(-DIR_MAX - 0.1, -DIR_MAX - 0.1)
 		dir.max_space = Vector2(DIR_MAX + 0.1, DIR_MAX + 0.1)
 		var center: StringName = PackLibrary.anim_path(&"goalkeeper_idle") if (keeper_mode and PackLibrary.has_clip(&"goalkeeper_idle")) else StringName("%s/%s" % [PACK_LIB, PACK_GAIT_CLIPS[0]])
+		if json_mode and not (keeper_mode and PackLibrary.has_clip(&"goalkeeper_idle")):
+			center = PackLibrary.anim_path(JsonCatalog.GAIT[0][0])
 		dir.add_blend_point(_anim_node(center), Vector2.ZERO, -1, &"d_center")
 		var di := 0
-		for pt in (TWIN_DIR_POINTS if twin_rig else DIR_POINTS):
+		_dir_ref = JsonCatalog.dir_ref_speed() if json_mode else DIR_REF_SPEED
+		for pt in (JsonCatalog.dir_points() if json_mode else (TWIN_DIR_POINTS if twin_rig else DIR_POINTS)):
 			if PackLibrary.has_clip(pt[0]):
 				dir.add_blend_point(_anim_node(PackLibrary.anim_path(pt[0])), Vector2(pt[1], pt[2]), -1, StringName("d%d" % di))
 				di += 1
@@ -332,7 +375,7 @@ func _setup_animation_tree() -> void:
 				previous = StringName("TouchShot%d" % f)
 				_touch_nodes[f] = tnode
 	var x: float = 520.0
-	for clip in ACTION_CLIPS:
+	for clip in ([] if json_mode else ACTION_CLIPS):
 		var shot_name := StringName("Shot_%s" % clip)
 		var scale_name := StringName("Scale_%s" % clip)
 		var one := AnimationNodeOneShot.new()
@@ -363,6 +406,7 @@ func _setup_animation_tree() -> void:
 	tree_root.connect_node(&"output", 0, previous)
 	anim_tree = AnimationTree.new()
 	anim_tree.name = "AnimationTree"
+	_param_last = {}
 	model_root.add_child(anim_tree)
 	anim_tree.tree_root = tree_root
 	anim_tree.anim_player = anim_tree.get_path_to(anim_player)
@@ -374,7 +418,7 @@ func play_touch(id: StringName, foot: int, speed: float) -> bool:
 	if anim_tree == null or not uses_pack or foot < 0 or foot > 1 or _touch_nodes[foot] == null or not PackLibrary.has_clip(id):
 		return false
 	(_touch_nodes[foot] as AnimationNodeAnimation).animation = PackLibrary.anim_path(id)
-	anim_tree.set("parameters/TouchScale%d/scale" % foot, maxf(speed, 0.05))
+	_set_param(P_TOUCH_SCALE[foot], maxf(speed, 0.05))
 	anim_tree.set("parameters/TouchShot%d/request" % foot, AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
 	return true
 
@@ -387,6 +431,8 @@ func carry_phase(clip: StringName) -> float:
 
 ## Clip de la marcha con pelota que domina a una velocidad (el punto de la mezcla mas cercano, sin el reposo).
 static func carry_clip_for(speed: float) -> StringName:
+	if PackLibrary.json_mode():
+		return &""   # la conduccion del modo 4 no usa clips de toque sueltos (ver JsonDribble)
 	var best: StringName = &""
 	var best_d: float = INF
 	for i in range(1, CARRY_GAIT_POINTS.size()):
@@ -436,6 +482,8 @@ static func gait_table() -> Array[Vector3]:
 
 ## Escala de tiempo de la marcha del pack a una velocidad: velocidad / velocidad natural de lo que se esta mezclando.
 static func gait_scale_for(speed: float) -> float:
+	if PackLibrary.json_mode():
+		return JsonCatalog.cycles_per_second(speed, false)
 	var table: Array[Vector3] = gait_table()
 	if table.size() < 2 or speed <= 0.15:
 		return 1.0
@@ -467,6 +515,8 @@ static func carry_gait_table() -> Array[Vector3]:
 	return _carry_cache
 
 static func carry_scale_for(speed: float) -> float:
+	if PackLibrary.json_mode():
+		return JsonCatalog.cycles_per_second(speed, true)
 	var table: Array[Vector3] = carry_gait_table()
 	if table.size() < 2 or speed <= 0.15:
 		return 1.0
@@ -482,7 +532,12 @@ static func carry_scale_for(speed: float) -> float:
 
 ## Segundos entre apoyos consecutivos (un pie tras otro) de la marcha del pack a una velocidad, ya con la escala de
 ## tiempo con la que se reproduce. -1 si no hay libreria del pack o el jugador esta parado.
-static func step_interval_for(speed: float) -> float:
+static func step_interval_for(speed: float, carry: bool = false) -> float:
+	if PackLibrary.json_mode():
+		if speed < 0.3 or not PackLibrary.available():
+			return -1.0
+		# Un ciclo son dos apoyos (un pie y el otro).
+		return 0.5 / JsonCatalog.cycles_per_second(speed, carry)
 	var table: Array[Vector3] = gait_table()
 	if table.size() < 3 or speed < 0.3:
 		return -1.0
@@ -565,6 +620,26 @@ func is_action_playing() -> bool:
 	return current_action != &""
 
 ## Llamado cada paso de fisica por el futbolista.
+## Parametros del AnimationTree que se fijan en cada imagen (drive_motion): nombres ya convertidos y valor escrito por ultima
+## vez. Escribir un parametro por su texto en cada imagen costaba ~0.05 ms por jugador (tools/perf_probe); ahora solo se
+## escribe cuando cambia (el AnimationTree conserva el ultimo valor).
+const P_LOCO := &"parameters/Locomotion/blend_position"
+const P_LOCO_SCALE := &"parameters/LocoScale/scale"
+const P_CARRY_MIX := &"parameters/CarryMix/blend_amount"
+const P_CARRY := &"parameters/Carry/blend_position"
+const P_CARRY_SCALE := &"parameters/CarryScale/scale"
+const P_TOUCH_SCALE: Array[StringName] = [&"parameters/TouchScale0/scale", &"parameters/TouchScale1/scale"]
+const P_MODE_MIX := &"parameters/ModeMix/blend_amount"
+const P_DIR := &"parameters/Dir/blend_position"
+const P_DIR_SCALE := &"parameters/DirScale/scale"
+var _param_last: Dictionary = {}
+
+func _set_param(path: StringName, value: Variant) -> void:
+	if _param_last.get(path) == value:
+		return
+	_param_last[path] = value
+	anim_tree.set(path, value)
+
 func update_motion(f: Footballer, delta: float) -> void:
 	drive_motion(f.locomotion.speed, f.locomotion.turn_rate, delta)
 
@@ -577,7 +652,11 @@ func drive_motion(speed: float, turn_rate: float, delta: float) -> void:
 		return
 	if _action_timer > 0.0:
 		_action_timer -= delta
-		if _action_timer <= 0.0:
+		# La pose de una accion con raiz termina con la raiz (la libera PlayerActions): antes se apagaba un paso antes y en
+		# esa imagen el cuerpo seguia moviendose con la raiz sin su pose.
+		if _action_timer <= 0.0 and arbiter != null and arbiter.holds_pose(current_action):
+			_action_timer = 0.0001
+		elif _action_timer <= 0.0:
 			var finished: StringName = current_action
 			if _action_cut and uses_pack:
 				anim_tree.set("parameters/PackShot/request", AnimationNodeOneShot.ONE_SHOT_REQUEST_FADE_OUT)
@@ -585,7 +664,7 @@ func drive_motion(speed: float, turn_rate: float, delta: float) -> void:
 			current_action = &""
 			_active_tripo_clip = &""
 			action_finished.emit(finished)
-	anim_tree.set("parameters/Locomotion/blend_position", speed)
+	_set_param(P_LOCO, speed)
 	# Evita que los pies patinen: la cadencia sigue a la velocidad real respecto al ciclo dominante.
 	var scale_factor: float = 1.0
 	if uses_pack:
@@ -594,32 +673,32 @@ func drive_motion(speed: float, turn_rate: float, delta: float) -> void:
 	elif speed > 0.15:
 		var natural: float = lerpf(NATURAL_SPEED["walk"], NATURAL_SPEED["run"], clampf((speed - 0.9) / 1.5, 0.0, 1.0))
 		scale_factor = clampf(speed / natural, MIN_TIME_SCALE, MAX_TIME_SCALE)
-	anim_tree.set("parameters/LocoScale/scale", scale_factor)
+	_set_param(P_LOCO_SCALE, scale_factor)
 	if _has_carry:
 		_carry_weight = move_toward(_carry_weight, 1.0 if carrying else 0.0, CARRY_BLEND_RATE * delta)
-		anim_tree.set("parameters/CarryMix/blend_amount", _carry_weight)
+		_set_param(P_CARRY_MIX, _carry_weight)
 		if _carry_weight > 0.0:
-			anim_tree.set("parameters/Carry/blend_position", speed)
-			anim_tree.set("parameters/CarryScale/scale", carry_scale_for(speed))
+			_set_param(P_CARRY, speed)
+			_set_param(P_CARRY_SCALE, carry_scale_for(speed))
 			# El toque en curso avanza al mismo ritmo que la marcha con pelota (sigue en fase con su ciclo base).
 			for f in 2:
 				if _touch_nodes[f] != null:
-					anim_tree.set("parameters/TouchScale%d/scale" % f, maxf(carry_scale_for(speed), 0.05))
+					_set_param(P_TOUCH_SCALE[f], maxf(carry_scale_for(speed), 0.05))
 	if uses_pack:
 		_dir_weight = move_toward(_dir_weight, 1.0 if directional else 0.0, 7.0 * delta)
-		anim_tree.set("parameters/ModeMix/blend_amount", _dir_weight)
+		_set_param(P_MODE_MIX, _dir_weight)
 		if _dir_weight > 0.0:
 			var ds: float = dir_velocity.length()
-			var p := Vector2(dir_velocity.y, dir_velocity.x) / DIR_REF_SPEED
+			var p := Vector2(dir_velocity.y, dir_velocity.x) / _dir_ref
 			# Solo el lateral hacia la derecha tiene un clip rapido (Strafe_3); el resto se limita al radio 1.
-			var lim: float = DIR_MAX if p.x > 0.8 and absf(p.y) < 0.5 else 1.0
+			var lim: float = DIR_MAX if p.x > 0.8 and absf(p.y) < 0.5 and not json_mode else 1.0
 			if p.length() > lim:
 				p = p.normalized() * lim
-			var ref: float = lerpf(DIR_REF_SPEED, STRAFE_FAST_SPEED, clampf((p.x - 1.0) / (DIR_MAX - 1.0), 0.0, 1.0))
+			var ref: float = _dir_ref if json_mode else lerpf(DIR_REF_SPEED, STRAFE_FAST_SPEED, clampf((p.x - 1.0) / (DIR_MAX - 1.0), 0.0, 1.0))
 			if dir_scale_override > 0.0:
 				p = dir_blend_override
-			anim_tree.set("parameters/Dir/blend_position", p)
-			anim_tree.set("parameters/DirScale/scale", dir_scale_override if dir_scale_override > 0.0 else (clampf(ds / ref, 0.6, 2.2) if ds > 0.2 else 1.0))
+			_set_param(P_DIR, p)
+			_set_param(P_DIR_SCALE, dir_scale_override if dir_scale_override > 0.0 else (clampf(ds / ref, 0.6, 2.2) if ds > 0.2 else 1.0))
 	# Inclinacion del cuerpo (como en el video de referencia de conduccion): hacia delante con la velocidad y al
 	# acelerar, hacia atras al frenar, y hacia dentro en las curvas como pide la fisica (tan = v * giro / g), algo menos.
 	var accel: float = 0.0
@@ -630,9 +709,11 @@ func drive_motion(speed: float, turn_rate: float, delta: float) -> void:
 	# El cuerpo entero (rig) se inclina poco, como antes, para no mover los pies que tocan la pelota; la inclinacion
 	# grande la lleva el tronco (ProceduralPose: columna, sin tocar caderas ni piernas).
 	var target_pitch: float = clampf(speed / 7.0, 0.0, 1.0) * 0.12
+	if json_mode:
+		target_pitch *= 0.2   # los clips JSON ya traen la inclinacion de la carrera
 	var target_roll: float = clampf(turn_rate * speed * 0.0042, -0.28, 0.28)
 	var trunk_pitch: float = clampf(_lean_accel / 9.81, -LEAN_BRAKE_MAX, LEAN_ACCEL_MAX)
-	if _has_carry and _carry_weight > 0.0:
+	if _has_carry and _carry_weight > 0.0 and not json_mode:
 		trunk_pitch += CARRY_CROUCH * _carry_weight * smoothstep(0.3, 1.4, speed) * (1.0 - smoothstep(3.2, 5.0, speed))
 	trunk_pitch += turn_crouch
 	var trunk_roll: float = clampf(atan(turn_rate * speed / 9.81) * LEAN_TURN_GAIN, -LEAN_ROLL_MAX, LEAN_ROLL_MAX)

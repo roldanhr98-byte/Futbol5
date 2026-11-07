@@ -100,6 +100,8 @@ func test_keeper_holds_the_ball_in_the_hands_of_his_idle_clip() -> void:
 	check(ctx.ball.global_position.distance_to(hands) < 0.15, "la pelota va en las manos del clip")
 
 func test_gait_transition_clips_follow_the_real_movement() -> void:
+	# Transiciones de la marcha del pack (modo 1); las del modo 4 estan en test_bank_integration.
+	Tuning.gameplay_mode = 1
 	PackLibrary.reload()
 	if not PackLibrary.available():
 		skip("sin libreria del pack")

@@ -3,6 +3,8 @@ extends Node
 ##   godot --headless --fixed-fps 60 --path . res://tests/run_tests.tscn
 ##   godot --headless --fixed-fps 60 --path . res://tests/run_tests.tscn -- --filter ball
 ##   godot --headless --fixed-fps 60 --path . res://tests/run_tests.tscn -- --filter dribble_reference::test_gentle
+## TEST_GAMEPLAY_MODE=4 las ejecuta con el modo de jugabilidad indicado (las pruebas de pelota y pies animados valen para el modo 4:
+## xvfb-run -a godot --rendering-driver opengl3 --fixed-fps 60 --path . res://tests/run_tests.tscn -- --filter live_feet).
 ## (con "::", la parte de la derecha filtra tambien el nombre del metodo).
 ## Sale con codigo 1 si alguna prueba falla (apto para CI).
 ## Una prueba que no ejecuta ninguna comprobacion se considera FALLIDA (suele indicar un error de script).
@@ -49,11 +51,21 @@ func _run() -> void:
 		methods.sort()
 		for mname in methods:
 			var t: TestCase = script.new()
+			# Cada prueba empieza en su modo: el del juego (4) salvo que la prueba declare otro (sistemas de modos descartados)
+			# o TEST_GAMEPLAY_MODE lo cambie.
+			var mode: int = t.gameplay_mode()
+			if mode == 0:
+				mode = int(OS.get_environment("TEST_GAMEPLAY_MODE")) if OS.get_environment("TEST_GAMEPLAY_MODE") != "" else Tuning.DEFAULT_GAMEPLAY_MODE
+			if Tuning.gameplay_mode != mode:
+				Tuning.gameplay_mode = mode
+				PackLibrary.reload()
 			t.tree = get_tree()
 			total_tests += 1
 			var t0: int = Time.get_ticks_msec()
+			t.begin()
 			await t.call(mname)
 			t.cleanup()
+			t.end()
 			await get_tree().physics_frame
 			if t.skipped:
 				skipped_tests += 1

@@ -55,6 +55,11 @@ func total_duration() -> float:
 	return _contact_time + FOLLOW_THROUGH + RECOVERY
 
 func _process_modification_with_delta(delta: float) -> void:
+	Prof.begin(&"pose procedural")
+	_pose_step(delta)
+	Prof.end(&"pose procedural")
+
+func _pose_step(delta: float) -> void:
 	if skeleton == null:
 		return
 	_apply_lean()

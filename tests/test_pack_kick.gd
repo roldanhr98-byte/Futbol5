@@ -3,6 +3,10 @@ extends TestCase
 ## llega a la pelota; si la pelota no esta al alcance de ninguna pierna NO hay pase ni tiro ni teletransporte.
 ## Requiere la libreria local del pack (recurso restringido): sin ella la prueba se omite, no se da por buena.
 
+## Sistema del modo 1 (pack de Mixamo / Tripo), descartado como modo de juego pero todavia en el codigo: se prueba en su modo.
+func gameplay_mode() -> int:
+	return 1
+
 const START := Vector3(-10.0, 0.0, 0.0)
 
 func _skip_if_missing() -> bool:
@@ -19,6 +23,12 @@ func _setup(ball_pos: Vector3) -> Dictionary:
 	var p: Footballer = add_player(ctx, 0, START, 50, src, true)
 	p.locomotion.yaw = Locomotion.yaw_from_dir(Vector3(1, 0, 0))
 	await physics_frames(10)
+	# La pelota se vuelve a poner en su sitio al final de la espera, justo antes del pedido: con el joystick suelto el
+	# jugador se acomoda a una pelota al alcance que no tiene delante (BallHandler.settle_steer, 2026-11-05) y la pelota de
+	# la prueba (detras, algo lejos del pie) ya no estaba ahi al pedir el golpeo.
+	p.place_at(START, Locomotion.yaw_from_dir(Vector3(1, 0, 0)))
+	ctx.ball.reset_at(ball_pos)
+	await physics_frames(1)
 	var events: Array = []
 	ctx.event_emitted.connect(func(e: GameEvent) -> void: events.append(e))
 	return {"ctx": ctx, "src": src, "p": p, "events": events}
@@ -113,6 +123,8 @@ func test_ball_out_of_reach_gives_no_kick_and_no_teleport() -> void:
 	var p: Footballer = s["p"]
 	var src: ScriptedInput = s["src"]
 	var ctx: MatchContext = s["ctx"]
+	# La pelota recien colocada se asienta (1 cm) en los primeros pasos.
+	await physics_frames(3)
 	var before: Vector3 = ctx.ball.global_position
 	src.hold_pass()
 	await physics_frames(3)
@@ -169,16 +181,19 @@ func test_reach_is_limited_by_the_leg_not_a_fixed_radius() -> void:
 	await wait_seconds(0.8)
 	check(_events_of(s2["events"], GameEvent.Type.SHOT).is_empty(), "pelota a 2.2 m delante: sin tiro")
 	cleanup()
-	# A media distancia SI se adapta: el jugador da un toque de preparacion que acerca la pelota al pie y luego tira.
+	# A media distancia SI se adapta: el jugador va hasta la pelota (no hay toque a distancia que la traiga, conduccion
+	# fisica desde 2026-11-05) y tira con el pie en la pelota.
 	var s3: Dictionary = await _setup(START + Vector3(1.3, 0.11, 0.0))
 	var p3: Footballer = s3["p"]
+	var x0: float = p3.global_position.x
 	s3["src"].hold_shoot()
 	await physics_frames(2)
 	s3["src"].release_shoot()
-	await wait_seconds(0.8)
-	note("pelota a 1.3 m: toques de preparacion=%d, modo del ultimo toque='%s'" % [p3.ball_handler.dribble_touch_count, p3.ball_handler.last_touch_mode])
-	check(p3.ball_handler.dribble_touch_count >= 1, "la pelota a 1.3 m se acerca primero con un toque de preparacion")
+	await wait_seconds(1.2)
+	note("pelota a 1.3 m: el jugador avanzo %.2f m, toques=%d, golpeos %s, pie-pelota %.3f m" % [p3.global_position.x - x0, p3.ball_handler.dribble_touch_count, str(p3.ball_handler.kick_stats), p3.ball_handler.last_foot_distance])
+	check(p3.global_position.x - x0 > 0.3, "la pelota a 1.3 m: el jugador va hasta ella")
 	check(not _events_of(s3["events"], GameEvent.Type.SHOT).is_empty(), "y despues el tiro se ejecuta")
+	check(int(p3.ball_handler.kick_stats["missed"]) == 0, "con el pie en la pelota (sin patada en falso)")
 
 func test_stride_adjustment_reaches_a_ball_slightly_off_the_foot() -> void:
 	if _skip_if_missing():

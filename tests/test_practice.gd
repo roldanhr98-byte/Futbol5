@@ -27,8 +27,10 @@ func test_gallery_lists_every_clip_with_a_known_role() -> void:
 	note("%d animaciones sin espejos en %d grupos" % [ids.size(), g.size()])
 	check(total == ids.size(), "todos los clips pertenecen a un grupo (%d de %d)" % [total, ids.size()])
 	check(ids.size() >= 133, "al menos las 133 animaciones del pack (hay %d)" % ids.size())
-	for must in [&"kick_up_soccerball", &"stall_soccerball", &"goalkeeper_drop_kick", &"soccer_tackle", &"Soccer_Spin"]:
-		check(ids.has(must), "la galeria incluye '%s'" % must)
+	# Clips del pack de Mixamo (solo existen fuera del modo 4; el banco JSON no tiene malabares ni ruleta).
+	if not PackLibrary.json_mode():
+		for must in [&"kick_up_soccerball", &"stall_soccerball", &"goalkeeper_drop_kick", &"soccer_tackle", &"Soccer_Spin"]:
+			check(ids.has(must), "la galeria incluye '%s'" % must)
 
 func test_every_clip_plays_and_moves_the_root_along_its_path() -> void:
 	if _skip_if_missing():
@@ -67,6 +69,9 @@ func test_mirror_toggle_plays_the_mirrored_clip() -> void:
 	check(s.current_clip == &"soccer_tackle_mirror", "con «Espejo» se reproduce la variante espejo")
 
 func test_juggling_keeps_the_ball_in_the_air_with_impulses_only() -> void:
+	if not JuggleController.available():
+		skip("sin clips de malabares en la libreria actual (el banco JSON del modo 4 no tiene)")
+		return
 	if _skip_if_missing():
 		return
 	var s: PracticeScene = await _make_scene()

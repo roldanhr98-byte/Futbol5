@@ -8,6 +8,10 @@ extends TestCase
 ## de la conduccion ORIGINAL, medidos con este mismo protocolo antes de corregirla, estan en
 ## docs/technical-index/CHANGELOG.md: carrera 36 % / sprint 31 % de tiempo con la pelota a 0.35-1.5 m (64 % / 69 % lejos).
 
+## Sistema del modo 1 (pack de Mixamo / Tripo), descartado como modo de juego pero todavia en el codigo: se prueba en su modo.
+func gameplay_mode() -> int:
+	return 1
+
 const SEEDS := [101, 202, 303, 404]
 const WARMUP := 0.8
 const WINDOW := 2.7
@@ -145,7 +149,9 @@ func test_dribble_distribution_at_jog_run_and_sprint() -> void:
 			rows["%s/%s" % [legacy_mode, mode["name"]]] = s
 			note(_line("TRIPO" if legacy_mode else "PACK", mode["name"], s))
 	var j: Dictionary = rows["false/trote"]
-	check(j["behind"] < 2.0 and j["glued"] < 2.0, "trote con pack: la pelota nunca queda atras ni pegada (atras %.1f %%, pegada %.1f %%)" % [j["behind"], j["glued"]])
+	# Conduccion fisica (2026-11-05): el toque llega cuando el pie alcanza la pelota, asi que en cada toque la pelota queda
+	# unos fotogramas a menos de 0.35 m del centro del cuerpo (medido con render: 3 %); antes el tope era 2 %.
+	check(j["behind"] < 2.0 and j["glued"] < 5.0, "trote con pack: la pelota nunca queda atras ni pegada (atras %.1f %%, pegada %.1f %%)" % [j["behind"], j["glued"]])
 	check(j["near"] > 90.0, "trote con pack: la pelota esta a distancia de control el %.0f %% del tiempo" % j["near"])
 	check(rows["false/sprint"]["behind"] < 2.0, "sprint con pack: la pelota no queda atras (%.1f %%)" % rows["false/sprint"]["behind"])
 	check(rows["false/carrera"]["near"] > 90.0, "carrera con pack: pelota controlada el %.0f %% del tiempo (> 90 %%)" % rows["false/carrera"]["near"])

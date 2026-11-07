@@ -104,6 +104,11 @@ func _build_net() -> void:
 # --- Deteccion de gol ------------------------------------------------------
 
 func _physics_process(_delta: float) -> void:
+	Prof.begin(&"arco (gol)")
+	_goal_step(_delta)
+	Prof.end(&"arco (gol)")
+
+func _goal_step(_delta: float) -> void:
 	if ball == null or not is_instance_valid(ball):
 		return
 	var lp: Vector3 = to_local(ball.global_position)

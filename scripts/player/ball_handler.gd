@@ -35,6 +35,28 @@ const KICK_PLANT_SPEED := 0.4
 const PLANT_FOOT_MAX_Y := 0.06
 ## m/s que la velocidad de apoyo de un clip puede superar a la del cuerpo al empezar la patada.
 const PLANT_SPEED_GAIN_MAX := 1.5
+## Modo 4: margen de puntaje (m de residuo equivalentes) dentro del cual se elige al azar entre los clips de patada.
+const JSON_KICK_VARIETY := 0.05
+## Modo 4: coste (m de residuo equivalentes por m/s) de elegir un clip cuyo pie de apoyo retrocede a una velocidad distinta de la del
+## jugador: el pie plantado patinaria. Mas alto que en el modo 1 porque hay clips de todas las velocidades (parado a sprint).
+const JSON_PLANT_MISMATCH_COST := 0.28
+## Modo 4: coste (m de residuo por m de ajuste de zancada): con tantos clips se prefiere el que apenas obliga a mover el cuerpo
+## (y el pie del lado de la pelota al del lado contrario).
+const JSON_STEP_COST := 0.35
+## Modo 4: golpeos evaluados a fondo por planificacion (los de contacto mas cercano a la pelota prevista).
+const JSON_KICK_EVAL := 24
+## Modo 4: con el destino a TURN_KICK_MIN grados o mas del frente, el golpeo es un clip que gira el cuerpo y patea (de 45 a
+## 180 grados, de taco, de rabona): el jugador no patea de espaldas. TURN_KICK_TOL: diferencia admitida entre hacia donde
+## sale la pelota en el clip y el destino; TURN_KICK_MAX_LATENCY: segundos maximos hasta el contacto (el giro se ve entero).
+## Sin golpeo girando que llegue y con el destino a TURN_FIRST_MIN grados o mas, primero un giro con pelota (clip) y despues
+## el golpeo (la orden espera).
+const TURN_KICK_MIN := 50.0
+const TURN_KICK_TOL := 40.0
+const TURN_FIRST_MIN := 100.0
+const TURN_KICK_MAX_LATENCY := 0.6
+## Con un rival a menos de TURN_KICK_PRESS_DIST m no hay tiempo para un giro largo: TURN_KICK_PRESSED_LATENCY s como mucho.
+const TURN_KICK_PRESS_DIST := 2.2
+const TURN_KICK_PRESSED_LATENCY := 0.4
 ## Latencia extra (s) de los golpeos del mocap de futbol (modo 2), ver clip_timing.
 const MOCAP_EXTRA_LATENCY := 0.08
 ## Coste (m de residuo equivalentes por m/s) de elegir un clip cuya velocidad de apoyo no encaja con la del jugador.
@@ -126,12 +148,18 @@ var _pending_stick: Vector3 = Vector3.ZERO
 var _pending_age: float = 0.0
 ## Patada en curso: el impulso se aplica en el instante de contacto de la animacion.
 var _kick_action: StringName = &""
+## Testigo del arbitro del golpeo con clip en curso (0 = ninguno).
+var _kick_token: int = 0
 var _kick_timer: float = 0.0
 var _kick_stick: Vector3 = Vector3.ZERO
 var _kick_charge: float = 0.0
 var _kick_lob: bool = false
 ## Patada con clip del pack en curso: {clip, speed, offset, latency, contact, distance (al iniciar)}. Vacio = patada procedural.
 var _kick_clip: Dictionary = {}
+## Golpeo girando en curso (modo 4): {clip, yaw0, start_at, speed, latency}. El cuerpo sigue la raiz y el rumbo del clip.
+var _kick_turn: Dictionary = {}
+## Direccion del golpeo pedido que necesita girar antes (modo 4, ver TURN_FIRST_MIN); cero si no.
+var _kick_turn_dir: Vector3 = Vector3.ZERO
 
 ## Contadores y registro de patadas con animacion (diagnostico reproducible; ver kick_log).
 ## started: balanceos iniciados; contact: golpeos validos; missed: balanceos que no alcanzaron la pelota;
@@ -152,6 +180,10 @@ var shot_charge: float = 0.0
 var through_charge: float = 0.0
 var cross_charge: float = 0.0
 
+## Modo 4 (Json): giros con pelota, vuelta atras, regates y frenadas con los clips JSON y sus toques (JsonBallMove).
+var json_move: JsonBallMove = null
+## Modo 4 (Json): recepcion de una pelota que llega con un clip cuyo pie la toca en su instante de toque (JsonReceive).
+var receive: JsonReceive = null
 ## Vuelta atras pisando la pelota (DragBack): regate con el boton REGATE y el joystick hacia atras.
 var drag_back: DragBack = null
 ## Giro con toques (joystick hacia atras conduciendo, estilo Dream League Soccer); ver BallTurn.
@@ -162,6 +194,8 @@ func _init(o: Footballer) -> void:
 	rng.randomize()
 	drag_back = DragBack.new(self)
 	ball_turn = BallTurn.new(self)
+	json_move = JsonBallMove.new(self)
+	receive = JsonReceive.new(self)
 
 func ball() -> Ball:
 	return owner.ctx.ball if owner.ctx != null else null
@@ -345,15 +379,25 @@ func update(frame: InputFrame, stick_world: Vector3, stick_mag: float, desired_d
 	owner.set_ball_ghost(_kick_action != &"" or _pass_ghost > 0.0 or (is_dribbling() and ball_distance() < DRIBBLE_GHOST_RANGE))
 	_desired_dir = desired_dir
 	_sample_feet(dt)
+	_json_touch_ik_step(dt)
 	_update_buttons(frame, stick_world, dt)
 	if _kick_action != &"":
 		drag_back.cancel("golpeo")
 		ball_turn.cancel("golpeo")
 		_kick_timer -= dt
-		if _kick_timer <= 0.0:
+		var toe_before: Vector3 = _contact_toe_now()
+		if _kick_timer <= 0.0 and _ball_still_arriving(dt, toe_before):
+			# Pelota que llega (golpeo de primera): el impulso espera a que llegue de verdad al pie (sin esto el pie la
+			# golpeaba a 0.26 m, en el aire, con la pelota a 6-7 m/s: test_live_kicks).
+			_steer_clip_kick()
+			_json_kick_ik()
+		elif _kick_timer <= 0.0:
 			_finish_kick()
 		elif not _kick_clip.is_empty():
 			_steer_clip_kick()
+			_json_kick_ik()
+		if _kick_action != &"":
+			_contact_prev_toe = toe_before
 		return
 	if _pending_action != &"":
 		_pending_age += dt
@@ -365,7 +409,13 @@ func update(frame: InputFrame, stick_world: Vector3, stick_mag: float, desired_d
 		# Corriendo hacia la pelota propia que quedo por delante (kick_approach_steer): la orden sigue en pie mientras
 		# el jugador se acerca de verdad, hasta PENDING_APPROACH_MAX.
 		var approaching: bool = _pending_age <= PENDING_APPROACH_MAX and is_approaching_for_kick()
-		if _pending_age > PENDING_KICK_MAX and not waiting_first_time and not approaching:
+		# Giro con la pelota para golpear (JsonBallMove.turn_for_kick, destino detras): la orden espera a que termine el giro
+		# y cuenta su tiempo desde ahi (el clip dura mas que PENDING_KICK_MAX y la orden se perdia: medido, tiros a 135 y
+		# 180 grados y pase a 180 al trote sin golpeo tras girar).
+		var turning_for_kick: bool = json_move != null and json_move.active and json_move.intent == &"kick_turn"
+		if turning_for_kick:
+			_pending_age = 0.0
+		if _pending_age > PENDING_KICK_MAX and not waiting_first_time and not approaching and not turning_for_kick:
 			if uses_clip_kicks():
 				_log_kick(_pending_action, &"out_of_reach", {"stage": "pending"})
 				kick_stats["out_of_reach"] += 1
@@ -378,6 +428,13 @@ func update(frame: InputFrame, stick_world: Vector3, stick_mag: float, desired_d
 	if lockout > 0.0 or owner.ctx.ball_locked_for(owner) or ball_owned_by_other():
 		drag_back.cancel("bloqueo")
 		ball_turn.cancel("bloqueo")
+		return
+	if PackLibrary.json_mode() and json_move.consider(desired_dir, stick_mag, dt):
+		return
+	Prof.begin(&"recepcion (plan del clip)")
+	var receiving: bool = PackLibrary.json_mode() and receive.consider(desired_dir, stick_mag, dt)
+	Prof.end(&"recepcion (plan del clip)")
+	if receiving:
 		return
 	if drag_back.update(desired_dir, stick_mag, dt):
 		return
@@ -470,11 +527,17 @@ func _try_execute_pending() -> bool:
 	if uses_clip_kicks():
 		var plan: Dictionary = plan_clip_kick(_pending_action, _pending_charge, _pending_lob)
 		if plan.is_empty():
+			# Modo 4, destino detras: giro con la pelota (clip) y la orden sigue pendiente para despues del giro.
+			if _kick_turn_dir != Vector3.ZERO and json_move.turn_for_kick(_kick_turn_dir):
+				_kick_turn_dir = Vector3.ZERO
+				_pending_age = 0.0
+				return true
 			return false   # ningun pie llegaria a la pelota: se espera (buffer) o se descarta
 		var act: StringName = _pending_action
+		if not _start_clip_kick(act, plan, _pending_stick, _pending_charge, _pending_lob):
+			return false   # el arbitro no da el control ahora: la orden sigue pendiente
 		_pending_action = &""
 		_kick_curl = _pending_curl
-		_start_clip_kick(act, plan, _pending_stick, _pending_charge, _pending_lob)
 		return true
 	if not can_reach(Tuning.player.touch_reach + 0.3):
 		return false
@@ -568,8 +631,12 @@ func _predicted_yaw(latency: float) -> float:
 ## Aborta una patada en curso y la accion pendiente (caida, barrida): no se aplica ningun impulso.
 func abort_kick() -> void:
 	if _kick_action != &"":
+		if owner.arbiter != null:
+			owner.arbiter.relevel(_kick_token, ActionArbiter.Level.OVERLAY)
+		_kick_token = 0
 		_kick_action = &""
 		_kick_clip = {}
+		_kick_turn = {}
 		owner.locomotion.turn_scale = 1.0
 		owner.nudge_velocity = Vector3.ZERO
 		owner.set_ball_ghost(false)
@@ -636,6 +703,16 @@ func is_clip_kick_in_progress() -> bool:
 
 ## Velocidad del cuerpo durante una patada con clip: la de partida, frenada con el pie de apoyo plantado.
 func kick_body_velocity() -> Vector3:
+	if not _kick_turn.is_empty():
+		# Golpeo girando: el cuerpo va con la raiz del clip (marco del inicio del clip).
+		var rp: PackedVector2Array = PackLibrary.meta(_kick_clip["clip"]).get("root_path", PackedVector2Array())
+		if rp.size() < 2:
+			return Vector3.ZERO
+		var ct2: float = _turn_kick_clip_t()
+		var fi: float = clampf(ct2 * 30.0, 0.0, float(rp.size() - 2))
+		var rv: Vector2 = (rp[int(fi) + 1] - rp[int(fi)]) * 30.0 * float(_kick_turn["speed"])
+		var f0: Vector3 = Locomotion.dir_from_yaw(float(_kick_turn["yaw0"]))
+		return f0 * rv.x + Vector3(-f0.z, 0.0, f0.x) * rv.y
 	if _kick_timer > KICK_PLANT_TIME:
 		return _kick_v0
 	return plant_velocity(_kick_clip["contact"], owner.locomotion.yaw, _kick_v0)
@@ -650,9 +727,25 @@ func _steer_clip_kick() -> void:
 	if b == null or b.is_held():
 		owner.nudge_velocity = Vector3.ZERO
 		return
-	var delta: Vector3 = predicted_foot_to_ball(_kick_clip["contact"], _kick_timer, _kick_v0)
+	var delta: Vector3 = _turn_kick_foot_to_ball() if not _kick_turn.is_empty() else predicted_foot_to_ball(_kick_clip["contact"], _kick_timer, _kick_v0)
 	var flat_d := Vector3(delta.x, 0.0, delta.z)
 	owner.nudge_velocity = (flat_d / maxf(_kick_timer - KICK_PLANT_TIME, 0.04)).limit_length(kick_nudge_cap(_kick_v0))
+
+## Lo comun a todos los clips de una accion en predicted_foot_to_ball (misma latencia): giro previsto, pelota prevista y velocidad.
+func _fast_prediction(latency: float) -> Dictionary:
+	var b: Ball = ball()
+	var loco: Locomotion = owner.locomotion
+	var bp: Vector3 = b.global_position + ball_travel(b, latency)
+	bp.y = b.global_position.y
+	var plant: float = minf(latency, KICK_PLANT_TIME)
+	var v: Vector3 = loco.velocity
+	return {"yaw": _predicted_yaw(latency), "bp": bp, "v": v, "plant": plant, "cruise": Vector3(v.x, 0.0, v.z) * (latency - plant)}
+
+## predicted_foot_to_ball con lo precalculado por _fast_prediction (mismas cuentas, sin repetir las comunes).
+func _foot_to_ball_fast(contact: Dictionary, pre: Dictionary) -> Vector3:
+	var yaw: float = pre["yaw"]
+	var p: Vector3 = owner.global_position + (pre["cruise"] as Vector3) + plant_velocity(contact, yaw, pre["v"]) * float(pre["plant"])
+	return (pre["bp"] as Vector3) - foot_contact_world(contact, p, yaw)
 
 func predicted_foot_to_ball(contact: Dictionary, latency: float, body_v: Variant = null) -> Vector3:
 	var b: Ball = ball()
@@ -679,6 +772,24 @@ static func contact_samples(contact: Dictionary) -> Array:
 			out.append({"time": float(contact["path_t0"]) + k * dt, "pos": path[k]})
 	return out if not out.is_empty() else [{"time": float(contact["time"]), "pos": contact["pos"]}]
 
+static var _samples_cache: Dictionary = {}
+
+## contact_samples de un clip, con a lo sumo MAX_SAMPLES instantes repartidos por la trayectoria (modo 4), guardado por clip.
+static func contact_samples_cached(clip: StringName, contact: Dictionary) -> Array:
+	if _samples_cache.has(clip):
+		return _samples_cache[clip]
+	var all: Array = contact_samples(contact)
+	var out: Array = all
+	if all.size() > MAX_SAMPLES:
+		out = []
+		for i in MAX_SAMPLES:
+			out.append(all[int(round(float(i) * float(all.size() - 1) / float(MAX_SAMPLES - 1)))])
+	_samples_cache[clip] = out
+	return out
+
+## Instantes de contacto que se prueban por clip en el modo 4.
+const MAX_SAMPLES := 3
+
 ## Clips de pelota en el aire: cabezazos (trayectoria de la cabeza) y voleas/acrobacias (punta del pie), con su espejo.
 const AERIAL_SETS := [
 	{"clips": [&"Header", &"Soccer_Header", &"header_soccerball", &"header_soccerball_2", &"Jumping_Up"], "keys": ["head"], "min_speed": 1.6, "kind": &"header"},
@@ -694,13 +805,33 @@ func plan_aerial_kick(action: StringName, charge: float) -> Dictionary:
 	if b == null or b.is_held():
 		return {}
 	var t: PlayerTuning = Tuning.player
-	var traj: PackedVector3Array = BallPredictor.trajectory(b.global_position, b.linear_velocity, 1.3, 1.0 / 30.0)
+	var traj: PackedVector3Array = BallPredictor.trajectory(b.global_position, b.linear_velocity, 1.3, 1.0 / 30.0, b.angular_velocity)
 	var adjust_max: float = t.kick_adjust_max + t.kick_adjust_sprint * _sprint_ratio()
 	var best: Dictionary = {}
 	var best_score: float = INF
+	var json: bool = PackLibrary.json_mode()
+	# Modo 4 (cientos de cabezazos y voleas): ventana de la pelota en el marco del jugador entre 0.1 y 1.1 s, para descartar
+	# con la caja de cada trayectoria los clips que no pueden llegar.
+	var wlo := Vector3(INF, INF, INF)
+	var whi := Vector3(-INF, -INF, -INF)
+	if json:
+		var lf: Vector3 = owner.locomotion.forward()
+		var lr: Vector3 = owner.locomotion.right()
+		for i in range(3, mini(traj.size(), 34)):
+			var d: Vector3 = traj[i] - owner.global_position
+			var lp := Vector3(d.dot(lf), traj[i].y, d.dot(lr))
+			wlo = Vector3(minf(wlo.x, lp.x), minf(wlo.y, lp.y), minf(wlo.z, lp.z))
+			whi = Vector3(maxf(whi.x, lp.x), maxf(whi.y, lp.y), maxf(whi.z, lp.z))
+		var body_move: float = owner.locomotion.speed * 1.1 + adjust_max + t.kick_start_residual + 0.2
+		wlo -= Vector3(body_move, t.kick_start_residual + 0.1, body_move)
+		whi += Vector3(body_move, t.kick_start_residual + 0.1, body_move)
 	for set in AERIAL_SETS:
-		for base in set["clips"]:
-			for clip in [base, StringName(String(base) + "_mirror")]:
+		# Modo 4: los clips de cada conjunto son todos los del rol (cabezazo / volea), ya con sus espejos.
+		var clip_list: Array = set["clips"]
+		if json:
+			clip_list = PackLibrary.by_role(&"header" if set["kind"] == &"header" else &"volley")
+		for base in clip_list:
+			for clip in ([base] if json else [base, StringName(String(base) + "_mirror")]):
 				if not PackLibrary.has_clip(clip):
 					continue
 				var paths: Dictionary = PackLibrary.meta(clip).get("paths", {})
@@ -708,7 +839,14 @@ func plan_aerial_kick(action: StringName, charge: float) -> Dictionary:
 					if not paths.has(key):
 						continue
 					var path: PackedVector3Array = paths[key]
-					for k in range(4, path.size() - 1):
+					if json:
+						var bb: Array = _path_bbox(clip, key, path)
+						var lo: Vector3 = bb[0]
+						var hi: Vector3 = bb[1]
+						if whi.x < lo.x or wlo.x > hi.x or whi.y < lo.y or wlo.y > hi.y or whi.z < lo.z or wlo.z > hi.z:
+							continue
+					# Modo 4 (muchos clips): un instante de cada dos (a 30 Hz sobran).
+					for k in range(4, path.size() - 1, 2 if PackLibrary.json_mode() else 1):
 						var v: float = (path[k + 1] - path[k - 1]).length() * 15.0
 						if v < float(set["min_speed"]):
 							continue
@@ -734,6 +872,22 @@ func plan_aerial_kick(action: StringName, charge: float) -> Dictionary:
 									"residual": residual, "adjust": step, "aerial": set["kind"]}
 	return best if not best.is_empty() and best["residual"] <= t.kick_start_residual else {}
 
+static var _bbox_cache: Dictionary = {}
+
+## Caja (min, max) de la trayectoria `key` de un clip en el marco del cuerpo, entre 0.1 y 1.1 s (lo que prueba el planificador
+## aereo), guardada por clip.
+static func _path_bbox(clip: StringName, key: String, path: PackedVector3Array) -> Array:
+	var ck: String = String(clip) + ":" + key
+	if _bbox_cache.has(ck):
+		return _bbox_cache[ck]
+	var lo := Vector3(INF, INF, INF)
+	var hi := Vector3(-INF, -INF, -INF)
+	for k in range(3, mini(path.size(), 34)):
+		lo = Vector3(minf(lo.x, path[k].x), minf(lo.y, path[k].y), minf(lo.z, path[k].z))
+		hi = Vector3(maxf(hi.x, path[k].x), maxf(hi.y, path[k].y), maxf(hi.z, path[k].z))
+	_bbox_cache[ck] = [lo, hi]
+	return [lo, hi]
+
 ## Elige el mejor clip, pierna E INSTANTE DE CONTACTO para la accion. El instante sale de la trayectoria real del pie del
 ## clip (contact_samples), no es fijo: se busca el punto que mejor encaja con la pelota predicha. Cada opcion puede
 ## compensar hasta el ajuste de zancada maximo; se empieza solo si, tras el ajuste, el pie quedaria a menos de
@@ -749,25 +903,208 @@ func plan_clip_kick(action: StringName, charge: float, lob: bool) -> Dictionary:
 	var best: Dictionary = {}
 	var best_score: float = INF
 	var kind_key: StringName = action if action == &"cross" else (&"lob" if lob else action)
-	for cand in AnimationCatalog.kick_candidates(kind_key):
-		for smp in contact_samples(cand["contact"]):
+	var pool: Array = []
+	var fast: Dictionary = {}
+	var json: bool = PackLibrary.json_mode()
+	# Modo 4 (decenas de clips): se descartan, con una cuenta barata, los clips cuyo contacto queda lejos de donde esta la pelota
+	# ahora (mas el ajuste de zancada y lo que ella y el cuerpo pueden moverse en la latencia), y de los demas se prueban pocos
+	# instantes de contacto. Sin esto, planificar costaba ~15 ms y se repite cada paso mientras la orden espera.
+	var bo: Vector3 = ball_offset()
+	var bfwd: float = bo.dot(owner.locomotion.forward())
+	var bright: float = bo.dot(owner.locomotion.right())
+	var margin: float = adjust_max + t.kick_start_residual + 0.2 + 0.35 * KickModel.flat(b.linear_velocity - owner.locomotion.velocity).length()
+	_kick_turn_dir = Vector3.ZERO
+	if json:
+		# Destino lejos del frente: golpeo girando (si alguno llega a la pelota); si no, el golpeo de siempre.
+		var kd: Vector3 = estimated_kick_dir(action, _pending_stick if _pending_stick.length_squared() > 0.01 else _desired_dir, charge, lob)
+		if kd != Vector3.ZERO:
+			var alpha: float = rad_to_deg(wrapf(Locomotion.yaw_from_dir(kd) - owner.locomotion.yaw, -PI, PI))
+			last_plan_debug = "alpha %.0f" % alpha
+			if absf(alpha) >= TURN_KICK_MIN:
+				var tp: Dictionary = plan_turn_kick(action, alpha, adjust_max)
+				last_plan_debug += " giro: %s" % ("sin plan" if tp.is_empty() else String(tp["clip"]))
+				if not tp.is_empty():
+					return tp
+				if absf(alpha) >= TURN_FIRST_MIN:
+					# Ningun golpeo girando sirve (el destino queda casi detras): primero se gira con la pelota.
+					_kick_turn_dir = kd
+					return {}
+	var cands: Array = AnimationCatalog.kick_candidates(kind_key, charge)
+	if json and cands.size() > JSON_KICK_EVAL:
+		# Cientos de golpeos: se evaluan a fondo solo los JSON_KICK_EVAL cuyo contacto queda mas cerca de donde estara la pelota
+		# (cuenta barata: pelota relativa al cuerpo, con la velocidad relativa durante una latencia tipica).
+		var rel_v: Vector3 = KickModel.flat(b.linear_velocity - owner.locomotion.velocity)
+		var lat0: float = t.kick_latency
+		var pf: float = bfwd + rel_v.dot(owner.locomotion.forward()) * lat0
+		var pr: float = bright + rel_v.dot(owner.locomotion.right()) * lat0
+		var scored: Array = []
+		var spd: float = owner.locomotion.speed
+		for cand in cands:
+			var cp0: Vector3 = cand["contact"]["pos"]
+			# Tambien la carrera de entrada del clip (v_in) frente a la del jugador: si no, a un jugador parado le tocaban
+			# golpeos con carrera y el pie de apoyo patinaba (medido: 3 m/s).
+			var v_in: float = float(cand["v_in"]) if cand.has("v_in") else spd
+			scored.append([Vector2(cp0.x - pf, cp0.z - pr).length() + JSON_PLANT_MISMATCH_COST * absf(v_in - spd), cand])
+		scored.sort_custom(func(a: Array, c: Array) -> bool: return float(a[0]) < float(c[0]))
+		cands = scored.slice(0, JSON_KICK_EVAL).map(func(e: Array) -> Dictionary: return e[1])
+	for cand in cands:
+		var samples: Array = contact_samples_cached(cand["clip"], cand["contact"]) if json else contact_samples(cand["contact"])
+		if json:
+			var cp: Vector3 = cand["contact"]["pos"]
+			if Vector2(cp.x - bfwd, cp.z - bright).length() > margin:
+				continue
+		for smp in samples:
 			var c := {"time": smp["time"], "pos": smp["pos"], "foot": cand["foot"]}
-			var timing: Dictionary = clip_timing(float(c["time"]), action, charge, bool(PackLibrary.meta(cand["clip"]).get("mocap", false)))
+			var timing: Dictionary = clip_timing(float(c["time"]), action, charge, bool(cand["mocap"]) if cand.has("mocap") else bool(PackLibrary.meta(cand["clip"]).get("mocap", false)))
 			c["plant"] = clip_plant_velocity(cand["clip"], float(c["time"]), int(c["foot"]), float(timing["speed"]))
-			var delta: Vector3 = predicted_foot_to_ball(c, timing["latency"])
+			var delta: Vector3
+			if json:
+				# La latencia es la misma para todos los clips de la accion: la pelota y el giro previstos se calculan una vez.
+				if fast.is_empty():
+					fast = _fast_prediction(float(timing["latency"]))
+				delta = _foot_to_ball_fast(c, fast)
+			else:
+				delta = predicted_foot_to_ball(c, timing["latency"])
 			var flat_d := Vector3(delta.x, 0.0, delta.z)
 			# El ajuste solo cabe antes de plantar el pie: no se planifica uno que el cuerpo no puede dar.
 			var step: Vector3 = flat_d.limit_length(minf(adjust_max, kick_adjust_capacity(owner.locomotion.velocity, float(timing["latency"]))))
 			var residual: float = Vector3(flat_d.x - step.x, delta.y, flat_d.z - step.z).length()
 			var mismatch: float = absf((c["plant"] as Vector2).length() - owner.locomotion.speed)
-			var score: float = residual + 0.15 * step.length() + PLANT_MISMATCH_COST * mismatch
+			var score: float = residual + (JSON_STEP_COST if json else 0.15) * step.length() + (JSON_PLANT_MISMATCH_COST if json else PLANT_MISMATCH_COST) * mismatch
+			var plan: Dictionary = timing.merged({"clip": cand["clip"], "contact": c, "distance": delta.length(), "residual": residual, "adjust": step})
 			if score < best_score:
 				best_score = score
-				best = timing.merged({"clip": cand["clip"], "contact": c, "distance": delta.length(), "residual": residual, "adjust": step})
+				best = plan
+			pool.append([score, plan])
+	# Modo 4 (hay muchos clips): entre los que encajan casi igual de bien se elige uno al azar, para que el jugador no repita
+	# siempre el mismo gesto.
+	if PackLibrary.json_mode() and not best.is_empty() and best["residual"] <= t.kick_start_residual:
+		var ok: Array = pool.filter(func(e: Array) -> bool: return float(e[0]) <= best_score + JSON_KICK_VARIETY and float((e[1] as Dictionary)["residual"]) <= t.kick_start_residual)
+		if ok.size() > 1:
+			best = (ok[rng.randi() % ok.size()] as Array)[1]
 	return best if not best.is_empty() and best["residual"] <= t.kick_start_residual else {}
 
-func _start_clip_kick(action: StringName, plan: Dictionary, stick_world: Vector3, charge: float, lob: bool) -> void:
+## Direccion (plana) en la que saldria la pelota si se golpeara ahora: la misma asistencia que el golpeo real (receptor del
+## pase, arco del tiro...), con un azar fijo. Cero si no se puede estimar.
+func estimated_kick_dir(action: StringName, stick: Vector3, charge: float, lob: bool) -> Vector3:
+	var ctx: MatchContext = owner.ctx
+	if ctx == null or ball() == null:
+		return Vector3.ZERO
+	var tmp := RandomNumberGenerator.new()
+	tmp.seed = 7
+	var res: KickModel.KickResult = null
+	match action:
+		&"pass":
+			res = PassAssist.compute(owner, ctx, stick, charge, lob, tmp, assist_pass_level())
+		&"through":
+			res = PassAssist.compute_through(owner, ctx, stick, charge, lob, tmp, assist_pass_level())
+		&"cross":
+			res = CrossAssist.compute(owner, ctx, stick, charge, lob, tmp, assist_pass_level(), 0.0)
+		_:
+			res = ShotAssist.compute(owner, ctx, stick, charge, lob, tmp, assist_shot_level(), 0.0)
+	if res == null:
+		return Vector3.ZERO
+	var v: Vector3 = KickModel.flat(res.velocity)
+	return v.normalized() if v.length() > 0.1 else Vector3.ZERO
+
+## Modo 4: planifica un golpeo girando hacia un destino a `alpha` grados del frente (+ izquierda). El cuerpo sigue la raiz y
+## el rumbo del clip (gira y patea); se busca el clip cuya pelota sale hacia el destino y cuyo pie llega a la pelota prevista
+## con un ajuste de paso acotado. {} si ninguno llega.
+func plan_turn_kick(action: StringName, alpha: float, adjust_max: float) -> Dictionary:
+	var b: Ball = ball()
 	var t: PlayerTuning = Tuning.player
+	var loco: Locomotion = owner.locomotion
+	var pos: Vector3 = KickModel.flat(owner.global_position)
+	var dt: float = 1.0 / float(Engine.physics_ticks_per_second)
+	var best: Dictionary = {}
+	var best_score: float = INF
+	var max_lat: float = TURN_KICK_PRESSED_LATENCY if nearest_opponent(TURN_KICK_PRESS_DIST) != null else TURN_KICK_MAX_LATENCY
+	for role in [&"kick_turn", &"kick_back"]:
+		for id in PackLibrary.by_role(role):
+			var m: Dictionary = PackLibrary.meta(id)
+			if not m.has("contact"):
+				continue
+			var ct: Dictionary = m["contact"]
+			var kt: float = float(ct.get("kick_turn", 0.0))
+			var dk: float = absf(wrapf(kt - alpha, -180.0, 180.0))
+			if dk > TURN_KICK_TOL or (ct["pos"] as Vector3).y > 0.35:
+				continue
+			if action == &"shot" and float(ct["speed"]) < 7.0:
+				continue
+			var hp: PackedFloat32Array = m.get("heading_path", PackedFloat32Array())
+			var rp: PackedVector2Array = m.get("root_path", PackedVector2Array())
+			var tc: float = float(ct["time"])
+			var rc: Vector2 = ct.get("root", Vector2.ZERO)
+			var dv: float = absf(float(m.get("v_in", 0.0)) - loco.speed)
+			for start_at in [0.0, 0.15, 0.3]:
+				if tc - start_at < 0.22:
+					break
+				for sp in [1.0, 1.3]:
+					var steps: int = maxi(int(round((tc - start_at) / sp / dt)), 2)
+					var lat: float = float(steps) * dt
+					if lat > max_lat:
+						continue
+					var speed: float = (tc - start_at) / lat
+					var yaw0: float = loco.yaw - ActionMotion.heading_rel(hp, start_at)
+					var f0: Vector3 = Locomotion.dir_from_yaw(yaw0)
+					var r0 := Vector3(-f0.z, 0.0, f0.x)
+					var rs: Vector2 = ActionMotion._at(rp, start_at) if rp.size() >= 2 else Vector2.ZERO
+					var body_c: Vector3 = pos + f0 * (rc.x - rs.x) + r0 * (rc.y - rs.y)
+					var yaw_c: float = yaw0 + ActionMotion.heading_rel(hp, tc)
+					var bp: Vector3 = b.global_position + ball_travel(b, lat)
+					bp.y = b.global_position.y
+					var delta: Vector3 = bp - foot_contact_world(ct, body_c, yaw_c)
+					var flat_d := Vector3(delta.x, 0.0, delta.z)
+					var step: Vector3 = flat_d.limit_length(minf(adjust_max, KICK_NUDGE_MAX * maxf(lat - KICK_PLANT_TIME, 0.0)))
+					var residual: float = Vector3(flat_d.x - step.x, delta.y, flat_d.z - step.z).length()
+					var score: float = residual + 0.3 * step.length() + 0.006 * dk + 0.12 * dv + (0.04 if sp > 1.0 else 0.0) + rng.randf() * 0.03
+					if score < best_score:
+						best_score = score
+						best = {"clip": id, "speed": speed, "offset": start_at, "latency": lat - 0.0005, "contact": ct, "distance": delta.length(),
+							"residual": residual, "adjust": step, "turn": {"yaw0": yaw0, "start_at": start_at, "speed": speed, "latency": lat - 0.0005, "kick_turn": kt, "alpha": alpha}}
+	if not best.is_empty():
+		last_plan_debug += " mejor %s resid %.2f ajuste %.2f" % [best["clip"], best["residual"], (best["adjust"] as Vector3).length()]
+	return best if not best.is_empty() and best["residual"] <= t.kick_start_residual else {}
+
+## Golpeo girando en curso: instante del clip ahora.
+func _turn_kick_clip_t() -> float:
+	var tk: Dictionary = _kick_turn
+	return float(tk["start_at"]) + (float(tk["latency"]) - _kick_timer) * float(tk["speed"])
+
+## Orientacion del cuerpo durante un golpeo girando (NAN si no hay): la del clip.
+func kick_body_yaw() -> float:
+	if _kick_turn.is_empty() or _kick_clip.is_empty():
+		return NAN
+	var hp: PackedFloat32Array = PackLibrary.meta(_kick_clip["clip"]).get("heading_path", PackedFloat32Array())
+	return float(_kick_turn["yaw0"]) + ActionMotion.heading_rel(hp, _turn_kick_clip_t())
+
+## Golpeo girando: donde quedara la punta del pie en el contacto respecto a la pelota prevista, con el cuerpo en su sitio de
+## ahora siguiendo la raiz del clip.
+func _turn_kick_foot_to_ball() -> Vector3:
+	var b: Ball = ball()
+	var m: Dictionary = PackLibrary.meta(_kick_clip["clip"])
+	var ct: Dictionary = _kick_clip["contact"]
+	var rp: PackedVector2Array = m.get("root_path", PackedVector2Array())
+	var hp: PackedFloat32Array = m.get("heading_path", PackedFloat32Array())
+	var yaw0: float = float(_kick_turn["yaw0"])
+	var f0: Vector3 = Locomotion.dir_from_yaw(yaw0)
+	var r0 := Vector3(-f0.z, 0.0, f0.x)
+	var ct_t: float = float(ct["time"])
+	var now_r: Vector2 = ActionMotion._at(rp, _turn_kick_clip_t()) if rp.size() >= 2 else Vector2.ZERO
+	var rc: Vector2 = ct.get("root", Vector2.ZERO)
+	var body_c: Vector3 = KickModel.flat(owner.global_position) + f0 * (rc.x - now_r.x) + r0 * (rc.y - now_r.y)
+	var bp: Vector3 = b.global_position + ball_travel(b, maxf(_kick_timer, 0.0))
+	bp.y = b.global_position.y
+	return bp - foot_contact_world(ct, body_c, yaw0 + ActionMotion.heading_rel(hp, ct_t))
+
+func _start_clip_kick(action: StringName, plan: Dictionary, stick_world: Vector3, charge: float, lob: bool) -> bool:
+	var t: PlayerTuning = Tuning.player
+	# El golpeo pide el control (pose del clip) al arbitro: una accion de mas nivel en curso lo deja pendiente.
+	if owner.arbiter != null:
+		var tok: int = owner.arbiter.play(&"kick", ActionArbiter.Level.KICK, &"BallHandler", plan["clip"], plan["speed"], plan["offset"], float(plan["latency"]) + t.kick_follow_through)
+		if tok == 0:
+			return false
+		_kick_token = tok
 	_kick_action = action
 	_kick_stick = stick_world
 	_kick_charge = charge
@@ -784,11 +1121,18 @@ func _start_clip_kick(action: StringName, plan: Dictionary, stick_world: Vector3
 	touch_timer = lockout
 	owner.locomotion.turn_scale = t.kick_turn_scale
 	owner.nudge_velocity = ((plan["adjust"] as Vector3) / maxf(_kick_timer - KICK_PLANT_TIME, 0.05)).limit_length(kick_nudge_cap(_kick_v0))
+	_kick_turn = plan.get("turn", {})
+	if not _kick_turn.is_empty():
+		# El joystick no gira al cuerpo: lo gira el clip.
+		owner.locomotion.turn_scale = 0.0
+		kick_stats["turn"] = int(kick_stats.get("turn", 0)) + 1
 	# Durante el balanceo el cuerpo (que se acerca a la pelota por el ajuste de zancada) no debe empujarla: el golpe lo da
 	# el pie en el instante de contacto, con impulso.
 	owner.set_ball_ghost(true)
-	owner.visual.play_pack_clip(plan["clip"], plan["speed"], plan["offset"], _kick_timer + t.kick_follow_through)
+	if owner.arbiter == null:
+		owner.visual.play_pack_clip(plan["clip"], plan["speed"], plan["offset"], _kick_timer + t.kick_follow_through)
 	kick_stats["started"] += 1
+	return true
 
 func _log_kick(action: StringName, result: StringName, extra: Dictionary = {}) -> void:
 	var entry := {"action": action, "result": result, "time_ms": Time.get_ticks_msec()}
@@ -797,6 +1141,50 @@ func _log_kick(action: StringName, result: StringName, extra: Dictionary = {}) -
 	if kick_log.size() > KICK_LOG_MAX:
 		kick_log.pop_front()
 
+## Espera del contacto con una pelota que llega (golpeo de primera): en el instante de contacto del clip la pelota todavia
+## viene hacia el pie. El impulso sale en el paso en que la punta del pie ANIMADO (la del cuadro que se dibuja: la leida
+## ahora mas su avance de un paso, porque el AnimationTree avanza despues de la fisica) y la pelota estan mas cerca: se
+## espera mientras esa distancia baja y supera CONTACT_ARRIVE_TOL, como mucho CONTACT_WAIT_MAX s. Sin esqueleto vivo, con el
+## punto de contacto del clip. La pelota nunca se mueve a mano: solo se elige el paso del impulso.
+const CONTACT_ARRIVE_TOL := 0.10
+const CONTACT_WAIT_MAX := 0.1
+var _contact_wait: float = 0.0
+var _contact_prev_d: float = INF
+var _contact_prev_toe: Vector3 = Vector3.ZERO
+
+## Punta del pie del golpeo en curso (esqueleto vivo), o ZERO.
+func _contact_toe_now() -> Vector3:
+	if _kick_clip.is_empty() or not feet_live:
+		return Vector3.ZERO
+	return toe_world(1 if int(_kick_clip["contact"]["foot"]) > 0 else 0)
+
+func _ball_still_arriving(dt: float, toe: Vector3) -> bool:
+	var b: Ball = ball()
+	if _kick_clip.is_empty() or b == null or b.is_held() or _contact_wait >= CONTACT_WAIT_MAX:
+		_contact_reset()
+		return false
+	var p: Vector3
+	if toe != Vector3.ZERO and _contact_prev_toe != Vector3.ZERO:
+		p = toe + (toe - _contact_prev_toe)
+	else:
+		p = foot_contact_world(_kick_clip["contact"], owner.global_position, owner.locomotion.yaw)
+	var d: float = p.distance_to(b.global_position) - b.radius
+	var to_p: Vector3 = KickModel.flat(p - b.global_position)
+	# Solo con una pelota que llega de verdad: la PELOTA va hacia el pie a > 2 m/s (golpeo de primera). El jugador que
+	# corre hacia una pelota quieta no espera (con la velocidad relativa esperaba y el pie pasaba de largo).
+	var ball_closing: float = KickModel.flat(b.linear_velocity).dot(to_p.normalized()) if to_p.length() > 0.001 else 0.0
+	if d > CONTACT_ARRIVE_TOL and ball_closing > 2.0 and d < _contact_prev_d:
+		_contact_prev_d = d
+		_contact_wait += dt
+		return true
+	_contact_reset()
+	return false
+
+func _contact_reset() -> void:
+	_contact_wait = 0.0
+	_contact_prev_d = INF
+	_contact_prev_toe = Vector3.ZERO
+
 ## Resuelve el golpeo de una patada con clip: valido solo si la pelota esta a kick_contact_radius del pie REAL
 ## (posicion de contacto del clip, con el jugador donde esta ahora). Si no, patada en falso: sin impulso.
 func _finish_clip_kick() -> void:
@@ -804,14 +1192,25 @@ func _finish_clip_kick() -> void:
 	var plan: Dictionary = _kick_clip
 	_kick_action = &""
 	_kick_clip = {}
+	# Resuelto el golpeo, su continuacion queda como capa en el arbitro.
+	if owner.arbiter != null:
+		owner.arbiter.relevel(_kick_token, ActionArbiter.Level.OVERLAY)
+	_kick_token = 0
 	lockout = 0.0
 	owner.locomotion.turn_scale = 1.0
 	owner.nudge_velocity = Vector3.ZERO
 	# El cuerpo sigue sin chocar con la pelota un instante (KICK_GHOST_SECONDS): la que sale golpeada no rebota en el.
 	_pass_ghost = maxf(_pass_ghost, KICK_GHOST_SECONDS)
-	# Tras el golpe el cuerpo sigue con la velocidad que traia (la del pie plantado era solo del balanceo).
-	owner.locomotion.velocity = _kick_v0
-	owner.locomotion.speed = _kick_v0.length()
+	# Tras el golpe el cuerpo sigue con la velocidad que traia (la del pie plantado era solo del balanceo). Girando, con la
+	# del clip en el contacto (ya mira hacia otro lado).
+	var after_v: Vector3 = _kick_v0
+	if not _kick_turn.is_empty():
+		_kick_clip = plan
+		after_v = kick_body_velocity()
+		_kick_clip = {}
+		_kick_turn = {}
+	owner.locomotion.velocity = after_v
+	owner.locomotion.speed = after_v.length()
 	var b: Ball = ball()
 	var d: float = -1.0
 	if b != null and not b.is_held():
@@ -819,8 +1218,8 @@ func _finish_clip_kick() -> void:
 	last_foot_distance = d
 	var interfered: bool = b != null and b.last_touch_msec != _kick_start_touch and b.last_toucher != owner
 	var dv: float = (KickModel.flat(b.linear_velocity) - _kick_start_ball_v).length() if b != null else 0.0
-	var info := {"clip": String(plan["clip"]), "foot_distance": d, "predicted": plan["residual"], "latency": plan["latency"], "adjust_m": (plan["adjust"] as Vector3).length(), "interfered": interfered, "ball_dv": dv, "by_team": int(b.last_touch_team) if b != null else -1, "own_team": owner.team}
-	if d < 0.0 or d > Tuning.player.kick_contact_radius:
+	var info := {"clip": String(plan["clip"]), "foot_distance": d, "predicted": plan["residual"], "latency": plan["latency"], "adjust_m": (plan["adjust"] as Vector3).length(), "interfered": interfered, "ball_dv": dv, "by_team": int(b.last_touch_team) if b != null else -1, "own_team": owner.team, "ball_v0": _kick_start_ball_v.length(), "body_v0": _kick_v0.length(), "turn": plan.has("turn"), "ball_y": b.global_position.y if b != null else 0.0}
+	if d < 0.0 or d > kick_reach():
 		lockout = 0.3
 		touch_timer = lockout
 		kick_stats["missed"] += 1
@@ -830,8 +1229,11 @@ func _finish_clip_kick() -> void:
 	kick_stats["contact"] += 1
 	_log_kick(action, &"contact", info)
 	_kick_event_info = info
-	perform_action(action, _kick_stick, _kick_charge, _kick_lob)
+	var res: KickModel.KickResult = perform_action(action, _kick_stick, _kick_charge, _kick_lob)
 	_kick_event_info = {}
+	if _json_kicks():
+		# El pie acompana a la pelota un instante al salir (y luego vuelve al gesto del clip).
+		_json_touch_ik_start(1 if int(plan["contact"]["foot"]) > 0 else 0, res.velocity if res != null else Vector3.ZERO, JSON_KICK_IK_MAX)
 
 func _finish_kick() -> void:
 	if not _kick_clip.is_empty():
@@ -1032,7 +1434,10 @@ func foot_distance(i: int, ball_pos: Vector3) -> float:
 func _foot_strike(b: Ball, mode: StringName, close_in: bool = false) -> int:
 	var fwd: Vector3 = owner.locomotion.forward()
 	var push_dir: Vector3 = fwd if (mode == &"carry" or mode == &"setup") else KickModel.flat(b.global_position - owner.global_position).normalized()
-	var radius: float = FOOT_CONTACT * (1.4 if mode == &"settle" or mode == &"lateral" or mode == &"redirect" or close_in else 1.0)
+	# Parar la pelota (settle sin rival): el pie tiene que llegar de verdad (antes 1.4 veces: tocaba a 0.38 m del centro de la
+	# pelota sin que el jugador se acercara). Llevarla de costado, girar o protegerla: un paso llega mas lejos.
+	var settle_plain: bool = mode == &"settle" and owner.is_human_controlled and _shield_dir(KickModel.flat(b.global_position - owner.global_position).length()).length_squared() < 0.01
+	var radius: float = FOOT_CONTACT * (SETTLE_STRIKE_SCALE if settle_plain else (1.4 if mode == &"settle" or mode == &"lateral" or mode == &"redirect" or close_in else 1.0))
 	if close_in:
 		# Pelota pegada al cuerpo: la toca el pie que este encima, sin exigir que vaya hacia delante (la empuja o la arrastra).
 		mode = &"near"
@@ -1067,6 +1472,74 @@ func _foot_strike(b: Ball, mode: StringName, close_in: bool = false) -> int:
 ##  - redirect: cambio de rumbo amplio -> la pelota se lleva hacia el rumbo nuevo, mas pegada al pie.
 ##  - carry: conduccion normal (caminar, trotar, correr, sprint).
 
+## Zona del pie: donde un pie llega a la pelota sin dar un paso (por delante del cuerpo, poco al costado). Para parar
+## la pelota, llevarla de costado o girar con ella cuenta tambien el costado del cuerpo (interior / exterior / suela).
+const FOOT_ZONE_FWD := 0.62
+const FOOT_ZONE_BACK := -0.05
+const FOOT_ZONE_LAT := 0.34
+## Pelota a menos de esto por delante del centro del cuerpo: el cuerpo se le viene encima y el pie la toca igual.
+const OVERRUN_FWD := 0.18
+## Parar la pelota con el joystick suelto (settle): zona del pie (m, delante del cuerpo y al costado) donde el pie que llega
+## la para, y zona comoda donde el jugador la deja quieta (settle_steer: fuera de ella el jugador se gira y da los pasos).
+const SETTLE_ZONE_BACK := -0.05
+const SETTLE_ZONE_LAT := 0.40
+const SETTLE_COMFY_MIN := 0.12
+const SETTLE_COMFY_MAX := 0.70
+const SETTLE_COMFY_LAT := 0.30
+## Velocidad (m/s) de la pelota por encima de la cual se va: el jugador la sigue.
+const SETTLE_STILL_SPEED := 0.35
+## Radio de contacto del pie al parar la pelota (multiplica FOOT_CONTACT).
+const SETTLE_STRIKE_SCALE := 1.15
+## Pelota quieta a menos de esto (m) del centro del cuerpo, delante: esta entre los pies (controlada).
+const SETTLE_UNDER := 0.30
+## Velocidad (m/s) minima de los pasos con que el jugador se acomoda a la pelota.
+const SETTLE_STEP_SPEED := 0.35
+
+func _ball_at_foot(off: Vector3, fwd: Vector3, mode: StringName) -> bool:
+	var ahead: float = off.dot(fwd)
+	var lat: float = absf(off.dot(Vector3(-fwd.z, 0.0, fwd.x)))
+	var reach_fwd: float = FOOT_ZONE_FWD + 0.14 * _sprint_ratio()
+	if mode == &"settle" and owner.is_human_controlled and _shield_dir(off.length()).length_squared() < 0.01:
+		# Parar la pelota (joystick suelto, sin rival encima; jugador de la persona): solo la que esta delante del cuerpo, al alcance de un paso. Al
+		# costado o detras no se la trae: el jugador va a ella (settle_steer) y la para el pie que llega. Antes esta zona
+		# llegaba a 0.62 m al costado y 0.35 m detras y la pelota se movia sola hasta delante del cuerpo (video del usuario
+		# 05-11 04:42:20, prueba physical_dribble::released_stick: jugador quieto 0.00 m, pelota llevada a 0.38 m delante).
+		var slow_s: float = clampf(owner.locomotion.speed / maxf(Tuning.player.walk_speed, 0.1), 0.0, 1.0)
+		var step_s: float = lerpf(touch_reach() * 0.95, reach_fwd, slow_s)
+		return ahead > SETTLE_ZONE_BACK and ahead < maxf(reach_fwd, step_s) and lat < SETTLE_ZONE_LAT
+	if mode == &"settle" or mode == &"lateral" or mode == &"redirect":
+		# Parado o caminando, para llevarla de costado, girar con ella o protegerla el jugador da un paso: llega mas lejos.
+		# (Proteger la pelota parado: el cuerpo se da vuelta y la pelota queda a medio metro del costado, al alcance de la
+		# suela o el interior.)
+		var slow: float = clampf(owner.locomotion.speed / maxf(Tuning.player.walk_speed, 0.1), 0.0, 1.0)
+		var step_reach: float = lerpf(touch_reach() * 0.95, reach_fwd, slow)
+		return ahead > lerpf(-0.35, -0.25, slow) and ahead < maxf(reach_fwd, step_reach) and lat < lerpf(0.62, 0.46, slow)
+	return ahead > FOOT_ZONE_BACK and ahead < reach_fwd and lat < FOOT_ZONE_LAT
+
+## Giro maximo (grados) que un toque puede dar a la pelota a esta velocidad: caminando casi cualquiera, a sprint poco
+## (un cambio de rumbo mayor se hace en varios toques). Mejor conduccion gira algo mas.
+func touch_turn_max_deg(speed: float) -> float:
+	var t: PlayerTuning = Tuning.player
+	var d: float
+	if speed <= t.walk_speed:
+		d = lerpf(170.0, t.touch_turn_walk_deg, clampf(speed / maxf(t.walk_speed, 0.1), 0.0, 1.0))
+	elif speed <= t.jog_speed:
+		d = lerpf(t.touch_turn_walk_deg, t.touch_turn_jog_deg, (speed - t.walk_speed) / maxf(t.jog_speed - t.walk_speed, 0.1))
+	else:
+		d = lerpf(t.touch_turn_jog_deg, t.touch_turn_sprint_deg, clampf((speed - t.jog_speed) / maxf(t.sprint_speed - t.jog_speed, 0.1), 0.0, 1.0))
+	return d * lerpf(0.85, 1.15, _carry_skill())
+
+## Gira `from` hacia `to` como mucho `max_rad` (en el plano).
+static func turn_toward(from: Vector3, to: Vector3, max_rad: float) -> Vector3:
+	var a: Vector3 = KickModel.flat(from).normalized()
+	var b: Vector3 = KickModel.flat(to).normalized()
+	if a.length_squared() < 0.5 or b.length_squared() < 0.5:
+		return b if b.length_squared() > 0.5 else a
+	var ang: float = a.signed_angle_to(b, Vector3.UP)
+	if absf(ang) <= max_rad:
+		return b
+	return a.rotated(Vector3.UP, signf(ang) * max_rad)
+
 ## Distancia (m) a la que el jugador quiere la pelota respecto al pie a una velocidad dada. Ley de tres tramos
 ## (parado / trote / sprint) con los valores de PlayerTuning; la habilidad de conduccion la acerca.
 func carry_gap(speed: float, skill: float) -> float:
@@ -1089,7 +1562,7 @@ func _touch_interval(ratio: float) -> float:
 	var v: FootballerVisual = owner.visual
 	if v == null or not v.uses_pack or v.is_placeholder:
 		return fixed
-	var step: float = FootballerVisual.step_interval_for(owner.locomotion.speed)
+	var step: float = FootballerVisual.step_interval_for(owner.locomotion.speed, true)
 	if step <= 0.0:
 		return fixed
 	# Con pies vivos se toca en cada apoyo hasta la carrera (el pie que llega a la pelota) y cada dos a sprint.
@@ -1238,6 +1711,12 @@ const TOUCH_SYNC_KEEP := 1.6
 ## Toques de clip por ciclo base (cache): base -> [{clip, foot, contact, aim, t0, base_len, touch_time, peak_time, path,
 ## path_dt, gaps}].
 static var _touch_cache: Dictionary = {}
+
+## Vacia los datos calculados con la libreria de clips (cambian al cambiar de modo).
+static func reset_caches() -> void:
+	_bbox_cache = {}
+	_touch_cache = {}
+	_samples_cache = {}
 
 var _touch_active: Dictionary = {}
 var _touch_sync: float = 0.0
@@ -1744,6 +2223,16 @@ func _clip_touch_step() -> void:
 func force_dribble_touch(dir: Vector3) -> void:
 	_try_dribble_touch(dir, 0.8)
 
+## Segundos de margen con los que se adelanta el toque cuando el cuerpo alcanza a la pelota (CATCH_CLOSING m/s o mas).
+const CATCH_LEAD := 0.12
+const CATCH_CLOSING := 0.6
+
+## El cuerpo se acerca a la pelota que va delante (mas rapido que ella) y en CATCH_LEAD s la tendra al alcance del pie.
+func _catching_ball(off: Vector3, fwd: Vector3, body_v: Vector3, ball_v: Vector3) -> bool:
+	var ahead: float = off.dot(fwd)
+	var closing: float = (body_v - ball_v).dot(fwd)
+	return ahead > 0.0 and absf(off.dot(Vector3(-fwd.z, 0.0, fwd.x))) < 0.45 and closing > CATCH_CLOSING and ahead < _foot_reach * 0.9 + closing * CATCH_LEAD
+
 func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 	var b: Ball = ball()
 	if b == null or b.is_held() or b.global_position.y > 0.45:
@@ -1783,56 +2272,54 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 	elif mode == &"lateral":
 		interval = maxf(interval * 0.8, 0.2)
 
-	# --- Cuando tocar: cuando la pelota vuelve al alcance del pie, o antes si se esta escapando ---------------
-	var escaping: bool = false
-	if _redirect_hold <= 0.0 and rel_v.length() > 0.5:
-		var rel_future: Vector3 = off + rel_v * 0.14
-		escaping = rel_future.length() > reach * t.touch_escape_factor and dist < reach * 1.3
-	var urgent: bool = escaping or mode == &"redirect" or (mode == &"settle" and rel_v.length() > 0.8)
+	# --- Cuando tocar: SOLO con el pie en la pelota -----------------------------------------------------------
+	# Conduccion fisica (estilo FTS / Ultimate Clash): la pelota cambia de rumbo unicamente cuando un pie la alcanza. No
+	# hay toques a distancia que la «traigan» al rumbo nuevo del jugador (el efecto «hilo» medido con la sonda: a sprint,
+	# redirecciones a 1.3 m del cuerpo sin pie). Si la pelota va por delante, el jugador la sigue (follow_steer) y la
+	# acomoda al llegar.
+	var at_foot: bool = _ball_at_foot(off, fwd, mode)
 	var strike: int = -1
 	if feet_live:
-		# Con el esqueleto animado el toque lo da un PIE: solo cuando una punta de pie baja llega a la pelota. Si no hay
-		# pie en la pelota se espera (el jugador alcanza su propio toque largo); la pelota que se escapa junto al cuerpo
-		# se toca igual tras FOOT_WAIT_MAX para no perderla.
-		# Media vuelta (giro de mas de 100 grados) con la pelota aun al alcance: el toque de giro no espera a la cadencia
-		# de la carrera; si esperase, la pelota (lanzada por el ultimo toque) se iria fuera del alcance.
-		# A la carrera el cuerpo aun va hacia la pelota (lanzada por el ultimo toque largo): el alcance del toque de giro es
-		# mayor, si no la pelota se escapaba al frenar (media vuelta a sprint: perdida a 6.5 m).
-		var closing_fast: bool = body_v.dot(off / maxf(dist, 0.01)) > 2.5
-		var rev_reach: float = reach * (1.5 if closing_fast else 1.2)
-		var reversal: bool = mode == &"redirect" and turn_angle > 100.0 and dist < rev_reach and touch_timer < interval * 0.9 - REVERSAL_TOUCH_GAP
-		if touch_timer > interval * 0.45 and not reversal:
+		# Con el esqueleto animado el toque lo da un PIE: cuando una punta de pie baja llega a la pelota. Media vuelta (giro
+		# de mas de 100 grados) con la pelota al pie: el toque de giro no espera a la cadencia de la carrera.
+		var reversal: bool = mode == &"redirect" and turn_angle > 100.0 and at_foot and touch_timer < interval * 0.9 - REVERSAL_TOUCH_GAP
+		# Modo 4: cambio de rumbo en carrera (diagonal, zigzag) con la pelota al pie: toque de rumbo ya, con el pie que esta
+		# junto a la pelota, en vez de esperar al siguiente paso (la pelota seguia derecho y quedaba al costado).
+		var steer_now: bool = PackLibrary.json_mode() and mode == &"carry" and at_foot and _steer_touch_ready(b, desired_dir, stick_mag, interval)
+		# El cuerpo acelera y alcanza a la pelota del toque anterior (lanzada para la velocidad de entonces): el toque no
+		# espera a la cadencia, si no el jugador la pisaba (medido: de caminar a correr, cuerpo a 0.07 m de la pelota).
+		# Solo conduciendo: con un golpeo pedido (setup) el toque de preparacion tiene sus reglas (kick_approach_steer).
+		var catching: bool = mode == &"carry" and _catching_ball(off, fwd, body_v, ball_v)
+		if touch_timer > interval * 0.45 and not reversal and not steer_now and not catching:
 			return
 		var close_in: bool = off.dot(fwd) < _foot_reach * 0.9 and (mode == &"carry" or mode == &"setup")
 		strike = _foot_strike(b, mode, close_in)
 		if strike < 0:
 			# Con un golpeo pedido y el jugador corriendo a por la pelota (kick_approach_steer) no hay toque sin pie: el
-			# contacto sera el del golpeo (medido: un toque de preparacion sin pie antes de cada golpeo a sprint).
+			# contacto sera el del golpeo.
 			if mode == &"setup" and not kick_approach_steer().is_empty():
 				return
 			_foot_wait += get_dt()
-			# En un cambio de rumbo no se puede esperar a la zancada: el toque llega antes (el pie se estira a la pelota).
-			# Si el cuerpo alcanza a la pelota (queda pegada o por detras de la punta del pie) tampoco: el jugador la pisaria.
-			var overrun: bool = off.dot(fwd) < _foot_reach * 0.9 and (mode == &"carry" or mode == &"setup")
-			# Parar la pelota (pisada / amortiguar) tampoco espera a la zancada: con el jugador frenando no hay zancada.
-			var wait_max: float = 0.08 if (mode == &"redirect" or mode == &"lateral" or mode == &"settle" or overrun) else FOOT_WAIT_MAX
-			# Con un golpeo pedido (modo setup) el toque de preparacion no espera a la zancada: el jugador va a la pelota.
-			var setup_reach: bool = mode == &"setup" and dist < reach * 1.5
-			var far_ok: float = maxf(reach * 1.3, rev_reach if mode == &"redirect" else 0.0)
-			if not (((urgent or overrun or dist > _planned_gap + 0.25) and dist < far_ok) or setup_reach) or _foot_wait <= wait_max:
+			# Sin pie medido solo si la pelota esta en la zona del pie (la punta no llega por centimetros en este paso) o el
+			# cuerpo se le viene encima (la pisaria); nunca a distancia.
+			var overrun: bool = (off.dot(fwd) < OVERRUN_FWD and dist < 0.45) or (catching and at_foot)
+			var wait_max: float = 0.06 if (overrun or steer_now or mode == &"settle" or mode == &"redirect" or mode == &"lateral") else FOOT_WAIT_MAX
+			# Conduciendo, con la pelota bien colocada se sigue esperando al pie (el toque llega en la zancada); sin pie solo si
+			# se esta yendo de la zona del pie o el cuerpo se le viene encima.
+			var leaving: bool = at_foot and off.dot(fwd) > (FOOT_ZONE_FWD + 0.14 * _sprint_ratio()) * 0.8 and rel_v.dot(off / maxf(dist, 0.01)) > 0.3
+			var no_foot_ok: bool = overrun or ((mode != &"carry" or leaving) and at_foot)
+			# Parando la pelota (joystick suelto, sin rival) el toque lo da un pie que llega: sin pie solo si el cuerpo se le
+			# viene encima. Si no, la pelota iba sola al pie (prueba physical_dribble::released_stick).
+			if mode == &"settle" and owner.is_human_controlled and not overrun and _shield_dir(dist).length_squared() < 0.01:
+				no_foot_ok = false
+			if not no_foot_ok or _foot_wait <= wait_max:
 				return
-	elif touch_timer > 0.0 and not (urgent and touch_timer < interval * 0.8) and not (mode == &"redirect" and turn_angle > 100.0 and touch_timer < interval * 0.9 - REVERSAL_TOUCH_GAP):
-		return
+	else:
+		if touch_timer > 0.0 and not (mode == &"redirect" and turn_angle > 100.0 and touch_timer < interval * 0.9 - REVERSAL_TOUCH_GAP):
+			return
+		if not at_foot:
+			return
 	var lateral_off: float = absf(off.dot(loco.right()))
-	var trigger: float = clampf(_planned_gap + 0.14, reach * 0.5, reach * 1.1)
-	if mode == &"redirect" or mode == &"lateral":
-		trigger = reach * (1.5 if (mode == &"redirect" and turn_angle > 100.0 and body_v.dot(off / maxf(dist, 0.01)) > 2.5) else 1.35)
-	elif mode == &"settle" or mode == &"setup":
-		trigger = reach * 1.5
-	elif lateral_off > 0.45:
-		trigger = reach * 1.25
-	if dist > trigger:
-		return
 	# La pelota quedo detras: hay que girar o recuperarla (carry_steer lleva al jugador a ella), salvo que el toque sea
 	# justo para traerla de vuelta. "Detras" respecto a hacia donde se quiere ir: con el joystick hacia atras, una pelota
 	# a la espalda esta delante del nuevo rumbo y se puede arrastrar hacia alli.
@@ -1859,7 +2346,9 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 			travel = 0.3
 			# Frenando desde carrera la pelota no se para en seco: se amortigua para que se DETENGA junto a donde se va a
 			# detener el cuerpo (con la rodadura proporcional una pelota que llega ahi rodando se pasaba: quedaba a 0.9 m).
-			if loco.speed > t.walk_speed and shield.length_squared() < 0.01:
+			# Parado o caminando, igual: el pie la deja quieta (pisada) donde la para, no la manda hacia delante del cuerpo
+			# (con una velocidad de llegada seguia rodando y el jugador la perseguia toque tras toque).
+			if shield.length_squared() < 0.01 and (owner.is_human_controlled or loco.speed > t.walk_speed):
 				var stop_dist: float = loco.speed * loco.speed / (2.0 * maxf(t.decel * owner.attributes.factor("acceleration", 0.16), 1.0))
 				settle_stop = KickModel.flat(owner.global_position) + KickModel.flat(body_v).normalized() * stop_dist + touch_dir * t.settle_gap
 				settle_to_stop = true
@@ -1893,11 +2382,17 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 		_:
 			carry_speed = _carry_speed_after_turn(stick_mag, turn_angle)
 			gap = carry_gap(carry_speed, skill)
-			var w: float = 0.45 if turn_angle < 25.0 else 0.8
+			var w: float = 0.75 if turn_angle < 25.0 else 1.0
+			if PackLibrary.json_mode() and _steer_angle(b, desired_dir) > STEER_TOUCH_DEG:
+				w = 1.0
 			touch_dir = (fwd * (1.0 - w) + desired_dir.normalized() * w).normalized() if has_dir else fwd
 			# A sprint el toque puede pasarse (toque largo); con mejor control se pasa menos.
 			gap += absf(rng.randfn(0.0, t.touch_overshoot_sprint * (1.2 - skill))) * ratio * ratio
 
+	# Un toque solo puede girar la pelota lo que el pie alcanza a esa velocidad (touch_turn_max_deg): un cambio de rumbo
+	# mayor se hace en varios toques (o con el giro con toques / la pisada). La media vuelta de arrastre despacio, aparte.
+	if has_dir and (mode == &"carry" or mode == &"setup" or (mode == &"redirect" and not (turn_angle > 100.0 and loco.speed < t.jog_speed))):
+		touch_dir = turn_toward(fwd, touch_dir, deg_to_rad(touch_turn_max_deg(loco.speed)))
 	# Con pies vivos la pelota se deja donde llega la punta del pie en su zancada (mas un radio): asi el siguiente toque
 	# lo da el pie de verdad. Sin esqueleto animado, la ley de distancias de PlayerTuning.
 	if feet_live and (mode == &"carry" or mode == &"setup" or mode == &"redirect"):
@@ -1924,6 +2419,14 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 	gap = minf(gap, reach * 1.35 - 0.05)
 	_planned_gap = gap
 	_foot_wait = 0.0
+	if strike < 0 and feet_live and PackLibrary.json_mode():
+		# Modo 4: sin pie justo en la pelota, el pie bajo mas cercano se estira hasta ella (IK, JSON_TOUCH_IK_MAX): el toque
+		# tambien se ve dado con el pie (en los cambios de rumbo la pelota queda a un costado del paso).
+		var best_d: float = FOOT_CONTACT + 0.2
+		for fi in 2:
+			if _toe_now[fi].y <= FOOT_MAX_Y and foot_distance(fi, b.global_position) < best_d:
+				best_d = foot_distance(fi, b.global_position)
+				strike = fi
 	last_touch_foot = strike
 	if strike >= 0:
 		foot_touches += 1
@@ -1945,15 +2448,9 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 		var t_align: float = minf(0.25 * turn_angle / 90.0, travel)
 		future_player = p_pos + body_v * (t_align * 0.5) + touch_dir * carry_speed * maxf(travel - t_align, 0.0) * 0.5
 	else:
-		# En curva el cuerpo sigue girando hasta el proximo toque: la pelota se coloca sobre el arco que va a recorrer
-		# (rumbo y velocidad girados a mitad del giro esperado), no en la tangente; si no, se va al exterior de la curva
-		# y el pie ya no la alcanza en el toque siguiente.
-		var bend: float = clampf(loco.turn_rate * travel * 0.8, -0.6, 0.6) if (mode == &"carry" and absf(loco.turn_rate) < 2.5) else 0.0
-		if absf(bend) > 0.02:
-			touch_dir = touch_dir.rotated(Vector3.UP, bend)
-			future_player = p_pos + (body_v.rotated(Vector3.UP, bend) + touch_dir * carry_speed) * 0.5 * travel
-		else:
-			future_player = p_pos + (body_v + touch_dir * carry_speed) * 0.5 * travel
+		# La pelota sale RECTA en el rumbo del toque (no se la coloca sobre la curva que va a hacer el jugador): el cuerpo
+		# la sigue (follow_steer) y el proximo toque la vuelve a orientar.
+		future_player = p_pos + (body_v + touch_dir * carry_speed) * 0.5 * travel
 	var target: Vector3 = future_player + touch_dir * gap
 	# Velocidad para llegar alli en `travel` segundos con la rodadura de la pelota (Ball). La pelota que se amortigua al
 	# frenar va a detenerse en su punto (Ball.roll_speed_to_stop), no a pasar por el.
@@ -1997,10 +2494,108 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 	rel *= clampf(rng.randfn(1.0, 0.03 + 0.05 * ratio), 0.85, 1.15)
 	v = body_v + rel
 	b.kick(v, b.rolling_spin(v), owner)
+	if strike >= 0 and PackLibrary.json_mode():
+		_json_touch_ik_start(strike, v - body_v)
 	touch_timer = interval * rng.randf_range(0.9, 1.1)
 	dribble_touch_count += 1
 	last_touch_mode = mode
 	touched_ball.emit(mode)
+
+## Modo 4: el pie que da el toque de conduccion se lleva hasta la pelota (TouchFootIK) un instante, y la acompana mientras
+## sale: el toque se ve dado con el pie (sin esto la punta quedaba a 0.1-0.17 m de la superficie de la pelota).
+## JSON_TOUCH_IK_MAX: lo maximo (m) que se estira el pie desde el gesto de la marcha.
+const JSON_TOUCH_IK_MAX := 0.34
+const JSON_TOUCH_IK_HOLD := 0.05
+const JSON_TOUCH_IK_FADE := 0.07
+var _jik_foot: int = -1
+var _jik_t: float = 0.0
+var _jik_dir: Vector3 = Vector3.ZERO
+var _jik_max: float = JSON_TOUCH_IK_MAX
+
+## Modo 4: en los ultimos JSON_KICK_IK_IN s del balanceo de un golpeo el pie que patea va hasta la pelota real (IK), hasta
+## JSON_KICK_IK_MAX m desde el gesto del clip: el golpe se ve dado con el pie aunque la pelota se haya corrido un poco.
+const JSON_KICK_IK_IN := 0.12
+const JSON_KICK_IK_MAX := 0.55
+
+## true si este jugador patea con los clips del modo 4 (Json).
+func _json_kicks() -> bool:
+	return owner.visual != null and owner.visual.json_mode
+
+## Distancia (m) maxima entre el pie del clip y la pelota para que el golpeo cuente.
+func kick_reach() -> float:
+	return Tuning.player.json_kick_reach if _json_kicks() else Tuning.player.kick_contact_radius
+
+func _json_kick_ik() -> void:
+	if _kick_timer > JSON_KICK_IK_IN or not _json_kicks() or _foot_ik() == null:
+		return
+	var b: Ball = ball()
+	if b == null or b.is_held():
+		return
+	var foot: int = 1 if int(_kick_clip["contact"]["foot"]) > 0 else 0
+	var toe: Vector3 = _toe_now[foot]
+	var bp: Vector3 = b.global_position
+	var app: Vector3 = KickModel.flat(bp - toe)
+	var dir: Vector3 = app.normalized() if app.length() > 0.02 else owner.locomotion.forward()
+	var want: Vector3 = bp - dir * (b.radius + 0.02)
+	want.y = clampf(bp.y, 0.05, 0.3)
+	var w: float = smoothstep(0.0, 1.0, 1.0 - _kick_timer / JSON_KICK_IK_IN)
+	if app.length() > JSON_KICK_IK_MAX + b.radius:
+		w = 0.0
+	_foot_ik().set_target(foot, want, 0.0, w)
+
+func _json_touch_ik_start(foot: int, push: Vector3, max_reach: float = JSON_TOUCH_IK_MAX) -> void:
+	if _foot_ik() == null:
+		return
+	_jik_max = max_reach
+	if _jik_foot >= 0 and _jik_foot != foot:
+		_foot_ik().set_target(_jik_foot, Vector3.ZERO, 0.0, 0.0)
+	_jik_foot = foot
+	_jik_t = 0.0
+	var p: Vector3 = KickModel.flat(push)
+	_jik_dir = p.normalized() if p.length() > 0.05 else owner.locomotion.forward()
+	_json_touch_ik_step(0.0)
+
+func _json_touch_ik_step(dt: float) -> void:
+	if _jik_foot < 0:
+		return
+	var ik: TouchFootIK = _foot_ik()
+	var b: Ball = ball()
+	if ik == null or b == null:
+		_jik_foot = -1
+		return
+	_jik_t += dt
+	var w: float = 1.0 if _jik_t <= JSON_TOUCH_IK_HOLD else clampf(1.0 - (_jik_t - JSON_TOUCH_IK_HOLD) / JSON_TOUCH_IK_FADE, 0.0, 1.0)
+	var toe: Vector3 = _toe_now[_jik_foot]
+	var want: Vector3 = b.global_position - _jik_dir * (b.radius + 0.025)
+	want.y = clampf(toe.y, 0.03, 0.12)
+	if KickModel.flat(want - toe).length() > _jik_max:
+		w = 0.0
+	ik.set_target(_jik_foot, want, 0.0, w)
+	if w <= 0.0:
+		_jik_foot = -1
+
+## Modo 4: angulo (grados) entre hacia donde va la pelota respecto al cuerpo y el rumbo pedido a partir del cual se da un
+## toque de rumbo, y alcance extra (m) del pie para darlo.
+const STEER_TOUCH_DEG := 18.0
+const STEER_TOUCH_REACH := 0.1
+
+## Angulo (grados) entre el camino de la pelota (su velocidad, o hacia donde esta si va quieta) y el rumbo pedido.
+func _steer_angle(b: Ball, desired_dir: Vector3) -> float:
+	if desired_dir.length_squared() < 0.01:
+		return 0.0
+	var bv: Vector3 = KickModel.flat(b.linear_velocity)
+	var path: Vector3 = bv if bv.length() > 0.8 else ball_offset()
+	if path.length() < 0.05:
+		return 0.0
+	return KickModel.angle_between_deg(path.normalized(), KickModel.flat(desired_dir).normalized())
+
+func _steer_touch_ready(b: Ball, desired_dir: Vector3, stick_mag: float, interval: float) -> bool:
+	if stick_mag < 0.3 or touch_timer > interval * 0.8 or _steer_angle(b, desired_dir) < STEER_TOUCH_DEG:
+		return false
+	for i in 2:
+		if _toe_now[i].y <= FOOT_MAX_Y and foot_distance(i, b.global_position) <= FOOT_CONTACT + STEER_TOUCH_REACH:
+			return true
+	return false
 
 ## Velocidad a la que el jugador podra llevar la pelota tras el giro (en un giro cerrado el cuerpo frena antes de
 ## acelerar hacia el rumbo nuevo: empujar la pelota al ritmo de la carrera actual la perderia).
@@ -2072,7 +2667,9 @@ func plan_carry(desired_dir: Vector3, stick_mag: float, dt: float) -> Vector3:
 ## (fallo visto en el video del usuario: soltar el joystick y la pelota seguia rodando sola). Devuelve [direccion,
 ## intensidad] o [] si no hace falta.
 func settle_steer() -> Array:
+	settle_close_now = false
 	if _kick_action != &"" or not is_dribbling() or seconds_since_kick() < OWN_KICK_SECONDS:
+		_settle_adjust = false
 		return []
 	var b: Ball = ball()
 	if b == null or b.is_held() or b.global_position.y > 0.6:
@@ -2081,9 +2678,31 @@ func settle_steer() -> Array:
 	var off: Vector3 = ball_offset()
 	var dist: float = off.length()
 	var bv: Vector3 = KickModel.flat(b.linear_velocity)
-	# Al alcance del pie no se la persigue: el cuerpo frena y el toque de parada la deja al pie.
-	if dist > 3.0 or dist < touch_reach() * 0.95:
+	if dist > 3.0:
 		return []
+	if drag_back.active() or ball_turn.active() or (json_move != null and json_move.active):
+		return []
+	# Al alcance del pie: si la pelota esta quieta delante (zona comoda) no hay nada que hacer; al costado, detras o
+	# yendose, el jugador va a ella (se gira y da los pasos) y la para el pie que llega. La pelota no viene al jugador.
+	if dist < touch_reach() * 0.95:
+		# Con un golpeo pedido o cargandose manda su propia preparacion (ajuste de zancada, ir a por la pelota, giro para
+		# golpear): el jugador no se acomoda a la pelota mientras tanto.
+		if _pending_action != &"" or _pass_active or _shoot_active or _through_active or _cross_active or kick_button_now:
+			_settle_adjust = false
+			return []
+		# Solo el jugador de la persona (como las reglas nuevas del toque de parada: zona del pie delante, pie que llega de
+		# verdad, pelota quieta): la IA siempre decide hacia donde ir y su joystick queda suelto solo un instante (al llegar a su
+		# sitio, tras recibir). Con las reglas nuevas tambien para la IA el partido cambiaba (seguia la pelota fuera de la
+		# cancha sin _keep_inside; tras recibir, la pelota se le escapaba hasta su siguiente decision: menos tiros, companeros
+		# encima del portador): fallos de pruebas de partidos de IA en GitHub Actions #46-#48 que con el codigo anterior no
+		# aparecian. La IA conserva el toque de parada de antes; pendiente darle una orden en ese instante.
+		if not owner.is_human_controlled:
+			_settle_adjust = false
+			return []
+		var close: Array = _settle_close(b, off, bv)
+		settle_close_now = not close.is_empty()
+		return close
+	_settle_adjust = false
 	# Donde estara la pelota en un momento y un punto un poco por detras de ella (desde el jugador).
 	var lead: float = clampf(dist / 4.0, 0.1, 0.5)
 	var target: Vector3 = KickModel.flat(owner.global_position) + off + bv * lead
@@ -2094,6 +2713,59 @@ func settle_steer() -> Array:
 	var need: float = maxf(bv.length(), (d - t.settle_gap) * 2.5)
 	var mag: float = clampf(need / maxf(owner.locomotion.max_run_speed(), 0.1), 0.25, 1.0)
 	return [to_t / d, mag]
+
+var _settle_adjust: bool = false
+## true si en este paso settle_steer acomoda al jugador con la pelota al alcance (Footballer: no la sigue follow_steer ni
+## se pone de costado).
+var settle_close_now: bool = false
+## Boton de golpeo apretado en este paso (lo pone Footballer antes de settle_steer).
+var kick_button_now: bool = false
+
+## settle_steer con la pelota al alcance: [direccion, magnitud, hacia donde mirar] para que el cuerpo quede de frente a la
+## pelota con ella a settle_gap delante, o [] si ya esta asi (quieta en la zona comoda) o la protege de un rival (manda la proteccion). Con
+## histeresis: una vez que se acomoda, sigue hasta dejarla bien delante (sin temblar en el borde de la zona).
+func _settle_close(b: Ball, off: Vector3, bv: Vector3) -> Array:
+	var t: PlayerTuning = Tuning.player
+	if _shield_dir(off.length()).length_squared() > 0.01:
+		_settle_adjust = false
+		return []
+	var loco: Locomotion = owner.locomotion
+	var ahead: float = off.dot(loco.forward())
+	var lat: float = absf(off.dot(loco.right()))
+	var margin: float = 0.06 if _settle_adjust else 0.0
+	var still: bool = bv.length() < SETTLE_STILL_SPEED
+	var comfy: bool = ahead > SETTLE_COMFY_MIN + margin and ahead < SETTLE_COMFY_MAX - margin and lat < SETTLE_COMFY_LAT - margin
+	# Pelota parada entre los pies, delante: ya esta controlada (pisada); no se camina encima de ella.
+	var under: bool = off.length() < SETTLE_UNDER and ahead > SETTLE_ZONE_BACK and lat < SETTLE_COMFY_LAT - margin
+	if (comfy or under) and still:
+		_settle_adjust = false
+		return []
+	_settle_adjust = true
+	# Hacia donde estara la pelota en un instante (si rueda, se la sigue) y lo que falta para dejarla a settle_gap delante.
+	var target: Vector3 = KickModel.flat(b.global_position) + bv * 0.25
+	var to_t: Vector3 = target - KickModel.flat(owner.global_position)
+	var d: float = to_t.length()
+	if d < 0.05:
+		return []
+	# El cuerpo mira a la pelota mientras se acomoda (Footballer: face_override).
+	var face: Vector3 = KickModel.flat(off).normalized() if KickModel.flat(off).length() > 0.05 else loco.forward()
+	if d < t.settle_gap + 0.05:
+		# Pelota pegada al cuerpo (a la espalda o al costado): se gira en el sitio hasta encararla, sin caminar encima de ella
+		# (si no, la pisaba y la volvia a tocar una y otra vez: prueba physical_dribble::released_stick, pelota detras).
+		return [face, 0.0, face]
+	var need: float = d - t.settle_gap
+	# Pasos cortos (velocidad de un paso de ajuste, no de una caminata) y la de la pelota si rueda.
+	var speed: float = clampf(maxf(need * 2.5, bv.length()), SETTLE_STEP_SPEED, loco.max_run_speed())
+	return [to_t / d, clampf(_magnitude_for_speed(speed), 0.06, 0.6), face]
+
+## Inversa de Locomotion.speed_for_magnitude (magnitud del joystick para ir a `speed` m/s).
+func _magnitude_for_speed(speed: float) -> float:
+	var t: PlayerTuning = Tuning.player
+	if speed <= t.walk_speed:
+		return 0.35 * speed / maxf(t.walk_speed, 0.01)
+	if speed <= t.jog_speed:
+		return 0.35 + 0.35 * (speed - t.walk_speed) / maxf(t.jog_speed - t.walk_speed, 0.01)
+	return 0.7 + 0.3 * (speed - t.jog_speed) / maxf(owner.locomotion.max_run_speed() - t.jog_speed, 0.01)
 
 ## Golpeo pedido (cargando o en espera) con la pelota PROPIA por delante (o suelta, para el jugador de la persona), fuera
 ## del alcance del pie y a menos de APPROACH_MAX_DIST: el jugador ajusta la carrera y va a por ella para poder golpearla
@@ -2109,7 +2781,13 @@ func kick_approach_steer() -> Array:
 		return []
 	# Tambien la pelota suelta que el jugador de la persona va a buscar (rebote, despeje): el pase pedido no se pierde
 	# por llegar un poco tarde. No la que viene hacia el (eso es un golpeo de primera, que espera en la trayectoria).
-	if b.last_toucher != owner and not (owner.is_human_controlled and incoming_ball_eta() == INF and loose_ball_chase() != Vector3.INF):
+	# Con la conduccion fisica no hay toque de preparacion a distancia: a la pelota suelta que esta justo por delante (a
+	# menos de 1.5 alcances, donde antes la traia ese toque) tambien se va caminando a golpearla.
+	var off0: Vector3 = ball_offset()
+	var near_front: bool = off0.length() < touch_reach() * 1.5 and off0.dot(owner.locomotion.forward()) > 0.3
+	if b.last_toucher != owner and not near_front and not (owner.is_human_controlled and incoming_ball_eta() == INF and loose_ball_chase() != Vector3.INF):
+		return []
+	if b.last_toucher != owner and (ball_owned_by_other() or incoming_ball_eta() != INF):
 		return []
 	var off: Vector3 = ball_offset()
 	var dist: float = off.length()
@@ -2122,6 +2800,15 @@ func kick_approach_steer() -> Array:
 		return []
 	var gap_speed: float = bv.dot(target.normalized())
 	return [target.normalized(), 1.0, dist > 1.6 or gap_speed > owner.locomotion.max_run_speed() * 0.8]
+
+## Golpeo pedido que todavia no puede salir (bloqueo tras un movimiento con pelota o una recepcion) con la pelota propia al
+## pie: el jugador se queda sobre ella a pasos cortos en vez de seguir hacia el joystick y dejarla atras (medido: tras
+## recibir, en los 0.3 s de bloqueo el cuerpo llegaba a 2 m/s y la pelota quedaba 0.5 m detras: pase perdido).
+func holding_for_kick() -> bool:
+	if _pending_action == &"" or _kick_action != &"" or lockout <= 0.0 or is_waiting_first_time():
+		return false
+	var b: Ball = ball()
+	return b != null and not b.is_held() and b.last_toucher == owner and ball_distance() < 0.8
 
 ## true si hay un golpeo en espera y el jugador se esta acercando de verdad a su pelota (ver kick_approach_steer).
 func is_approaching_for_kick() -> bool:
@@ -2232,6 +2919,97 @@ func carry_steer(desired_dir: Vector3) -> Vector3:
 		return Vector3.ZERO
 	return to_a.normalized()
 
+## Tiempo (s) en que el jugador quiere cerrar la distancia de mas con una pelota propia que se adelanto, y margen (m) sobre
+## la distancia de conduccion antes de apurarse.
+const CATCH_UP_TIME := 0.6
+const CATCH_UP_MARGIN := 0.25
+
+## Pelota propia por delante en el rumbo pedido pero mas lejos que la distancia de conduccion (un toque largo, frenar con la
+## pelota rodando): intensidad de carrera (0..1) que hace falta para alcanzarla en CATCH_UP_TIME s; 0 si esta a distancia de
+## conduccion, detras o al costado (de eso se ocupa carry_steer). La pelota no se toca: el jugador se adapta a ella.
+func carry_catch_up_mag(desired_dir: Vector3) -> float:
+	if desired_dir.length_squared() < 0.01 or _kick_action != &"" or not is_dribbling():
+		return 0.0
+	var b: Ball = ball()
+	if b == null or b.is_held() or b.global_position.y > 0.6:
+		return 0.0
+	var want: Vector3 = KickModel.flat(desired_dir).normalized()
+	var off: Vector3 = ball_offset()
+	var ahead: float = off.dot(want)
+	if ahead <= 0.0 or absf(off.dot(Vector3(-want.z, 0.0, want.x))) > 0.55:
+		return 0.0
+	var loco: Locomotion = owner.locomotion
+	var excess: float = ahead - carry_gap(loco.speed, _carry_skill()) - CATCH_UP_MARGIN
+	if excess <= 0.0:
+		return 0.0
+	var need: float = maxf(KickModel.flat(b.linear_velocity).dot(want), 0.0) + excess / CATCH_UP_TIME
+	var m: float = 0.1
+	while m < 1.0 and loco.speed_for_magnitude(m) < need:
+		m += 0.05
+	return minf(m, 1.0)
+
+## Conduccion fisica: entre toques la pelota rueda libre y solo un toque del pie la desvia, asi que quien conduce SIGUE a
+## la pelota. Corre al punto desde el que la alcanzara por detras respecto del rumbo del proximo toque (el pedido con el
+## joystick, limitado por touch_turn_max_deg a esa velocidad), donde estara la pelota cuando llegue. Una diagonal tras un
+## toque largo se hace como en FTS / Ultimate Clash: primero se alcanza la pelota y despues se la acomoda; el cuerpo no
+## gira dejandola atras para que despues lo «siga». Devuelve [direccion, magnitud, sprint] o [] (joystick suelto: lo
+## resuelve settle_steer; giro con toques, pisada y golpeos tienen su propio control del cuerpo).
+const FOLLOW_MAX_DIST := 4.0
+## Distancia (m) por detras de la pelota (en el rumbo del proximo toque) a la que llega el cuerpo: el pie la alcanza ahi.
+const FOLLOW_BACK := 0.40
+
+func follow_steer(desired_dir: Vector3, stick_mag: float, sprint: bool) -> Array:
+	if desired_dir.length_squared() < 0.01 or _kick_action != &"" or drag_back.active() or ball_turn.active():
+		return []
+	# Con un golpeo pedido mandan sus propios movimientos (giro con pelota para golpear, golpeo girando, ir a por la pelota):
+	# seguir a la pelota volvia a girar al jugador hacia ella tras el giro para tirar (medido: tiros a 135-180 grados sin
+	# golpeo).
+	if _pending_action != &"" or (json_move != null and json_move.active):
+		return []
+	var b: Ball = ball()
+	if b == null or b.is_held() or b.global_position.y > 0.6 or b.last_toucher != owner or not is_dribbling():
+		return []
+	if seconds_since_kick() < OWN_KICK_SECONDS:
+		return []
+	var loco: Locomotion = owner.locomotion
+	var off: Vector3 = ball_offset()
+	var dist: float = off.length()
+	if dist > FOLLOW_MAX_DIST:
+		return []
+	var fwd: Vector3 = loco.forward()
+	var want: Vector3 = KickModel.flat(desired_dir).normalized()
+	var max_turn: float = deg_to_rad(touch_turn_max_deg(loco.speed))
+	if _ball_at_foot(off, fwd, &"carry"):
+		# Al pie: el cuerpo puede encarar el rumbo del proximo toque, sin girar mas de lo que el toque llevara a la pelota.
+		return [turn_toward(fwd, want, max_turn), stick_mag, sprint]
+	var bv: Vector3 = KickModel.flat(b.linear_velocity)
+	var ref: Vector3 = bv.normalized() if bv.length() > 0.8 else (off / maxf(dist, 0.01))
+	var push: Vector3 = turn_toward(ref, want, max_turn)
+	var p: Vector3 = KickModel.flat(owner.global_position)
+	var bp: Vector3 = KickModel.flat(b.global_position)
+	var chase: float = maxf(loco.speed, loco.speed_for_magnitude(maxf(stick_mag, 0.7)))
+	var tau := 0.0
+	var target: Vector3 = bp - push * FOLLOW_BACK
+	for k in 3:
+		target = bp + KickModel.flat(ball_travel(b, tau)) - push * FOLLOW_BACK
+		tau = clampf(p.distance_to(target) / maxf(chase, 1.0), 0.0, 1.5)
+	var to_t: Vector3 = target - p
+	if to_t.length() < 0.12:
+		return [turn_toward(fwd, want, max_turn), stick_mag, sprint]
+	var dir: Vector3 = to_t.normalized()
+	# Intensidad: la del joystick, salvo que haga falta apurarse para no perder la pelota (la misma ley que
+	# carry_catch_up_mag: alcanzar en CATCH_UP_TIME s lo que pasa de la distancia de conduccion). Asi frenar con el joystick
+	# sigue frenando (la persecucion a fondo no dejaba bajar de 3.5 m/s con el joystick al 25 %).
+	var excess: float = to_t.length() - carry_gap(loco.speed, _carry_skill()) - CATCH_UP_MARGIN
+	var need: float = maxf(bv.dot(dir), 0.0) + maxf(excess, 0.0) / CATCH_UP_TIME
+	var mag: float = stick_mag
+	if excess > 0.0 and need > loco.speed_for_magnitude(stick_mag):
+		mag = 0.1
+		while mag < 1.0 and loco.speed_for_magnitude(mag) < need:
+			mag += 0.05
+		mag = clampf(maxf(mag, stick_mag), 0.0, 1.0)
+	return [dir, mag, sprint]
+
 ## Direccion a la que debe mirar el cuerpo mientras conduce (control lateral o proteccion). Cero = libre.
 func carry_face() -> Vector3:
 	return _carry_face
@@ -2269,15 +3047,8 @@ func _try_first_touch(desired_dir: Vector3) -> bool:
 		var next_d: float = dist - closing * _dt * 1.1
 		if toe_d > FOOT_CONTACT + 0.06 and next_d > 0.48:
 			return false
-	var loco: Locomotion = owner.locomotion
 	var ratio: float = _sprint_ratio()
-	var absorb: float = t.first_touch_absorb * owner.attributes.factor("ball_control", 0.35)
-	var behind: bool = off.dot(loco.forward()) < -0.25
-	if behind:
-		absorb *= 0.5
-	absorb *= 1.0 - 0.25 * ratio
-	absorb *= lerpf(0.85, 1.0, KickModel.balance_state(owner))
-	absorb = clampf(absorb, 0.15, 0.93)
+	var absorb: float = first_touch_absorb(off)
 	var leftover: Vector3 = rel_v * (1.0 - absorb)
 	# Ruido: peor control = rebote menos predecible.
 	var sigma: float = 20.0 * (1.35 - owner.attributes.norm("ball_control")) * (1.0 + 0.4 * ratio)
@@ -2294,6 +3065,16 @@ func _try_first_touch(desired_dir: Vector3) -> bool:
 		{"absorb": absorb, "incoming_speed": rel_v.length()}))
 	touched_ball.emit(&"first_touch")
 	return true
+
+## Fraccion (0.15-0.93) de la velocidad de la pelota que amortigua el primer toque: control del jugador, pelota por detras
+## (off: pelota respecto al jugador), carrera y equilibrio. La usan el control fisico y la recepcion con clip (JsonReceive).
+func first_touch_absorb(off: Vector3) -> float:
+	var absorb: float = Tuning.player.first_touch_absorb * owner.attributes.factor("ball_control", 0.35)
+	if off.dot(owner.locomotion.forward()) < -0.25:
+		absorb *= 0.5
+	absorb *= 1.0 - 0.25 * _sprint_ratio()
+	absorb *= lerpf(0.85, 1.0, KickModel.balance_state(owner))
+	return clampf(absorb, 0.15, 0.93)
 
 # --- Disputa ----------------------------------------------------------------
 

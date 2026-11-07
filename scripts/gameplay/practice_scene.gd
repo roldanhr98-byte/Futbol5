@@ -14,6 +14,34 @@ const ROLE_NAMES := {
 	"salto": "Saltos", "festejo": "Festejos", "felicitar": "Felicitar", "lamento": "Lamentos", "calentamiento": "Calentamiento",
 	"arbitro": "Árbitro", "malabares": "Malabares", "practica": "Práctica", "arquero": "Arquero", "toque": "Toques de conducción",
 	"mocap": "Mocap fútbol (modo 2)",
+	# Modo 4 (Json): roles de las animaciones JSON.
+	"idle": "Reposo", "idle_ball": "Reposo con balón", "walk": "Caminar", "jog": "Trotar", "run": "Correr", "sprint": "Sprint",
+	"dribble_walk": "Conducción al paso", "dribble_jog": "Conducción al trote", "dribble_run": "Conducción a la carrera",
+	"dribble_fast": "Conducción rápida", "dribble_sprint": "Conducción a sprint", "ball_turn": "Giros con balón",
+	"ball_turn_stop": "Giros con balón y parada", "ball_skill": "Regates", "ball_sole": "Pisar la pelota", "ball_stop": "Frenar con balón",
+	"ball_start": "Arrancar con balón", "ball_dribble": "Conducción (variantes)", "control_stand": "Control parado",
+	"receive": "Recepciones", "receive_turn": "Recepción orientada", "kick_pass_soft": "Pase suave", "kick_pass": "Pase",
+	"kick_shot": "Tiro", "kick_shot_hard": "Tiro fuerte", "kick_lob": "Vaselina", "kick_cross": "Centro", "kick_turn": "Golpeo girando",
+	"kick_back": "Golpeo hacia atrás / taco", "kick_flick": "Toque sutil", "header": "Cabezazos", "volley": "Voleas",
+	"turn_stand": "Giro parado", "turn_start": "Giro y arranque", "turn_run": "Giro en carrera", "turn_stop": "Giro y parada",
+	"start": "Arranque", "stop": "Frenada", "step_stand": "Paso en el sitio", "run_change": "Cambio en carrera", "sidestep": "Paso lateral",
+	"slide": "Barridas", "tackle_stand": "Entrada de pie", "fall": "Caídas", "getup": "Levantarse", "stumble": "Tropiezos",
+	"avoid": "Esquivar", "celebrate": "Festejos", "celebrate_scorer": "Festejo del goleador", "celebrate_team": "Festejo en grupo",
+	"clap": "Aplausos", "dejected": "Lamentos", "angry": "Enojo", "warmup": "Calentamiento", "gesture": "Gestos",
+	"idle_fidget": "Espera (gestos)", "idle_ready": "Listo para el saque", "wall": "Barrera", "jostle": "Forcejeo",
+	"nis_walk": "Escenas: caminar", "nis_idle": "Escenas: espera", "nis_sit": "Escenas: sentado", "nis_misc": "Escenas: varias",
+	"manager": "Técnico", "mascot": "Mascota", "crowd": "Público", "referee": "Árbitro", "throw_in": "Saque de banda",
+	"setpiece_pass": "Balón parado: pase", "setpiece_shot": "Balón parado: tiro", "setpiece_lob": "Balón parado: vaselina", "setpiece_miss": "Balón parado descartado (no llega a la pelota)",
+	"gk_dive": "Arquero: estiradas", "gk_catch": "Arquero: atajadas", "gk_scoop": "Arquero: recoger", "gk_block": "Arquero: bloqueos",
+	"gk_getup": "Arquero: levantarse", "gk_turn": "Arquero: giros", "gk_loco": "Arquero: desplazamientos", "gk_gesture": "Arquero: gestos",
+	"gk_kick": "Arquero: saque con el pie", "gk_throw": "Arquero: saque con la mano", "gk_roll": "Arquero: saque rodando",
+	"defeat_end": "Lamento final", "dir_back": "Marcha atrás", "dir_back_diag": "Marcha atrás en diagonal", "dir_back_walk": "Caminar hacia atrás",
+	"dir_fwd_diag": "Marcha en diagonal", "dir_fwd_diag_walk": "Caminar en diagonal", "dir_side": "Marcha lateral", "fall_hit": "Caída por golpe",
+	"gk_direct": "Arquero: dirige", "gk_idle": "Arquero: reposo", "gk_idle_ball": "Arquero: con la pelota", "gk_idle_var": "Arquero: espera",
+	"gk_miss": "Arquero: no llega", "gk_place": "Arquero: deja la pelota", "gk_sidestep": "Arquero: paso lateral", "idle_ball_var": "Gesto sin fútbol",
+	"jostle_ball": "Control protegiendo", "jump": "Salto", "lie": "Tendido", "loco_jog": "Trote (variante)", "loco_side": "Lateral (variante)",
+	"loco_sprint": "Sprint (variante)", "loco_walk": "Caminar (variante)", "receive_chest": "Recepción de pecho (gesto)", "receive_foot": "Recepción con el pie",
+	"shove": "Carga", "stumble_light": "Trastabillar leve", "throw_prep": "Giro para sacar de banda", "thumbs_up": "Pulgar arriba", "trip": "Zancadilla sufrida",
 }
 
 var ctx: MatchContext
@@ -162,6 +190,8 @@ func _build_ui() -> void:
 	var jug := Button.new()
 	jug.text = "Malabares"
 	jug.pressed.connect(toggle_juggle)
+	# Sin clips de malabares (el banco JSON del modo 4 no tiene) el boton no se muestra.
+	jug.visible = JuggleController.available()
 	bar.add_child(jug)
 	var back := Button.new()
 	back.text = "Volver"
@@ -217,7 +247,7 @@ func toggle_juggle() -> void:
 		stage.rotation.y = 0.0
 		ball.reset_at(Vector3(_origin.x, 0.11, _origin.z - 0.6))
 		juggler.start()
-		current_clip = &"malabares"
+		current_clip = &"malabares" if juggler.running else &""
 	_update_status()
 
 func _update_status() -> void:

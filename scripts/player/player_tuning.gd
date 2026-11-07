@@ -67,6 +67,12 @@ extends Resource
 ## Error extra por sprint (multiplicador) y por giro brusco.
 @export var touch_error_sprint: float = 2.0
 @export var touch_error_turn: float = 1.9
+## Giro maximo (grados) que un toque de conduccion le da a la pelota caminando, al trote y a sprint (BallHandler
+## .touch_turn_max_deg): entre toques la pelota rueda recta y el jugador la sigue; un cambio de rumbo mayor lleva varios
+## toques, como en FTS / Ultimate Clash.
+@export var touch_turn_walk_deg: float = 150.0
+@export var touch_turn_jog_deg: float = 110.0
+@export var touch_turn_sprint_deg: float = 70.0
 ## Segundos de bloqueo despues de un pase/tiro antes de poder volver a tocar la pelota.
 @export var kick_lockout: float = 0.35
 @export var possession_radius: float = 1.1
@@ -74,6 +80,11 @@ extends Resource
 @export_group("Patada con animacion del pack")
 ## Radio (m) entre el pie (posicion de contacto medida del clip) y el centro de la pelota para que el golpeo cuente.
 @export var kick_contact_radius: float = 0.30
+## Modo 4 (Json): alcance (m) con el que el golpeo de un clip sigue contando aunque la pelota se haya corrido del punto
+## previsto; el pie se estira hasta ella (IK) en el ultimo tramo del balanceo. Con 0.30 una de cada cinco patadas del
+## partido de IA se perdia en el aire con la pelota a 0.30-0.47 m («hace la animacion pero no le da al balon»); con 0.55
+## seguian perdiendose 2-4 por partido a 0.56-0.73 m en jugadas disputadas (el cuerpo empujado 0.4-1.1 m en el balanceo).
+@export var json_kick_reach: float = 0.65
 ## Altura maxima (m) de la punta del pie y velocidad minima de avance (m/s) para que un punto de la trayectoria del clip
 ## cuente como golpeo: el pie debe ir bajo y lanzado, no subiendo ni frenando.
 @export var kick_foot_max_height: float = 0.25
@@ -101,6 +112,15 @@ extends Resource
 @export_group("Contacto con balon")
 ## Fraccion de energia que absorbe el control orientado (0 = rebote total).
 @export var first_touch_absorb: float = 0.65
+## Recepcion con clip (modo 4, JsonReceive.contact_velocity), por parte del cuerpo: Vector3(restitucion, conservacion a lo
+## largo de la superficie, empuje hacia delante en m/s). Los dos primeros se escalan con lo que el jugador no amortigua
+## (first_touch_absorb): un buen control deja la pelota muerta. Valores iniciales para ajustar en el juego, no medidos.
+@export var receive_contact: Dictionary = {
+	"foot_air": Vector3(0.15, 0.25, 0.7),
+	"thigh": Vector3(0.35, 0.3, 0.6),
+	"knee": Vector3(0.3, 0.35, 0.8),
+	"chest": Vector3(0.15, 0.15, 0.45),
+}
 @export var body_mass: float = 75.0
 @export var capsule_radius: float = 0.3
 @export var capsule_height: float = 1.75

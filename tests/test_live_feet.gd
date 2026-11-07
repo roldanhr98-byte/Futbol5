@@ -58,7 +58,11 @@ func test_dribble_touches_come_from_the_animated_foot() -> void:
 		note("%s (%.2f m/s): %d toques, %d con el pie animado, distancia punta-centro de la pelota mediana %.2f m, pelota cerca %d %%" % [cfg[0], r["speed"], r["touches"], r["foot"], r["median"], int(r["kept"] * 100.0)])
 		check(r["live"], "%s: el esqueleto se anima (pies vivos)" % cfg[0])
 		check(r["touches"] >= 3, "%s: hay toques de conduccion (%d)" % [cfg[0], r["touches"]])
-		check(float(r["foot"]) >= 0.8 * float(r["touches"]), "%s: al menos el 80 %% de los toques los da un pie (%d de %d)" % [cfg[0], r["foot"], r["touches"]])
+		# Conduccion fisica (2026-11-05): sin toques a distancia que recoloquen la pelota, a sprint el cuerpo alcanza a la pelota
+		# empujada y parte de los toques son «al alcanzarla» (sin la punta medida en la pelota; en el modo 4 el IK del toque
+		# lleva el pie igual). Medido con render: 4-7 de 9-10 toques con la punta medida a sprint (antes 8 de 9).
+		var min_ratio: float = 0.4 if cfg[0] == "sprint" else 0.8
+		check(float(r["foot"]) >= min_ratio * float(r["touches"]), "%s: al menos el %d %% de los toques los da un pie (%d de %d)" % [cfg[0], int(min_ratio * 100.0), r["foot"], r["touches"]])
 		check(r["median"] >= 0.0 and r["median"] <= 0.30, "%s: la punta del pie esta en la pelota al tocarla (mediana %.2f m)" % [cfg[0], r["median"]])
 		check(r["kept"] > 0.95, "%s: conserva la pelota (%d %% del tiempo a menos de 1.6 m)" % [cfg[0], int(r["kept"] * 100.0)])
 

@@ -31,6 +31,12 @@ const MOCAP_THROW_RELEASE := 6.68
 const MOCAP_THROW_START := 5.4
 const MOCAP_THROW_HANDS := Vector3(0.45, 1.52, 0.0)
 const KICK_SPEED := 1.0
+## Carrerilla maxima (m de raiz del clip) antes del golpe.
+const RUNUP_MAX := 2.6
+## Radio (m) alrededor de la pelota en el que no puede haber nadie mas que el ejecutor mientras dura el saque: carrerilla
+## maxima (RUNUP_MAX) + contacto a un costado del cuerpo (hasta ~0.7 m) + medio cuerpo y margen. Los rivales, ademas,
+## a la distancia reglamentaria (MatchScene.SET_PIECE_DISTANCE).
+const CLEAR_RADIUS := 4.0
 ## Distancia maxima (m) entre la punta del pie del clip y la pelota en el instante de golpeo para que cuente.
 const CONTACT_RADIUS := 0.45
 ## Segundos que espera la IA antes de sacar, y maximo que espera a la persona antes de sacar por ella.
@@ -67,6 +73,8 @@ static func kind_name(k: Kind) -> String:
 	return KIND_NAMES.get(k, "set_piece")
 
 func _init(k: Kind, team_index: int, at: Vector3, who: Footballer, context: MatchContext) -> void:
+	# Modo 4: cada balon parado usa otro de los clips convertidos de su rol (saque de banda, tiro libre, centro...).
+	PackLibrary.vary_aliases()
 	kind = k
 	team = team_index
 	spot = Vector3(at.x, 0.0, at.z)
@@ -253,6 +261,9 @@ func execute(act: StringName, ch: float, lb: bool, dir: Vector3, cu: float = 0.0
 		var mocap: bool = AnimationCatalog.mocap_mode() and PackLibrary.has_clip(MOCAP_THROW_CLIP)
 		clip = MOCAP_THROW_CLIP if mocap else THROW_CLIP
 		contact_t = MOCAP_THROW_RELEASE if mocap else THROW_RELEASE
+		if _json_throw():
+			# Modo 4: el instante y la posicion de las manos al lanzar se midieron en el propio clip (meta release).
+			contact_t = float(PackLibrary.meta(THROW_CLIP)["release"]["time"])
 		# Se empieza tarde en el clip: solo los ultimos THROW_RUNUP m de carrerilla, para lanzar desde la linea.
 		var start_at: float = MOCAP_THROW_START if mocap else _start_for_runup(clip, contact_t, THROW_RUNUP)
 		var root_left: Vector2 = ActionMotion.offset_between(clip, start_at, contact_t)
@@ -271,7 +282,7 @@ func execute(act: StringName, ch: float, lb: bool, dir: Vector3, cu: float = 0.0
 	foot_key = "toe_r" if int(c.get("foot", 1)) > 0 else "toe_l"
 	contact_t = float(c.get("time", 0.4))
 	# Inicio del clip: la carrera completa si cabe, o recortada para no empezar a mas de 3 m de la pelota.
-	var start_t: float = _start_for_runup(clip, contact_t, 2.6)
+	var start_t: float = _start_for_runup(clip, contact_t, RUNUP_MAX)
 	var toe: Vector3 = _toe_at(clip, foot_key, contact_t)
 	var root0: Vector2 = ActionMotion.offset_between(clip, 0.0, start_t)
 	var f2: Vector3 = Locomotion.dir_from_yaw(yaw)
@@ -317,7 +328,13 @@ func _resolve_without_clip() -> void:
 
 ## Manos al lanzar respecto del jugador, segun el clip de saque.
 func _throw_hands() -> Vector3:
+	if _json_throw():
+		return PackLibrary.meta(THROW_CLIP)["release"]["hands"]
 	return MOCAP_THROW_HANDS if clip == MOCAP_THROW_CLIP else THROW_HANDS
+
+## Modo 4: el saque de banda usa el clip JSON con su suelta medida.
+func _json_throw() -> bool:
+	return PackLibrary.json_mode() and PackLibrary.has_clip(THROW_CLIP) and PackLibrary.meta(THROW_CLIP).has("release")
 
 ## Instante de inicio del clip para que, hasta `until`, la raiz recorra como mucho `max_m` metros.
 func _start_for_runup(id: StringName, until: float, max_m: float) -> float:

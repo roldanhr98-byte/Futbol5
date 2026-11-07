@@ -59,7 +59,7 @@ const CATCH_REL := 1.2
 ## La vuelta solo empieza en los primeros REQUEST_WINDOW s de pedirla: despues ya manda la media vuelta por el costado
 ## (no se mezclan las dos). El boton REGATE la deja pedida REQUEST_HOLD s (para girar el joystick justo despues).
 const REQUEST_WINDOW := 0.12
-const REQUEST_HOLD := 0.3
+const REQUEST_HOLD := 0.6
 
 enum Phase { NONE, REACH, HOLD, PULL }
 
