@@ -338,3 +338,19 @@ Catálogo central ampliado con rutas de presentación y consulta de estado de la
 - Encender sin overlay: `FUTBOL5_ANIM_TRACE=1` o `-- --anim-trace`; overlay al iniciar: `FUTBOL5_ANIM_DEBUG=1` o `-- --anim-debug`.
 - Prueba: `tests/test_anim_trace.gd` (apagado por defecto, esquema, no cambia decisiones, exportación, `explain` por
   categoría, overlay, partido real de 90 s con todas las familias).
+
+## Golpeos recuperados por el costado (Fase 2, 2026-11-07)
+
+- Diagnóstico de los 322 tramos conectados que ningún consumidor elegía: [`docs/integration/fase2/FASE2_DIAGNOSTICO_322.md`](../../integration/fase2/FASE2_DIAGNOSTICO_322.md)
+  (tabla por segmento en `diagnostico_322.csv`). Solo se habilita lo que tiene consumidor real y prueba.
+- `JsonCatalog.kick_clean_failures(contact)`: condiciones de golpeo limpio que no se cumplen (`pie_alto`, `detras`,
+  `lejos_delante`, `costado`, `pie_lento`, `apoyo_alto`, `giro`, `apoyo_patina`, `apoyo_no_plantado`; mismos umbrales
+  que el conversor).
+- `JsonCatalog.KICK_LATERAL_MAX = 0.75`: `kick_clip_rejection` admite un golpeo no limpio solo si lo único que falla es
+  el costado (contacto entre 0,50 y 0,72 m al lado) y está dentro de 0,75 m. 54 tramos (108 variantes):
+  `kick_shot` 24, `kick_shot_hard` 17, `kick_pass` 9, `kick_pass_soft` 3, `kick_lob` 1. El resto de los no limpios
+  sigue fuera; el motivo de `kick_clip_rejection` detalla la condición que falla.
+- `BallHandler.plan_clip_kick` no cambió: sigue exigiendo que el pie llegue a la pelota, así que estos clips solo
+  salen con la pelota a ese costado.
+- Prueba: `tests/test_kick_recovery.gd` (conjunto exacto de 54; cada clip y espejo planificado por `plan_clip_kick`,
+  aceptado por el árbitro, contacto validado e impulso aplicado: 108/108, peor distancia pie–pelota 0,151 m).

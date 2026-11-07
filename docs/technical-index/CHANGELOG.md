@@ -11,6 +11,14 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-11-07 — Fase 2 de la guía (abierta): diagnóstico de los 322 y 54 golpeos laterales habilitados
+
+- `JsonCatalog.kick_clean_failures` y `KICK_LATERAL_MAX = 0.75`: `kick_clip_rejection` admite los golpeos no limpios cuyo
+  único fallo es el costado (54 tramos / 108 variantes); el resto sigue fuera con el motivo detallado.
+- Tabla por segmento de los 322: `docs/integration/fase2/` (decisiones de la sección 4.2 de la guía).
+- Verificación: `test_kick_recovery` 2/0 (108/108 golpeos llegan a la pelota por el planificador real, peor 0,151 m);
+  `test_anim_trace` 8/0. **No ejecutadas:** suite completa, baterías con render, métricas de partido.
+
 ## 2026-11-07 — Fase 1 de la guía: trazabilidad de candidatos y overlay de depuración
 
 - `AnimTrace` (`scripts/diagnostics/anim_trace.gd`): registro por decisión de los candidatos examinados (motivo o coste),

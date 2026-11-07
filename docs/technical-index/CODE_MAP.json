@@ -5706,7 +5706,7 @@
         {
           "file": "scripts/animation/json_catalog.gd",
           "name": "JsonCatalog.situation_clip",
-          "line": 211,
+          "line": 247,
           "kind": "func"
         },
         {

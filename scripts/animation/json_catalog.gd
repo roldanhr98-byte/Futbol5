@@ -173,14 +173,50 @@ static func kick_candidates(kind: StringName, charge: float) -> Array:
 
 static var _kick_cache: Dictionary = {}
 
+## Golpeo «limpio» (lo mide el conversor, tools/json_anim/build_json_library.gd, y lo guarda en contact.clean): punta del
+## pie baja (y <= 0.3 m), delante del cuerpo (0 <= x <= 0.95 m) y a un costado razonable (|z| <= 0.5 m), pie rapido
+## (>= 4 m/s), pie de apoyo apoyado (y <= 0.06 m durante los 0.1 s previos) y quieto (<= 1.2 m/s) y salida a menos de 45
+## grados. Fase 2 (2026-11-07): 54 golpeos cumplen todo salvo el costado, con el contacto entre 0.50 y 0.72 m (los
+## limpios llegan a 0.50). El limite lateral se amplia a KICK_LATERAL_MAX SOLO para ellos: el planificador sigue exigiendo
+## que el pie llegue a la pelota (residuo tras el ajuste de zancada), asi que solo salen con la pelota a ese costado.
+const KICK_LATERAL_MAX := 0.75
+
+## Condiciones de golpeo limpio que el contacto no cumple (nombres de la tabla de la Fase 2); vacio si las cumple todas.
+static func kick_clean_failures(ct: Dictionary) -> Array[String]:
+	var out: Array[String] = []
+	var p: Vector3 = ct.get("pos", Vector3.ZERO)
+	if p.y > 0.3:
+		out.append("pie_alto")
+	if p.x < 0.0:
+		out.append("detras")
+	if p.x > 0.95:
+		out.append("lejos_delante")
+	if absf(p.z) > 0.5:
+		out.append("costado")
+	if float(ct.get("speed", 0.0)) < 4.0:
+		out.append("pie_lento")
+	if float(ct.get("plant_y", 0.0)) > 0.06:
+		out.append("apoyo_alto")
+	if absf(float(ct.get("kick_turn", 0.0))) >= 45.0:
+		out.append("giro")
+	if float(ct.get("plant_slide", 0.0)) > 1.2:
+		out.append("apoyo_patina")
+	if not bool(ct.get("planted", true)):
+		out.append("apoyo_no_plantado")
+	return out
+
 ## Motivo por el que kick_candidates no ofrece un clip de golpeo de ese rol ("" si lo ofrece). Los dos centros del banco
 ## (kick_cross) se admiten aunque su contacto no sea limpio: el planificador exige igualmente que el pie llegue.
 static func kick_clip_rejection(m: Dictionary, role: StringName) -> String:
 	if not m.has("contact"):
 		return "sin contacto medido (JsonCatalog.kick_candidates)"
-	if not bool(m["contact"].get("clean", true)) and role != &"kick_cross":
-		return "contacto no limpio (JsonCatalog.kick_candidates exige clean)"
-	return ""
+	var ct: Dictionary = m["contact"]
+	if bool(ct.get("clean", true)) or role == &"kick_cross":
+		return ""
+	var fails: Array[String] = kick_clean_failures(ct)
+	if fails == ["costado"] and absf((ct["pos"] as Vector3).z) <= KICK_LATERAL_MAX:
+		return ""
+	return "contacto no limpio (JsonCatalog.kick_candidates exige clean: %s)" % (", ".join(fails) if not fails.is_empty() else "sin detalle")
 
 ## Situaciones de presentacion (AnimationCatalog.FIELD) -> roles de los clips JSON. Se elige entre TODOS los clips de esos
 ## roles que se pueden reproducir en el sitio (poco recorrido de raiz): festejos, lamentos, enojo, aplausos, gestos,
