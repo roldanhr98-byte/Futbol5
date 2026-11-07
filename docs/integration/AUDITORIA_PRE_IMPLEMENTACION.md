@@ -6,20 +6,39 @@
 - **Godot:** 4.7.2 oficial (`ed1daf0bf`). **Esta fase no modifica código, recursos ni pruebas del juego.** Solo añade
   documentación, la herramienta de medición (`docs/integration/fase0/medicion/`) y la evidencia.
 
-## 0. Bloqueos que requieren intervención
+## 0. Bloqueos y su estado
 
-| Bloqueo | Detalle | Efecto |
-|---|---|---|
-| **La guía llegó cortada** | El mensaje termina en la sección 3.3 («Esquema fijo del CSV de trazabilidad…») sin el esquema. Faltan también las fases 2 a 9 y la sección 15.0 (pruebas de bloqueo y umbrales de aborto) a las que remite el texto. | No se puede empezar la Fase 1 (contrato de candidato y CSV fijo) sin el esquema. Las propuestas de 15.0 de este documento (secciones 9 y 10) son provisionales. |
-| **No está el ZIP de los 2.022 JSON originales** | No existe en el sistema de archivos ni en el historial Git de ninguna rama (0 objetos con rutas del banco; las herramientas lo esperan en `animaciones_futbol5_JSON`, nunca versionado). | Regla 7 de la guía: queda detenida toda tarea que exija inspeccionar el banco original (revisar fuentes, volver a medir contactos desde los JSON, regenerar clips, verificar hashes de originales). Lo derivado sí está y se usó: `json_clips.res`, `json_scenes.res`, `json_keeper.res`, `animdb.json`, perfiles y rutas. |
-| **El tag no se pudo subir** | `git tag -a pre-audit-phase-0 04ed110` existe en la copia local. El push del tag se corta («the remote end hung up unexpectedly») con 4 reintentos; los pushes de ramas funcionan. El commit `04ed110` sí está en `origin/integracion-openai`. | Para dejarlo inmutable en GitHub: `git tag -a pre-audit-phase-0 04ed11050885e0dcffbd7820ee6ac1e94572c2bd -m "Linea base Fase 0" && git push origin pre-audit-phase-0` desde una cuenta con permisos. |
+| Bloqueo inicial | Estado (actualizado 2026-11-07) |
+|---|---|
+| La guía llegó cortada en 3.3 | **Resuelto**: el usuario envió el resto (esquema del CSV, fases 2 a 12, sección 15.0). |
+| No estaba el ZIP de los 2.022 JSON | **Resuelto**: el usuario subió `animaciones_futbol5_nombres_originales1.zip` (ver sección 1.1). |
+| El tag `pre-audit-phase-0` no se pudo subir | **Sigue**: el proxy de la sesión corta el push de tags. El tag existe en la copia local sobre `04ed110`, que sí está en `origin/integracion-openai`. Para fijarlo en GitHub: `git tag -a pre-audit-phase-0 04ed11050885e0dcffbd7820ee6ac1e94572c2bd -m "Linea base Fase 0" && git push origin pre-audit-phase-0`. |
 
 ## 1. Identificación de los dos paquetes (por contenido, no por nombre)
 
 | Paquete | Ubicación | Contenido verificado | Uso |
 |---|---|---|---|
 | ZIP de integración | `docs/integration/FUTBOL5_GODOT_4_7_2_INTEGRACION.zip` (sha256 `17c31729…c18aa8c`) | 358 entradas; 43 JSON, de los cuales **38 son `EJ_*`** (clips sintéticos) y 5 de catálogo/configuración | Solo referencia técnica. No se importa, no se cuenta, no mide cobertura |
-| ZIP de los 2.022 JSON | **no disponible** | — | Fuente de verdad del banco: pedirlo |
+| ZIP de los 2.022 JSON | `animaciones_futbol5_nombres_originales1.zip` (subido por el usuario; sha256 `3fa72c92…d8b374f`, 8.383.382 bytes; **no se versiona**) | 2.023 JSON: **2.022 clips** `NNNN_<CATEGORIA>_<NOMBRE>.json` + `index.json` (`count: 2022`, 17 categorías). Ningún `EJ_*` | Fuente de verdad del banco; inmutable |
+
+### 1.1 Verificación del ZIP de los 2.022 JSON
+
+- Extraído en un directorio de trabajo externo al repositorio (no se copia al proyecto ni se modifica).
+- Los 2.022 índices `NNNN` coinciden **uno a uno** con los de `animdb.json` (0 sobrantes, 0 faltantes); los nombres
+  coinciden salvo 3 nombres largos que el nombre de archivo trunca (`1944`, `1946`, `1948`).
+- Estructura de cada clip: `name`, `index`, `mirrored`, `fps`, `frames`, `key_frame`, `length_frames`, 19
+  `joint_names`, `times`, `joints` (posiciones por fotograma clave), `root` y `meta` (categoría, estado, tipo, potencia,
+  duración, bucle, velocidad, rumbo inicial y final, raíz final).
+- Hashes: [`fase0/hashes_json_originales.sha256`](fase0/hashes_json_originales.sha256) (2.022 clips + `index.json`).
+  Comprobación: `cd <dir extraído> && sha256sum -c <repo>/docs/integration/fase0/hashes_json_originales.sha256`.
+- Correspondencia con las librerías convertidas: en 1.899 de 2.022 fuentes la duración convertida (suma de sus tramos)
+  coincide con la del original a ±0,06 s. En 123 difiere (−1,27 a +2,88 s), sobre todo cabezazos, atajadas, golpeos
+  girando y regates: el conversor (`tools/json_anim/build_json_library.gd`) recorta ciclos entre apoyos y ventanas
+  alrededor de los eventos. No es un fallo de integridad; queda como punto a revisar en la Fase 10 (que los recortes no
+  desplacen eventos de contacto).
+- Para que la prueba de bloqueo «hashes de los 2.022 JSON» corra en CI haría falta versionar el ZIP o alojarlo en un
+  sitio accesible por el workflow: decisión del propietario (8,4 MB). Mientras tanto la comprobación se ejecuta en
+  local cuando el ZIP está presente.
 
 El banco real se cuenta sobre sus derivados versionados: **2.022 fuentes** (índices de `animdb.json`), **2.024 tramos**,
 **3.223 variantes** (1.199 espejos), 111 roles.
@@ -33,7 +52,7 @@ El banco real se cuenta sobre sus derivados versionados: **2.022 fuentes** (índ
   (reproducible desde el tag; no se versiona el ZIP para no duplicar 31 MB).
 - **Hashes:** [`fase0/hashes_recursos_animacion.sha256`](fase0/hashes_recursos_animacion.sha256): 47 archivos (las 8
   librerías `.res`, `animdb.json`, rutas, scripts de animación, perfiles y el ZIP de integración). Comprobación al final
-  de la fase: `sha256sum -c` sin diferencias (sección 11). Hashes de los JSON originales: **no posibles** (bloqueo 0).
+  de la fase: `sha256sum -c` sin diferencias (sección 11). Hashes de los JSON originales: ver 1.1.
 
 ## 3. Sistemas reales (tabla 1.1 de la guía, verificada en el código)
 
@@ -182,26 +201,30 @@ confirmarla con sus hojas de poses (`continuacion/visual/`).
 Total: 7 + 1 + 2 + 2 + 12 + 8 + 2 + 13 = 47. Solo 4 clips quedan **pendientes por assets**; el resto no está bloqueado
 por recursos.
 
-## 9. Pruebas de bloqueo y de seguimiento (propuesta; la sección 15.0 de la guía no llegó)
+## 9. Pruebas de bloqueo (gate) y de seguimiento (monitoring)
 
-**De bloqueo** (deben pasar para cerrar una fase y para fusionar):
+Lista adoptada a partir de la sección 15.0 de la guía, ajustada a lo que existe hoy. Una prueba de bloqueo no se relaja
+para que pase; si la línea base estaba mal se corrige en un commit separado y justificado.
 
-1. Suite headless completa (`tools/run_tests.sh`): 0 fallidas, 0 `SCRIPT ERROR`.
-2. Las 8 baterías con render de la sección 6.1: 0 fallidas.
-3. 0 fugas de ObjectDB y 0 recursos en uso al cerrar (headless y render).
-4. Auditoría del banco (`tools/integration/audit_bank.tscn`): 2.022 fuentes, 3.223 variantes, 0 fallos.
-5. `sha256sum -c docs/integration/fase0/hashes_recursos_animacion.sha256` sin diferencias, salvo cambios de recursos
-   declarados en la fase (y entonces se regenera el manifiesto en el mismo commit).
-6. Workflow de Android: exportación ARM64 y verificación de la APK.
+**Gate** (bloquean el cierre de cada etapa):
 
-Riesgo conocido dentro del grupo 1: 13 archivos de prueba usan partidos con `MatchScene` y azar no sembrado
-(`test_ai_match`, `test_control_and_keeper`, `test_full_match`, `test_goal_replay`, `test_json_mode`, `test_match_flow`,
-`test_mocap_mode`, `test_pass_receiver_control`, `test_pes_mechanics`, `test_set_pieces`, `test_team_shape_metrics`,
-`test_training_mode`; `test_transition_connections` solo usa una constante). Un fallo en ellos se investiga igual (no
-se repite hasta que pase); el intermitente conocido es F9-001.
+| # | Prueba | Cómo se ejecuta | Base Fase 0 |
+|---|---|---|---|
+| G1 | Hashes de los 2.022 JSON originales | `sha256sum -c docs/integration/fase0/hashes_json_originales.sha256` en el directorio extraído (local; el ZIP no está versionado) | 2.023/2.023 OK |
+| G2 | Hashes de los recursos derivados | `sha256sum -c docs/integration/fase0/hashes_recursos_animacion.sha256` (salvo cambios declarados en la etapa) | 47/47 OK |
+| G3 | Importación de las 3.223 variantes (poses finitas al inicio, mitad y final) | `tools/integration/audit_bank.tscn` | 2.022 / 3.223 / 0 fallos |
+| G4 | Suite headless completa (incluye `test_action_arbiter` 9/9, `test_receive` 30, `test_pack_locomotion`) | `tools/run_tests.sh` sin instrumentación | 310 / 0 fallidas |
+| G5 | Baterías con render: `live_kicks` (50/50 con contacto), `live_feet` y las otras 6 | `xvfb-run …` (sección 6.1) | 8 / 0 fallidas |
+| G6 | 0 fugas al cerrar | salida de G4 y G5 | 0 |
+| G7 | Ningún alias pasa de «roto documentado» a «roto no documentado»; 0 referencias a nombres inexistentes en índices | prueba de la Fase 7 (mientras tanto: lista de 5 alias sin clip de la auditoría) | 5 documentados |
+| G8 | Pie animado = pie informado en golpeos originales y espejos | prueba a crear (sección 15.2) | — |
+| G9 | Exportación ARM64 y verificación de la APK | workflow de Android | run 63 verde |
 
-**De seguimiento** (informativas, comparan fases): las métricas de partido de `medir_linea_base.py`, con los umbrales
-de la sección 10.
+**Monitoring** (informativas): partidos IA largos con varias semillas (`medir_linea_base.py`), distribución de uso por
+rol y clip, variantes por partido, repeticiones por ventana visible, abortos por familia, tiempo de carga y memoria.
+`test_ai_match` con semilla fija pasa a gate cuando la Fase 9 garantice el determinismo; hasta entonces sus fallos
+(F9-001) se investigan pero se tratan como intermitencia conocida. Los otros 12 archivos de prueba con `MatchScene`
+siguen en G4.
 
 ## 10. Umbrales de aborto propuestos (con los valores de la línea base)
 
@@ -213,6 +236,7 @@ Se comparan **medias de los 6 partidos de 10 min con las semillas 101–606**.
 | 3 | % golpeos iniciados sin contacto | 5,23 % | > 10,23 % (+5 pp) |
 | 3 | % movimientos con pelota cortados | 32,9 % | > 37,9 % (+5 pp) |
 | 3 | % recepciones con clip abortadas | 34,6 % | > 39,6 % (+5 pp) |
+| 3 | goles por partido | 4,5 (4–5) | caída significativa (por debajo del mínimo de la base en la media de 6 partidos) |
 | 4 (aéreo) | goles en propia por partido | 1,0 | > 1,5 |
 | 4 | % golpeos aéreos fallidos | sin datos (0 aéreos) | > % rasos fallidos de la misma medición (base 4,17 %) |
 | 5 (recepciones) | % pérdida tras recepción animada | 28,1 % | > 29,5 % (+5 % relativo); con el ruido actual, confirmar con 12 partidos |
@@ -231,7 +255,5 @@ apretar más los umbrales.
 
 ## 12. Siguiente paso
 
-Para empezar la Fase 1 hacen falta: (1) el resto de la guía, como mínimo el esquema del CSV de la sección 3.3 y la
-sección 15.0; (2) el ZIP de los 2.022 JSON, si alguna fase va a inspeccionar las fuentes originales. Con la guía
-completa, las fases 1 a 5 se pueden hacer sobre los recursos derivados sin el ZIP; las tareas que exijan las fuentes
-quedarán señaladas como bloqueadas.
+Con la guía completa y el banco original disponibles, la siguiente etapa es la Fase 1 (trazabilidad de candidatos y
+overlay de depuración). El seguimiento por etapas está en [`SEGUIMIENTO_ANIMACIONES.md`](SEGUIMIENTO_ANIMACIONES.md).
