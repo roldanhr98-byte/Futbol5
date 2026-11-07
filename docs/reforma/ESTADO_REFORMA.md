@@ -45,6 +45,7 @@ cada banco sobre su cuerpo original (ya disponible en el banco de pruebas), **C*
   (escena y no `--script`: los scripts del juego usan el autoload `Tuning`).
 - Pruebas: `tools/run_tests.sh test_anim_bank_bench` (y con render, ver `docs/START_HERE.md`).
 - APK: GitHub Actions «Android APK» se dispara con cada push de código a `reforma-tiros-penales`; artefacto `futbol5-apk`.
+  Última: compilación 68 (`ccc5592`), https://github.com/roldanhr98-byte/Futbol5/actions/runs/42380816763 (vence el 21-11-2026).
 
 ## Pendientes conocidos
 

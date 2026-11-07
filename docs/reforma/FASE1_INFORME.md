@@ -151,7 +151,7 @@ Las mediciones de carga se tomaron con la suite de pruebas corriendo en paralelo
 | GitHub Actions, compilación 67 (intento 1) | 327 pruebas, **1 fallida**: `test_json_mode::test_ai_match_in_json_mode` («hay tiros (0)»: un partido de IA de 90 s sin tiros). Repetida 10 veces en local: falla 1 de 10 en esta rama y 3 de 10 en `5511cfe` (antes del cambio de golpeos de la Fase 2 de la guía anterior): intermitente y anterior a esta fase. Como el workflow no exporta la APK si falla una prueba, se relanzó el mismo commit con todas las pruebas (sin saltear ni desactivar ninguna) |
 | Las 8 baterías con render (live_feet, live_kicks, pack_motion, json_mode, physical_dribble, directional_kicks, dribble_reference, test_receive) | 0 fallidas, 0 fugas, 0 errores de script (`fase1/pruebas/render_*.log`) |
 | Capturas del banco con render (16 casos: golpeo, estirada, barrera y penal en los tres bancos y los dos cuerpos) | sin errores de script; `fase1/capturas/` |
-| APK | GitHub Actions en `reforma-tiros-penales` (enlace en la respuesta de cierre) |
+| APK | GitHub Actions, compilación 68 (`ccc5592`, sin el fútbol 5): todas las pruebas de CI en verde, artefacto `futbol5-apk` (58 MB, disponible hasta el 21-11-2026): https://github.com/roldanhr98-byte/Futbol5/actions/runs/42380816763 . La compilación 67 (`a9e5e7b`, todavía con el acceso al fútbol 5) también dejó su APK |
 
 Qué comprueban las pruebas: el catálogo está separado por procedencia (ningún clip en dos bancos, cada clip existe en sus
 propias bibliotecas); el selector carga solo las bibliotecas del banco elegido; una categoría vacía muestra «sin clip en
