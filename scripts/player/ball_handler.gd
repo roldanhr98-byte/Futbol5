@@ -1496,7 +1496,7 @@ const SETTLE_COMFY_LAT := 0.30
 ## Velocidad (m/s) de la pelota por encima de la cual se va: el jugador la sigue.
 const SETTLE_STILL_SPEED := 0.35
 ## Radio de contacto del pie al parar la pelota (multiplica FOOT_CONTACT).
-const SETTLE_STRIKE_SCALE := 1.15
+const SETTLE_STRIKE_SCALE := 1.1
 ## Pelota quieta a menos de esto (m) del centro del cuerpo, delante: esta entre los pies (controlada).
 const SETTLE_UNDER := 0.30
 ## Velocidad (m/s) minima de los pasos con que el jugador se acomoda a la pelota.

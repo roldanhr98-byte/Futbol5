@@ -53,3 +53,11 @@ Fallos headless: arranque a sprint; dirección de caída; control lateral; cuatr
 `tests/test_live_kicks.gd` distingue punta visible final (capturada por TouchFootIK durante el modificador) y pose base. No se aumenta el umbral de distancia. La observación mínima de 100 cuadros se amplía sólo mientras la orden/golpeo sigue pendiente, hasta el plazo derivado de PENDING_APPROACH_MAX, PENDING_FIRST_TIME_MAX, TURN_KICK_MAX_LATENCY y kick_lockout. La prueba exige que la orden termine, sin duplicar impulsos. Resultado ejecutado: 6 pruebas, 0 fallidas, 50 comprobaciones; batería de 50 situaciones: 46 golpeos, 4 órdenes sin golpeo, 0 contactos inválidos y 0 bloqueos. Evidencia: pruebas/patadas_render_revalidacion.log y recuperacion_tiro_detras.log.
 
 Continuar con: ocho fallos headless documentados arriba (arranque ya pasó en la revalidación aislada, pendiente suite completa), contactos de parada, comparación de recepciones contra 0b46c10 y conducción en cancha real. Los cambios experimentales todavía no comprobados siguen separados de esta etapa. El APK permanece pendiente.
+
+## Etapa guardada: conducción y parada con render
+
+Se reprodujo el fallo de zigzag en 0b46c10 (máximo 2,78 m). La traza actual situó la separación máxima en x=19,39 m, contra la pared de la cancha de futsal de 40 m. La prueba de conducción libre usa ahora la cancha real de 50 m, conserva posiciones de máxima separación y mantiene la tolerancia de 1,6 m. Resultado: 1 prueba, 0 fallidas, 12 comprobaciones. Las pruebas específicas de paredes, colisiones y arcos permanecen en la suite.
+
+Se acota el alcance del pie en la parada: SETTLE_STRIKE_SCALE baja de 1,15 a 1,1 (de 0,322 a 0,308 m). La medición conserva distancia de pose base y de pose visible final, sin ampliar el umbral de 0,32 m de la prueba. Resultado: 1 prueba, 0 fallidas, 12 comprobaciones. Evidencia: conduccion_cancha_real.log, parada_contacto.log y zigzag_base_comparacion.log.
+
+Pendientes: recepción rápida sin clip compatible (la revalidación aislada todavía falla), control lateral, distribución de atajadas al palo y suite completa final. Los cambios en Footballer/PlayerActions aún se validan antes de guardarlos como otra etapa.

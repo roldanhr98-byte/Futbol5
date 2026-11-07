@@ -198,7 +198,21 @@ func _settle_probe(name: String, off: Vector2, vel: Vector2, total_s: float) -> 
 	var touches: Array = []
 	bh.touched_ball.connect(func(kind: StringName) -> void:
 		var o: Vector3 = KickModel.flat(ctx.ball.global_position - p.global_position)
-		touches.append({"kind": String(kind), "foot": bh.last_touch_foot, "foot_d": bh.last_touch_foot_distance, "body_d": o.length()}))
+		var sample := {"kind": String(kind), "foot": bh.last_touch_foot, "foot_d": bh.last_touch_foot_distance, "foot_raw": bh.last_touch_foot_distance, "body_d": o.length()}
+		touches.append(sample)
+		var foot: int = int(sample["foot"])
+		if foot < 0:
+			return
+		await RenderingServer.frame_post_draw
+		if not is_instance_valid(p) or not p.is_inside_tree():
+			return
+		var ik: TouchFootIK = p.visual.touch_ik
+		if ik != null and ik.rendered_frame[foot] >= Engine.get_process_frames() - 1:
+			var a: Vector3 = ik.rendered_ankle_world[foot]
+			var segment: Vector3 = ik.rendered_toe_world[foot] - a
+			var ball_pos: Vector3 = ctx.ball.global_position
+			var u: float = clampf((ball_pos - a).dot(segment) / maxf(segment.length_squared(), 0.000001), 0.0, 1.0)
+			sample["foot_d"] = (a + segment * u).distance_to(ball_pos))
 	var start_p: Vector3 = KickModel.flat(p.global_position)
 	var start_yaw: float = p.locomotion.yaw
 	var front_at: float = -1.0
@@ -217,7 +231,7 @@ func _settle_probe(name: String, off: Vector2, vel: Vector2, total_s: float) -> 
 		var far: bool = String(e["kind"]) != "clip" and String(e["kind"]) != "body" and (int(e["foot"]) < 0 or float(e["foot_d"]) > 0.32)
 		if far:
 			remote += 1
-		lines.append("%s pie=%d d_pie=%.2f d_cuerpo=%.2f%s" % [e["kind"], e["foot"], e["foot_d"], e["body_d"], " <-- SIN PIE" if far else ""])
+		lines.append("%s pie=%d d_pie_visible=%.3f d_base=%.3f d_cuerpo=%.2f%s" % [e["kind"], e["foot"], e["foot_d"], e["foot_raw"], e["body_d"], " <-- SIN PIE" if far else ""])
 	var moved: float = KickModel.flat(p.global_position).distance_to(start_p)
 	var turned: float = absf(rad_to_deg(wrapf(p.locomotion.yaw - start_yaw, -PI, PI)))
 	var o_end: Vector3 = KickModel.flat(ctx.ball.global_position - p.global_position)

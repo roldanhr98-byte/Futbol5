@@ -283,6 +283,8 @@ func _drive(stick_fn: Callable, sprint: bool, seconds: float) -> Dictionary:
 	src.sprint = sprint
 	var dists: Array[float] = []
 	var max_d := 0.0
+	var max_position := Vector3.ZERO
+	var max_ball_position := Vector3.ZERO
 	var max_speed := 0.0
 	for i in int(seconds * 60.0):
 		src.move = stick_fn.call(i)
@@ -291,11 +293,14 @@ func _drive(stick_fn: Callable, sprint: bool, seconds: float) -> Dictionary:
 		var d: float = Vector2(ctx.ball.global_position.x - p.global_position.x, ctx.ball.global_position.z - p.global_position.z).length()
 		if i > 90:
 			dists.append(d)
-			max_d = maxf(max_d, d)
+			if d > max_d:
+				max_d = d
+				max_position = p.global_position
+				max_ball_position = ctx.ball.global_position
 		max_speed = maxf(max_speed, p.locomotion.speed)
 	dists.sort()
 	var out := {"median": dists[dists.size() / 2], "max": max_d, "touches": p.ball_handler.dribble_touch_count, "foot": p.ball_handler.foot_touches, "speed": max_speed,
-		"possessor": ctx.possessor == p}
+		"possessor": ctx.possessor == p, "max_position": max_position, "max_ball_position": max_ball_position}
 	cleanup()
 	return out
 
@@ -305,6 +310,8 @@ func test_live_dribble_keeps_the_ball_with_foot_touches() -> void:
 		return
 	if _skip_if_missing():
 		return
+	# La secuencia de 9 s llega a la pared de la cancha de futsal de 40 m; el rebote no mide conduccion libre.
+	use_game_pitch()
 	var prev: int = Tuning.gameplay_mode
 	for name in ["Humanoide"]:
 		_mode4()
@@ -318,6 +325,7 @@ func test_live_dribble_keeps_the_ball_with_foot_touches() -> void:
 		for pair in [["trote", jog], ["carrera", run], ["sprint", sprint], ["zigzag", zig]]:
 			var r: Dictionary = pair[1]
 			note("%s, %s: pelota-cuerpo mediana %.2f m, max %.2f m, toques %d (con el pie %d), velocidad max %.1f m/s" % [name, pair[0], r["median"], r["max"], r["touches"], r["foot"], r["speed"]])
+			note("maxima separacion: jugador %s, pelota %s" % [str(r["max_position"]), str(r["max_ball_position"])])
 			check(r["max"] < 1.6, "%s, %s: la pelota nunca se va (max %.2f m)" % [name, pair[0], r["max"]])
 			check(r["median"] > 0.25 and r["median"] < 1.1, "%s, %s: va al pie (mediana %.2f m)" % [name, pair[0], r["median"]])
 			check(int(r["foot"]) >= int(int(r["touches"]) * 0.5), "%s, %s: la mayoria de los toques los da el pie (%d de %d)" % [name, pair[0], r["foot"], r["touches"]])
