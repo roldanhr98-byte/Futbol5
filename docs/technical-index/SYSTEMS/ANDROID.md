@@ -80,3 +80,8 @@ El workflow conserva Godot 4.7.2 y sus plantillas Android oficiales. Antes de ex
 Las pruebas con render son bloqueantes y usan X11 explícito con Xvfb. El APK sigue siendo artefacto de prueba;
 `publish_release` permanece desactivado por defecto. En esta sesión el dispatch fue rechazado por GitHub con HTTP 403
 (`Resource not accessible by integration`); no hay ejecución ni APK nuevos. Detalle en `docs/integration/INFORME.md`.
+
+
+## Continuación de integración (2026-11-07)
+
+Workflow Android activado por push en integracion-openai; publicación exclusivamente como artefacto, sin pasos de Release y con contents:read. Despacho externo aún devuelve 403; un push sí inició una ejecución real. [Seguimiento](../../integration/continuacion/README.md).

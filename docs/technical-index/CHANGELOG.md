@@ -11,6 +11,11 @@ Formato de entrada: **fecha — título** · commit · qué cambió · archivos 
 
 ---
 
+## 2026-11-07 — Conexiones verificadas y compilación Android por artefacto
+
+Rama integracion-openai. Se conservan los tres commits previos. 262 de 338 tramos tienen conexión con invocación comprobada; 76 pendientes. Cambios en AnimDB/JsonCatalog, MatchPresentation/MatchScene, PlayerActions/Footballer, BallHandler/BallTurn, SetPiece, Goalkeeper y diagnóstico TouchFootIK. Nuevas pruebas por consumidor y corrección de las dos pruebas de render anteriores. Workflow sin publicación de Releases. Suite completa en curso, todavía sin declarar aprobada. [Informe y evidencia](../integration/continuacion/README.md).
+
+
 ## 2026-11-06 — Documentación de transferencia de la integración (sin cambios de código de juego)
 
 Rama `respaldo-f3`. Pedido: documentación técnica completa para transferir el proyecto. Carpeta nueva

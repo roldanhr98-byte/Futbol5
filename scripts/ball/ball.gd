@@ -586,3 +586,5 @@ func _on_body_entered(body: Node) -> void:
 		knuckle_accel = 0.0
 	if body.is_in_group("goal_frame"):
 		hit_goal_frame.emit(global_position, linear_velocity.length())
+	if body.has_method("on_ball_impact"):
+		body.call("on_ball_impact", self)

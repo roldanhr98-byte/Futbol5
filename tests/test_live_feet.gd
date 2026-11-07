@@ -21,9 +21,32 @@ func _carry(stick: Vector2, sprint: bool, seconds: float, zigzag: bool = false) 
 	p.is_human_controlled = true   # el jugador de la persona (la IA tiene reglas propias, p. ej. no salir de la cancha)
 	p.locomotion.yaw = Locomotion.yaw_from_dir(Vector3(1, 0, 0))
 	var dists: Array[float] = []
+	var toe_dists: Array[float] = []
+	var raw_toe_dists: Array[float] = []
 	p.ball_handler.touched_ball.connect(func(_k: StringName) -> void:
-		if p.ball_handler.last_touch_foot_distance >= 0.0:
-			dists.append(p.ball_handler.last_touch_foot_distance))
+		var foot: int = p.ball_handler.last_touch_foot
+		if foot < 0:
+			return
+		raw_toe_dists.append(p.ball_handler.last_touch_toe_distance)
+		# El evento se emite en fisica, antes del AnimationTree y del IK. Se verifica la pose que se dibuja,
+		# con los huesos reales despues de ese proceso; no el cache del esqueleto del fotograma anterior.
+		await RenderingServer.frame_post_draw
+		if not is_instance_valid(p) or not p.is_inside_tree():
+			return
+		var sk: Skeleton3D = p.visual.skeleton
+		var side: String = "Left" if foot == 0 else "Right"
+		sk.force_update_all_bone_transforms()
+		var toe: Vector3 = sk.global_transform * sk.get_bone_global_pose(sk.find_bone("mixamorig_%sToeBase" % side)).origin
+		var ankle: Vector3 = sk.global_transform * sk.get_bone_global_pose(sk.find_bone("mixamorig_%sFoot" % side)).origin
+		var ik: TouchFootIK = p.visual.touch_ik
+		if ik != null and ik.rendered_frame[foot] >= Engine.get_process_frames() - 1:
+			toe = ik.rendered_toe_world[foot]
+			ankle = ik.rendered_ankle_world[foot]
+		var segment: Vector3 = toe - ankle
+		var ball_pos: Vector3 = ctx.ball.global_position
+		var fraction: float = clampf((ball_pos - ankle).dot(segment) / maxf(segment.length_squared(), 0.000001), 0.0, 1.0)
+		dists.append((ankle + segment * fraction).distance_to(ball_pos))
+		toe_dists.append(toe.distance_to(ball_pos)))
 	src.move = stick
 	src.sprint = sprint
 	var kept: int = 0
@@ -42,10 +65,15 @@ func _carry(stick: Vector2, sprint: bool, seconds: float, zigzag: bool = false) 
 			print("ZZ f%d pelota %.2f,%.2f v %.2f giro %.2f escala %.2f clip %s curva %s activo %s" % [i, o2.dot(p.locomotion.forward()), o2.dot(p.locomotion.right()), p.locomotion.speed, p.locomotion.turn_rate, p.locomotion.turn_scale, p.ball_handler._clip_driving(), p.ball_handler._curving, not p.ball_handler._touch_active.is_empty()])
 		if p.ball_handler.ball_distance() < 1.6:
 			kept += 1
+	await RenderingServer.frame_post_draw
 	var bh: BallHandler = p.ball_handler
 	dists.sort()
+	toe_dists.sort()
+	raw_toe_dists.sort()
 	var out := {"live": bh.feet_live, "touches": bh.dribble_touch_count, "foot": bh.foot_touches,
 		"median": dists[dists.size() / 2] if not dists.is_empty() else -1.0, "kept": float(kept) / float(frames),
+		"median_toe": toe_dists[toe_dists.size() / 2] if not toe_dists.is_empty() else -1.0,
+		"raw_median_toe": raw_toe_dists[raw_toe_dists.size() / 2] if not raw_toe_dists.is_empty() else -1.0,
 		"speed": p.locomotion.speed}
 	cleanup()
 	return out
@@ -55,7 +83,8 @@ func test_dribble_touches_come_from_the_animated_foot() -> void:
 		return
 	for cfg in [["trote", Vector2(0.65, 0), false], ["carrera", Vector2(1, 0), false], ["sprint", Vector2(1, 0), true]]:
 		var r: Dictionary = await _carry(cfg[1], cfg[2], 4.0)
-		note("%s (%.2f m/s): %d toques, %d con el pie animado, distancia punta-centro de la pelota mediana %.2f m, pelota cerca %d %%" % [cfg[0], r["speed"], r["touches"], r["foot"], r["median"], int(r["kept"] * 100.0)])
+		note("%s (%.2f m/s): %d toques, %d con el pie animado, mediana segmento del pie %.2f m, mediana punta %.2f m, pelota cerca %d %%" % [cfg[0], r["speed"], r["touches"], r["foot"], r["median"], r["median_toe"], int(r["kept"] * 100.0)])
+		note("punta antes de procesar AnimationTree/IK: %.2f m" % float(r["raw_median_toe"]))
 		check(r["live"], "%s: el esqueleto se anima (pies vivos)" % cfg[0])
 		check(r["touches"] >= 3, "%s: hay toques de conduccion (%d)" % [cfg[0], r["touches"]])
 		# Conduccion fisica (2026-11-05): sin toques a distancia que recoloquen la pelota, a sprint el cuerpo alcanza a la pelota
@@ -63,7 +92,7 @@ func test_dribble_touches_come_from_the_animated_foot() -> void:
 		# lleva el pie igual). Medido con render: 4-7 de 9-10 toques con la punta medida a sprint (antes 8 de 9).
 		var min_ratio: float = 0.4 if cfg[0] == "sprint" else 0.8
 		check(float(r["foot"]) >= min_ratio * float(r["touches"]), "%s: al menos el %d %% de los toques los da un pie (%d de %d)" % [cfg[0], int(min_ratio * 100.0), r["foot"], r["touches"]])
-		check(r["median"] >= 0.0 and r["median"] <= 0.30, "%s: la punta del pie esta en la pelota al tocarla (mediana %.2f m)" % [cfg[0], r["median"]])
+		check(r["median"] >= 0.0 and r["median"] <= 0.30, "%s: el segmento del pie esta en la pelota al tocarla (mediana %.2f m)" % [cfg[0], r["median"]])
 		check(r["kept"] > 0.95, "%s: conserva la pelota (%d %% del tiempo a menos de 1.6 m)" % [cfg[0], int(r["kept"] * 100.0)])
 
 func test_zigzag_keeps_the_ball_with_foot_touches() -> void:

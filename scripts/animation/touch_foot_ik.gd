@@ -25,6 +25,11 @@ var _abs_weight: Array[float] = [0.0, 0.0]
 var _abs_age: Array[int] = [0, 0]
 ## Punta del pie (mundo) tal como quedo tras el IK de set_target en la ultima imagen (las pruebas miden la suela).
 var abs_toe_world: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
+## Pose realmente enviada al renderizador. Skeleton3D restaura la pose base tras ejecutar sus modificadores;
+## get_bone_global_pose fuera de este callback no sirve para verificar el resultado del IK.
+var rendered_toe_world: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
+var rendered_ankle_world: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
+var rendered_frame: Array[int] = [-1, -1]
 
 ## Correccion de la punta del pie `foot` (0 izquierdo, 1 derecho): desplazamiento en el mundo (se limita a MAX_SHIFT) y
 ## peso 0-1. Se mantiene hasta la siguiente llamada.
@@ -85,11 +90,18 @@ func _ik_step(_delta: float) -> void:
 			var w: float = _abs_weight[f]
 			ik_toe(sk, _bones[f], toe_pose.lerp(to_local * _abs_target[f], w), up, _abs_pitch[f] * w, _body_forward(sk, up))
 			abs_toe_world[f] = sk.global_transform * PoseSampler.bone_in_skeleton(sk, _bones[f][3]).origin
+			_capture_rendered_foot(sk, f)
 			continue
 		if _weight[f] < 0.001:
 			continue
 		var toe: Vector3 = PoseSampler.bone_in_skeleton(sk, _bones[f][3]).origin
 		ik_toe(sk, _bones[f], toe + to_skel * (_shift[f] * _weight[f]), up, 0.0)
+		_capture_rendered_foot(sk, f)
+
+func _capture_rendered_foot(sk: Skeleton3D, foot: int) -> void:
+	rendered_toe_world[foot] = sk.global_transform * PoseSampler.bone_in_skeleton(sk, _bones[foot][3]).origin
+	rendered_ankle_world[foot] = sk.global_transform * PoseSampler.bone_in_skeleton(sk, _bones[foot][2]).origin
+	rendered_frame[foot] = Engine.get_process_frames()
 
 ## Frente del cuerpo en el espacio del esqueleto (de cadera izquierda a derecha, girado sobre la vertical).
 func _body_forward(sk: Skeleton3D, up: Vector3) -> Vector3:

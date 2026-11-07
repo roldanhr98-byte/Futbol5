@@ -310,3 +310,8 @@ Auditoría reproducible: `OUT=/ruta/audit.json godot --headless --path . res://t
 El informe distingue registro, índice por rol, invocación por `AnimationPlayer`, muestreo de poses, conexión histórica,
 verificación visual y Android. Muestrear tres instantes **no certifica** contactos ni transiciones en partido.
 Inventario cruzado: `python3 tools/integration/report.py`; resultados y limitaciones en `docs/integration/`.
+
+
+## Continuación de integración (2026-11-07)
+
+Catálogo central ampliado con rutas de presentación y consulta de estado de las 338 conexiones históricas. Estado parcial y evidencia individual: [continuación](../../integration/continuacion/README.md).

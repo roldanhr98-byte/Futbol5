@@ -8,9 +8,41 @@ extends RefCounted
 
 const PATH := "res://assets/animations/animdb.json"
 const NO_WINDOW := Vector2(-INF, INF)
+const PRESENTATION_PATH := "res://resources/animation/environment_routes.json"
+const CONNECTIONS_PATH := "res://resources/animation/connection_routes.json"
 
 static var _db: Dictionary = {}
 static var _loaded: bool = false
+static var _presentation: Dictionary = {}
+static var _connections: Dictionary = {}
+static var _routes_loaded: bool = false
+
+static func _ensure_routes() -> void:
+	if _routes_loaded:
+		return
+	_routes_loaded = true
+	for path in [PRESENTATION_PATH, CONNECTIONS_PATH]:
+		if not FileAccess.file_exists(path):
+			continue
+		var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+		if data is Dictionary:
+			if path == PRESENTATION_PATH:
+				_presentation = data
+			else:
+				_connections = data
+
+## Capa de conexiones actuales, separada del inventario historico y sin cargar poses.
+static func connection(id: StringName) -> Dictionary:
+	_ensure_routes()
+	return ((_connections.get("clips", {}) as Dictionary).get(String(id).trim_suffix("_mirror"), {}) as Dictionary).duplicate(true)
+
+static func connection_summary() -> Dictionary:
+	_ensure_routes()
+	return (_connections.get("summary", {}) as Dictionary).duplicate(true)
+
+static func presentation_routes() -> Dictionary:
+	_ensure_routes()
+	return _presentation.duplicate(true)
 
 static func _ensure() -> void:
 	if _loaded:
@@ -84,6 +116,11 @@ static func actions() -> Array[String]:
 	_ensure()
 	var out: Array[String] = []
 	out.assign((_db.get("acciones", {}) as Dictionary).keys())
+	_ensure_routes()
+	for route in _presentation.values():
+		var action: String = route["actor"] + "/" + route["context"]
+		if not out.has(action):
+			out.append(action)
 	out.sort()
 	return out
 
@@ -93,9 +130,21 @@ static func candidates(action: StringName, context: Dictionary = {}) -> Array[St
 	var out: Array[StringName] = []
 	if not PackLibrary.json_mode():
 		return out
+	var ids: Array[StringName] = []
+	if String(action).contains("/"):
+		_ensure_routes()
+		for id in _presentation:
+			var route: Dictionary = _presentation[id]
+			if route["actor"] + "/" + route["context"] == String(action):
+				ids.append(StringName(id))
+				var mirror := StringName(id + "_mirror")
+				if PackLibrary.has_clip(mirror):
+					ids.append(mirror)
+	else:
+		ids = PackLibrary.by_role(action)
 	if context.is_empty():
-		return PackLibrary.by_role(action)
-	for id in PackLibrary.by_role(action):
+		return ids
+	for id in ids:
 		if not bool(context.get("mirrors", true)) and String(id).ends_with("_mirror"):
 			continue
 		var m: Dictionary = PackLibrary.meta(id)

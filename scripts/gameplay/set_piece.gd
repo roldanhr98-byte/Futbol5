@@ -42,6 +42,11 @@ const CONTACT_RADIUS := 0.45
 ## Segundos que espera la IA antes de sacar, y maximo que espera a la persona antes de sacar por ella.
 const AI_WAIT := 1.1
 const HUMAN_TIMEOUT := 9.0
+## Estos clips fallaban por muestreo puntual o por espacio en el corner. Recuperados con barrido 3D y carrerilla libre.
+const RECOVERED_FREE_KICKS := {
+	&"pass": [&"jn_setpiece_pass_3330", &"jn_setpiece_pass_3342", &"jn_setpiece_pass_3346"],
+	&"shot": [&"jn_setpiece_shot_3354", &"jn_setpiece_shot_3856"],
+}
 
 var kind: Kind = Kind.THROW_IN
 var team: int = 0
@@ -60,6 +65,15 @@ var resolved: bool = false
 ## Golpeos fallidos (el pie no llego a la pelota): al segundo, el saque se hace sin carrera para no trabar el partido.
 var misses: int = 0
 var result: StringName = &""
+## Ultima medicion del contacto, incluso si el saque se reintenta.
+var last_contact: Dictionary = {}
+var last_setup: Dictionary = {}
+var _previous_toe := Vector3.INF
+var _previous_ball := Vector3.INF
+var _contact_min: float = INF
+var orientation_clip: StringName = &""
+var _queued_throw: Dictionary = {}
+var _orientation_done: bool = false
 var _t: float = 0.0
 var _btn: StringName = &""
 var _btn_time: float = 0.0
@@ -142,10 +156,20 @@ func tick(frame: InputFrame, delta: float) -> bool:
 	if stage == &"setup":
 		_tick_setup(frame, delta)
 		return true
+	if stage == &"orient":
+		_update_anchor()
+		if not taker.actions.active():
+			var queued: Dictionary = _queued_throw
+			_queued_throw = {}
+			stage = &"setup"
+			execute(queued["action"], queued["charge"], queued["lob"], queued["dir"], queued["curl"])
+		return false
 	# Etapa "run": el clip mueve el cuerpo (PlayerActions); aqui solo se resuelve el contacto.
 	if kind == Kind.THROW_IN:
 		_update_anchor()
 	var mt: float = taker.actions.motion.t
+	if kind != Kind.THROW_IN and not resolved:
+		_track_contact(mt)
 	if not resolved and mt >= contact_t:
 		_resolve()
 	if not taker.actions.active():
@@ -255,6 +279,9 @@ func execute(act: StringName, ch: float, lb: bool, dir: Vector3, cu: float = 0.0
 	lob = lb
 	if dir.length_squared() > 0.01:
 		aim_dir = KickModel.flat(dir).normalized()
+	if kind == Kind.THROW_IN and not _orientation_done and _orient_throw():
+		_queued_throw = {"action": act, "charge": ch, "lob": lb, "dir": dir, "curl": cu}
+		return
 	var yaw: float = Locomotion.yaw_from_dir(aim_dir)
 	stage = &"run"
 	if kind == Kind.THROW_IN:
@@ -277,6 +304,9 @@ func execute(act: StringName, ch: float, lb: bool, dir: Vector3, cu: float = 0.0
 			_resolve_without_clip()
 		return
 	clip = _kick_clip(act, lb)
+	_previous_toe = Vector3.INF
+	_previous_ball = Vector3.INF
+	_contact_min = INF
 	var m: Dictionary = PackLibrary.meta(clip)
 	var c: Dictionary = m.get("contact", {})
 	foot_key = "toe_r" if int(c.get("foot", 1)) > 0 else "toe_l"
@@ -289,10 +319,28 @@ func execute(act: StringName, ch: float, lb: bool, dir: Vector3, cu: float = 0.0
 	var r2 := Vector3(-f2.z, 0.0, f2.x)
 	# Posicion de salida tal que el pie (trayectoria con raiz desde start_t) quede sobre la pelota en el golpeo.
 	var start2: Vector3 = spot - f2 * (toe.x - root0.x) - r2 * (toe.z - root0.y)
+	last_setup = {"start": start2, "start_t": start_t, "toe": toe, "root0": root0}
 	taker.place_at(start2, yaw)
 	taker.set_ball_ghost(true)
 	if not taker.actions.start(&"set_piece", clip, KICK_SPEED, contact_t - start_t + 0.45, [], start_t):
 		_resolve_without_clip()
+
+## Antes de lanzar, el ejecutor puede orientarse con su clip propio sin soltar la pelota ni fabricar un lanzamiento.
+func _orient_throw() -> bool:
+	if not PackLibrary.json_mode():
+		return false
+	var needed: float = wrapf(Locomotion.yaw_from_dir(aim_dir) - taker.locomotion.yaw, -PI, PI)
+	for id in PackLibrary.by_role(&"throw_prep"):
+		var m: Dictionary = PackLibrary.meta(id)
+		var turn: float = ActionMotion.heading_rel(m.get("heading_path", PackedFloat32Array()), float(m.get("duration", 1.0)))
+		if absf(needed) < deg_to_rad(15.0) or absf(wrapf(needed - turn, -PI, PI)) > deg_to_rad(12.0):
+			continue
+		if taker.actions.start(&"set_piece", id):
+			orientation_clip = id
+			_orientation_done = true
+			stage = &"orient"
+			return true
+	return false
 
 ## Fuerza el saque ya (lo pide el partido si el balon parado se alarga demasiado).
 func force() -> void:
@@ -360,7 +408,43 @@ func _kick_clip(act: StringName, lb: bool) -> StringName:
 	var id: StringName = base if taker.dominant_right else StringName(String(base) + "_mirror")
 	if not PackLibrary.has_clip(id):
 		id = base
+	if kind == Kind.FREE_KICK and not lb:
+		var pool: Array[StringName] = recovered_free_kicks(act)
+		if not pool.is_empty():
+			if PackLibrary.has_clip(id):
+				pool.append(id)
+			return pool[rng.randi_range(0, pool.size() - 1)]
 	return id if PackLibrary.has_clip(id) else &"Soccer_Pass"
+
+func recovered_free_kicks(act: StringName) -> Array[StringName]:
+	var out: Array[StringName] = []
+	if kind != Kind.FREE_KICK:
+		return out
+	var yaw: float = Locomotion.yaw_from_dir(aim_dir)
+	var forward: Vector3 = Locomotion.dir_from_yaw(yaw)
+	var right := Vector3(-forward.z, 0.0, forward.x)
+	for base in RECOVERED_FREE_KICKS.get(act, []):
+		var id: StringName = base if taker.dominant_right else StringName(String(base) + "_mirror")
+		if not PackLibrary.has_clip(id):
+			continue
+		var contact: Dictionary = PackLibrary.meta(id).get("contact", {})
+		var time: float = float(contact.get("time", -1.0))
+		if time <= 0.0:
+			continue
+		var start: float = _start_for_runup(id, time, RUNUP_MAX)
+		var toe: Vector3 = _toe_at(id, "toe_r" if int(contact.get("foot", 1)) > 0 else "toe_l", time)
+		var root0: Vector2 = ActionMotion.offset_between(id, 0.0, start)
+		var origin: Vector3 = spot - forward * (toe.x - root0.x) - right * (toe.z - root0.y)
+		var fits: bool = true
+		for frame in range(int(start * 30.0), int(time * 30.0) + 2):
+			var root: Vector2 = ActionMotion.offset_between(id, start, float(frame) / 30.0)
+			var point: Vector3 = origin + forward * root.x + right * root.y
+			if absf(point.x) > ctx.pitch.config.half_length() + 0.7 or absf(point.z) > ctx.pitch.config.half_width() + 0.7:
+				fits = false
+				break
+		if fits:
+			out.append(id)
+	return out
 
 ## Instante del golpe / lanzamiento: el impulso sale del contacto real del pie (o de las manos).
 func _resolve() -> void:
@@ -379,8 +463,10 @@ func _resolve() -> void:
 	var k: int = int(round(taker.actions.motion.t * 30.0))
 	var toe: Vector3 = KeeperPlanner.path_world_at_body(clip, foot_key, k, taker.global_position, taker.locomotion.yaw)
 	var d: float = Vector2(toe.x - ball.global_position.x, toe.z - ball.global_position.z).length()
+	var swept: float = _contact_min if is_finite(_contact_min) else (toe - ball.global_position).length()
+	last_contact = {"clip": clip, "distance": d, "swept_distance": swept, "toe": toe, "ball": ball.global_position, "body": taker.global_position, "time": taker.actions.motion.t}
 	taker.set_ball_ghost(false)
-	if d > CONTACT_RADIUS:
+	if swept > CONTACT_RADIUS:
 		result = &"missed"
 		ctx.emit_event(GameEvent.make(GameEvent.Type.KICK_WHIFF, taker.actor_id, team, {"set_piece": kind_name(kind), "foot_distance": d}))
 		misses += 1
@@ -399,6 +485,22 @@ func _resolve() -> void:
 	var stick: Vector3 = aim_dir
 	taker.ball_handler.shot_curl = curl
 	taker.ball_handler.perform_action(action, stick, charge, lob)
+
+## El pie puede recorrer 20 cm entre pasos: un unico fotograma despues del evento perdia contactos reales.
+## Mide la menor distancia 3D relativa barrida, como las manos del arquero, en la ventana del contacto.
+func _track_contact(time: float) -> void:
+	var toe: Vector3 = KeeperPlanner.path_world_at_body(clip, foot_key, int(round(time * 30.0)), taker.global_position, taker.locomotion.yaw)
+	var ball_pos: Vector3 = ctx.ball.global_position
+	if absf(time - contact_t) <= Goalkeeper.CONTACT_WINDOW:
+		var relative: Vector3 = toe - ball_pos
+		_contact_min = minf(_contact_min, relative.length())
+		if _previous_toe != Vector3.INF:
+			var before: Vector3 = _previous_toe - _previous_ball
+			var segment: Vector3 = relative - before
+			var fraction: float = clampf(-before.dot(segment) / maxf(segment.length_squared(), 0.000001), 0.0, 1.0)
+			_contact_min = minf(_contact_min, (before + segment * fraction).length())
+	_previous_toe = toe
+	_previous_ball = ball_pos
 
 ## Velocidad del saque de banda con las manos hacia el companero (o hacia donde apunta).
 func _throw_velocity(from: Vector3) -> Vector3:

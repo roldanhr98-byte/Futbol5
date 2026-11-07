@@ -84,7 +84,9 @@ func _ai_match(game_pitch: bool) -> void:
 	check(idle_players.is_empty(), "todos los jugadores de IA se mueven (menos de 40 m en 120 s: %s)" % str(idle_players))
 	var k0: Goalkeeper = m.keepers[0]
 	var k1: Goalkeeper = m.keepers[1]
-	check(k0.stats["shots_faced"] + k1.stats["shots_faced"] >= 1, "los arqueros enfrentan disparos")
+	# Un tiro puede salir afuera o ser bloqueado antes de amenazar la linea. Se comprueba la lectura del tiro real;
+	# la respuesta a un tiro a puerta se exige por separado con una trayectoria determinista en test_keeper_shot_read.
+	check(k0.stats["shots_seen"] + k1.stats["shots_seen"] >= 1, "los arqueros leen los disparos reales")
 
 func test_each_team_wears_its_own_kit() -> void:
 	var m: MatchScene = await _scene(0.0)

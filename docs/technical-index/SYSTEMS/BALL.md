@@ -35,7 +35,7 @@
 <!-- AUTO:params:BallTuning -->
 | Parámetro | Defecto | Rango / tipo | Definido en | Dónde se usa (accesos reales) | Descripción |
 |---|---|---|---|---|---|
-| `radius` | `0.1` | float | `scripts/ball/ball_tuning.gd:8` | `scripts/player/ball_handler.gd:1859`, `scripts/player/ball_handler.gd:1976`, `scripts/player/ball_handler.gd:1998`, `scripts/player/ball_handler.gd:2090` (+14) | Radio real en metros (circunferencia ~63 cm). (Cuerpo) |
+| `radius` | `0.1` | float | `scripts/ball/ball_tuning.gd:8` | `scripts/player/ball_handler.gd:1869`, `scripts/player/ball_handler.gd:1986`, `scripts/player/ball_handler.gd:2008`, `scripts/player/ball_handler.gd:2100` (+14) | Radio real en metros (circunferencia ~63 cm). (Cuerpo) |
 | `mass` | `0.42` | float | `scripts/ball/ball_tuning.gd:10` | `scripts/ball/ball.gd:130`, `scripts/ball/ball_predictor.gd:33`, `scripts/ball/ball_predictor.gd:43`, `scripts/assistance/kick_model.gd:68` (+1) | Masa en kg (futsal: 400-440 g). (Cuerpo) |
 | `visual_scale` | `1.25` | float | `scripts/ball/ball_tuning.gd:12` | `scripts/ball/ball.gd:147`, `scripts/ball/ball.gd:148` | Escala solo visual para que se lea bien con camara alta (no afecta a la fisica). (Cuerpo) |
 | `bounce` | `0.54` | 0.0, 1.0 | `scripts/ball/ball_tuning.gd:16` | `scripts/ball/ball.gd:138`, `scripts/ball/ball_predictor.gd:54`, `scripts/ball/ball_predictor.gd:57` | Coeficiente de restitucion. El balon de futsal rebota ~50-60 % de la altura de caida. (Contacto) |

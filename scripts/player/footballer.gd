@@ -171,6 +171,11 @@ func set_ball_ghost(on: bool) -> void:
 func has_ball() -> bool:
 	return ball_handler != null and ball_handler.has_possession()
 
+## Notificacion de una colision fisica real de Jolt; no se usa para fabricar un toque ni mover la pelota.
+func on_ball_impact(ball: Ball) -> void:
+	if actions != null:
+		actions.react_to_ball_impact(ball)
+
 func reset_motion() -> void:
 	_cancel_reaction()
 	set_piece = null
@@ -512,6 +517,9 @@ var _turn_cd: float = 0.0
 
 func _json_turn_move(desired_dir: Vector3, desired_mag: float, delta: float) -> void:
 	_turn_cd = maxf(_turn_cd - delta, 0.0)
+	if _turn_cd <= 0.0 and actions.try_locomotion_transition(desired_dir, desired_mag):
+		_turn_cd = JSON_TURN_COOLDOWN if is_human_controlled else JSON_TURN_COOLDOWN_AI
+		return
 	if _turn_cd > 0.0 or desired_mag < 0.5 or desired_dir.length_squared() < 0.01 or not actions.can_start(&"turn") or ball_handler.has_possession():
 		return
 	if ctx.ball == null or KickModel.flat(ctx.ball.global_position - global_position).length() < JSON_TURN_BALL_DIST or has_incoming_pass():

@@ -31,7 +31,7 @@ const REACH_MAX := 0.4
 const FIRST_TOUCH_DELAY := 0.1
 ## Velocidad (m/s) del cuerpo mientras rodea la pelota y frenada (m/s2) hasta ella (por el factor de aceleracion).
 const TURN_SPEED := 1.35
-const BRAKE := 13.0
+const BRAKE := 16.0
 ## Ritmo maximo del giro (grados/s, por la agilidad) y aceleracion lateral maxima (m/s2): yendo rapido el cuerpo gira
 ## a LATERAL_ACCEL / velocidad (primero frena, despues rodea).
 const TURN_RATE := 210.0
@@ -189,7 +189,21 @@ func body_control() -> Dictionary:
 		var want: float = clampf(vb + CATCH_REL, loco.speed, minf(loco.speed + 0.8, maxf(loco.speed, loco.max_sprint_speed())))
 		return {"face": old_dir, "rate": 360.0, "sign": 0.0, "vel": old_dir * want, "accel": Tuning.player.accel * accel_f}
 	var c: Vector3 = turn_control(loco.speed, owner.attributes.factor("agility", 0.14))
-	return {"face": new_dir, "rate": c.x, "sign": turn_sign, "vel": loco.forward() * c.y, "accel": c.z * accel_f}
+	var b: Ball = handler.ball()
+	var target: Vector3 = _avoid_ball(loco.forward() * c.y, owner.global_position, b.global_position, b.linear_velocity, c.z * accel_f)
+	return {"face": new_dir, "rate": c.x, "sign": turn_sign, "vel": target, "accel": c.z * accel_f}
+
+## El cuerpo rodea la pelota en vez de cruzar su centro. Limita la velocidad radial por la distancia de frenado;
+## conserva la componente tangencial. No mueve ni frena artificialmente el balon.
+static func _avoid_ball(want: Vector3, body: Vector3, ball_pos: Vector3, ball_velocity: Vector3, brake: float) -> Vector3:
+	var gap: Vector3 = KickModel.flat(ball_pos - body)
+	var distance: float = gap.length()
+	if distance < 0.001:
+		return want
+	var radial: Vector3 = gap / distance
+	var allowed: float = sqrt(2.0 * brake * maxf(distance - 0.38, 0.0))
+	var closing: float = (want - KickModel.flat(ball_velocity)).dot(radial)
+	return want - radial * maxf(closing - allowed, 0.0)
 
 ## Ritmo de giro (grados/s), velocidad objetivo (m/s) y aceleracion (m/s2, sin el factor) del cuerpo girando a `speed`.
 static func turn_control(speed: float, agility_f: float) -> Vector3:
@@ -207,6 +221,8 @@ func predict_body(horizon: float) -> Dictionary:
 	var v: Vector3 = KickModel.flat(loco.velocity)
 	var yaw: float = loco.yaw
 	var goal: float = Locomotion.yaw_from_dir(new_dir)
+	var b: Ball = handler.ball()
+	var trajectory: PackedVector3Array = BallPredictor.trajectory(b.global_position, b.linear_velocity, horizon + dt, dt, b.angular_velocity)
 	for i in int(round(horizon / dt)):
 		var c: Vector3 = turn_control(v.length(), agility_f)
 		var diff: float = wrapf(goal - yaw, -PI, PI)
@@ -214,7 +230,10 @@ func predict_body(horizon: float) -> Dictionary:
 			diff += signf(turn_sign) * TAU
 		var m: float = deg_to_rad(c.x) * dt
 		yaw = wrapf(yaw + clampf(diff, -m, m), -PI, PI)
-		v = v.move_toward(Locomotion.dir_from_yaw(yaw) * c.y, c.z * accel_f * dt)
+		var bp: Vector3 = trajectory[mini(i, trajectory.size() - 1)]
+		var bv: Vector3 = (trajectory[mini(i + 1, trajectory.size() - 1)] - bp) / dt
+		var target: Vector3 = _avoid_ball(Locomotion.dir_from_yaw(yaw) * c.y, p, bp, bv, c.z * accel_f)
+		v = v.move_toward(target, c.z * accel_f * dt)
 		p += v * dt
 	return {"pos": p, "fwd": Locomotion.dir_from_yaw(yaw), "vel": v}
 
@@ -304,9 +323,15 @@ func _kick_to(b: Ball, target: Vector3, time: float, mode: StringName) -> void:
 	b.kick(v, b.rolling_spin(v), owner)
 	_last_push = v.normalized() if v.length() > 0.1 else KickModel.flat(owner.locomotion.forward())
 	_since_touch = 0.0
-	handler.touched_ball.emit(mode)
 	handler.dribble_touch_count += 1
 	handler.last_touch_mode = mode
+	var gap: float = handler.foot_distance(foot, b.global_position) if handler.feet_live else INF
+	handler.last_touch_foot = foot if gap <= BallHandler.FOOT_CONTACT else -1
+	handler.last_touch_foot_distance = gap if gap <= BallHandler.FOOT_CONTACT else -1.0
+	handler.last_touch_toe_distance = handler._toe_now[foot].distance_to(b.global_position) if gap <= BallHandler.FOOT_CONTACT else -1.0
+	if handler.last_touch_foot >= 0:
+		handler.foot_touches += 1
+	handler.touched_ball.emit(mode)
 	var speeds: Array = last.get("touch_speeds", [])
 	speeds.append(snappedf(v.length(), 0.01))
 	last["touch_speeds"] = speeds

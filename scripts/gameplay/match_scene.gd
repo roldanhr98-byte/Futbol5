@@ -33,6 +33,7 @@ var pitch: Pitch
 var ball: Ball
 var camera: MatchCamera
 var manager: MatchManager
+var presentation: MatchPresentation = null
 var hud: Hud
 var controlled: Footballer = null
 var home: Array[Footballer] = []
@@ -94,6 +95,11 @@ func _ready() -> void:
 	manager.intro_seconds = intro_seconds
 	add_child(manager)
 	manager.setup(ctx)
+	if PackLibrary.json_mode() and not training_mode:
+		presentation = MatchPresentation.new()
+		presentation.name = "MatchPresentation"
+		add_child(presentation)
+		presentation.setup(ctx)
 	manager.kickoff_requested.connect(_on_kickoff_requested)
 	manager.set_piece_requested.connect(_on_set_piece_requested)
 	hud = Hud.new()

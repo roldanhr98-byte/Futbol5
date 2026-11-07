@@ -25,7 +25,12 @@ const DIR_ROLES: Array[StringName] = [&"dir_back", &"dir_back_diag", &"dir_fwd_d
 ## y = adelante, todos a distancia 1 en la direccion medida del clip (meta natural_dir = adelante, derecha); al frente, el
 ## trote de la marcha. Sin esto la mezcla quedaba sin clips (buscaba los nombres del pack de Mixamo) y el jugador que
 ## presionaba se deslizaba con la pose fija («como estatuas»).
-static func dir_points() -> Array:
+static var _direction_cache: Dictionary = {}
+static var _gait_points_cache: Dictionary = {}
+
+static func dir_points(keeper: bool = false) -> Array:
+	if _direction_cache.has(keeper):
+		return _direction_cache[keeper]
 	var out: Array = []
 	if PackLibrary.has_clip(DIR_FORWARD):
 		out.append([DIR_FORWARD, 0.0, 1.0])
@@ -36,6 +41,21 @@ static func dir_points() -> Array:
 				continue
 			var d: Vector2 = Vector2(nd.y, nd.x).normalized()
 			out.append([id, d.x, d.y])
+	# Variantes laterales y hacia atras: su direccion medida las conecta a la mezcla de marcaje, no a la carrera frontal.
+	var extra_roles: Array[StringName] = [&"loco_walk", &"loco_jog", &"loco_side"]
+	if keeper:
+		extra_roles.append(&"gk_loco")
+	for role in extra_roles:
+		for id in AnimDB.candidates(role, {"mirrors": false}):
+			var m: Dictionary = PackLibrary.meta(id)
+			var nd: Vector2 = m.get("natural_dir", Vector2.ZERO)
+			if not bool(m.get("loop", false)) or nd.length() < 0.5:
+				continue
+			if role != &"gk_loco" and nd.normalized().x > 0.95:
+				continue
+			var d: Vector2 = Vector2(nd.y, nd.x).normalized()
+			out.append([id, d.x, d.y])
+	_direction_cache[keeper] = out
 	return out
 
 ## Velocidad media (m/s) de los clips de dir_points a su ritmo natural (referencia de la cadencia de la mezcla).
@@ -65,6 +85,8 @@ static func is_human_model(path: String) -> bool:
 
 ## Escalones [clip, posicion en el BlendSpace (m/s)] de la marcha (carry: con pelota) que existen en la libreria.
 static func gait_points(carry: bool) -> Array:
+	if _gait_points_cache.has(carry):
+		return _gait_points_cache[carry]
 	var out: Array = []
 	for pt in (CARRY if carry else GAIT):
 		var id: StringName = pt[0]
@@ -74,6 +96,19 @@ static func gait_points(carry: bool) -> Array:
 		if pos < 0.0:
 			pos = float(PackLibrary.meta(id).get("natural_speed", 0.0))
 		out.append([id, pos])
+	var extra_roles: Array = [&"dribble_jog", &"dribble_run", &"dribble_fast", &"dribble_sprint"] if carry else [&"loco_walk", &"loco_jog", &"loco_sprint"]
+	var present: Dictionary = {}
+	for point in out:
+		present[point[0]] = true
+	for role in extra_roles:
+		for id in AnimDB.candidates(role, {"mirrors": false}):
+			var m: Dictionary = PackLibrary.meta(id)
+			var direction: Vector2 = m.get("natural_dir", Vector2.ZERO)
+			if present.has(id) or not bool(m.get("loop", false)) or direction.normalized().x <= 0.95:
+				continue
+			out.append([id, float(m.get("natural_speed", 0.0))])
+	out.sort_custom(func(a: Array, b: Array) -> bool: return float(a[1]) < float(b[1]))
+	_gait_points_cache[carry] = out
 	return out
 
 ## Longitud de zancada (m por ciclo) de un escalon: velocidad natural por duracion del ciclo.
@@ -186,3 +221,5 @@ static func situation_clip(situation: StringName, pick: int) -> StringName:
 static func reset_caches() -> void:
 	_kick_cache = {}
 	_situation_cache = {}
+	_direction_cache = {}
+	_gait_points_cache = {}

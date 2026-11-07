@@ -9,7 +9,7 @@ extends CharacterBody3D
 
 signal saved(kind: StringName)
 
-enum State { POSITION, PREPARE, ACTION, HOLD, DISTRIBUTE, GOAL_KICK }
+enum State { POSITION, PREPARE, ACTION, HOLD, DISTRIBUTE, GOAL_KICK, TURNING }
 
 ## Segundos con la pelota parada en el area tras los que el arquero la recoge aunque haya rivales cerca.
 const SCRUM_SECONDS := 1.2
@@ -54,7 +54,8 @@ var state: State = State.POSITION
 var yaw: float = 0.0
 var rng := RandomNumberGenerator.new()
 ## Contadores y registro (diagnostico y pruebas).
-var stats := {"shots_faced": 0, "catches": 0, "parries": 0, "beaten": 0, "dives": 0, "pickups": 0, "distributions": 0}
+var stats := {"shots_seen": 0, "shots_faced": 0, "catches": 0, "parries": 0, "beaten": 0, "dives": 0, "pickups": 0, "distributions": 0}
+var _last_shot_notice: Vector2i = Vector2i(-1, -1)
 var save_log: Array[Dictionary] = []
 
 var _tune: KeeperTuning = null
@@ -236,6 +237,8 @@ func _keeper_step(delta: float) -> void:
 			_tick_distribute(delta)
 		State.GOAL_KICK:
 			_tick_goal_kick(delta)
+		State.TURNING:
+			_tick_turn(delta)
 	_direct_cd = maxf(_direct_cd - delta, 0.0)
 	if is_on_floor():
 		velocity.y = -0.5
@@ -267,6 +270,8 @@ func _tick_position(delta: float, preparing: bool = false) -> void:
 		if _try_smother():
 			return
 		if _assess_cross():
+			return
+		if _try_turn():
 			return
 		_maybe_direct_team()
 	# Objetivo: sobre el arco, en la linea arco-pelota, mas adelantado cuanto mas cerca esta el peligro.
@@ -1304,6 +1309,8 @@ func _maybe_direct_team() -> void:
 
 func _on_match_event(e: GameEvent) -> void:
 	match e.type:
+		GameEvent.Type.SHOT:
+			_notice_real_shot(e)
 		GameEvent.Type.KICKOFF, GameEvent.Type.RESTART, GameEvent.Type.MATCH_START:
 			reset_position()
 		GameEvent.Type.OUT_OF_PLAY, GameEvent.Type.SET_PIECE:
@@ -1323,3 +1330,85 @@ func _on_match_event(e: GameEvent) -> void:
 				_cancel_action(true)
 				state = State.POSITION
 				visual.play_situation(&"dejected" if conceded else &"celebrate", actor_id, 1.0, 2.4)
+
+## Lee la salida real del tiro aunque luego vaya afuera o lo bloquee un defensor. Verlo no obliga a estirarse:
+## la trayectoria fisica de _assess_shot sigue decidiendo si amenaza el arco y si las manos llegan.
+func _notice_real_shot(event: GameEvent) -> void:
+	if event.team == team or event.team < 0 or ctx.ball.is_held():
+		return
+	var shooter: Node = ctx.ball.last_toucher
+	if shooter == null or shooter.get("actor_id") != event.actor_id:
+		return
+	var direction: Array = event.data.get("dir", [])
+	if direction.size() < 2 or float(direction[0]) * float(goal_side()) <= 0.0 or float(event.data.get("speed", 0.0)) < _tune.shot_min_speed:
+		return
+	var key := Vector2i(ctx.ball.last_touch_frame, event.actor_id)
+	if key == _last_shot_notice:
+		return
+	_last_shot_notice = key
+	stats["shots_seen"] += 1
+	_kick_seen_since = _clock
+	_next_plan_at = -1.0
+	if state == State.TURNING:
+		_motion.stop()
+		state = State.POSITION
+	if state == State.POSITION and visual != null:
+		# Una indicacion al equipo no debe tapar la preparacion de un tiro que acaba de salir.
+		visual.stop_current_action()
+
+## Giro sin amenaza inmediata: usa la raiz y el rumbo medidos. Un disparo interrumpe este estado.
+func _try_turn() -> bool:
+	if is_human_controlled or state != State.POSITION or ctx.dead_ball or ctx.ball.ground_speed() >= _tune.shot_min_speed:
+		return false
+	if global_position.distance_to(ctx.ball.global_position) < 6.0:
+		return false
+	var best: StringName = &""
+	var best_error: float = INF
+	for id in PackLibrary.by_role(&"gk_turn"):
+		var error: float = _turn_error(id)
+		if error < best_error:
+			best = id
+			best_error = error
+	return best != &"" and start_orientation_turn(best)
+
+func _turn_error(id: StringName) -> float:
+	var meta: Dictionary = PackLibrary.meta(id)
+	if meta.get("role", "") != "gk_turn" or not bool(meta.get("json", false)):
+		return INF
+	var needed: float = wrapf(Locomotion.yaw_from_dir(KickModel.flat(ctx.ball.global_position - global_position).normalized()) - yaw, -PI, PI)
+	var measured: float = ActionMotion.heading_rel(meta.get("heading_path", PackedFloat32Array()), float(meta.get("duration", 1.0)))
+	var error: float = absf(wrapf(needed - measured, -PI, PI))
+	if absf(needed) < deg_to_rad(2.0) or error > deg_to_rad(12.0) or absf(velocity.length() - float(meta.get("v_in", 0.0))) > 1.3:
+		return INF
+	var offset: Vector2 = meta.get("root_total", Vector2.ZERO)
+	var end: Vector3 = global_position + forward() * offset.x + right_vec() * offset.y
+	if absf(end.x) > ctx.pitch.config.half_length() - 0.3 or absf(end.z) > ctx.pitch.config.half_width() - 0.3:
+		return INF
+	return error
+
+func start_orientation_turn(id: StringName) -> bool:
+	if state != State.POSITION or is_human_controlled or ctx.dead_ball or ctx.ball.ground_speed() >= _tune.shot_min_speed \
+			or global_position.distance_to(ctx.ball.global_position) < 6.0 or is_inf(_turn_error(id)):
+		return false
+	if visual.play_pack_clip(id) <= 0.0 or not _motion.start(id):
+		return false
+	_motion.yaw0 = yaw
+	state = State.TURNING
+	return true
+
+func _tick_turn(delta: float) -> void:
+	if ctx.ball.ground_speed() >= _tune.shot_min_speed or global_position.distance_to(ctx.ball.global_position) < 4.0:
+		_motion.stop()
+		visual.stop_current_action()
+		state = State.POSITION
+		_tick_position(delta)
+		return
+	var root_velocity: Vector2 = _motion.step(delta)
+	var base: Vector3 = Locomotion.dir_from_yaw(_motion.yaw0)
+	var right: Vector3 = Vector3(-base.z, 0.0, base.x)
+	var world_velocity: Vector3 = base * root_velocity.x + right * root_velocity.y
+	velocity.x = world_velocity.x
+	velocity.z = world_velocity.z
+	yaw = _motion.yaw0 + _motion.heading_at(_motion.t)
+	if not _motion.active:
+		state = State.POSITION

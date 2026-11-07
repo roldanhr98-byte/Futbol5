@@ -696,6 +696,7 @@ func _touch(i: int, b: Ball, met: bool = false) -> void:
 	handler.foot_touches += 1
 	handler.last_touch_foot = foot
 	handler.last_touch_foot_distance = d
+	handler.last_touch_toe_distance = d
 	handler.last_touch_mode = &"move"
 	handler.touched_ball.emit(&"move")
 

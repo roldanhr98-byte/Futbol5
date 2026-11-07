@@ -892,12 +892,13 @@ static func _path_bbox(clip: StringName, key: String, path: PackedVector3Array) 
 ## clip (contact_samples), no es fijo: se busca el punto que mejor encaja con la pelota predicha. Cada opcion puede
 ## compensar hasta el ajuste de zancada maximo; se empieza solo si, tras el ajuste, el pie quedaria a menos de
 ## kick_start_residual de la pelota. Si ninguna llega, devuelve {} y NO hay patada.
-func plan_clip_kick(action: StringName, charge: float, lob: bool) -> Dictionary:
+func plan_clip_kick(action: StringName, charge: float, lob: bool, preferred_clip: StringName = &"") -> Dictionary:
 	var b: Ball = ball()
 	if b == null or b.is_held():
 		return {}
 	if b.global_position.y > AERIAL_MIN_BALL_Y:
-		return plan_aerial_kick(action, charge)
+		var aerial: Dictionary = plan_aerial_kick(action, charge)
+		return aerial if preferred_clip == &"" or aerial.get("clip", &"") == PackLibrary.resolve(preferred_clip) else {}
 	var t: PlayerTuning = Tuning.player
 	var adjust_max: float = t.kick_adjust_max + t.kick_adjust_sprint * _sprint_ratio()
 	var best: Dictionary = {}
@@ -924,12 +925,16 @@ func plan_clip_kick(action: StringName, charge: float, lob: bool) -> Dictionary:
 				var tp: Dictionary = plan_turn_kick(action, alpha, adjust_max)
 				last_plan_debug += " giro: %s" % ("sin plan" if tp.is_empty() else String(tp["clip"]))
 				if not tp.is_empty():
-					return tp
+					return tp if preferred_clip == &"" or tp["clip"] == PackLibrary.resolve(preferred_clip) else {}
 				if absf(alpha) >= TURN_FIRST_MIN:
 					# Ningun golpeo girando sirve (el destino queda casi detras): primero se gira con la pelota.
 					_kick_turn_dir = kd
 					return {}
 	var cands: Array = AnimationCatalog.kick_candidates(kind_key, charge)
+	# Una variante explicita sigue pasando TODAS las condiciones fisicas del planificador y debe pertenecer a la accion.
+	if preferred_clip != &"":
+		var requested: StringName = PackLibrary.resolve(preferred_clip)
+		cands = cands.filter(func(candidate: Dictionary) -> bool: return candidate["clip"] == requested)
 	if json and cands.size() > JSON_KICK_EVAL:
 		# Cientos de golpeos: se evaluan a fondo solo los JSON_KICK_EVAL cuyo contacto queda mas cerca de donde estara la pelota
 		# (cuenta barata: pelota relativa al cuerpo, con la velocidad relativa durante una latencia tipica).
@@ -1370,6 +1375,8 @@ var _dt: float = 1.0 / 60.0
 ## Toques de conduccion dados con el pie animado y distancia pie-pelota del ultimo (diagnostico y pruebas).
 var foot_touches: int = 0
 var last_touch_foot_distance: float = -1.0
+## Medida separada de la punta: un contacto con el interior no ocurre necesariamente en la punta del botin.
+var last_touch_toe_distance: float = -1.0
 ## Pie del ultimo toque de conduccion: 0 izquierdo, 1 derecho, -1 toque sin pie del esqueleto cerca (rescate o sin
 ## esqueleto vivo). Solo diagnostico y pruebas.
 var last_touch_foot: int = -1
@@ -1636,6 +1643,9 @@ func _shrug_resting_ball() -> bool:
 	var v: Vector3 = out * 2.2 + Vector3.UP * 1.2
 	b.kick(v, Vector3.ZERO, owner)
 	touch_timer = 0.3
+	last_touch_foot = -1
+	last_touch_foot_distance = -1.0
+	last_touch_toe_distance = -1.0
 	touched_ball.emit(&"body")
 	return true
 
@@ -2214,6 +2224,7 @@ func _clip_touch_step() -> void:
 	dribble_touch_count += 1
 	last_touch_foot = f
 	last_touch_foot_distance = float(last_clip_touch["d"])
+	last_touch_toe_distance = _toe_now[f].distance_to(b.global_position)
 	last_touch_mode = &"clip"
 	touch_timer = period * 0.7
 	_touch_sync = period * TOUCH_SYNC_KEEP
@@ -2430,7 +2441,11 @@ func _try_dribble_touch(desired_dir: Vector3, stick_mag: float) -> void:
 	last_touch_foot = strike
 	if strike >= 0:
 		foot_touches += 1
-		last_touch_foot_distance = _toe_now[strike].distance_to(b.global_position)
+		last_touch_foot_distance = foot_distance(strike, b.global_position)
+		last_touch_toe_distance = _toe_now[strike].distance_to(b.global_position)
+	else:
+		last_touch_foot_distance = -1.0
+		last_touch_toe_distance = -1.0
 
 	# Posicion del jugador cuando la pelota llegue a destino: promedio entre su velocidad actual y la que tendra.
 	var p_pos: Vector3 = KickModel.flat(owner.global_position)

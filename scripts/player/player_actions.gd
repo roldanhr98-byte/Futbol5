@@ -51,6 +51,7 @@ var _slide_cd: float = 0.0
 ## Testigo del arbitro de la accion en curso (0 = ninguna).
 var _token: int = 0
 var stats := {"slides": 0, "slide_wins": 0, "slide_fouls": 0, "falls": 0}
+const LOCOMOTION_TRANSITIONS: Array[StringName] = [&"start", &"step_stand", &"run_change", &"turn_stop"]
 
 func _init(o: Footballer) -> void:
 	owner = o
@@ -91,6 +92,86 @@ func can_start(k: StringName) -> bool:
 	if owner.arbiter == null:
 		return not active()
 	return owner.arbiter.can_start(ActionArbiter.level_for_action(k))
+
+func react_to_ball_impact(ball: Ball) -> bool:
+	if owner.ctx == null or owner.ctx.ball != ball or ball.linear_velocity.length() < 2.0 or owner.ball_handler.is_kick_in_progress():
+		return false
+	var offset: Vector3 = ball.global_position - owner.global_position
+	if offset.y < 1.25 or offset.y > 1.95 or KickModel.flat(offset).length() > 0.65 or offset.dot(owner.locomotion.forward()) < -0.05:
+		return false
+	var id := &"jn_nis_misc_0450"
+	if not start(&"stumble", id):
+		return false
+	stats["ball_face_reactions"] = int(stats.get("ball_face_reactions", 0)) + 1
+	return true
+
+## Transiciones antes fuera de las franjas de giro de 90/180 grados: arranque, paso de parada y giro frenando.
+## Se comparan por separado el desplazamiento pedido y la orientacion del cuerpo (incluye retroceder mirando al rival).
+func transition_score(id: StringName, desired_dir: Vector3, magnitude: float) -> float:
+	var m: Dictionary = PackLibrary.meta(id)
+	var role := StringName(String(m.get("role", "")))
+	if not LOCOMOTION_TRANSITIONS.has(role) or not can_start(&"turn") or owner.ball_handler.has_possession() \
+			or owner.has_incoming_pass() or owner.ball_handler.is_kick_in_progress() or owner.ball_handler._pending_action != &"":
+		return INF
+	if owner.ctx.ball == null or KickModel.flat(owner.ctx.ball.global_position - owner.global_position).length() < 2.0 or not _lands_inside(id):
+		return INF
+	var loco: Locomotion = owner.locomotion
+	var dv: float = absf(loco.speed - float(m.get("v_in", 0.0)))
+	if dv > 1.0:
+		return INF
+	var moving: bool = magnitude >= 0.2 and desired_dir.length_squared() > 0.01
+	if (role == &"step_stand" and moving) or (role != &"step_stand" and not moving):
+		return INF
+	if role == &"start" and (loco.speed >= 1.3 or magnitude < 0.5):
+		return INF
+	if role == &"run_change" and (loco.speed < 0.8 or magnitude < 0.5):
+		return INF
+	if role == &"turn_stop" and (magnitude > 0.5 or loco.speed < 1.0):
+		return INF
+	var displacement: Vector2 = m.get("root_total", Vector2.ZERO)
+	var world_displacement: Vector3 = loco.forward() * displacement.x + loco.right() * displacement.y
+	var want: Vector3 = desired_dir if moving else loco.velocity
+	if world_displacement.length() > 0.08 and want.length() > 0.05 and world_displacement.normalized().dot(want.normalized()) < 0.65:
+		return INF
+	var measured: float = ActionMotion.heading_rel(m.get("heading_path", PackedFloat32Array()), float(m.get("duration", 1.0)))
+	var face: Vector3 = loco.face_override if loco.face_override.length_squared() > 0.01 else desired_dir
+	var needed: float = wrapf(Locomotion.yaw_from_dir(face.normalized()) - loco.yaw, -PI, PI) if moving else 0.0
+	var error: float = absf(wrapf(needed - measured, -PI, PI))
+	if moving and error > deg_to_rad(25.0):
+		return INF
+	return dv + error
+
+func request_locomotion_transition(id: StringName, desired_dir: Vector3, magnitude: float) -> bool:
+	if is_inf(transition_score(id, desired_dir, magnitude)):
+		return false
+	return start(&"turn", id)
+
+func try_locomotion_transition(desired_dir: Vector3, magnitude: float) -> bool:
+	if not can_start(&"turn") or owner.ball_handler.has_possession() or owner.has_incoming_pass() \
+			or owner.ball_handler.is_kick_in_progress() or owner.ball_handler._pending_action != &"":
+		return false
+	if magnitude < 0.2 and owner.locomotion.speed < 0.2:
+		return false
+	var pool: Array[StringName] = []
+	var weights: Array[float] = []
+	var total: float = 0.0
+	for role in LOCOMOTION_TRANSITIONS:
+		for id in PackLibrary.by_role(role):
+			var score: float = transition_score(id, desired_dir, magnitude)
+			if is_inf(score):
+				continue
+			var weight: float = 1.0 / (0.1 + score)
+			pool.append(id)
+			weights.append(weight)
+			total += weight
+	if pool.is_empty():
+		return false
+	var pick: float = rng.randf() * total
+	for i in pool.size():
+		pick -= weights[i]
+		if pick <= 0.0:
+			return request_locomotion_transition(pool[i], desired_dir, magnitude)
+	return request_locomotion_transition(pool.back(), desired_dir, magnitude)
 
 ## Empieza una accion. chain: [{kind, clip, speed, cut}] que se encadenan al terminar. El arbitro decide si entra (por
 ## nivel: una caida corta un giro o un movimiento con pelota; un giro no corta una caida).

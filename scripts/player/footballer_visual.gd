@@ -322,7 +322,7 @@ func _setup_animation_tree() -> void:
 		dir.add_blend_point(_anim_node(center), Vector2.ZERO, -1, &"d_center")
 		var di := 0
 		_dir_ref = JsonCatalog.dir_ref_speed() if json_mode else DIR_REF_SPEED
-		for pt in (JsonCatalog.dir_points() if json_mode else (TWIN_DIR_POINTS if twin_rig else DIR_POINTS)):
+		for pt in (JsonCatalog.dir_points(keeper_mode) if json_mode else (TWIN_DIR_POINTS if twin_rig else DIR_POINTS)):
 			if PackLibrary.has_clip(pt[0]):
 				dir.add_blend_point(_anim_node(PackLibrary.anim_path(pt[0])), Vector2(pt[1], pt[2]), -1, StringName("d%d" % di))
 				di += 1
@@ -339,13 +339,13 @@ func _setup_animation_tree() -> void:
 		carry.max_space = 7.5
 		carry.sync = true
 		var ci := 0
-		for pt in CARRY_GAIT_POINTS:
+		for pt in (JsonCatalog.gait_points(true) if json_mode else CARRY_GAIT_POINTS):
 			var cclip: StringName = pt[0]
 			if not PackLibrary.has_clip(cclip):
 				continue
 			var cnat: float = float(PackLibrary.meta(cclip).get("natural_speed", 0.0))
 			var cpos: float = cnat if float(pt[1]) < 0.0 else float(pt[1])
-			carry.add_blend_point(_anim_node(PackLibrary.anim_path(cclip)), cpos, -1, StringName("c%d" % ci))
+			carry.add_blend_point(_json_cycle_node(cclip) if json_mode else _anim_node(PackLibrary.anim_path(cclip)), cpos, -1, StringName("c%d" % ci))
 			_carry_points[cclip] = "c%d" % ci
 			ci += 1
 		if ci >= 2:
