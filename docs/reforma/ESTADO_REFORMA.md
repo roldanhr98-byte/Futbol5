@@ -1,6 +1,7 @@
 # Estado de la reforma: tiros libres y penales
 
-Leer primero en un chat nuevo. Última actualización: 2026-11-07.
+Leer primero en un chat nuevo (junto con [`CONTINUAR_REFORMA.md`](CONTINUAR_REFORMA.md), que trae el prompt para pegar, y
+[`INSTRUCCION_REFORMA.md`](INSTRUCCION_REFORMA.md), la instrucción completa del usuario). Última actualización: 2026-11-08.
 
 ## Rama y reglas
 
