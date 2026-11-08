@@ -4,6 +4,8 @@
 
 ## 1. Prompt para pegar en el chat nuevo
 
+(Si el proyecto se mueve a un repositorio nuevo, usar la variante del §7.)
+
 ```
 Trabajá sobre el repositorio roldanhr98-byte/Futbol5, rama `reforma-tiros-penales` (no toques `integracion-openai`
 ni `respaldo-f3`, no abras PR ni hagas merges). Estamos reformando el juego (Godot 4.7.2, Android) para que tenga
@@ -102,3 +104,66 @@ cubre las 25 acciones; Mixamo, 20; Mocap, 8 (sin barrera ni casi nada del arquer
 - Los videos e imágenes de referencia del usuario tampoco están en el repositorio; si hacen falta, pedirlos de nuevo.
 - Trabajo anterior en pausa (en `integracion-openai`): guía maestra de animaciones del partido, ver
   `docs/integration/CONTINUAR_GUIA_ANIMACIONES.md`. No es parte de esta reforma.
+
+## 7. Si el proyecto pasa a un repositorio nuevo (decisión del usuario, 2026-11-08)
+
+El usuario va a bajar el ZIP de GitHub y crear un repositorio nuevo para este juego.
+
+**Cómo bajar el ZIP correcto:** la rama por defecto del repositorio viejo (`ccr-a6c53cd2-uoxpk0`) es una versión antigua, sin
+la reforma. Hay que bajar la rama **`reforma-tiros-penales`**:
+`https://github.com/roldanhr98-byte/Futbol5/archive/refs/heads/reforma-tiros-penales.zip` (o en la página del repositorio:
+selector de ramas → `reforma-tiros-penales` → Code → Download ZIP). Bajarlo **después** del último commit (hoy `c5704f6` o posterior).
+
+**Qué trae el ZIP y qué no:**
+
+- Trae todo lo versionado (~80 MB; el archivo más grande es `assets/animations/json_clips.res`, 24 MB, bajo el límite de 100 MB
+  de GitHub): código, escenas, las bibliotecas de los tres bancos, catálogo, documentación, pruebas y el workflow de la APK.
+- **No trae el historial de git** ni las otras ramas ni los tags. En el repositorio nuevo no existen `integracion-openai` ni
+  `respaldo-f3`: las reglas que los nombran dejan de aplicar, pero **el repositorio viejo no se debe borrar**: ahí quedan el
+  partido de fútbol 5 completo, el historial y la guía de animaciones del partido (si algún día se quiere recuperar algo).
+  La nota «recuperar desde el historial de git» de `FUTBOL5_QUITADO.md` se refiere al repositorio viejo.
+- **No trae** los 2.022 JSON originales (nunca estuvieron en el repositorio; están en el ZIP del usuario
+  `animaciones_futbol5_nombres_originales1.zip`, sha256 `3fa72c92ae35fe58540dd130d841534e0c73a2308a131f71a503ecd8ad8b374f`;
+  guardarlo aparte), ni los videos e imágenes de referencia, ni las APK ya compiladas (los artefactos de Actions son del
+  repositorio viejo y vencen el 21-11-2026), ni los tags.
+
+**Qué ajustar al crear el repositorio nuevo:**
+
+1. Subir el contenido del ZIP a la rama `main` (el workflow ya compila en `main`; no usa secretos: firma con una clave de
+   depuración creada en cada ejecución). El primer push genera la APK; sin cambios de código no hay motivo para otra.
+2. Las rutas y enlaces `roldanhr98-byte/Futbol5`, `integracion-openai` y `respaldo-f3` que aparecen en los documentos quedan como
+   referencia histórica del repositorio viejo; no hace falta reescribirlos. Lo que sí hay que decirle al chat nuevo es el
+   nombre del repositorio y la rama de trabajo (ver el prompt de abajo).
+3. En `CLAUDE.md` la regla de Git nombra la rama `reforma-tiros-penales`: el chat nuevo debe actualizarla a la rama real del
+   repositorio nuevo en su primer commit.
+4. Dar acceso a la sesión de Claude al repositorio nuevo (instalar la app de Claude en él); sin eso el chat no puede leer,
+   subir ni mirar GitHub Actions.
+
+**Variante del prompt para el repositorio nuevo** (cambiar `<REPO>` y `<RAMA>`; es el prompt del §1 sin las reglas sobre ramas
+que ya no existen):
+
+```
+Trabajá sobre el repositorio <REPO>, rama `<RAMA>`; no abras PR ni hagas merges. Este proyecto salió del repositorio
+roldanhr98-byte/Futbol5 (rama reforma-tiros-penales, último commit c5704f6 o posterior), que se conserva aparte como
+respaldo: no lo toques. Estamos reformando el juego (Godot 4.7.2, Android) para que tenga SOLO dos modos: tiros libres y
+penales, en orientación HORIZONTAL 16:9 (otras proporciones sin deformar el campo; nunca vertical). El modo de fútbol 5
+ya se quitó; se conserva todo lo reutilizable (animaciones, física, golpeos, arquero, árbitro de acciones).
+
+Antes de tocar nada, leé en este orden:
+1. docs/reforma/CONTINUAR_REFORMA.md (estado, siguientes pasos y este §7)
+2. docs/reforma/INSTRUCCION_REFORMA.md (mi instrucción completa y mis decisiones posteriores; manda sobre todo)
+3. docs/reforma/ESTADO_REFORMA.md, FASE0_AUDITORIA_Y_PLAN.md, FASE1_INFORME.md, FUTBOL5_QUITADO.md
+4. CLAUDE.md y docs/technical-index/INDEX.md (índice técnico; ficha docs/technical-index/SYSTEMS/REFORMA.md)
+
+Reglas: trabajar por fases; al terminar cada una entregar informe, archivos, pruebas y APK y ESPERAR mi autorización antes
+de la siguiente. No elegir por mí el banco de animación (JSON / Mixamo / Mocap), no mezclarlos y no rellenar huecos con
+clips de otro banco. No modificar los originales. No inventar resultados: informar fallos con la salida real. No conectar
+Supabase. No relajar ni desactivar pruebas para que pase la CI. Commits con las líneas de atribución de la sesión.
+
+Estado: Fase 0 y Fase 1 entregadas (banco de pruebas con selector de bancos). Espero mi decisión sobre cómo comparar
+Mixamo y Mocap (opciones A/B/C del §6 de docs/reforma/FASE1_INFORME.md) y sobre qué banco(s) me convencen tras probar la
+APK. NO avances a la Fase 2 ni a otra sin que te lo autorice. Primero verificá el estado real del repositorio (git status,
+último commit, última compilación de GitHub Actions) y que `python3 tools/docs_index.py check` y `tools/run_tests.sh`
+pasen en el repositorio nuevo; actualizá en CLAUDE.md la regla de Git a esta rama; resumime en pocas líneas dónde estamos y
+preguntame lo que necesites de las decisiones pendientes.
+```
