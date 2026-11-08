@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "generated_by": "tools/docs_index.py (sync); campos curados a mano: id, system, description, keywords, files, nombres de symbols/parameters, dependencies, documentation",
-  "last_verified": "2026-11-07",
+  "last_verified": "2026-11-08",
   "entries": [
     {
       "id": "ball.physics",
@@ -309,7 +309,7 @@
         "TUNING"
       ],
       "documentation": "docs/technical-index/SYSTEMS/BALL.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "ball.state",
@@ -363,7 +363,7 @@
         "BALL"
       ],
       "documentation": "docs/technical-index/SYSTEMS/NETWORK.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "pitch.layout",
@@ -562,7 +562,7 @@
         "TUNING"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PITCH.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "pitch.goal",
@@ -669,7 +669,7 @@
         "MATCH"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PITCH.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "pitch.goal_net",
@@ -769,7 +769,7 @@
         "PITCH"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PITCH.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "player.controller",
@@ -837,7 +837,7 @@
         "MATCH"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "player.locomotion",
@@ -1022,7 +1022,7 @@
         "TUNING"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "player.ball_handling",
@@ -1214,7 +1214,7 @@
         "TUNING"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "player.kick_timing",
@@ -1315,7 +1315,7 @@
         "BALL"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "assist.pass",
@@ -1422,7 +1422,7 @@
         "TUNING"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ASSISTANCE.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "assist.shot",
@@ -1569,7 +1569,7 @@
         "TUNING"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ASSISTANCE.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "assist.press",
@@ -1671,7 +1671,7 @@
         "TUNING"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ASSISTANCE.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "assist.kick_model",
@@ -1765,7 +1765,7 @@
         "PROGRESSION"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ASSISTANCE.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "anim.visual",
@@ -1899,7 +1899,7 @@
         "GODOT"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ANIMATIONS.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "anim.procedural_kick",
@@ -1980,7 +1980,7 @@
         "PLAYER"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ANIMATIONS.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "anim.pose_sampler",
@@ -2023,7 +2023,7 @@
         "ANIMATIONS"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ANIMATIONS.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "anim.library",
@@ -2088,7 +2088,7 @@
         "TRIPO"
       ],
       "documentation": "docs/technical-index/SYSTEMS/TOOLS_AND_ASSETS.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "anim.kit",
@@ -2132,7 +2132,7 @@
         "TOOLS"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ANIMATIONS.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "camera.match",
@@ -2298,7 +2298,7 @@
         "PITCH"
       ],
       "documentation": "docs/technical-index/SYSTEMS/CAMERA.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "input.frame",
@@ -2385,7 +2385,7 @@
         "NETWORK"
       ],
       "documentation": "docs/technical-index/SYSTEMS/INPUTS.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "input.touch",
@@ -2484,7 +2484,7 @@
         "PLAYER"
       ],
       "documentation": "docs/technical-index/SYSTEMS/UI_HUD.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "match.flow",
@@ -2643,7 +2643,7 @@
         "NETWORK"
       ],
       "documentation": "docs/technical-index/SYSTEMS/MATCH.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "match.context",
@@ -2721,7 +2721,7 @@
         "NETWORK"
       ],
       "documentation": "docs/technical-index/SYSTEMS/MATCH.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "network.events",
@@ -2774,7 +2774,7 @@
         "MATCH"
       ],
       "documentation": "docs/technical-index/SYSTEMS/NETWORK.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "ui.hud",
@@ -2886,7 +2886,7 @@
         "TUNING"
       ],
       "documentation": "docs/technical-index/SYSTEMS/UI_HUD.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "perf.graphics",
@@ -2966,7 +2966,7 @@
         "ANDROID"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PERFORMANCE.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "perf.prof",
@@ -3015,7 +3015,7 @@
         "JSON_MODE"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PERFORMANCE.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "perf.diagnostics",
@@ -3064,7 +3064,7 @@
         "UI_HUD"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PERFORMANCE.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "tuning.registry",
@@ -3158,7 +3158,7 @@
         "GOALKEEPER"
       ],
       "documentation": "docs/technical-index/SYSTEMS/TUNING.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "progression.attributes",
@@ -3244,7 +3244,7 @@
         "ASSISTANCE"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PROGRESSION.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "android.partial",
@@ -3293,7 +3293,7 @@
         "GODOT"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ANDROID.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "tests.framework",
@@ -3325,7 +3325,7 @@
         "GODOT"
       ],
       "documentation": "docs/technical-index/SYSTEMS/TESTING.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "tools.tripo",
@@ -3368,7 +3368,7 @@
         "GODOT"
       ],
       "documentation": "docs/technical-index/SYSTEMS/TOOLS_AND_ASSETS.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "anim.pack_eval",
@@ -3472,7 +3472,7 @@
         "TOOLS"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ANIMATION_PACK.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "anim.pack_integration",
@@ -3599,7 +3599,7 @@
         "TOOLS"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ANIMATION_PACK.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "player.clip_kick",
@@ -3749,7 +3749,7 @@
         "TUNING"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "goalkeeper.entity",
@@ -3828,7 +3828,7 @@
         "MATCH"
       ],
       "documentation": "docs/technical-index/SYSTEMS/GOALKEEPER.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "ball.predictor",
@@ -3866,7 +3866,7 @@
         "BALL"
       ],
       "documentation": "docs/technical-index/SYSTEMS/BALL.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "ai.teams",
@@ -3909,7 +3909,7 @@
         "BALL"
       ],
       "documentation": "docs/technical-index/SYSTEMS/MATCH.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "player.actions",
@@ -4006,7 +4006,7 @@
         "BALL"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "player.action_arbiter",
@@ -4126,7 +4126,7 @@
         "BALL"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "player.json_receive",
@@ -4305,7 +4305,7 @@
         "JSON_MODE"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "match.referee",
@@ -4331,7 +4331,7 @@
         "MATCH"
       ],
       "documentation": "docs/technical-index/SYSTEMS/MATCH.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "practice.scene",
@@ -4405,7 +4405,7 @@
         "UI_HUD"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ANIMATIONS.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "match.set_pieces",
@@ -4488,7 +4488,7 @@
         "PITCH"
       ],
       "documentation": "docs/technical-index/SYSTEMS/MATCH.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "match.replay",
@@ -4533,7 +4533,7 @@
         "CAMERA"
       ],
       "documentation": "docs/technical-index/SYSTEMS/MATCH.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "assistance.cross_through",
@@ -4583,7 +4583,7 @@
         "PLAYER"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ASSISTANCE.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "ball.curl",
@@ -4649,7 +4649,7 @@
         "ASSISTANCE"
       ],
       "documentation": "docs/technical-index/SYSTEMS/BALL.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "ball.visual_spin",
@@ -4701,7 +4701,7 @@
         "BALL"
       ],
       "documentation": "docs/technical-index/SYSTEMS/BALL.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "player.foot_sync",
@@ -4750,7 +4750,7 @@
         "BALL"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "player.clip_touches",
@@ -4898,7 +4898,7 @@
         "BALL"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "player.drag_back",
@@ -5027,7 +5027,7 @@
         "ANIMATIONS"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "inputs.bindings",
@@ -5062,7 +5062,7 @@
         "UI_HUD"
       ],
       "documentation": "docs/technical-index/SYSTEMS/INPUTS.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "player.ball_turn",
@@ -5168,7 +5168,7 @@
         "ANIMATIONS"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "player.loose_ball_chase",
@@ -5226,7 +5226,7 @@
         "MATCH"
       ],
       "documentation": "docs/technical-index/SYSTEMS/PLAYER.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "audio.sfx",
@@ -5316,7 +5316,7 @@
         "UI_HUD"
       ],
       "documentation": "docs/technical-index/SYSTEMS/AUDIO.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "animation.mocap_mode",
@@ -5442,7 +5442,7 @@
         "UI_HUD"
       ],
       "documentation": "docs/technical-index/SYSTEMS/ANIMATION_PACK.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "animation.json_mode",
@@ -5735,7 +5735,7 @@
         "TUNING"
       ],
       "documentation": "docs/technical-index/SYSTEMS/JSON_MODE.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "animation.trace",
@@ -5840,7 +5840,7 @@
         "MATCH"
       ],
       "documentation": "docs/technical-index/SYSTEMS/JSON_MODE.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     },
     {
       "id": "reforma.anim_bank_bench",
@@ -5911,7 +5911,7 @@
         "PITCH"
       ],
       "documentation": "docs/technical-index/SYSTEMS/REFORMA.md",
-      "last_verified": "2026-11-07"
+      "last_verified": "2026-11-08"
     }
   ]
 }
